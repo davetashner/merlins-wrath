@@ -11,10 +11,12 @@ Parameters:
   HostedZoneId:
     Type: AWS::Route53::HostedZone::Id
     Default: Z1026384SYV7U6UO2WXU
-  GitHubRepo:
+  GitHubSubjectPrefix:
     Type: String
-    Default: davetashner/thevesperbell
-    Description: owner/repo allowed to assume the deploy role
+    # The repo uses immutable OIDC subjects (owner and repo ids), so renames don't break deploys.
+    # Read it with: gh api repos/<owner>/<repo>/actions/oidc/customization/sub
+    Default: repo:davetashner@5702882/thevesperbell@1391330589
+    Description: OIDC subject prefix of the repository allowed to assume the deploy role
   GitHubOidcProviderArn:
     Type: String
     Default: arn:aws:iam::205074708100:oidc-provider/token.actions.githubusercontent.com
@@ -210,8 +212,8 @@ Resources:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
                 # Jobs that declare an environment get an environment-scoped subject claim.
                 token.actions.githubusercontent.com:sub:
-                  - !Sub "repo:${GitHubRepo}:environment:production"
-                  - !Sub "repo:${GitHubRepo}:ref:refs/heads/main"
+                  - !Sub "${GitHubSubjectPrefix}:environment:production"
+                  - !Sub "${GitHubSubjectPrefix}:ref:refs/heads/main"
       Policies:
         - PolicyName: deploy-site
           PolicyDocument:
