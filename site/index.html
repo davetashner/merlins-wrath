@@ -54,10 +54,30 @@
   .links { display: flex; flex-wrap: wrap; gap: .8rem 1.6rem; margin-top: 1.6rem; }
   .links a { font-weight: 500; }
   footer { padding: 2rem 16px 3rem; text-align: center; color: var(--muted); font-size: .9rem; }
+
+  /* Main theme toggle: off by default; nothing downloads until the visitor presses it. */
+  .theme-toggle { position: absolute; z-index: 2; top: 16px; right: 16px; display: inline-flex; align-items: center; gap: .5em;
+    padding: .45em .95em; border: 1px solid rgba(232,162,74,.55); border-radius: 999px; cursor: pointer;
+    background: rgba(21,19,31,.55); color: var(--cream); font: 500 .9rem/1 "Cinzel", Georgia, serif; letter-spacing: .06em;
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+  .theme-toggle:hover { border-color: var(--hearth); background: rgba(21,19,31,.75); }
+  .theme-toggle:focus-visible { outline: 2px solid var(--hearth); outline-offset: 3px; }
+  .theme-toggle svg { width: 1em; height: 1em; fill: currentColor; }
+  .theme-toggle .pause, .theme-toggle[aria-pressed="true"] .play { display: none; }
+  .theme-toggle[aria-pressed="true"] .pause { display: inline; }
 </style>
 </head>
 <body>
   <header class="hero">
+    <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Play the main theme">
+      <svg class="play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>
+      <svg class="pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5h3v11H4zm5 0h3v11H9z"/></svg>
+      <span>Main theme</span>
+    </button>
+    <audio id="theme" preload="none" loop>
+      <source src="/audio/main-theme-v1.ogg" type="audio/ogg; codecs=opus">
+      <source src="/audio/main-theme-v1.m4a" type="audio/mp4">
+    </audio>
     <div class="hero-inner">
       <h1><span class="the">The</span>Vesper Bell</h1>
       <p class="logline">For three weeks, the people of Briar Glen have been walking out of their beds at night and not coming back. Something beneath the mine is singing.</p>
@@ -75,5 +95,23 @@
     </div>
   </main>
   <footer>The Vesper Bell · a free game in progress</footer>
+  <script>
+    (() => {
+      const audio = document.getElementById('theme');
+      const toggle = document.querySelector('.theme-toggle');
+      const sync = () => {
+        const on = !audio.paused;
+        toggle.setAttribute('aria-pressed', String(on));
+        toggle.setAttribute('aria-label', on ? 'Pause the main theme' : 'Play the main theme');
+      };
+      audio.volume = 0.8;
+      audio.addEventListener('play', sync);
+      audio.addEventListener('pause', sync);
+      toggle.addEventListener('click', () => {
+        if (audio.paused) audio.play().catch(sync);
+        else audio.pause();
+      });
+    })();
+  </script>
 </body>
 </html>
