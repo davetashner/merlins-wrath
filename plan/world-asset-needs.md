@@ -53,11 +53,11 @@ Canon notes the prompts must respect (story bible):
 | `env-deepworks-winch-house-01` | Winch house and cage lift | e26-deepworks-greybox |
 | `env-deepworks-goblin-hall-01` | Ore-sorting hall turned goblin camp: kettle throne, hammocks, Duggan's crate | e26-deepworks-encounters |
 | `env-deepworks-sealed-gallery-01` | Vane's gallery 9: pried Hornfolk carvings, the breach | e26-vane-gallery-breach |
-| `env-bellhollow-nave-01` | Roofless nave, god-rays, ivy | e26-priory-greybox |
-| `env-bellhollow-choir-01` | Choir of singing-monk statues, hidden choir door | e26-priory-choir |
-| `env-bellhollow-scriptorium-01` | Ruined scriptorium, candle store, lecterns | e26-priory-scriptorium |
-| `env-bellhollow-belfry-01` | Belfry with the cracked, tongueless Vesper Bell over the Sounding Shaft | e26-priory-belfry, e26-vesper-bell-finale |
-| `env-bellhollow-garden-pear-01` | Priory garden with the dead pear tree (and a bloom variant) | e26-priory-greybox |
+| `env-bellwater-nave-01` | Roofless nave, god-rays, ivy | e26-priory-greybox |
+| `env-bellwater-choir-01` | Choir of singing-monk statues, hidden choir door | e26-priory-choir |
+| `env-bellwater-scriptorium-01` | Ruined scriptorium, candle store, lecterns | e26-priory-scriptorium |
+| `env-bellwater-belfry-01` | Belfry with the cracked, tongueless Vesper Bell over the Sounding Shaft | e26-priory-belfry, e26-vesper-bell-finale |
+| `env-bellwater-garden-pear-01` | Priory garden with the dead pear tree (and a bloom variant) | e26-priory-greybox |
 | `env-knot-outer-ring-01` | Rune-banded basalt corridors, loom-spider webs copying runes | e26-knot-outer-greybox, e26-art-dress-knot |
 | `env-knot-ossuary-01` | Bone galleries, Clatter's pale mushroom garden | e26-ossuary-galleries |
 | `env-knot-chapel-echoes-01` | Echoing chapel, bells, portcullis with counterweight | e26-chapel-of-echoes |
@@ -180,7 +180,7 @@ heads per `e37-3d-pipeline-decision`).
 | `music-forest` (bible) | Briarwood family | e25-wilds-lighting-audio |
 | `music-watchtower` (bible) | Mooring's Watch family | e25-wilds-lighting-audio |
 | `music-old-mine` (bible) | Deepworks family | e26-dungeon-lighting-audio |
-| `music-monastery` (bible) | Bellhollow Priory family | e26-dungeon-lighting-audio |
+| `music-monastery` (bible) | Bellwater Priory family | e26-dungeon-lighting-audio |
 | `music-labyrinth` (bible) | The Knot family | e26-dungeon-lighting-audio |
 | `music-labyrinth-stem-song` (new) | Nightjar song layer driven by song.intensity (0–3) | e13-song-intensity, e26-dungeon-lighting-audio |
 | `music-labyrinth-heart` (bible) | The Fold reveal (warm) | e26-horns-hall-fold |

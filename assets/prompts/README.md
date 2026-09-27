@@ -1,7 +1,6 @@
 # Asset prompts — workflow
 
-This folder is how Merlin's Wrath (working title — changes after `e39-title-decision`; the story bible
-recommends *Nightjar*) gets consistent art, 3D, music and sound from generative tools and CC0
+This folder is how The Vesper Bell gets consistent art, 3D, music and sound from generative tools and CC0
 sources without an art team. **Claude does the production work; the owner approves at explicit gates.**
 Consistency is defined **once** in the bibles and enforced by **templates**:
 

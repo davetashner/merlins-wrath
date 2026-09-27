@@ -63,7 +63,7 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 - `CONSTITUTION.md` — product vision and design pillars. Everything is subordinate to it.
 - `docs/backlog-contract.md` — how beads are written, coverage policy, DoD, asset workflow, hardware baseline.
 - `docs/narrative/story-bible.md` — story canon (names, places, plot). `docs/art/style-bible.md` and `docs/audio/audio-bible.md` — asset consistency; every asset prompt starts from their preambles.
-- Backlog: `bd` (prefix `mw-`), published at https://davetashner.github.io/merlins-wrath/backlog.html on every merge to main.
+- Backlog: `bd` (prefix `mw-`), published at https://davetashner.github.io/thevesperbell/backlog.html on every merge to main.
 
 ## Workflow
 

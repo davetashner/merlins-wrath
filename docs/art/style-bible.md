@@ -1,12 +1,12 @@
-# Merlin's Wrath — Visual Style Bible
+# The Vesper Bell — Visual Style Bible
 
 > Status: **DRAFT v0.1 — awaiting owner sign-off** (bead `e37-style-bible`).
 > Subordinate to `CONSTITUTION.md` and `docs/backlog-contract.md`. When this document and a prompt
 > disagree, this document wins; when this document and the constitution disagree, the constitution wins.
 > Story/lore names, locations, creatures and motifs are reconciled with `docs/narrative/story-bible.md`
 > (**story canon**). If they disagree, the story bible wins: change it there first, then update this file.
-> "Merlin's Wrath" is the **working title** only; it changes after `e39-title-decision` (the story bible
-> recommends *Nightjar — The Labyrinth Beneath Briar Glen*).
+> The game's title is **The Vesper Bell** (decided in `e39-title-decision`, see `docs/adr/0002-game-title.md`).
+> "Merlin's Wrath" survives only as the original codename.
 
 ---
 
@@ -94,7 +94,7 @@ gameplay-legibility cues.
 | **The Briarwood** (wilderness) | canopy `#2E5E3E`, bark `#4A3528`, fern `#5E8C3A` | moss floor `#445F37`, fog `#A7B8B0` | foxglove `#9B5FA8`, glow-cap mushrooms `#7FD1C1` | Dappled shafts `#F3E6A8`; cooler and bluer as you go deeper. Oak, holly and bramble. Landmarks: the Standing Horn menhir, the Sleepers' Path (trampled ferns, readable only at night or to a sharp eye), the millpond and drowned lane. |
 | **Mooring's Watch** (watchtower) | weathered stone `#8C8A80`, lichen `#A3B35E` | faded barony banner `#8E3B3B`, rust `#9A5A34` | signal-mirror flash `#FF9B3D` (reflected sun; **no beacon brazier**) | Windy, open sky `#9FB4CF`; high contrast, long shadows. The signal mirror on the roof is a light-reactive puzzle object (§7). Hollow Sentinels above, goblin lookout below. |
 | **The Deepworks** (Vane silver mine) | rock `#4B4640`, shoring timber `#6B4B2E` | coal `#2A2628`, rail iron `#5C5A58` | copper ore `#C07A3E`, crystal `#6FB7C9` | Pools of lantern light `#F0A04B` in `#1C1A22` dark. Silver is nearly worked out — silver-vein glints are rare and use existing `cream` highlights. The Bell Line rule is carved over the boarded main gate (carving shape only, no legible text). Below the Line: Vane's sealed gallery, Hornfolk carvings, the breach. |
-| **Bellhollow Priory** (ruined Vesperine monastery) | sandstone `#CDB89A`, grey marble `#B8B4AA` | ivy `#4F6F3A`, fresco blue `#5D7FA3` | gilt `#C9A042`, stained-glass rose `#B04A6A` | Cathedral god-rays; candle `#FFD89A`; dust motes. Melancholy but beautiful. Roofless nave, singing-monk choir statues, scriptorium, the belfry with the cracked **Vesper Bell** (§5.3), crypt, cistern. |
+| **Bellwater Priory** (ruined Vesperine monastery) | sandstone `#CDB89A`, grey marble `#B8B4AA` | ivy `#4F6F3A`, fresco blue `#5D7FA3` | gilt `#C9A042`, stained-glass rose `#B04A6A` | Cathedral god-rays; candle `#FFD89A`; dust motes. Melancholy but beautiful. Roofless nave, singing-monk choir statues, scriptorium, the belfry with the cracked **Vesper Bell** (§5.3), crypt, cistern. |
 | **The Knot** (labyrinth) | ancient basalt `#3A3A44`, worn bronze `#8C6A3A` | verdigris `#4F9A8A`, bone `#E5DCC5` | glyph glow `#9FD8E0`, torch `#F08A3C` | Cold, geometric, echoing; Hornfolk runes on every wall (§5.3). Areas: Outer Ring, Ossuary Galleries, Chapel of Echoes, Horn's Hall, the Fold, the Sounding Shaft's foot, the Cradle. **Exception — Horn's Hall and the Fold** (the sleepers' vault): warm moss `#7A9A4A`, flowers `#E0B64A`, light-well glow `#F6E7B0` — moss beds, goblin-brought bread, chalk tallies: the visual reveal that it is not a monster's lair. |
 | **The Cradle** (heart of the Knot) | ancient basalt `#3A3A44`, carved-face stone `#6E6A78` | dream-fog `#9C98C2`, moth-mottle brown-grey `#7A6A5A` | Nightjar song shimmer `#CFC6F2`, abbot's anchor lanterns `#FFD27A` | Round chamber where the dream leaks into the physical. Sourceless cool dream-light from the centre; geometry softens and blurs toward the middle; every carved face in the room turned toward the centre. The abbot's anchor lanterns are the **only warm light** here, so they read as targets. Unsettling beauty, not horror. |
 | **The River Wend** (connective route) | brown river water `#6B5A3E`, towpath clay `#9A8466`, lock stone `#8C8A80` | reeds `#8FA05A`, willow `#6E8A52`, tarred barge timber `#3A2E26` | barge hull stripe ochre `#C9923A`, lock-gate red `#A8473A` | Day or misty dawn; water mirrors `sky` and stays readable as water (§7 water cue; not a flowing-water sim). Places: Briar Glen Quay and the Ore Stair (stepped ore chute, ore dust); the **Millweir** (Vesperine stonework with a bell-mark keystone; the sluice walk is a clear walkable top); the towpath; **Kestrel Lock** (balance-beam gates, windlasses, the keeper's cottage, a flaking toll board with no legible text). **The Weeping Adit**: a cold, dark, dripping tunnel mouth where the river springs; a faint Nightjar shimmer `#CFC6F2` on the water is the only sign it is humming. |
@@ -161,7 +161,7 @@ Physical/non-magic elements share the language: **oil** `#3B2F1E` glossy; **wate
 | Shape | Meaning | Where |
 |---|---|---|
 | **Circles / soft rounds** | Safety, friendliness, home | Briar Glen buildings, NPC faces, Brother Horn's face, the Fold, healing |
-| **Squares / blocks** | Strength, stability, order | Knight, stonework, Mooring's Watch, Hollow Sentinels, Bellhollow Priory, Hornfolk carving |
+| **Squares / blocks** | Strength, stability, order | Knight, stonework, Mooring's Watch, Hollow Sentinels, Bellwater Priory, Hornfolk carving |
 | **Triangles / spikes** | Danger, aggression, magic | Goblin weapons, Loom Spiders, briars, traps, fire, storm |
 | **Spirals / rings** | Mystery, the old magic, the Knot | Glyphs, the Knot's plan, the Cradle, Arcane/Conjuration/Time VFX |
 
@@ -569,12 +569,10 @@ Numeric budgets are reconciled into a single `perf-budgets.json` owned by `e32-p
 ## 14. GPT STYLE PREAMBLE (verbatim — paste at the top of every image prompt)
 
 ```text
-STYLE: Stylized hand-painted fantasy art for "Merlin's Wrath", a 3D third-person action RPG. Chunky low-poly forms with soft bevelled edges and slightly exaggerated, heavy proportions, painted with broad confident brush strokes and gentle colour gradients instead of fine photographic detail. Mood: souls-like weight and ancient mystery, but warm and hopeful — golden hearth light pushing back cool violet-blue shadow. Palette: deep ink-violet shadows (#1E1B2E, never pure black), moss green (#2F4A3A), weathered stone (#8C8A80), bark brown (#5A3E2B), parchment cream (#EFE2C4) and hearth amber (#E8A24A); strong saturated colour only for magic, fire and points of interest. Clear, readable silhouettes: one big shape, a few medium shapes, small detail used sparingly. Soft warm key light from the upper left with a cool fill and a gentle rim light. No photorealism, no photo textures, no text, letters or numbers, no logos, no watermark, no signature, no modern objects, no gore.
+STYLE: Stylized hand-painted fantasy art for "The Vesper Bell", a 3D third-person action RPG. Chunky low-poly forms with soft bevelled edges and slightly exaggerated, heavy proportions, painted with broad confident brush strokes and gentle colour gradients instead of fine photographic detail. Mood: souls-like weight and ancient mystery, but warm and hopeful — golden hearth light pushing back cool violet-blue shadow. Palette: deep ink-violet shadows (#1E1B2E, never pure black), moss green (#2F4A3A), weathered stone (#8C8A80), bark brown (#5A3E2B), parchment cream (#EFE2C4) and hearth amber (#E8A24A); strong saturated colour only for magic, fire and points of interest. Clear, readable silhouettes: one big shape, a few medium shapes, small detail used sparingly. Soft warm key light from the upper left with a cool fill and a gentle rim light. No photorealism, no photo textures, no text, letters or numbers, no logos, no watermark, no signature, no modern objects, no gore.
 ```
 
-> **Working title:** "Merlin's Wrath" in the preamble is the working title. When `e39-title-decision` closes
-> (story bible recommends *Nightjar*), update the title in this block via a bead, bump the bible version and
-> note it in affected prompt files. Never substitute the title ad hoc in a single prompt.
+> **Title:** the preamble names the game as "The Vesper Bell" (decided in `e39-title-decision`). Any future title change updates this block via a bead and bumps the bible version.
 
 ### 14.1 Per-category add-ons (appended after the preamble)
 

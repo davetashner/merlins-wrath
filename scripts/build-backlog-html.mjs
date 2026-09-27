@@ -30,7 +30,7 @@ const html = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Merlin's Wrath Backlog</title>
+<title>The Vesper Bell Backlog</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -127,7 +127,7 @@ footer { color: var(--muted); font-size: .85rem; margin-top: 40px; }
 <body>
 <div class="wrap">
 <header>
-  <h1>Merlin's Wrath backlog</h1>
+  <h1>The Vesper Bell backlog</h1>
   <p class="sub">What's being built, what's next, and what's done. Every item links back to a bead in the repository's tracker.</p>
   <ul class="tally" id="tally"></ul>
   <div class="tabs" role="tablist">

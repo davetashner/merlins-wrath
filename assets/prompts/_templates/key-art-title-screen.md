@@ -20,7 +20,7 @@
 
 ## 2. Brief
 
-<Use (title screen, itch/store capsule, social banner), the promise it sells (four classes, the Knot, Brother Horn the misunderstood warden), negative space for the logo (title TBD by `e39-title-decision`; working title "Merlin's Wrath").>
+<Use (title screen, itch/store capsule, social banner), the promise it sells (four classes, the Knot, Brother Horn the misunderstood warden), negative space for the logo (title: The Vesper Bell, typeset separately, never painted into the image).>
 
 ## 3. Filled prompt
 

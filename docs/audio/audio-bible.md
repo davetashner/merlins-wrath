@@ -1,4 +1,4 @@
-# Merlin's Wrath — Audio Bible
+# The Vesper Bell — Audio Bible
 
 > Status: **DRAFT v0.1 — awaiting owner sign-off** (bead `e38-audio-bible`).
 > Subordinate to `CONSTITUTION.md`, `docs/backlog-contract.md` and aligned with `docs/art/style-bible.md`.
@@ -6,8 +6,8 @@
 > SFX tool: decided by `e38-sfx-tool-decision` — recommendation: **ElevenLabs Sound Effects API** (Claude-run), CC0 fallback (§9.4).
 > No voice acting in MVP.
 > Story names, locations, creatures and motifs are reconciled with `docs/narrative/story-bible.md` (**story
-> canon**); if they disagree, the story bible wins. "Merlin's Wrath" is the **working title** only; it changes
-> after `e39-title-decision` (the story bible recommends *Nightjar*).
+> canon**); if they disagree, the story bible wins. The game's title is **The Vesper Bell**
+> (decided in `e39-title-decision`); "Merlin's Wrath" is only the original codename.
 
 ---
 
@@ -41,7 +41,7 @@ lock and spell sounds tactile, heavy and true."**
 | **Signature lead** | Nyckelharpa, hurdy-gurdy (melody + drone), solo cello | The "voice" of the game. |
 | **Drone / bed** | Hurdy-gurdy drone, low string ensemble (cello, double bass), harmonium, bowed psaltery | Drones in the tonic/fifth define dungeon cues. |
 | **Colour** | Hammered dulcimer, Celtic harp, lute, wooden flute / recorder, low whistle, kantele | Town, the Briarwood, day. |
-| **Choir** | Wordless choir (ooh/aah, soft), solo female/male wordless voice | Mystery, Bellhollow Priory, the Vesper hymn, the Nightjar's song. Never lyrics. |
+| **Choir** | Wordless choir (ooh/aah, soft), solo female/male wordless voice | Mystery, Bellwater Priory, the Vesper hymn, the Nightjar's song. Never lyrics. |
 | **Percussion** | Frame drum, bodhrán, daf, taiko-ish low drum (sparingly), hand bells, wooden clacks, chains | Combat and tension; no drum kit. |
 | **Weight** | Low brass (horns, tuba — sparing), bass drum | Reserved for Brother Horn (the Warden encounter) and major combat. |
 | **Magic texture** | Glass harmonica, bowed metal, singing bowls, reversed harp | Arcane/illusion/time moments; the Nightjar's churring trill. |
@@ -90,7 +90,7 @@ motif-establishing track, (b) pick the best take as the **motif anchor**, and (c
 | **The Knot** | Four-note circular turn that never resolves (E–F–D♯–E, Phrygian), repeated in canon — a sentence that never ends | Low strings, bowed psaltery | The Knot, the Deepworks below the Bell Line, Brother Horn foreshadowing |
 | **Brother Horn (the Warden)** | Heavy falling minor third on low horn (A–F♯) with a big drum hit, over the Hornfolk drone. **Reveal variant:** same notes re-harmonised in Lydian/major, played on solo cello + harp, tender | Low horns → cello | Warden encounter → the Fold reveal |
 | **The Nightjar's song** | A lulling, beautiful lullaby figure in 3/4 — falling minor sixth, then gently rocking seconds — that slowly **drifts out of tune** (microtonal sag) over a soft churring trill (the nightjar's churr). Seductive, not scary: dread comes from its beauty. Distant solo wordless voice | Solo wordless voice, glass harmonica, bowed metal churr | Night sleepwalking, the song reaching town on still nights, Hushlings, the Cradle, song-swell beats |
-| **The Vesper hymn / Vesper Bell** | Plainchant-like stepwise line in a narrow range (D Dorian), three short phrases ending on a long held tonic, answered by one low **bell toll**. The in-world hymn that calms the Forgotten and puts the Nightjar to sleep; the player can hum it | Wordless male unison choir or solo cello + low bronze bell | Bellhollow Priory, calming the Forgotten, befriending Horn, the Climb, "Vespers Rung" |
+| **The Vesper hymn / Vesper Bell** | Plainchant-like stepwise line in a narrow range (D Dorian), three short phrases ending on a long held tonic, answered by one low **bell toll**. The in-world hymn that calms the Forgotten and puts the Nightjar to sleep; the player can hum it | Wordless male unison choir or solo cello + low bronze bell | Bellwater Priory, calming the Forgotten, befriending Horn, the Climb, "Vespers Rung" |
 | **The Sleepless Abbot** | The Vesper hymn **inverted** (the silenced hymn turned upside down), played gently and courteously on harmonium with whispered wordless choir; in confrontation it braids with the Nightjar's song | Harmonium, whispered choir | "A friend below" notes, the Act III reveal, the Cradle confrontation |
 | **Wendmouth — "The Tide"** | Rolling 6/8 shanty figure: a rising fourth, then bouncing repeated notes, answered call-and-response between fiddle and low whistle over stomps. **Heist variant:** the same figure on pizzicato cello and muted dulcimer, half-time, with ticking | Fiddle, low whistle, bodhrán → pizzicato | Wendmouth, the Tidefair, the bonded-warehouse and Gilded Tern heists |
 | **Magic / learning** | Arpeggiated Lydian sparkle | Dulcimer, glass harmonica | Spell learned, the Lamplit Stacks, discovery |
@@ -182,7 +182,7 @@ key-neutral (percussive/atonal) otherwise.
 | `music-briarwood` | The Briarwood | A Aeolian | 80 | explore, stealth, tension, combat |
 | `music-moorings-watch` | Mooring's Watch | E Aeolian | 76 | explore, tension, combat |
 | `music-deepworks` | The Deepworks | C♯ Phrygian | 64 | explore (sparse), stealth, tension, combat |
-| `music-bellhollow-priory` | Bellhollow Priory | F Dorian (choir) | 60 | explore, stealth, tension, combat |
+| `music-bellwater-priory` | Bellwater Priory | F Dorian (choir) | 60 | explore, stealth, tension, combat |
 | `music-knot` | The Knot | E Phrygian | 58 | explore (drone), stealth, tension, combat |
 | `music-knot-fold` | The Fold (sleepers' vault) and Horn's Hall once Horn is at peace | E Lydian | 66 | explore |
 | `music-knot-cradle` | The Cradle, where the Nightjar sleeps | E Phrygian with the Nightjar's song drifting out of tune | 50 / free-time | explore (drone), tension |
@@ -225,7 +225,7 @@ reaches the town through the breach).
   them in `assets/source/music/<asset-id>/stems/`. Evaluate separation quality in the spike before relying on it.
 - **Licence tier:** outputs generated on a **free tier are generally owned by the tool and limited to
   non-commercial use with attribution**; **paid tiers (Pro/Premier) grant ownership/commercial rights for
-  songs generated while subscribed.** Although Merlin's Wrath is free, the repo is public and redistributes
+  songs generated while subscribed.** Although The Vesper Bell is free, the repo is public and redistributes
   the files, so **generate all shipping music on a paid tier** (one or two months of Pro for a batch is
   enough). Record the tier and date per track in `CREDITS.md`; free-tier takes are placeholders only.
   Re-read Suno's current terms before each batch and link them in the credits entry.
@@ -327,7 +327,7 @@ Runtime path: `public/assets/audio/<category>/<asset-id>.ogg` (+ `.m4a`, `.json`
 - **Three-layer impacts:** transient (click/crack) + body (material) + tail (debris/room). Tail is added by
   runtime reverb, not baked, wherever possible.
 - **Dry sources:** SFX are delivered dry; the engine adds location reverb (town: short, the Deepworks: medium
-  wood-rock, Bellhollow Priory: long hall, the Knot: long stone with pre-delay). Special spaces: the **Chapel of
+  wood-rock, Bellwater Priory: long hall, the Knot: long stone with pre-delay). Special spaces: the **Chapel of
   Echoes** (sound misbehaves — echoes return late or from the wrong side; must stay consistent with
   `e09-sound-propagation` wherever the sim models it), river and harbour spaces (Wendmouth waterfront: open air
   with a short slap off warehouse walls; the Undertow: low vaulted cellar; ship holds: boxy wood; the Weeping
@@ -423,7 +423,7 @@ faint draught; hidden passages have air movement; water you can freeze is audibl
 
 Per-location ambience notes: Briar Glen night falls unnaturally silent past midnight, with the Nightjar's song
 faint on still nights; the Briarwood lacks wolf howls; Mooring's Watch is wind and flapping banner remnants;
-the Deepworks has winch-house creaks and distant goblin chatter; Bellhollow Priory has wind through the
+the Deepworks has winch-house creaks and distant goblin chatter; Bellwater Priory has wind through the
 roofless nave and the occasional hum of the cracked bell; the Knot has dripping stone and far bone-rattle; the
 Cradle carries the song itself as a low, drifting bed.
 
