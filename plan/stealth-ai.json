@@ -1,0 +1,1554 @@
+{
+  "group": "stealth-ai",
+  "epics": [
+    {
+      "id": "mw-e09",
+      "title": "E09 — Systemic Stealth",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:sim",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "description": "## Outcome\nVisibility, lighting, sound, suspicion, searching, last-known-position and hiding work as coherent, deterministic systems. Stealth is not crouching + an eye icon: players read light exposure, noise and each enemy’s awareness, and failure escalates into new situations rather than a reload.\n\n## Scope\n- In: visibility model (light, stance, motion, distance, contrast), multi-point LOS with partial cover, sound propagation through rooms/doors/walls/floors, surface acoustics and footsteps, verticality rules, hiding places, anomaly detection, stealth HUD and directional awareness indicators, LKP ghost, text barks/stingers, zone alarm escalation, stealth tuning data, stealth grey-box course, deterministic infiltration scenario suite, assists.\n- Out: thief verbs (mw-e10), AI state machine and behaviours (mw-e11), creature data (mw-e12), final art/audio (E37/E38 asset beads), crime/bounty systems.\n\n## Exit criteria\n- Stealth rules in `src/sim` at 100% coverage.\n- ≥ 10 infiltration replay scenarios green and deterministic.\n- Stealth grey-box course playable end-to-end in the browser.",
+      "acceptance": "- EC-1 [integration] Given the infiltration scenario suite, when run in CI, then all scenarios pass with identical state-hash sequences across two runs.\n- EC-2 [unit] Given coverage reports, when CI runs, then stealth modules in `src/sim` report 100% lines/branches/functions/statements.\n- EC-3 [e2e] Given the stealth grey-box course, when a scripted player completes it undetected and once detected-then-escaped, then both runs finish without errors.\n- EC-4 [manual] Given 5 playtesters, when asked why they were detected, then ≥ 4 of 5 can name the cause (light, noise, anomaly)."
+    },
+    {
+      "id": "mw-e10",
+      "title": "E10 — Thief Toolkit",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "description": "## Outcome\nLockpicking, pickpocketing, thrown distractions, extinguishing lights, climbing, hiding bodies, disguises, silent movement, takedowns, traps and escape tools produce a complete thief fantasy built on shared world systems (properties, light, sound, AI perception).\n\n## Scope\n- In: thief tool item data, distractions, light extinguishing, takedowns (lethal/non-lethal), body carry/hide, lockpicking (spike + in-world implementation), pickpocketing/planting, climbing + ropes, disguises, trap placement and disarming, smoke/flash escapes, silent-movement capability unlocks, lean/peek, environmental takedowns, grey-box thief vault challenge.\n- Out: stealth simulation core (mw-e09), AI (mw-e11), progression UI (E19), loot/shop placement (E18/E20), final art/animation.\n\n## Exit criteria\n- Thief vault challenge solvable by ≥ 3 scripted routes plus one failure-and-escape route.\n- Every thief verb interacts through properties, not item-specific scripts.",
+      "acceptance": "- EC-1 [integration] Given the thief vault challenge, when each scripted route runs, then all complete deterministically.\n- EC-2 [unit] Given thief rule modules, when coverage runs, then `src/sim` coverage is 100%.\n- EC-3 [manual] Given 3 playtesters, when completing an undetected infiltration, then ≥ 2 rate it at least as satisfying as a hard fight (≥ 4/5)."
+    },
+    {
+      "id": "mw-e11",
+      "title": "E11 — Enemy AI",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "description": "## Outcome\nEnemies patrol, perceive, investigate, communicate, fight, retreat, search and return to believable routines through a deterministic, data-driven behaviour runtime and the six-state alert machine (Unaware → Suspicious → Investigating → Searching → Alerted → Combat). Enemies never know the player position except through their senses.\n\n## Scope\n- In: architecture spike + runtime, scenario test harness, navigation, perception, awareness, alert states, memory/LKP, patrol, investigate, search, communication/alarms, combat, retreat/flee, return to routine, AI tuning data, debug visualisation, AI perf budget.\n- Out: creature data schema (mw-e12), stealth inputs (mw-e09), boss/bestiary-specific behaviours (E13/E26), social dialogue (E14/E22).\n\n## Exit criteria\n- Grey-box fight (m1) uses this AI; stealth scenarios (m2) pass.\n- No-omniscience enforced by architecture tests.\n- 24 agents within the AI perf budget.",
+      "acceptance": "- EC-1 [unit] Given the AI modules, when an architecture test scans imports, then no behaviour/memory module reads ground-truth player transforms.\n- EC-2 [perf] Given the AI stress scene, when run on the reference machine, then AI+perception+sound cost p95 ≤ 3 ms per tick.\n- EC-3 [integration] Given the AI scenario suite, when run, then every scenario is deterministic and green.\n- EC-4 [e2e] Given the grey-box fight room, when the player fights fixture guards, then guards patrol, detect, fight and search without errors."
+    },
+    {
+      "id": "mw-e12",
+      "title": "E12 — Creature Framework",
+      "priority": 0,
+      "labels": [
+        "epic:e12",
+        "area:content",
+        "milestone:m1"
+      ],
+      "description": "## Outcome\nCreatures are data: unique senses, locomotion, attacks, property-driven vulnerabilities, factions/relationships, dispositions, fears/morale, personalities, needs and non-hostile interaction affordances are all declared in validated content and consumed by AI and stealth systems — ready for the bestiary (E13) and social creatures (E14).\n\n## Scope\n- In: creature schema, sense profiles, grey-box fixtures, spawner, attack definitions, locomotion, vulnerabilities via world properties, factions, dispositions, fears/morale, personality traits, needs hooks, interaction affordances, creature save state, auto smoke-test harness, authoring guide.\n- Out: specific bestiary creatures (E13), social creature content and dialogue (E14/E22), final models/animations (E37 asset beads).\n\n## Exit criteria\n- A new creature can be added with data only and passes the auto smoke harness.\n- Schemas and runtime at 100% coverage.",
+      "acceptance": "- EC-1 [content] Given any creature data file, when validated and smoke-tested, then it passes with no code changes required.\n- EC-2 [unit] Given creature modules, when coverage runs, then `src/sim` and `src/content` creature code is at 100%.\n- EC-3 [manual] Given the authoring guide, when a designer follows it, then a new creature is added in ≤ 30 min."
+    }
+  ],
+  "items": [
+    {
+      "key": "e12-creature-schema",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Define zod creature schema with senses, locomotion, attacks and needs",
+      "priority": 0,
+      "labels": [
+        "epic:e12",
+        "area:content",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nThe constitution says enemies are creatures, not target dummies, and creatures must be data-driven. Every AI, stealth and bestiary feature needs one shared, validated creature definition.\n\n## What\nA `CreatureDef` zod schema in `src/content/schemas/creature.ts` with typed sections: `id`, `family`, `tags`, `stats` (health, poise, mass, size class), `senses` (ref to sense profile or inline), `locomotion` (list of locomotion modes), `attacks` (list of attack refs), `properties` (world-property tags such as `flammable`, `undead`, `conductive`), `vulnerabilities`/`resistances`, `faction`, `disposition` defaults, `fears`, `personality`, `needs`, `behaviour` (behaviour profile id + tuning overrides), `interactions` (non-hostile affordances), `loot` ref, `presentation` (placeholder mesh id, sfx set id). Every section except `id`, `family`, `stats`, `senses`, `locomotion` is optional with documented defaults. A loader registers creatures into the content registry and resolves refs.\n\n## Scope\n- In: Schema, TypeScript types inferred from zod, ref resolution, default filling\n- In: Clear validation errors naming the file and JSON path\n- In: Schema version field for future migrations\n- Out: Specific creatures (E13 Bestiary / world-content group)\n- Out: Runtime behaviour for each section — later E12/E11 items consume the fields\n- Out: Dialogue content (E22/E14)\n\n## Notes\nSection sub-schemas are owned by later items (e12-sense-profiles, e12-locomotion-types, e12-attack-definitions, …); this item creates the envelope with stub sub-schemas they extend. Keep refs string-typed (`attack:goblin-slash`) and resolved at load. Related: E13 Bestiary and E14 Social Creatures consume this schema.",
+      "acceptance": "- AC-1 [content] Given a creature file containing only `id`, `family`, `stats`, `senses` and `locomotion`, when validated, then it passes and all optional sections are filled with the documented defaults.\n- AC-2 [content] Given a creature file missing `stats.health`, when validated, then validation fails with an error message containing the file path and `stats.health`.\n- AC-3 [unit] Given a creature referencing `attack:does-not-exist`, when the content registry resolves refs, then loading fails listing every unresolved ref (not just the first).\n- AC-4 [unit] Given two creature files with the same `id`, when loaded, then loading fails with a duplicate-id error naming both files.\n- AC-5 [unit] Given a valid creature def, when round-tripped through serialize → parse, then the result deep-equals the input.\n- AC-6 [content] Given the schema, when `pnpm content:docs` runs, then a field reference table is generated at `docs/content/creature-schema.md` with every field, type and default.",
+      "depends_on": [
+        "e00-content-pipeline"
+      ]
+    },
+    {
+      "key": "e12-sense-profiles",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Add sense profile data: sight cones, hearing, smell, special senses",
+      "priority": 0,
+      "labels": [
+        "epic:e12",
+        "area:content",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nCreatures should perceive differently — a spider feels vibration, a wraith senses life, a goblin sees in the dark. Unique senses make stealth a puzzle rather than one global rule.\n\n## What\nA `SenseProfile` sub-schema and data files: `sight` (near/far range m, primary and peripheral half-angles, vertical half-angle, dark-vision factor 0–1, detection speed multiplier), `hearing` (sensitivity dB threshold, range cap), `smell` (range m, wind-sensitivity flag, tracks scent trails flag), and extensible `special` senses (`tremor`, `life-sense`, `magic-sense`) each with range and gating properties. Profiles are reusable (`senses: \"sense:humanoid-guard\"`) and overridable per creature.\n\n## Scope\n- In: Sub-schema + validation\n- In: Three baseline profiles used by test fixtures: humanoid, beast, undead\n- In: Merge semantics for per-creature overrides\n- Out: Runtime evaluation of senses (e11-perception)\n- Out: Smell trail simulation beyond hooks (post-MVP)\n\n## Notes\nUnits are metres, degrees and seconds everywhere. Special senses are declared as data with a `channel` name so e11-perception can register handlers without schema changes.",
+      "acceptance": "- AC-1 [content] Given a sense profile with `sight.primaryHalfAngle` greater than `sight.peripheralHalfAngle`, when validated, then validation fails with a message naming both fields.\n- AC-2 [unit] Given a creature referencing `sense:humanoid` and overriding `sight.farRange: 30`, when resolved, then far range is 30 and every other sight field equals the base profile.\n- AC-3 [content] Given the baseline humanoid profile, when validated, then it defines sight far range between 15 and 30 m and hearing threshold between 20 and 40 dB (documented tuning band).\n- AC-4 [content] Given a profile declaring an unknown special sense channel, when validated, then validation fails listing the registered channels.\n- AC-5 [unit] Given a profile with negative range values, when validated, then validation fails.",
+      "depends_on": [
+        "e12-creature-schema"
+      ]
+    },
+    {
+      "key": "e12-greybox-archetypes",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Author three grey-box creature fixtures for AI and stealth tests",
+      "priority": 0,
+      "labels": [
+        "epic:e12",
+        "area:content",
+        "area:qa",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nAI and stealth tests need stable, deliberately boring creatures that are not bestiary content so tuning the real bestiary never breaks rule tests.\n\n## What\nThree test-fixture creature defs in `src/content/fixtures/creatures/`: `fixture-guard` (humanoid, sight-dominant, patrols, can communicate), `fixture-hound` (beast, hearing + smell dominant, fast), `fixture-sentinel` (undead, life-sense, never sleeps, ignores darkness). Each uses placeholder capsule meshes and the baseline sense profiles.\n\n## Scope\n- In: Fixture data + README explaining that fixtures are frozen for tests\n- In: Excluded from shipping content bundles\n- Out: Real bestiary creatures (E13)\n- Out: Art (capsules only)\n\n## Notes\nChanging fixture values requires updating dependent scenario tests; add a header comment saying so.",
+      "acceptance": "- AC-1 [content] Given the three fixture files, when validated against `CreatureDef`, then all pass.\n- AC-2 [unit] Given a production content build, when bundled, then no fixture creature id appears in the output manifest.\n- AC-3 [unit] Given `fixture-sentinel`, when its resolved senses are inspected, then dark-vision factor is 1.0 and it declares the `life-sense` channel.\n- AC-4 [content] Given each fixture, when its content smoke test runs, then it spawns, ticks 600 sim frames without error and despawns.",
+      "depends_on": [
+        "e12-sense-profiles"
+      ]
+    },
+    {
+      "key": "e12-creature-spawner",
+      "epic": "mw-e12",
+      "type": "feature",
+      "title": "Spawn data-defined creatures into the sim and grey-box scenes",
+      "priority": 0,
+      "labels": [
+        "epic:e12",
+        "area:sim",
+        "area:game",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nDesigners and tests must be able to put any creature into the world from data alone, fast.\n\n## What\nAs a designer, I want to spawn any creature by id at a position (from level data, debug console or tests) so that I can iterate on encounters without code. The spawner builds the entity/component set from a resolved `CreatureDef` (transform, health, senses, locomotion, behaviour, faction, needs), binds a placeholder capsule render proxy in `src/game`, and supports despawn and respawn. Debug console: `spawn <creatureId> [count] [at-cursor]`, `despawn all`.\n\n## Scope\n- In: Sim-side factory (pure) + game-side render binding\n- In: Level-data spawn points with optional patrol route and faction override\n- In: Console commands\n- Out: Spawn waves / encounter director (E26 content)\n- Out: Final meshes (asset integration beads)\n\n## Notes\nFactory must be deterministic: entity ids allocated from the sim entity store, any per-spawn variance from seeded RNG.",
+      "acceptance": "- AC-1 [unit] Given `fixture-guard` and a seed, when spawned twice in fresh sims with the same seed, then both entity component snapshots hash identically.\n- AC-2 [unit] Given an unknown creature id, when spawn is requested, then no entity is created and a typed `SpawnError` is returned (sim does not throw).\n- AC-3 [integration] Given the grey-box testbed, when `spawn fixture-hound 3` is run in the debug console, then 3 hound entities exist with render proxies within 1 frame.\n- AC-4 [unit] Given a spawn point with a faction override, when spawned, then the entity faction equals the override, not the def default.\n- AC-5 [e2e] Given the grey-box testbed, when a level with 4 spawn points loads, then 4 creatures are visible and the console shows no errors.",
+      "depends_on": [
+        "e12-creature-schema",
+        "e00-sim-core",
+        "e00-greybox-testbed",
+        "e33-debug-console"
+      ]
+    },
+    {
+      "key": "e12-attack-definitions",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Data-driven creature attack definitions bound to the damage model",
+      "priority": 0,
+      "labels": [
+        "epic:e12",
+        "area:content",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nCombat is intrinsically fun only when attacks are readable and varied; creatures need telegraphed, data-defined attacks that behave consistently with player combat.\n\n## What\nAn `AttackDef` schema: id, kind (`melee` | `projectile` | `area` | `grab` | `special`), range min/max m, windup/active/recovery frames, telegraph cue id, hitbox shape ref, damage packets (type + amount + poise), cooldown s, selection weight, preconditions (distance, target stance, own health band). A sim executor runs an attack’s phases and emits hitbox activations to the damage model.\n\n## Scope\n- In: Schema + executor for melee and projectile kinds\n- In: Telegraph events for render/audio to consume\n- In: Preconditions evaluated deterministically\n- Out: Choosing which attack to use (e11-combat-behaviour)\n- Out: Grab/special runtime beyond a stub event (post-MVP or bestiary items)\n\n## Notes\nFrame counts are in fixed sim ticks. Telegraph cues are string ids so placeholder sfx/vfx can be swapped later.",
+      "acceptance": "- AC-1 [unit] Given a melee attack with windup 12, active 4, recovery 10 ticks, when executed, then the hitbox is active exactly on ticks 13–16 and the attack completes on tick 26.\n- AC-2 [unit] Given an attack executing, when the attacker is staggered during windup, then the attack is cancelled and no hitbox activates.\n- AC-3 [content] Given an attack with `range.min` > `range.max`, when validated, then validation fails.\n- AC-4 [unit] Given a telegraph cue id, when windup starts, then exactly one `AttackTelegraph` event is emitted on the event bus with the attacker id and cue id.\n- AC-5 [integration] Given `fixture-guard` attacking a player hurtbox in range, when the active window overlaps, then the damage model receives one damage packet per packet definition.",
+      "depends_on": [
+        "e12-creature-schema",
+        "e04-damage-model"
+      ]
+    },
+    {
+      "key": "e12-locomotion-types",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Support walker, climber, flier, swimmer and burrower locomotion data",
+      "priority": 0,
+      "labels": [
+        "epic:e12",
+        "area:sim",
+        "area:content",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nVerticality and alternate routes only matter if creatures move differently: a spider on the ceiling, a harpy over a chasm, a hound that cannot climb.\n\n## What\nA `LocomotionMode` schema (`walk`, `climb`, `fly`, `swim`, `burrow`, `wallcrawl`) with speeds per gait (sneak/walk/run), step height, jump height, max slope, and nav-area permissions. Creatures list one or more modes; the navigation layer receives a per-creature nav capability mask derived from them.\n\n## Scope\n- In: Schema + capability mask derivation\n- In: Gait speeds used by patrol/investigate/combat\n- In: Area-cost multipliers (e.g. swimmer prefers water)\n- Out: Navmesh generation itself (e11-navigation)\n- Out: Flight physics beyond kinematic movement (post-MVP)\n\n## Notes\nMask is a bitfield so nav queries stay cheap. Mode transitions (walk→climb) are nav link types.",
+      "acceptance": "- AC-1 [unit] Given a creature with only `walk`, when its capability mask is derived, then `climb`, `fly` and `swim` bits are 0.\n- AC-2 [unit] Given a creature with `walk` and `climb`, when the mask is derived, then climb-only nav links are traversable for it and not for a walk-only creature.\n- AC-3 [content] Given a locomotion entry with `run` speed lower than `walk` speed, when validated, then validation fails.\n- AC-4 [unit] Given a creature with no locomotion modes, when validated, then validation fails (every creature must move or declare `stationary`).",
+      "depends_on": [
+        "e12-creature-schema"
+      ]
+    },
+    {
+      "key": "e12-vulnerabilities-properties",
+      "epic": "mw-e12",
+      "type": "feature",
+      "title": "Drive creature vulnerabilities from world properties, not pairings",
+      "priority": 1,
+      "labels": [
+        "epic:e12",
+        "area:sim",
+        "area:content",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nThe constitution requires systemic interactions: a creature tagged `flammable` should burn from any fire source, and `undead` should respond to any light effect, without scripted spell/creature pairs.\n\n## What\nAs a player, I want creatures to react to the same world properties as objects so that my experiments transfer. Creatures carry world-property tags (from e03-world-properties) plus `vulnerabilities`/`resistances` keyed by damage type or property effect (e.g. `heat: x2`, `frozen: immune`, `light: stagger`). A sim rule applies element-propagation effects to creatures exactly as to objects, then applies the creature multiplier.\n\n## Scope\n- In: Property tags on creatures participate in element propagation\n- In: Multiplier + immunity + special reaction (stagger, flee trigger) data\n- In: Resolution order documented\n- Out: New element types (E03)\n- Out: Specific creature weaknesses (E13)\n\n## Notes\nExpress everything as properties; tests must use property names, never spell names. Reactions can emit a `FearStimulus` consumed by e12-fears-morale.",
+      "acceptance": "- AC-1 [unit] Given any creature tagged `flammable` inside an active fire volume, when 1 s of sim time passes, then it gains the `burning` state.\n- AC-2 [unit] Given a creature with `resistances.heat: immune`, when inside a fire volume, then it takes 0 heat damage and does not gain `burning`.\n- AC-3 [unit] Given a creature with `vulnerabilities.cold: 2.0`, when it receives a 10-point cold packet, then it loses 20 health.\n- AC-4 [unit] Given a creature with reaction `light: stagger` and light level at its position rising above the configured threshold within 1 tick, then it enters stagger once and not again until light falls below the threshold (no re-trigger spam).\n- AC-5 [content] Given a vulnerability keyed by an unknown property or damage type, when validated, then validation fails listing known keys.",
+      "depends_on": [
+        "e12-creature-schema",
+        "e03-world-properties",
+        "e03-element-propagation",
+        "e04-damage-model",
+        "e03-light-field"
+      ]
+    },
+    {
+      "key": "e12-factions-relationships",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Faction table and relationship queries between creatures",
+      "priority": 1,
+      "labels": [
+        "epic:e12",
+        "area:sim",
+        "area:content",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nGoblins that fight skeletons, wolves that avoid trolls and guards that tolerate a disguised thief all need one relationship model.\n\n## What\nFaction data (`factions.json`): id, default stance toward each other faction (`ally`, `friendly`, `neutral`, `wary`, `hostile`, `prey`, `predator`) and toward the player. Runtime API `relation(a, b)` combining faction stance, per-creature overrides and dynamic modifiers (e.g. the player attacked this faction). Relationship changes emit events.\n\n## Scope\n- In: Faction schema + symmetric/asymmetric stances\n- In: Dynamic faction-wide modifiers stored in sim state (save-compatible)\n- In: Query API used by perception/alert/combat\n- Out: Individual disposition toward player (e12-dispositions)\n- Out: Story-specific factions (E39/E13 content)\n\n## Notes\nAsymmetry is allowed (wolves see sheep as prey; sheep see wolves as predator).",
+      "acceptance": "- AC-1 [unit] Given faction A hostile to B, when `relation(a, b)` is queried for members, then it returns `hostile`.\n- AC-2 [unit] Given an asymmetric definition A→B `prey` and B→A `predator`, when queried both ways, then each direction returns its own stance.\n- AC-3 [unit] Given a creature-level override making one member of A friendly to the player, when queried, then that creature returns `friendly` and other A members keep the faction default.\n- AC-4 [content] Given a faction referencing an undefined faction id, when validated, then validation fails.\n- AC-5 [unit] Given the player kills a member of faction A witnessed by another A member, when the rule runs, then A’s dynamic stance toward the player worsens one step and a `FactionRelationChanged` event is emitted once.",
+      "depends_on": [
+        "e12-creature-schema"
+      ]
+    },
+    {
+      "key": "e12-dispositions",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Per-creature disposition toward the player with event modifiers",
+      "priority": 1,
+      "labels": [
+        "epic:e12",
+        "area:sim",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nSome creatures can be tricked, helped, befriended or angered; that needs a persistent per-individual attitude, not just a faction flag.\n\n## What\nDisposition value −100..100 per creature toward the player, seeded from def + faction. Data-driven modifier rules map sim events to deltas (`attacked: -40`, `fed: +15`, `witnessed-theft: -20`, `helped-ally: +25`). Thresholds map to stances (hostile < −50 ≤ wary < −10 ≤ neutral ≤ 10 < friendly ≤ 50 < devoted). Decay toward baseline is optional per creature.\n\n## Scope\n- In: Runtime value, modifier rules, thresholds, decay\n- In: Events for UI/dialogue to consume\n- In: Save serialization of values\n- Out: Dialogue conditions using disposition (e22-dialogue-runtime)\n- Out: Social creature content (E14)\n\n## Notes\nModifier rules are content data so E14 can add new event types without code changes.",
+      "acceptance": "- AC-1 [unit] Given a creature at disposition 0, when the player attacks it, then disposition becomes −40 and stance becomes `wary`.\n- AC-2 [unit] Given disposition 95, when a +15 modifier applies, then it clamps to 100.\n- AC-3 [unit] Given decay rate 1/min toward baseline 0, when 10 sim minutes pass from 20, then disposition is 10.\n- AC-4 [unit] Given a modifier rule for an event type that never fires, when the sim runs 10,000 ticks, then disposition is unchanged (no drift).\n- AC-5 [integration] Given a saved game with a creature at −37, when loaded, then disposition is exactly −37.",
+      "depends_on": [
+        "e12-factions-relationships",
+        "e30-save-serialization"
+      ]
+    },
+    {
+      "key": "e12-fears-morale",
+      "epic": "mw-e12",
+      "type": "feature",
+      "title": "Creature fears and morale that trigger fleeing and cowering",
+      "priority": 1,
+      "labels": [
+        "epic:e12",
+        "area:sim",
+        "area:content",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nCreatures have fears. Frightening a wolf pack with fire or breaking goblin morale by felling their leader are non-lethal solutions the constitution wants.\n\n## What\nAs a player, I want to exploit what creatures fear so that I can win encounters without killing everything. `fears`: list of {stimulus property or faction or event, intensity}. Morale 0–100 per creature, reduced by fear stimuli, ally deaths, low health, leader death; restored over time and near allies. Below thresholds the creature emits `Cower` or `Flee` intents for the AI.\n\n## Scope\n- In: Fear stimulus matching via properties (e.g. anything `burning` or light level > X)\n- In: Morale model + thresholds + recovery\n- In: Group morale shock when a `leader`-tagged ally dies\n- Out: Flee movement behaviour (e11-retreat-flee)\n- Out: Intimidation dialogue (E14)\n\n## Notes\nFear stimuli are perceived — the creature must sense the burning object (via e11-perception) for it to count.",
+      "acceptance": "- AC-1 [unit] Given a creature with fear {property `burning`, intensity 30} and morale 50, when it perceives a burning object within 5 m, then morale drops to 20 and a `Flee` intent is emitted (flee threshold 25).\n- AC-2 [unit] Given a fear stimulus the creature cannot perceive (behind a wall), when evaluated, then morale is unchanged.\n- AC-3 [unit] Given a `leader`-tagged creature dies, when allies within 20 m perceive it, then each ally loses the configured leader-shock morale once.\n- AC-4 [unit] Given morale 10 and no stimuli, when 30 s pass near 2 allies, then morale recovers by the configured rate and the `Flee` intent clears once above 35 (hysteresis).\n- AC-5 [content] Given a fear with intensity outside 0–100, when validated, then validation fails.",
+      "depends_on": [
+        "e12-creature-schema",
+        "e11-perception",
+        "e03-world-properties"
+      ]
+    },
+    {
+      "key": "e12-personality-traits",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Personality traits that weight AI decisions per individual",
+      "priority": 2,
+      "labels": [
+        "epic:e12",
+        "area:sim",
+        "area:content",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nPersonalities make creatures memorable: a lazy guard who gives up searching early, a curious goblin who investigates every noise.\n\n## What\nTrait vector (bravery, curiosity, aggression, diligence, sociability, greed) 0–1 per creature, def default plus seeded per-spawn jitter within a declared range. Traits are exposed as inputs to the behaviour runtime (utility weights or BT conditions) and to tuning curves (e.g. diligence scales search duration).\n\n## Scope\n- In: Schema, deterministic jitter, accessor API\n- In: Documented list of which AI behaviours read which trait\n- Out: Dialogue personality/voice (E22)\n- Out: Named-character authored personalities (E13/E14 content)\n\n## Notes\nJitter must come from the seeded sim RNG keyed by entity id so replays match.",
+      "acceptance": "- AC-1 [unit] Given a def with curiosity 0.5 ± 0.2, when 1,000 spawns are sampled with a fixed seed, then all values lie within 0.3–0.7 and the sequence is identical across runs.\n- AC-2 [unit] Given diligence 1.0 vs 0.0 with base search duration 60 s and diligence scale 0.5–1.5, then search durations are 90 s and 30 s respectively.\n- AC-3 [content] Given a trait outside 0–1, when validated, then validation fails.\n- AC-4 [unit] Given a creature with no personality section, when resolved, then all traits default to 0.5 with zero jitter.",
+      "depends_on": [
+        "e12-creature-schema",
+        "e11-behaviour-runtime"
+      ]
+    },
+    {
+      "key": "e12-needs-hooks",
+      "epic": "mw-e12",
+      "type": "feature",
+      "title": "Creature needs (hunger, sleep, fatigue) with behaviour hooks",
+      "priority": 2,
+      "labels": [
+        "epic:e12",
+        "area:sim",
+        "area:content",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nA hungry beast that can be lured with meat or a guard who dozes at 3am turns creatures into systems the player can read and exploit.\n\n## What\nAs a thief, I want creatures to eat, sleep and tire so that I can time or engineer my approach. Needs (hunger, sleep, fatigue, plus extensible custom needs) rise over sim time at data-defined rates; satisfiers are world objects tagged with properties (`edible:meat`, `bed`) or schedule windows. Crossing thresholds emits intents (`SeekFood`, `Sleep`) the behaviour runtime may choose. Sleeping creatures use a reduced sense profile.\n\n## Scope\n- In: Need decay/satisfaction model\n- In: Property-based satisfier discovery via perception\n- In: Sleep modifies senses (e.g. sight off, hearing −20 dB)\n- Out: Day/night world clock (owned by world/time systems — Related: world clock)\n- Out: Poisoned bait (e10 / alchemy post-MVP)\n\n## Notes\nNeeds must be cheap: update at 1 Hz, not per tick. Related: a world time-of-day clock is needed for schedule windows; if none exists use sim time with a configurable day length.",
+      "acceptance": "- AC-1 [unit] Given hunger rate 10/min and threshold 70, when 7 sim minutes pass from 0, then a `SeekFood` intent is emitted exactly once.\n- AC-2 [unit] Given a hungry creature that perceives any object tagged `edible:meat` within 15 m, when it chooses `SeekFood`, then its target is the nearest perceived edible object.\n- AC-3 [unit] Given a sleeping creature, when a 30 dB noise occurs 5 m away and its awake threshold is 25 dB with sleep penalty 20 dB, then it does not wake; a 50 dB noise wakes it into Suspicious.\n- AC-4 [unit] Given an edible object that is removed while a creature walks to it, when it arrives, then the intent fails gracefully and the creature returns to its routine within 3 s.\n- AC-5 [unit] Given 200 creatures with needs, when 1 sim hour elapses, then needs update 3,600 times per creature (1 Hz) and never per tick.",
+      "depends_on": [
+        "e12-creature-schema",
+        "e11-behaviour-runtime",
+        "e11-perception",
+        "e03-world-properties"
+      ]
+    },
+    {
+      "key": "e12-interaction-affordances",
+      "epic": "mw-e12",
+      "type": "feature",
+      "title": "Declare non-hostile creature interactions (feed, talk, calm) in data",
+      "priority": 1,
+      "labels": [
+        "epic:e12",
+        "area:sim",
+        "area:game",
+        "area:content",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nNot everything exists solely to be killed. Social creatures (E14) need a framework hook: feeding, talking, intimidating, petting or trading must be declarable per creature.\n\n## What\nAs a designer, I want to declare which non-hostile verbs a creature accepts and under what conditions so that E14 can build social creatures without new engine code. `interactions`: list of {verb (`talk`, `feed`, `intimidate`, `calm`, `pet`, `trade`, `give`), conditions (disposition range, alert state ∈ {Unaware, Suspicious}, item tag required), outcome event id}. Available verbs surface as contextual prompts via the interaction system; executing emits a typed sim event consumed by dialogue/disposition rules.\n\n## Scope\n- In: Schema, condition evaluation, prompt surfacing, outcome events\n- In: Alert-state gating (cannot pet a creature in Combat)\n- Out: Dialogue trees (e22-dialogue-runtime)\n- Out: Specific social creatures and their outcomes (E14)\n\n## Notes\nOutcome events feed e12-dispositions modifier rules, e.g. `feed` with any `edible` item applies the `fed` modifier.\n\n**Integration note:** Promoted to P1 — befriending/helping creatures (Brother Horn, the goblins, Clatter) is an MVP constitution pillar and depends on this.",
+      "acceptance": "- AC-1 [unit] Given a creature declaring `feed` requiring item tag `edible:meat`, when the player holds no such item, then the `feed` verb is not offered.\n- AC-2 [unit] Given the same creature in Combat state, when the player holds meat, then `feed` is not offered.\n- AC-3 [integration] Given the grey-box testbed and a fixture creature declaring `feed`, when the player feeds it, then the item is removed from inventory, a `CreatureInteracted{verb: feed}` event fires and disposition rises by the `fed` modifier.\n- AC-4 [content] Given an interaction with an unknown verb, when validated, then validation fails listing allowed verbs.\n- AC-5 [unit] Given two verbs with overlapping conditions, when prompts are built, then both are offered in declared order.",
+      "depends_on": [
+        "e12-dispositions",
+        "e02-interaction",
+        "e17-inventory-core",
+        "e11-alert-states"
+      ]
+    },
+    {
+      "key": "e12-creature-save-state",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Persist creature runtime state across save and load",
+      "priority": 1,
+      "labels": [
+        "epic:e12",
+        "area:sim",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nFailure creates stories only if consequences persist: a guard who is searching, a befriended hound or a knocked-out patrol must survive a reload.\n\n## What\nA creature state serializer covering position/facing, health, alert state + timers, memory (last-known positions), morale, needs, disposition, current behaviour node/intent, carried inventory changes (pickpocketed items), and status (`alive`, `unconscious`, `dead`, `befriended`). Integrates with the versioned save format and world state store.\n\n## Scope\n- In: Serializer + migration test scaffold\n- In: Deterministic resume: a loaded sim continues identically to an unsaved one\n- Out: Save UI (E30)\n- Out: Global world facts (e27-world-state-store owns them; this item writes creature facts into it)\n\n## Notes\nResume determinism is the key property: save at tick N, load, run to N+M, hash must equal an uninterrupted run.",
+      "acceptance": "- AC-1 [unit] Given a creature in Searching with 12.5 s remaining and an LKP, when saved and loaded, then state, remaining timer and LKP are identical.\n- AC-2 [integration] Given a replay of 600 ticks with a save/load at tick 300, when compared with an uninterrupted replay, then sim state hashes at tick 600 are equal.\n- AC-3 [unit] Given a save from creature-state schema v1 missing `morale`, when migrated to v2, then morale defaults to 100 and the migration test passes.\n- AC-4 [unit] Given an unconscious creature, when saved and loaded, then it remains unconscious with its wake timer preserved.",
+      "depends_on": [
+        "e12-creature-schema",
+        "e30-save-serialization",
+        "e27-world-state-store",
+        "e11-alert-states"
+      ]
+    },
+    {
+      "key": "e12-creature-content-harness",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Auto-generate smoke tests for every creature data file",
+      "priority": 1,
+      "labels": [
+        "epic:e12",
+        "area:qa",
+        "area:content",
+        "area:tools",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nThe test policy requires every creature to have at least one automated test; generating them keeps the bestiary cheap to extend.\n\n## What\nA Vitest harness that discovers every `CreatureDef` and runs a standard smoke battery in a headless sim: spawn, tick 10 s, perceive a scripted stimulus (alert state leaves Unaware), execute each declared attack once against a dummy, take lethal damage and die (or respect immunity), despawn. Creature files can opt into extra scenario tests.\n\n## Scope\n- In: Discovery, battery, readable per-creature test names\n- In: CI integration\n- Out: Balance testing (E13 / E34 telemetry)\n\n## Notes\nTest names follow `creature:<id> smoke — <step>` so failures point to data.",
+      "acceptance": "- AC-1 [integration] Given N creature files, when the suite runs, then N × (battery size) named tests execute.\n- AC-2 [integration] Given a creature whose attack references a missing hitbox, when the suite runs, then only that creature’s attack step fails with the ref name in the message.\n- AC-3 [integration] Given a creature immune to all damage types, when the lethal-damage step runs, then the step asserts survival instead of death.\n- AC-4 [unit] Given a creature with no attacks, when the battery runs, then the attack step is skipped and reported as skipped, not passed.",
+      "depends_on": [
+        "e12-creature-spawner",
+        "e12-attack-definitions",
+        "e11-alert-states"
+      ]
+    },
+    {
+      "key": "e12-creature-authoring-guide",
+      "epic": "mw-e12",
+      "type": "task",
+      "title": "Write the creature authoring guide with a worked example",
+      "priority": 2,
+      "labels": [
+        "epic:e12",
+        "area:design",
+        "area:content",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nThe world-content group will author the bestiary in parallel; a single guide keeps creatures consistent and systemic.\n\n## What\nA designer guide `docs/content/creatures.md`: every schema section explained, how senses/fears/needs/personality affect AI, property-based vulnerability rules, a worked example built from fixtures (not a real bestiary creature), checklist for a new creature (data, smoke test, placeholder asset ids, prompt bead).\n\n## Scope\n- In: Guide + checklist + links to generated schema reference\n- Out: Bestiary entries (E13)\n\n## Notes\nLink from docs/backlog-contract.md is out of scope for this bead; content group will reference the guide.",
+      "acceptance": "- AC-1 [content] Given the guide, when its worked-example JSON is extracted by a doc test, then it validates against `CreatureDef`.\n- AC-2 [manual] Given a designer unfamiliar with the code, when following the checklist, then they can add a new creature that passes the smoke harness in ≤ 30 min.\n- AC-3 [unit] Given the generated schema reference, when a schema field is added without documentation, then the doc-coverage check fails.",
+      "depends_on": [
+        "e12-creature-content-harness",
+        "e12-interaction-affordances"
+      ]
+    },
+    {
+      "key": "e11-ai-architecture-spike",
+      "epic": "mw-e11",
+      "type": "spike",
+      "title": "Spike: choose AI architecture (utility AI, behaviour trees, HFSM)",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "area:design",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nEvery enemy behaviour sits on this choice. It must be deterministic, data-driven, debuggable and cheap enough for 24+ agents in a browser.\n\n## What\nTime-box 2 days. Question: which decision architecture (utility AI, behaviour trees, hierarchical FSM, or hybrid — e.g. HFSM for the 6 alert states with utility selection inside states) best fits deterministic sim, data authoring, debug visualisation and the alert state machine? Build the same scenario (patrol → hear noise → investigate → return) in two candidates inside `spikes/ai-architecture/`, measure tick cost and authoring effort, write an ADR.\n\n## Scope\n- In: Two prototype implementations in `spikes/`\n- In: Micro-benchmark: 50 agents, cost per tick\n- In: ADR `docs/adr/NNNN-ai-architecture.md` with recommendation and data format sketch\n- Out: Production runtime (e11-behaviour-runtime)\n- Out: Navigation (e11-navigation)\n\n## Notes\nEvaluation criteria: determinism (no hidden time/random), data-authorability (JSON), debuggability (current node/scores visualisable), perf, testability at 100% coverage, fit with personality traits and needs as utility inputs.",
+      "acceptance": "- AC-1 [manual] Given the spike is complete, when the ADR is reviewed, then it records the decision, at least 2 rejected alternatives with reasons and the measured numbers.\n- AC-2 [perf] Given each prototype, when 50 agents run the scenario headless for 60 s, then per-tick cost is recorded (mean and p95) in the ADR.\n- AC-3 [unit] Given each prototype, when the scenario replays twice with the same seed, then the agent state hash sequences are identical.\n- AC-4 [manual] Given the ADR, when read, then it includes a JSON sketch of a behaviour definition for `fixture-guard` in the chosen format.",
+      "depends_on": [
+        "e00-sim-core"
+      ]
+    },
+    {
+      "key": "e11-behaviour-runtime",
+      "epic": "mw-e11",
+      "type": "task",
+      "title": "Implement the deterministic behaviour runtime chosen by the ADR",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nA single, deterministic behaviour runtime lets all creatures share patrol/investigate/search/combat behaviours authored as data.\n\n## What\nProduction implementation of the ADR architecture in `src/sim/ai/`: behaviour definitions loaded as content (`behaviour:*`), per-agent blackboard (typed keys), action primitives (move-to, look-at, wait, play-cue, emit-noise, attack), condition primitives (state, stimulus, timer, trait), time-slicing so each agent thinks at a configurable rate (default 10 Hz) with deterministic ordering by entity id.\n\n## Scope\n- In: Runtime, primitives, blackboard, behaviour schema + loader\n- In: Deterministic scheduler with think budgets\n- In: Introspection API for debug visualisation\n- Out: Individual behaviours (later E11 items)\n- Out: Visual editor (post-MVP, E33)\n\n## Notes\nActions return Running/Success/Failure (or utility equivalents); all timing uses sim ticks. Introspection returns current node/score table per agent.",
+      "acceptance": "- AC-1 [unit] Given two agents with think rate 10 Hz on a 60 Hz sim, when 60 ticks run, then each agent thinks exactly 10 times and their think ticks are staggered deterministically by entity id.\n- AC-2 [unit] Given a behaviour definition referencing an unknown primitive, when loaded, then loading fails with the behaviour id and primitive name.\n- AC-3 [unit] Given an action that fails (move-to unreachable), when the runtime ticks, then the failure propagates per the ADR semantics and a fallback branch runs.\n- AC-4 [unit] Given an agent is despawned mid-action, when the runtime ticks, then no further callbacks run for it and no exception is thrown.\n- AC-5 [perf] Given 50 agents running a patrol behaviour, when the sim runs headless, then AI think cost p95 ≤ 1.0 ms per tick on the reference machine.\n- AC-6 [unit] Given an agent, when introspected, then it returns the active node path (or top-3 utility scores) as serialisable data.",
+      "depends_on": [
+        "e11-ai-architecture-spike",
+        "e00-content-pipeline"
+      ]
+    },
+    {
+      "key": "e11-ai-scenario-harness",
+      "epic": "mw-e11",
+      "type": "task",
+      "title": "Scenario harness for scripted AI tests with asserted states over time",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:qa",
+        "area:sim",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nStealth and AI rules must be trustworthy without reading code; readable, deterministic scenario tests are how we prove guard behaviour.\n\n## What\nA test DSL in `src/sim/testing/scenario.ts`: load a grey-box layout (JSON), spawn fixtures with routes, script a player path (waypoints, stance, speed, actions like `throw`, `extinguish`), and assert over time (`at(12.0).expect(guard1).state(\"Investigating\")`, `during(0, 5).expect(guard1).notState(\"Combat\")`). Runs headless on the replay harness; failures print a timeline of state changes and stimuli.\n\n## Scope\n- In: DSL, headless runner, failure timeline output\n- In: Snapshot hash recording for regression\n- In: Example scenario using fixture-guard\n- Out: The scenario suite itself (e09-infiltration-scenarios)\n- Out: Browser e2e (Playwright)\n\n## Notes\nBuilt on e00-replay-harness; scripted player drives the same input actions as a real player where possible.",
+      "acceptance": "- AC-1 [unit] Given a scenario asserting `state(\"Suspicious\")` at t=3.0 s, when the guard is actually Unaware at 3.0 s, then the test fails and output lists every state transition with timestamps.\n- AC-2 [unit] Given a scenario, when run twice, then the recorded state hash sequence is identical.\n- AC-3 [integration] Given the example scenario (player walks through guard view in light), when run, then the guard transitions Unaware→Suspicious within 1.5 s and the test passes.\n- AC-4 [unit] Given a layout JSON referencing an unknown fixture id, when the scenario loads, then it fails before ticking with a clear error.\n- AC-5 [perf] Given a 120 s scenario with 6 agents, when run headless in CI, then it completes in ≤ 3 s wall time.",
+      "depends_on": [
+        "e00-replay-harness",
+        "e12-greybox-archetypes",
+        "e12-creature-spawner"
+      ]
+    },
+    {
+      "key": "e11-navigation",
+      "epic": "mw-e11",
+      "type": "task",
+      "title": "Navmesh generation and deterministic pathfinding for creatures",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nPatrol, investigate, search, flee and flank all need reliable paths, including doors, ladders and climb links that make verticality matter.\n\n## What\nNavmesh baked from grey-box and level geometry at content build time (Recast-style tool or chosen library, decided within this item), stored as data. Sim-side A* over the navmesh with per-creature capability masks (from e12-locomotion-types), dynamic obstacles (closed/locked doors toggling links), off-mesh links (ladders, jumps, climb). Path smoothing and a request queue with a per-tick budget.\n\n## Scope\n- In: Bake step + data format\n- In: Pathfinding in sim, deterministic\n- In: Door state integration, off-mesh links\n- In: Local steering/avoidance between agents (simple)\n- Out: Flying 3D navigation beyond height-offset flight (post-MVP)\n- Out: Crowd simulation\n\n## Notes\nIf a WASM library is used, the query layer must still be deterministic and wrapped behind a sim interface with a pure-TS fake for unit tests. Related: level geometry format from E00 greybox kit.",
+      "acceptance": "- AC-1 [unit] Given a baked grey-box navmesh, when a path is requested between two connected points, then the returned path is valid (every segment on-mesh) and identical across runs.\n- AC-2 [unit] Given a closed locked door between two rooms, when a walker requests a path through it, then no path through that door is returned; after `unlock + open`, the path is found.\n- AC-3 [unit] Given a climb link, when a walk-only creature and a climber request the same path, then only the climber’s path uses the link.\n- AC-4 [unit] Given an unreachable target, when requested, then the result is `Unreachable` with the closest reachable point, not an exception.\n- AC-5 [perf] Given 30 path requests in one tick, when the budget is 0.5 ms, then excess requests are deferred to later ticks and all complete within 10 ticks.\n- AC-6 [integration] Given the grey-box testbed, when the bake runs, then a navmesh file is produced in ≤ 10 s and content validation passes.",
+      "depends_on": [
+        "e00-greybox-testbed",
+        "e00-sim-core",
+        "e03-doors-locks-switches",
+        "e12-locomotion-types"
+      ]
+    },
+    {
+      "key": "e11-perception",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "Creature perception: sight cones, hearing and special senses",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nEnemies must perceive the world honestly — through senses that the player can understand, predict and exploit — rather than knowing everything.\n\n## What\nAs a thief, I want enemies to only know what their senses tell them so that darkness, silence and cover genuinely protect me. Each agent evaluates senses from its resolved sense profile: sight (cone test with primary/peripheral zones, vertical limit, range falloff, LOS via e09-line-of-sight, target visibility score via e09-visibility-model, dark-vision factor), hearing (receives noise events from e09-sound-propagation above its threshold), smell/special senses via registered channel handlers. Output is a list of typed stimuli {source, kind, position, strength 0–1, certainty} per think, fed to awareness.\n\n## Scope\n- In: Sight, hearing, special-sense channel registry\n- In: Stimulus types: seen-target, heard-noise, seen-anomaly, sensed-life\n- In: Time-slicing so expensive LOS checks respect a budget\n- Out: Awareness accumulation (e11-awareness-accumulation)\n- Out: Alert state logic (e11-alert-states)\n- Out: Anomaly definitions (e09-anomaly-detection)\n\n## Notes\nPerception never reads the player position directly outside senses — enforced by an API boundary (agents receive only stimuli). This is the no-omniscience guarantee.",
+      "acceptance": "- AC-1 [unit] Given a guard with primary half-angle 35° and range 20 m, when a fully visible target stands at 10 m and 20° off-axis, then a seen-target stimulus is produced with strength > 0.5.\n- AC-2 [unit] Given the same target at 10 m and 120° off-axis (outside peripheral), when evaluated, then no sight stimulus is produced.\n- AC-3 [unit] Given a target in the cone but with LOS fully blocked, when evaluated, then no sight stimulus is produced.\n- AC-4 [unit] Given a target in the cone with visibility score 0.1 (deep shadow, crouched), when evaluated at 15 m, then stimulus strength is below the Suspicious contribution threshold per tuning data.\n- AC-5 [unit] Given a noise event of 45 dB at the listener and threshold 30 dB, when evaluated, then a heard-noise stimulus carries the noise’s propagated position, not the true source if the noise was occluded and routed through a doorway.\n- AC-6 [unit] Given the perception API, when an agent attempts to access the player entity transform outside a stimulus, then the type system disallows it (compile-time) and an architecture test asserts no such import exists.\n- AC-7 [perf] Given 24 agents and 1 target, when perception runs at 10 Hz, then sim perception cost p95 ≤ 0.8 ms per tick on the reference machine.",
+      "depends_on": [
+        "e09-visibility-model",
+        "e09-line-of-sight",
+        "e09-sound-propagation",
+        "e12-sense-profiles",
+        "e11-behaviour-runtime"
+      ]
+    },
+    {
+      "key": "e11-awareness-accumulation",
+      "epic": "mw-e11",
+      "type": "task",
+      "title": "Accumulate and decay awareness from stimuli per perceived target",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nDetection should build gradually so players have time to react; a glimpse at the edge of vision is not the same as walking into a torch-lit room.\n\n## What\nPer agent, per perceived source: awareness 0–1 accumulated each think as `strength × senseRate × traitModifiers × dt`, with decay when unstimulated after a grace period. Thresholds from tuning data (e.g. 0.3 Suspicious, 0.6 Investigating, 1.0 Detected) drive alert transitions. Tracks the stimulus that contributed most, used by UI to explain why the player was noticed.\n\n## Scope\n- In: Accumulation/decay curves\n- In: Per-source records with dominant-cause tracking\n- In: Instant-detection rule for very close contact (touch/bump)\n- Out: State machine (e11-alert-states)\n- Out: UI (e09-awareness-indicators)\n\n## Notes\nCurves and thresholds come from e11-ai-tuning-data; this item ships defaults.",
+      "acceptance": "- AC-1 [unit] Given a constant sight stimulus of strength 1.0 and rate 1.0/s, when 0.6 s passes, then awareness is 0.6 ± 0.01.\n- AC-2 [unit] Given awareness 0.5 and no stimuli, when grace 2 s then decay 0.1/s applies, then awareness is 0.5 at t=2 s and 0.3 at t=4 s.\n- AC-3 [unit] Given the player bumps into an Unaware guard, when contact is registered, then awareness jumps to 1.0 immediately regardless of light.\n- AC-4 [unit] Given sight and hearing stimuli in the same think, when accumulated, then the dominant cause recorded is the one with the larger contribution.\n- AC-5 [unit] Given a source that despawns, when the next think runs, then its awareness record is removed without error.",
+      "depends_on": [
+        "e11-perception"
+      ]
+    },
+    {
+      "key": "e11-alert-states",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "Six-state alert machine: Unaware to Combat with timed decay",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nThe constitution mandates Unaware → Suspicious → Investigating → Searching → Alerted → Combat. Readable states let players understand and manipulate guards.\n\n## What\nAs a thief, I want guards to escalate and de-escalate through recognisable states so that I can recover from mistakes. A hierarchical state machine per agent: Unaware, Suspicious (stops, looks toward stimulus), Investigating (moves to stimulus position), Searching (lost the target, searches around last-known position), Alerted (knows an intruder exists, active hunt, may raise alarm), Combat (has a confirmed target in perception). Transitions driven by awareness thresholds, timers and events (ally alarm, damage taken). Each state has a data-defined timeout and fallback. De-escalation goes to a `postAlert` flag (heightened baseline) rather than straight to fully relaxed.\n\n## Scope\n- In: States, transition table as data, timers, events emitted on every transition\n- In: Damage-from-unseen-source → Alerted (not Combat) since the attacker is unknown\n- In: Heightened baseline after de-escalation (faster accumulation)\n- Out: Behaviours inside states (investigate/search/combat items)\n- Out: Group communication (e11-communication)\n\n## Notes\nTransition table example lives in tuning data. Combat → Searching when target lost for > N s; Searching → Unaware(postAlert) after search timeout. Never Combat → Unaware directly.",
+      "acceptance": "- AC-1 [unit] Given an Unaware guard, when awareness crosses 0.3, then it enters Suspicious and emits `AlertStateChanged{from: Unaware, to: Suspicious, cause}`.\n- AC-2 [unit] Given a Suspicious guard, when no stimulus is received for 6 s, then it returns to Unaware with `postAlert=false` and resumes its routine.\n- AC-3 [unit] Given a guard in Combat, when the target leaves perception for 5 s, then it enters Searching (never Unaware directly) with the target’s last observed position as LKP.\n- AC-4 [unit] Given a Searching guard, when the search timeout (60 s default) elapses without re-acquisition, then it enters Unaware with `postAlert=true` and awareness accumulation rate ×1.5 for 300 s.\n- AC-5 [unit] Given an Unaware guard hit by a projectile from an unperceived source, when damage is applied, then it enters Alerted (not Combat) and the LKP is estimated from the projectile direction, not the shooter position.\n- AC-6 [unit] Given the transition table, when fuzzed with 10,000 random event sequences, then no transition ever occurs that is absent from the table and state is always one of the six.\n- AC-7 [content] Given a tuning file with a timeout ≤ 0, when validated, then validation fails.",
+      "depends_on": [
+        "e11-awareness-accumulation",
+        "e11-behaviour-runtime"
+      ]
+    },
+    {
+      "key": "e11-memory-lkp",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "Target memory and last-known position without omniscience",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nEnemies must not magically know the player’s position after losing sight. Last-known position is what lets players slip away, double back and set up ambushes.\n\n## What\nAs a thief, I want guards to hunt where they last saw me, not where I actually am, so that breaking line of sight is meaningful. Agent memory stores per target: LKP, last observed velocity, time last seen, confidence decaying over time, and a bounded prediction (LKP + velocity × min(t, 1.5 s)). Memory updates only from perception stimuli or ally communication. Memories of anomalies (bodies, open doors) persist with timestamps.\n\n## Scope\n- In: Memory records, confidence decay, bounded prediction\n- In: Update sources: own stimuli, ally reports (tagged second-hand, lower confidence)\n- In: Forgetting after configured duration\n- Out: Search behaviour choosing where to look (e11-search-behaviour)\n- Out: Player-facing LKP ghost (e09-lkp-ghost)\n\n## Notes\nArchitecture test: memory module has no access to ground-truth transforms. Prediction cap prevents agents tracking the player through walls.",
+      "acceptance": "- AC-1 [unit] Given the player is last seen at P moving 3 m/s east, when 10 s pass without stimuli, then the predicted position is P + 4.5 m east (capped at 1.5 s) and never updates further.\n- AC-2 [unit] Given the player, unseen, moves 30 m away, when the guard queries memory, then the returned LKP is unchanged (no leak of true position).\n- AC-3 [unit] Given an ally shouts a report of the player at Q, when the listener updates memory, then LKP becomes Q with confidence × 0.7 and source `second-hand`.\n- AC-4 [unit] Given confidence decay 0.02/s from 1.0, when 50 s pass, then the memory is forgotten and queries return none.\n- AC-5 [integration] Given a scenario where the player breaks LOS around a corner then climbs to a ledge, when the guard arrives at the LKP, then it has no knowledge of the ledge position unless it perceives the player there.",
+      "depends_on": [
+        "e11-perception",
+        "e11-alert-states"
+      ]
+    },
+    {
+      "key": "e11-patrol-routines",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "Patrol routes, guard posts and idle routines authored as data",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "area:content",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nBelievable routines are what a thief observes, times and exploits; they are also where guards return after an alert.\n\n## What\nAs a designer, I want to author patrol routes and posts in level data so that guards have readable, exploitable routines. Route types: loop, ping-pong, random-weighted graph; waypoints with dwell time, look-direction, and optional idle action (lean, warm hands at fire, check door). Posts: stationary with scan arcs. Routines can be scheduled by time windows. Agents remember their routine and resume the nearest sensible waypoint after an alert.\n\n## Scope\n- In: Route/post schema in level data, runtime behaviour\n- In: Idle action hooks as cue ids\n- In: Resume-nearest-waypoint logic\n- Out: Day/night schedules beyond simple windows (Related: world clock)\n- Out: Animation assets (placeholder cues only)\n\n## Notes\nRandom-weighted routes use seeded RNG per agent.",
+      "acceptance": "- AC-1 [unit] Given a loop route A→B→C with 2 s dwell at each, when simulated, then the guard visits A, B, C, A in order with dwell ±1 tick.\n- AC-2 [unit] Given a ping-pong route, when the guard reaches the last waypoint, then it reverses direction.\n- AC-3 [unit] Given a guard returning from Searching, when it resumes, then it paths to the nearest waypoint on its route by nav distance, not the next index.\n- AC-4 [unit] Given a route waypoint that becomes unreachable (door locked), when the guard attempts it, then it skips to the next reachable waypoint and emits a `RouteBlocked` event (door-check anomaly hook).\n- AC-5 [content] Given a route referencing a nonexistent waypoint id, when validated, then validation fails.",
+      "depends_on": [
+        "e11-navigation",
+        "e11-behaviour-runtime"
+      ]
+    },
+    {
+      "key": "e11-investigate-behaviour",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "Guards investigate suspicious stimuli at their perceived location",
+      "priority": 1,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nDistractions only work if guards go and look. Investigation is the core lever for thrown objects, noises and glimpses.\n\n## What\nAs a thief, I want a guard to walk over and check a noise or glimpse so that I can lure him away from his post. In Suspicious: stop, turn toward stimulus, text bark cue. In Investigating: path to stimulus position at walk (or cautious) gait, look around on arrival with a scan pattern, inspect the source object if perceived (e.g. a thrown bottle), then decide: nothing found → de-escalate; more stimuli → escalate. Multiple stimuli: most recent strong one wins; weaker stimuli queue up to 3.\n\n## Scope\n- In: Investigate behaviour, scan pattern, source inspection, stimulus queue\n- In: Cautious gait when postAlert\n- Out: Group investigation roles (e11-communication)\n- Out: Search around LKP (e11-search-behaviour)\n\n## Notes\nInvestigation position is the perceived position (may be offset by sound routing), not the true source.",
+      "acceptance": "- AC-1 [unit] Given an Investigating guard with target position 12 m away, when simulated, then it arrives within (12 / walkSpeed + 1) s and performs a scan of ≥ 3 look directions.\n- AC-2 [unit] Given a second, louder stimulus while investigating, when perceived, then the guard retargets to the new position and the first is queued.\n- AC-3 [unit] Given an unreachable stimulus position (on a roof), when investigating, then the guard moves to the closest reachable point, looks toward the position for the scan duration, then de-escalates.\n- AC-4 [integration] Given a scenario where a noise occurs behind a closed door, when the guard investigates, then it opens the door (if unlocked) before scanning the room.\n- AC-5 [unit] Given a queue already holding 3 stimuli, when a 4th weaker stimulus arrives, then the weakest is dropped.",
+      "depends_on": [
+        "e11-alert-states",
+        "e11-memory-lkp",
+        "e11-navigation"
+      ]
+    },
+    {
+      "key": "e11-search-behaviour",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "Search patterns around last-known position, including hiding spots",
+      "priority": 1,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\nA convincing search — fanning out, checking corners and wardrobes — makes escaping feel earned, and gives up plausibly so failure does not force a reload.\n\n## What\nAs a thief, I want searching guards to check plausible places near where they lost me so that hiding well matters and hiding badly gets me caught. Searching generates candidate points around LKP (+ bounded prediction): nav-reachable points ranked by distance, cover/darkness, and whether the point is out of sight from LKP; plus hiding spots within radius. Agents claim points (no two agents search the same point), check hiding spots with a probability based on whether they saw the target enter it, expand radius over time, then give up.\n\n## Scope\n- In: Candidate generation, ranking, claiming, radius expansion\n- In: Hiding-spot checks with probability rules\n- In: Diligence trait scaling of duration\n- Out: Hiding place mechanics (e09-hiding-places)\n- Out: Alarm raising (e11-communication)\n\n## Notes\nProbability of checking a hiding spot: 1.0 if target was seen entering; otherwise base 0.25 scaled by proximity to LKP. Seeded RNG.",
+      "acceptance": "- AC-1 [unit] Given a Searching guard with LKP L, when candidates are generated, then all lie within the current radius, are nav-reachable and the first 3 are sorted by the ranking function.\n- AC-2 [unit] Given two guards searching the same LKP, when they claim points, then no point is claimed by both.\n- AC-3 [unit] Given the guard saw the target enter a hiding spot, when searching, then it checks that spot first with probability 1.0.\n- AC-4 [unit] Given a hiding spot not seen being entered, 10 m from LKP, when evaluated with a fixed seed, then the check decision matches the documented probability formula.\n- AC-5 [unit] Given no reachable candidates (LKP on an isolated ledge), when searching, then the guard looks toward LKP from the nearest point, then de-escalates at the search timeout without error.\n- AC-6 [integration] Given a scenario where the player hides in darkness 8 m from LKP and stays still, when a single guard searches for 60 s, then the guard ends Searching without entering Combat in the scripted seed.",
+      "depends_on": [
+        "e11-memory-lkp",
+        "e11-navigation",
+        "e11-investigate-behaviour"
+      ]
+    },
+    {
+      "key": "e11-communication",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "Allies share alerts by shouts, sight signals and alarm devices",
+      "priority": 1,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\nEnemies that communicate make a single mistake escalate believably, and give players targets — silence the shouter, cut the bell rope.\n\n## What\nAs a thief, I want guards to call for help through the world rather than telepathy so that I can prevent or exploit alarms. Channels: shout (emits a loud noise event via sound propagation carrying a report: LKP, state), visual signal (allies in LOS within 25 m receive the report), alarm device (agents path to a nearest `alarm` object and activate it via the interaction/mechanism system, broadcasting Alerted to a faction zone). Only allies (faction relation ally/friendly) accept reports. Group roles in Alerted/Searching: one caller, others flank/search.\n\n## Scope\n- In: Report message type, shout/visual/alarm channels\n- In: Faction filtering\n- In: Basic role assignment (caller, searcher, guard-post-holder)\n- Out: Reinforcement spawning (e09-failed-stealth-outcomes)\n- Out: Speech/voice (text barks only — e09-alert-barks)\n\n## Notes\nAlarm objects are world mechanisms with an `alarm` property; if destroyed or jammed, the AI must fall back to shouting. Related: alarm bell mechanism may be authored with E03 switches.",
+      "acceptance": "- AC-1 [unit] Given a guard entering Alerted, when it shouts, then a noise event of the configured loudness is emitted and allies whose perceived level exceeds their hearing threshold receive the report.\n- AC-2 [unit] Given a guard behind 2 closed doors whose shout is attenuated below an ally’s threshold, when shouting, then that ally receives nothing.\n- AC-3 [unit] Given a creature of a hostile faction within hearing, when a shout occurs, then it does not receive the report (it may still perceive the noise as a stimulus).\n- AC-4 [unit] Given an alarm object that has been disabled (jammed or destroyed), when a guard attempts to use it, then it falls back to shouting within 2 s.\n- AC-5 [integration] Given a scenario with 3 guards and one alarm bell, when the first guard spots the player and reaches the bell, then all guards in the bell’s zone enter Alerted within 1 tick of activation.\n- AC-6 [unit] Given a guard is knocked out mid-path to the alarm, when the tick runs, then no alarm activation occurs.",
+      "depends_on": [
+        "e11-alert-states",
+        "e11-memory-lkp",
+        "e09-sound-propagation",
+        "e12-factions-relationships",
+        "e03-doors-locks-switches"
+      ]
+    },
+    {
+      "key": "e11-combat-behaviour",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "Combat behaviour: engage, space, select attacks and share targets",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nCombat is intrinsically fun only if enemies fight readably: spacing, telegraphing, taking turns and punishing mistakes.\n\n## What\nAs a knight, I want enemies to circle, pressure and take turns so that fights reward reading behaviour. In Combat: maintain preferred range per creature, strafe/circle, pick attacks from `attacks` by preconditions + weights + personality aggression, respect an attack token budget per target (max N simultaneous attackers, default 2), react to player block/parry (stagger response), reposition when target is out of reach (path/wait/ranged fallback).\n\n## Scope\n- In: Engage/space/attack-select loop\n- In: Attack token manager\n- In: Out-of-reach handling (e.g. player on ledge)\n- Out: Retreat/flee (e11-retreat-flee)\n- Out: Boss-specific patterns (E13/E26)\n\n## Notes\nAll selection deterministic with seeded RNG. Losing the target transitions via alert states to Searching.",
+      "acceptance": "- AC-1 [unit] Given 4 hostile guards in Combat vs one player with token budget 2, when simulated for 10 s, then at no tick are more than 2 guards in an attack windup/active phase.\n- AC-2 [unit] Given an attack whose precondition (distance ≤ 2 m) is false, when selecting, then it is never chosen.\n- AC-3 [unit] Given the player stands on a ledge unreachable by nav, when a melee-only guard is in Combat, then it moves to the closest point, waits and after 8 s transitions to a taunt/wait behaviour rather than jittering (≤ 1 path request per second).\n- AC-4 [integration] Given the grey-box fight room, when the player fights 2 fixture guards, then both guards attack at least once within 10 s and the fight resolves without AI errors.\n- AC-5 [unit] Given a guard is staggered, when the stagger ends, then it re-evaluates attack selection rather than resuming the cancelled attack.",
+      "depends_on": [
+        "e11-alert-states",
+        "e12-attack-definitions",
+        "e11-navigation",
+        "e04-damage-model"
+      ]
+    },
+    {
+      "key": "e11-retreat-flee",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "Creatures retreat, flee to allies and cower based on morale",
+      "priority": 1,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nEnemies that retreat, regroup or flee make fights and scares feel alive and allow non-lethal victories.\n\n## What\nAs a player, I want frightened or wounded creatures to disengage so that encounters end in more ways than death. Consumes `Flee`/`Cower` intents from e12-fears-morale and health thresholds: flee away from the fear source toward allies, safe zones or a lair point; cower when cornered; regroup and re-enter Alerted/Searching when morale recovers. Fleeing creatures may shout (communication) and drop carried items (hook).\n\n## Scope\n- In: Flee destination scoring, cower, regroup\n- In: Surrender intent event (hook for E14 dialogue)\n- Out: Morale model (e12-fears-morale)\n- Out: Surrender dialogue (E14/E22)\n\n## Notes\nFlee destination scoring: distance from threat, ally proximity, darkness preference per creature.",
+      "acceptance": "- AC-1 [unit] Given a creature with a `Flee` intent and threat at T, when fleeing, then after 3 s its distance from T has increased and its path does not pass within 2 m of T.\n- AC-2 [unit] Given a fleeing creature with no escape path (dead end), when cornered, then it enters `Cower` within 1 s.\n- AC-3 [unit] Given morale recovers above the regroup threshold, when the intent clears, then the creature enters Searching with the threat’s last-known position.\n- AC-4 [unit] Given a creature tagged `fearless` (morale disabled), when at 1 health, then it never flees.",
+      "depends_on": [
+        "e11-combat-behaviour",
+        "e12-fears-morale",
+        "e11-communication"
+      ]
+    },
+    {
+      "key": "e11-return-to-routine",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "Guards return to routines, visibly changed by what happened",
+      "priority": 1,
+      "labels": [
+        "epic:e11",
+        "area:sim",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nFailure creates stories: after an alert guards should go back to work, but the world should remember — lit torches, doubled posts, grumbling barks.\n\n## What\nAs a thief, I want guards to settle back down after an alert but stay changed so that my mistakes reshape the level instead of resetting it. On de-escalation: path back to routine, apply post-alert adjustments from data (e.g. relight extinguished lights on route, close opened doors, patrol in pairs, add a checkpoint post, carry a torch), keep heightened awareness for a duration. Adjustments are data-driven per behaviour profile and recorded as world facts.\n\n## Scope\n- In: Return behaviour, post-alert adjustment list, persistence via world state\n- In: Barks cue on return\n- Out: Level lockdowns/reinforcements (e09-failed-stealth-outcomes)\n\n## Notes\nAdjustments list example: `relight-seen-extinguished-lights`, `close-seen-open-doors`, `pair-up`, `carry-torch`.",
+      "acceptance": "- AC-1 [unit] Given a guard de-escalates with `postAlert=true`, when simulated, then it resumes its route within 5 s and awareness rate multiplier is 1.5 for 300 s, then 1.0.\n- AC-2 [unit] Given a guard with the `relight-seen-extinguished-lights` adjustment that perceived an extinguished torch during the alert, when returning, then it paths to the torch and relights it before resuming.\n- AC-3 [unit] Given the torch was destroyed (not merely extinguished), when the adjustment runs, then the guard skips it and switches to `carry-torch` if declared.\n- AC-4 [integration] Given a save after an alert with `pair-up` applied, when loaded, then the paired patrol persists.",
+      "depends_on": [
+        "e11-patrol-routines",
+        "e11-alert-states",
+        "e27-world-state-store",
+        "e03-light-field"
+      ]
+    },
+    {
+      "key": "e11-ai-tuning-data",
+      "epic": "mw-e11",
+      "type": "task",
+      "title": "Author AI tuning data: thresholds, decay timers, search durations",
+      "priority": 1,
+      "labels": [
+        "epic:e11",
+        "area:content",
+        "area:sim",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nStealth feel is tuned constantly; all numbers must be data so designers can iterate without code and tests can pin defaults.\n\n## What\nA `AiTuning` schema and default files per behaviour profile: awareness thresholds per state, accumulation rates per sense, grace and decay timers, state timeouts (Suspicious 6 s, Investigating 20 s, Searching 60 s, Alerted 120 s defaults), post-alert multiplier and duration, search radius growth, token budgets, think rates. Profiles inherit (`guard-default` → `guard-lazy`). Hot-reload in dev.\n\n## Scope\n- In: Schema, inheritance, defaults, hot reload in dev builds\n- In: Pinned default-value tests\n- Out: Sense ranges (e12-sense-profiles)\n- Out: Stealth emitter tuning (e09-stealth-tuning-data)\n\n## Notes\nChanging defaults requires updating pinned tests deliberately — that is the point.",
+      "acceptance": "- AC-1 [content] Given the default tuning files, when validated, then every state has a positive timeout and thresholds are strictly increasing Suspicious < Investigating < Detected.\n- AC-2 [unit] Given `guard-lazy` inheriting from `guard-default` overriding only Searching timeout 30 s, when resolved, then all other values equal the parent.\n- AC-3 [unit] Given an inheritance cycle, when loaded, then loading fails naming the cycle.\n- AC-4 [integration] Given a dev build, when a tuning file is edited, then running agents use the new values within 1 s without reload.\n- AC-5 [unit] Given the shipped defaults, when the pinned-default test runs, then each documented default matches.",
+      "depends_on": [
+        "e11-alert-states",
+        "e00-content-pipeline"
+      ]
+    },
+    {
+      "key": "e11-debug-visualisation",
+      "epic": "mw-e11",
+      "type": "feature",
+      "title": "AI debug overlay: sight cones, hearing, states, LKP and paths",
+      "priority": 0,
+      "labels": [
+        "epic:e11",
+        "area:tools",
+        "area:render",
+        "area:game",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nAI is untuneable if you cannot see what it thinks. Developers need to see every agent’s senses, state and memory live.\n\n## What\nAs a developer, I want a toggleable AI overlay so that I can understand and tune behaviour in seconds. Per agent: sight cone (primary/peripheral, tinted by alert state), hearing radius, awareness bars per source, state label + time in state, active behaviour node / top utility scores, LKP marker with confidence, current path, claimed search points. Global: noise event rings with loudness and propagation route, light level probe under cursor. Console: `ai.debug on|off|select <id>`, `ai.freeze`, `ai.step`.\n\n## Scope\n- In: Overlay rendering from sim introspection data\n- In: Console commands incl. freeze/step\n- In: Selection by clicking an agent\n- Out: Player-facing stealth UI (E09 UI items)\n- Out: Visual behaviour editor (post-MVP)\n\n## Notes\nRender layer reads introspection snapshots; sim must not depend on overlay. Overlay code excluded from unit coverage per coverage-exclusions.md; introspection data builders are 100% covered in sim.",
+      "acceptance": "- AC-1 [unit] Given an agent, when the introspection snapshot is built, then it contains state, timeInState, awareness per source, LKP, path and cone parameters.\n- AC-2 [e2e] Given the grey-box testbed with 3 guards, when `ai.debug on` is entered, then overlay elements for 3 agents render with no console errors.\n- AC-3 [integration] Given `ai.freeze`, when 60 frames render, then the sim tick counter does not advance; `ai.step` advances exactly 1 tick.\n- AC-4 [perf] Given the overlay on with 24 agents, when measured, then added frame time p95 ≤ 2 ms on the reference machine (High).\n- AC-5 [unit] Given the overlay is off, when the sim runs, then no introspection snapshots are built (zero overhead check via counter).",
+      "depends_on": [
+        "e11-alert-states",
+        "e11-perception",
+        "e33-debug-console",
+        "e00-greybox-testbed"
+      ]
+    },
+    {
+      "key": "e11-ai-perf-budget",
+      "epic": "mw-e11",
+      "type": "task",
+      "title": "Perf budget: 24 active AI agents within sim frame budget",
+      "priority": 1,
+      "labels": [
+        "epic:e11",
+        "area:perf",
+        "area:sim",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nThe hardware baseline requires steady 60 fps; AI perception, pathing and sound propagation are the likeliest sim hot spots.\n\n## What\nAdd an AI stress scene and budget tests: 24 agents (mixed fixtures) in Alerted/Searching with continuous noise events and a moving target. Budgets: total AI+perception+sound sim cost p95 ≤ 3 ms per tick on the reference machine; ≤ 5 ms on the Low-preset class machine. Includes LOS cache and level-of-detail think rates (agents > 40 m from player think at 2 Hz).\n\n## Scope\n- In: Stress scene, budget assertions, AI LOD think rates, LOS result caching\n- Out: Render perf (E32)\n\n## Notes\nNumbers cite the contract hardware baseline.",
+      "acceptance": "- AC-1 [perf] Given the AI stress scene with 24 agents, when run for 60 s headless on the reference machine, then AI+perception+sound cost p95 ≤ 3 ms per tick.\n- AC-2 [unit] Given an agent 50 m from the player with LOD enabled, when 60 ticks run, then it thinks 2 times; within 40 m it thinks 10 times.\n- AC-3 [unit] Given AI LOD, when an out-of-range agent receives a noise stimulus above threshold, then it is promoted to full think rate on the next tick (no missed alerts).\n- AC-4 [perf] Given the stress scene in the browser (High), when measured, then frame time p95 ≤ 16.7 ms.",
+      "depends_on": [
+        "e11-combat-behaviour",
+        "e11-search-behaviour",
+        "e32-perf-budgets"
+      ]
+    },
+    {
+      "key": "e09-line-of-sight",
+      "epic": "mw-e09",
+      "type": "task",
+      "title": "Multi-point line-of-sight queries with partial cover and see-through",
+      "priority": 0,
+      "labels": [
+        "epic:e09",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nHiding behind a crate with your head poking out should be different from full cover; windows and grates should let guards see but not pass.\n\n## What\nA sim LOS service: raycast from the observer’s eye to N sample points on the target (head, chest, hips, feet — configurable) returning fraction visible 0–1. Colliders carry an `occlusion` property: `opaque`, `transparent` (glass, grates), `partial:<factor>` (foliage, curtains, smoke volumes). Queries go through a physics adapter with a pure-TS fake for unit tests.\n\n## Scope\n- In: LOS service, sample points, occlusion properties, adapter + fake\n- In: Dynamic occluders (smoke volumes, closing doors)\n- Out: Visibility score composition (e09-visibility-model)\n- Out: Sight cone logic (e11-perception)\n\n## Notes\nSmoke and foliage are volumes; their factor multiplies along the ray. Batch API for many observers per tick.",
+      "acceptance": "- AC-1 [unit] Given a target fully behind an `opaque` wall, when queried, then visible fraction is 0.\n- AC-2 [unit] Given a target crouched behind a crate that hides hips and feet only, when queried with 4 sample points, then visible fraction is 0.5.\n- AC-3 [unit] Given a target behind a `transparent` window, when queried, then visible fraction equals the unobstructed value.\n- AC-4 [unit] Given a ray through two `partial:0.5` foliage volumes, when queried, then the per-ray visibility is 0.25.\n- AC-5 [unit] Given a zero-length ray (observer eye inside target), when queried, then visible fraction is 1 and no error is thrown.\n- AC-6 [perf] Given 24 observers × 4 samples, when batched, then the query cost p95 ≤ 0.3 ms per tick on the reference machine.",
+      "depends_on": [
+        "e00-sim-core",
+        "e03-world-properties",
+        "e00-engine-decision"
+      ]
+    },
+    {
+      "key": "e09-visibility-model",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Compute player visibility from light, stance, motion and distance",
+      "priority": 0,
+      "labels": [
+        "epic:e09",
+        "area:sim",
+        "milestone:m1",
+        "class:thief"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nStealth cannot be crouching plus an eye icon. Visibility must emerge from light and darkness, stance, movement and distance so players can reason about it.\n\n## What\nAs a thief, I want how visible I am to depend on the light on my body, my stance, how fast I move and what I wear so that shadows and patience are my tools. `visibility(target, observer)` = lightTerm (light-field sample at target sample points, adjusted by observer dark-vision) × stanceTerm (prone/crouch/stand) × motionTerm (speed band) × profileTerm (equipment brightness, disguise/cloak modifiers) × LOS fraction × distance falloff. A per-target self-visibility (observer-independent) is also exposed for the HUD.\n\n## Scope\n- In: Pure function + components, all weights from tuning data\n- In: Self-visibility for UI\n- In: Contrast rule: a silhouette against a bright background raises visibility\n- Out: Sight cone / accumulation (E11)\n- Out: Light-field implementation (e03-light-field)\n\n## Notes\nTerms multiply so any zero term hides the target. Keep the function pure: inputs are sampled values, not entity lookups, for trivial unit testing.",
+      "acceptance": "- AC-1 [unit] Given light level 0.05 at all sample points, crouched and still at 10 m, when computed with default tuning, then visibility ≤ 0.1.\n- AC-2 [unit] Given light level 0.9, standing and sprinting at 10 m, when computed, then visibility ≥ 0.8.\n- AC-3 [unit] Given identical inputs except distance 5 m vs 20 m, when computed, then the 20 m result is strictly lower per the falloff curve.\n- AC-4 [unit] Given an observer with dark-vision 1.0, when the target stands in 0.0 light, then the light term is 1.0 (darkness gives no benefit).\n- AC-5 [unit] Given a dark target silhouetted against a background light ≥ 0.7 along the observer ray, when computed, then the contrast bonus applies and visibility rises by the configured amount.\n- AC-6 [unit] Given LOS fraction 0, when computed, then visibility is exactly 0 regardless of other terms.\n- AC-7 [content] Given the stealth tuning file, when a weight is outside 0–2, then validation fails.",
+      "depends_on": [
+        "e03-light-field",
+        "e00-sim-core",
+        "e02-player-controller",
+        "e09-line-of-sight",
+        "e02-stance-profiles"
+      ]
+    },
+    {
+      "key": "e09-sound-propagation",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Propagate noise events through rooms, doors and walls with occlusion",
+      "priority": 0,
+      "labels": [
+        "epic:e09",
+        "area:sim",
+        "milestone:m1",
+        "class:thief"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nSound propagation, surfaces and doors are constitution-mandated stealth inputs. Guards should hear a dropped bottle through an open door but not through thick stone.\n\n## What\nAs a thief, I want noise to travel like it does in a building so that closing a door or taking the long way round actually keeps me quiet. Noise events {source, loudness dB at 1 m, kind, tags} propagate over a room/portal graph built from level data: distance attenuation (inverse-square approximation in dB), portal attenuation by door state (open 0 dB, ajar −6 dB, closed −20 dB, configurable per door material), wall transmission for adjacent rooms (−30 dB default, per wall material), floor/ceiling transmission for verticality. Listeners receive perceived level and the perceived position (the last portal the sound came through when routed indirectly).\n\n## Scope\n- In: Room/portal graph build from level data\n- In: Propagation (Dijkstra over portals, bounded)\n- In: Perceived position routing\n- In: Event bus API for emitters (footsteps, impacts, shouts, spells)\n- In: Hook for e28-audio-engine to reuse the occlusion result\n- Out: Footstep emission rules (e09-footstep-noise)\n- Out: Actual audio playback (e28-audio-engine)\n\n## Notes\nPerceived position is what makes the no-omniscience rule hold for sound. Bounded search: stop when level < global floor (10 dB).",
+      "acceptance": "- AC-1 [unit] Given a 60 dB noise and a listener 10 m away in the same room, when propagated, then perceived level is 40 dB ± 0.5 (−20 dB for 10 m).\n- AC-2 [unit] Given the same geometry with a closed door on the only path, when propagated, then perceived level is 20 dB lower than with the door open.\n- AC-3 [unit] Given a noise in room A heard in room B via a doorway, when propagated, then the perceived position is the doorway, not the source.\n- AC-4 [unit] Given two paths (open corridor 25 m, closed door 8 m), when propagated, then the louder of the two routes is used.\n- AC-5 [unit] Given a noise on the floor above through a wooden floor (−15 dB), when propagated to a listener below, then perceived level reflects the floor transmission loss.\n- AC-6 [unit] Given a door that changes from open to closed between two noise events, when the second event propagates, then it uses the new door state (graph edges update on door events).\n- AC-7 [unit] Given a noise emitted outside any room (open terrain), when propagated, then pure distance attenuation applies without error.\n- AC-8 [perf] Given 20 noise events per tick in a 60-room level, when propagated, then cost p95 ≤ 0.5 ms per tick.",
+      "depends_on": [
+        "e00-sim-core",
+        "e03-doors-locks-switches",
+        "e03-world-properties",
+        "e00-greybox-testbed"
+      ]
+    },
+    {
+      "key": "e09-surface-acoustics",
+      "epic": "mw-e09",
+      "type": "task",
+      "title": "Tag surfaces with acoustic materials that change footstep noise",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:sim",
+        "area:content",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nSurfaces are a constitution stealth input: carpet muffles, gravel crunches, a creaky board betrays you, a puddle splashes.\n\n## What\nAcoustic material tags on walkable colliders and level regions (`stone`, `wood`, `wood-creaky`, `carpet`, `gravel`, `metal-grate`, `water-shallow`, `grass`, `leaves`, `glass-shards`): loudness offset dB, per-step variance, and sfx set id. Materials can change dynamically via world properties (a `wet` or `frozen` surface changes its offset; scattered glass shards become `glass-shards`). Query API `surfaceAt(position)`.\n\n## Scope\n- In: Material table (content data), collider/region tagging, dynamic modifiers from world properties\n- In: Grey-box painter support: tag via level JSON\n- Out: Footstep emission rule (e09-footstep-noise)\n- Out: Final footstep audio (asset beads)\n\n## Notes\nCreaky boards: probability per step of an extra +12 dB creak (seeded).",
+      "acceptance": "- AC-1 [unit] Given a position on a `carpet` region, when `surfaceAt` is queried, then material is `carpet` with offset −10 dB (default table).\n- AC-2 [unit] Given a `wood` surface that gains the `frozen` property, when queried, then the frozen-surface modifier applies per the table.\n- AC-3 [unit] Given overlapping regions, when queried, then the higher-priority region wins deterministically.\n- AC-4 [unit] Given a position with no surface tag, when queried, then the default `stone` material is returned and a dev warning is logged once per region.\n- AC-5 [content] Given the material table, when validated, then each material has an offset in −20..+20 dB and a sfx set id.",
+      "depends_on": [
+        "e03-world-properties",
+        "e09-sound-propagation"
+      ]
+    },
+    {
+      "key": "e09-footstep-noise",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Emit footstep noise from speed, stance, surface and equipment weight",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:sim",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nSilent movement must be a skill: running on gravel in plate armour should wake the keep; creeping barefoot over carpet should not.\n\n## What\nAs a thief, I want my footsteps to be as loud as my choices make them so that moving slowly and choosing my path pays off. Each footstep (from controller gait cadence) emits a noise event: base dB by gait (sneak/walk/run/sprint) + surface offset + equipment noise (sum of equipped item `noise` values, e.g. plate clank) + landing impulse for jumps/falls (by fall height). Also emitted for any creature with footsteps, so the player can hear guards.\n\n## Scope\n- In: Footstep emission rule shared by player and creatures\n- In: Landing and falling impacts\n- In: Equipment noise aggregation (reads item data)\n- Out: Progression perks that reduce noise (e10-silent-movement)\n- Out: Audio playback (e28)\n\n## Notes\nEmit at step cadence, not per tick. Defaults: sneak 25, walk 40, run 55, sprint 65 dB at 1 m.",
+      "acceptance": "- AC-1 [unit] Given the player sneaking on carpet with no noisy equipment, when a step occurs, then the event loudness is 15 dB (25 − 10).\n- AC-2 [unit] Given sprinting on gravel wearing items with total noise +10 dB, when a step occurs, then loudness is 65 + gravel offset + 10.\n- AC-3 [unit] Given a fall of 3 m onto stone, when landing, then an impact event with loudness per the fall-height curve is emitted once.\n- AC-4 [unit] Given the player standing still, when 5 s pass, then no footstep events are emitted.\n- AC-5 [integration] Given a scenario where the player sneaks past a guard 6 m away on carpet, when simulated, then the guard stays Unaware; the same path sprinting on gravel makes the guard Suspicious within 1 s.",
+      "depends_on": [
+        "e09-surface-acoustics",
+        "e02-player-controller",
+        "e17-inventory-core",
+        "e09-sound-propagation"
+      ]
+    },
+    {
+      "key": "e09-stealth-tuning-data",
+      "epic": "mw-e09",
+      "type": "task",
+      "title": "Author stealth tuning data: light weights, stance, noise, doors",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:content",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nStealth feel must be tunable by designers without code, and defaults pinned by tests.\n\n## What\nA `StealthTuning` schema and default file: light-term curve, stance multipliers, motion bands, distance falloff, contrast bonus, gait base dB, surface table link, door-state and wall/floor transmission defaults, global audibility floor, hiding-place concealment defaults. Hot reload in dev; difficulty presets can override a whitelisted subset.\n\n## Scope\n- In: Schema, defaults, hot reload, pinned default tests\n- In: Difficulty override whitelist (consumed by e09-stealth-assists)\n- Out: AI thresholds and timers (e11-ai-tuning-data)\n- Out: Sense ranges (e12-sense-profiles)\n\n## Notes\nCurves are piecewise-linear point lists for easy editing.",
+      "acceptance": "- AC-1 [content] Given the default file, when validated, then all curves are monotonic in the documented direction.\n- AC-2 [unit] Given a difficulty preset overriding a non-whitelisted key, when loaded, then loading fails naming the key.\n- AC-3 [integration] Given a dev build, when the stance multiplier is edited, then the visibility HUD reflects the change within 1 s.\n- AC-4 [unit] Given the shipped defaults, when the pinned-default test runs, then documented values match.",
+      "depends_on": [
+        "e09-visibility-model",
+        "e09-footstep-noise"
+      ]
+    },
+    {
+      "key": "e09-verticality",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Verticality rules: limited upward vision and height advantage",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:sim",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nVerticality is a stealth input: rafters, balconies and rooftops should be real thief highways because guards rarely look up.\n\n## What\nAs a thief, I want to be harder to notice above or below a guard’s eye line so that rafters and ledges become routes. Vertical sight: per-profile vertical half-angles up/down (humanoids look up poorly by default, e.g. +20° up, −45° down) with an extra falloff; creatures with `looks-up` tag (e.g. spiders, fliers) ignore it; Searching agents perform occasional look-up scans. Height difference affects noise via floor transmission (already in propagation) and adds a visibility penalty when the target is above a lit area but itself in dark rafters.\n\n## Scope\n- In: Vertical cone limits + falloff\n- In: Look-up scan in Searching/Investigating when LKP is elevated\n- In: Tuning data\n- Out: Climbing movement (e10-climbing)\n- Out: Flying creature navigation (post-MVP)\n\n## Notes\nLKP elevation > 2 m above agent eye triggers look-up scan behaviour.",
+      "acceptance": "- AC-1 [unit] Given a humanoid guard with vertical up half-angle 20°, when the target is 30° above horizontal at 8 m, then no sight stimulus is produced while the guard is Unaware.\n- AC-2 [unit] Given a creature tagged `looks-up`, when the same target is evaluated, then a sight stimulus is produced.\n- AC-3 [unit] Given a Searching guard whose LKP is 4 m above its eye height, when it reaches the LKP area, then it performs a look-up scan that widens its up half-angle to 60° for 3 s.\n- AC-4 [integration] Given a scenario where the player crosses rafters above 2 patrolling guards in a lit hall, when simulated, then neither guard exceeds Suspicious.\n- AC-5 [unit] Given the target directly overhead (90°), when evaluated, then no division-by-zero or NaN occurs and visibility follows the vertical rule.",
+      "depends_on": [
+        "e11-perception",
+        "e09-visibility-model",
+        "e11-search-behaviour"
+      ]
+    },
+    {
+      "key": "e09-hiding-places",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Hiding places: wardrobes, barrels, tall grass and shadowed alcoves",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:sim",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nHiding places are a constitution stealth input and give failed stealth a recovery move rather than a reload.\n\n## What\nAs a thief, I want to duck into a wardrobe, crouch in tall grass or press into an alcove so that I can break pursuit if I am quick and unseen. Two kinds: enter-able containers (wardrobe, barrel, under-bed — interact to enter/exit, player hidden, limited view) and concealment volumes (tall grass, curtains, alcoves — visibility multiplier while inside and stationary/crouched). Data: concealment factor, entry noise dB, entry time, capacity, `searchable` flag. AI that saw you enter knows; AI searching may check (e11-search-behaviour). Being found inside = instant Combat at close range with a brief stagger window to flee (failure creates a story).\n\n## Scope\n- In: Hiding place component + data\n- In: Enter/exit via interaction with timing and noise\n- In: Concealment volumes feeding visibility model\n- In: Being-discovered outcome\n- Out: Hiding bodies in containers (e10-body-carry-hide)\n- Out: Hiding prop art (placeholder boxes)\n\n## Notes\nEntering while observed must be tracked as a memory `saw-enter:<hidingPlaceId>`.",
+      "acceptance": "- AC-1 [unit] Given the player inside a wardrobe, when any observer computes visibility, then the result is 0 unless the wardrobe is opened by that observer.\n- AC-2 [unit] Given the player crouched still in tall grass (concealment 0.3), when visibility is computed, then it is multiplied by 0.3; moving at run speed removes the bonus.\n- AC-3 [unit] Given a guard observes the player entering a barrel, when the guard searches, then the barrel is checked first (via memory `saw-enter`).\n- AC-4 [unit] Given an occupied single-capacity hiding place, when a second entity attempts to enter, then entry is refused with a prompt reason.\n- AC-5 [integration] Given a guard opens the wardrobe the player is in, when discovered, then the guard enters Combat and the player gets a 0.6 s stagger window during which exiting is possible.\n- AC-6 [e2e] Given the stealth grey-box course, when the player enters and exits a wardrobe via the interact action, then the camera switches to the hiding view and back without errors.",
+      "depends_on": [
+        "e02-interaction",
+        "e09-visibility-model",
+        "e11-search-behaviour",
+        "e11-memory-lkp"
+      ]
+    },
+    {
+      "key": "e09-anomaly-detection",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Guards notice world anomalies: bodies, open doors, dark torches",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:sim",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nA thief’s actions leave traces; guards noticing a doused torch or a missing colleague creates tension and new situations.\n\n## What\nAs a thief, I want guards to notice what I changed so that covering my tracks is part of the craft. Anomalies are world facts compared against an agent’s expected state (routine knowledge): unconscious/dead bodies, doors open that are normally closed, lights extinguished that are normally lit, missing valuables from a watched spot, blood/broken objects, a colleague missing from post for > N s. Each anomaly type has data: detection via sight (uses visibility of the anomaly), suspicion weight, resulting state (Suspicious for an open door, Alerted for a body).\n\n## Scope\n- In: Anomaly registry + expected-state baseline per area/agent\n- In: Perception integration (seen-anomaly stimulus)\n- In: Data-driven anomaly types + weights\n- Out: Relighting/closing on return (e11-return-to-routine)\n- Out: Body carrying (e10-body-carry-hide)\n\n## Notes\nExpected state captured at level load and updated when guards themselves change things. Hidden bodies (in containers or darkness below visibility threshold) are not perceived.",
+      "acceptance": "- AC-1 [unit] Given a door normally closed is open, when a guard perceives it, then it becomes Suspicious and investigates the door.\n- AC-2 [unit] Given a guard perceives an unconscious body, when evaluated, then it enters Alerted, investigates the body and may wake it (unconscious ally wakes after 3 s interaction).\n- AC-3 [unit] Given a body placed in a container or in light ≤ 0.1 beyond 6 m, when a guard walks its route, then the body is not perceived.\n- AC-4 [unit] Given a torch normally lit is extinguished, when a guard perceives the dark torch, then it becomes Suspicious (not Alerted) with cause `light-out`.\n- AC-5 [unit] Given a guard itself opened a door on its route, when it later perceives that door open, then no anomaly is raised.\n- AC-6 [integration] Given a scenario where the player knocks out guard A and leaves the body in a lit corridor on guard B’s route, when guard B passes, then guard B enters Alerted within 2 s of the body entering its view.",
+      "depends_on": [
+        "e11-perception",
+        "e11-alert-states",
+        "e27-world-state-store",
+        "e03-light-field",
+        "e03-doors-locks-switches"
+      ]
+    },
+    {
+      "key": "e09-visibility-hud",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Stealth HUD: light exposure, noise ring and stance readout",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:ui",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nStealth cannot be an eye icon: the player needs to read the inputs — how lit they are and how loud they are — to make decisions.\n\n## What\nAs a thief, I want to see how exposed and how loud I am so that I can make informed choices. Elements: light-exposure gem (continuous, 5 visual bands, driven by self-visibility), noise ring around the character footprint that pulses at each emitted noise scaled to its audible radius for a typical guard, stance/gait indicator, and optional diegetic cue (character material darkens in shadow). All toggleable and scalable via settings.\n\n## Scope\n- In: HUD components in `src/ui`, data binding from sim\n- In: Placeholder art (CSS/SVG shapes)\n- In: Settings toggles\n- Out: Per-enemy awareness (e09-awareness-indicators)\n- Out: Final UI art (asset beads)\n\n## Notes\nNoise ring radius = distance at which the emitted noise drops to the baseline humanoid hearing threshold in open space.",
+      "acceptance": "- AC-1 [unit] Given self-visibility 0.05, when the HUD model is computed, then the gem shows band 1 of 5; at 0.95 band 5.\n- AC-2 [unit] Given a 40 dB footstep and a 30 dB baseline threshold, when the noise ring is computed, then its radius is ≈ 3.2 m (10^(10/20)).\n- AC-3 [integration] Given the settings toggle `hud.stealth=false`, when the HUD renders, then no stealth elements are present.\n- AC-4 [e2e] Given the stealth grey-box course, when the player walks from a lit area into shadow, then the gem band decreases within 250 ms.\n- AC-5 [manual] Given a playtest with 3 players, when asked to explain the gem and ring without instructions after 5 min, then at least 2 describe both correctly.",
+      "depends_on": [
+        "e09-visibility-model",
+        "e09-footstep-noise",
+        "e31-settings-framework"
+      ]
+    },
+    {
+      "key": "e09-awareness-indicators",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Directional awareness indicators showing each enemy’s alert state",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:ui",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nPlayers must see who is noticing them, from where, how close to detection, and why — without the omniscient radar that kills tension.\n\n## What\nAs a thief, I want directional indicators for enemies becoming aware of me so that I can react before being caught. For each agent with awareness > 0 of the player: an indicator near the agent (on-screen) or screen-edge chevron (off-screen) that fills with awareness and changes shape per alert state (6 distinct shapes, not colour alone), plus a cause glyph (eye = saw, ear = heard, hand = anomaly). Indicators only appear for agents the player could plausibly perceive (on-screen or heard), preserving uncertainty.\n\n## Scope\n- In: Indicator model from awareness + state + dominant cause\n- In: On-screen and off-screen rendering\n- In: Colour-blind-safe shapes\n- Out: Text barks (e09-alert-barks)\n- Out: Last-known-position ghost (e09-lkp-ghost)\n\n## Notes\nIndicators for agents the player has not perceived (behind walls, silent) are hidden unless an accessibility assist enables them (e09-stealth-assists).",
+      "acceptance": "- AC-1 [unit] Given an agent at awareness 0.45 in Suspicious caused by hearing, when the indicator model is built, then fill = 0.45, shape = `suspicious`, glyph = `ear`.\n- AC-2 [unit] Given an agent behind a wall that has not been seen or heard by the player, when the model is built with assists off, then no indicator is produced.\n- AC-3 [unit] Given each of the six states, when shapes are resolved, then six distinct shape ids are returned.\n- AC-4 [e2e] Given the stealth grey-box course, when a guard off-screen to the left becomes Suspicious from a noise, then a left-edge chevron appears within 1 frame of the state change.\n- AC-5 [unit] Given 12 aware agents, when the model is built, then at most 6 indicators are shown, prioritised by awareness × proximity.",
+      "depends_on": [
+        "e11-alert-states",
+        "e11-awareness-accumulation",
+        "e02-camera"
+      ]
+    },
+    {
+      "key": "e09-lkp-ghost",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Show a last-known-position ghost where enemies think you are",
+      "priority": 2,
+      "labels": [
+        "epic:e09",
+        "area:ui",
+        "area:render",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nShowing where guards believe you are turns last-known position into a tool — the player can see the gap between belief and reality and exploit it.\n\n## What\nAs a thief, I want to see a faint silhouette where the enemies last saw me so that I can plan to double back or set up an ambush. When at least one hunting agent (Searching/Alerted) holds a player LKP and the player is out of its perception, render a translucent silhouette at the LKP in the stance last observed. Disappears when all agents lose the memory or re-acquire. Toggleable.\n\n## Scope\n- In: Ghost model from aggregated agent memories\n- In: Placeholder translucent capsule silhouette\n- In: Settings toggle\n- Out: Accurate player mesh silhouette (asset integration later)\n\n## Notes\nAggregate: show the most recent LKP among hunting agents; if two diverge by > 10 m, show both.",
+      "acceptance": "- AC-1 [unit] Given one Searching agent with an LKP and no perception of the player, when the ghost model is built, then one ghost at that LKP is returned.\n- AC-2 [unit] Given the agent re-acquires the player, when the model is built, then no ghost is returned.\n- AC-3 [unit] Given two hunting agents with LKPs 15 m apart, when built, then two ghosts are returned; if 5 m apart, one.\n- AC-4 [e2e] Given the stealth grey-box course, when the player breaks LOS from an Alerted guard, then a ghost appears at the break point within 250 ms.",
+      "depends_on": [
+        "e11-memory-lkp",
+        "e29-vfx-framework",
+        "e31-settings-framework"
+      ]
+    },
+    {
+      "key": "e09-alert-barks",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Text barks and audio stingers on alert state transitions",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:game",
+        "area:audio",
+        "area:ui",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nPlayers read enemy minds through barks (\"Who’s there?\", \"Must be rats…\"). With no voice in MVP, text barks plus audio stingers carry this.\n\n## What\nAs a thief, I want guards to mutter and call out as their state changes so that I understand what they think without a UI meter. Bark tables per behaviour profile map (transition, cause) → weighted lines, shown as floating subtitle text near the speaker within hearing range; audio stinger per escalation (placeholder tones) via the audio engine; cooldowns prevent spam. Barks also enable stealth-layer music hooks.\n\n## Scope\n- In: Bark table schema + selection (seeded)\n- In: Floating text renderer with distance fade\n- In: Stinger cue ids + cooldowns\n- Out: Voice acting (no voice in MVP)\n- Out: Adaptive music system (Related: E28/E38 music layering)\n- Out: Final bark writing (narrative pass, Related: e39-story-bible tone)\n\n## Notes\nStingers: `sfx-stealth-suspicious-01`, `sfx-stealth-alerted-01`, `sfx-stealth-combat-01`, `sfx-stealth-lost-01` — placeholder beeps until asset beads land.",
+      "acceptance": "- AC-1 [unit] Given a Unaware→Suspicious transition with cause `heard`, when a bark is selected with a fixed seed, then it comes from the `suspicious.heard` table and is deterministic.\n- AC-2 [unit] Given the same agent barked 2 s ago with cooldown 5 s, when a new transition occurs, then no bark is shown.\n- AC-3 [unit] Given a speaker 40 m away beyond hearing range, when a bark would show, then it is suppressed for the player.\n- AC-4 [integration] Given an escalation to Alerted, when it occurs, then exactly one stinger cue is played via the audio engine.\n- AC-5 [content] Given a bark table referencing an unknown transition key, when validated, then validation fails.",
+      "depends_on": [
+        "e11-alert-states",
+        "e28-audio-engine"
+      ]
+    },
+    {
+      "key": "e09-failed-stealth-outcomes",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Failed stealth escalates into new situations, not reload screens",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:sim",
+        "area:content",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\nFailure creates stories. Being spotted should cause lockdowns, reinforcements, changed patrols or a chase — situations the player can still play through.\n\n## What\nAs a thief, I want getting caught to change the level rather than end my run so that I can improvise an escape. Area alarm levels (0 calm, 1 wary, 2 alarm, 3 lockdown) per zone driven by alarms, bodies found and combat. Data-defined responses per zone and level: lock specified doors, light extra lights, reinforce posts from a reserve pool (pre-placed, activated — not spawned from nowhere), release hounds, shift patrols; decay back after N minutes of calm to a stable “wary” level, never fully reset. Responses recorded in world state.\n\n## Scope\n- In: Zone alarm model + response data + decay\n- In: Integration with doors, lights, reserve creatures\n- In: World state persistence\n- Out: Crime/bounty system across settlements (Related: E22/E27 crime; not in this epic)\n- Out: Specific dungeon zone authoring (E26)\n\n## Notes\nReserve pool creatures are placed in level data with `reserve: <zone>`; activation paths them in from their barracks so the player can see them come.",
+      "acceptance": "- AC-1 [unit] Given zone Z at level 0, when an alarm device activates in Z, then Z becomes level 2 and all level-2 responses fire once.\n- AC-2 [unit] Given a level-3 response `lock-doors: [d1, d2]`, when triggered, then d1 and d2 are locked via the door system and pathfinding reflects it.\n- AC-3 [unit] Given no alarm triggers for 5 sim minutes at level 2, when the decay rule runs, then Z drops to level 1 (never to 0 once an alarm has occurred).\n- AC-4 [unit] Given a reserve creature already killed or knocked out by the player, when reinforcements are called, then it is not activated and no replacement is spawned.\n- AC-5 [integration] Given a save while Z is at level 2, when loaded, then Z is at level 2 with its responses applied.\n- AC-6 [integration] Given the stealth grey-box course, when the player is spotted and the alarm rung, then the course remains completable via at least one alternate route (scripted e2e path succeeds).",
+      "depends_on": [
+        "e11-communication",
+        "e03-doors-locks-switches",
+        "e03-light-field",
+        "e27-world-state-store",
+        "e12-creature-spawner"
+      ]
+    },
+    {
+      "key": "e09-stealth-greybox-course",
+      "epic": "mw-e09",
+      "type": "task",
+      "title": "Build the stealth grey-box course covering every stealth input",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:content",
+        "area:qa",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nStealth systems need one playable space that exercises light, sound, surfaces, doors, verticality and hiding for e2e tests and tuning playtests.\n\n## What\nA grey-box level `greybox/stealth-course` with labelled stations: light/dark gradient hall, surface strip (carpet/stone/gravel/creaky wood/water), door maze (open/closed/locked), vertical hall with rafters and ledges, hiding place gallery, distraction room, patrol yard with 3 fixture guards, alarm bell zone with reserve guards. Includes a baked navmesh, room/portal graph and patrol routes.\n\n## Scope\n- In: Level data, placeholder props, patrol routes, spawn points\n- In: Console `tp station <n>`\n- Out: Final dungeon content (E26)\n- Out: Art\n\n## Notes\nUsed by e09 e2e ACs, e09-infiltration-scenarios and e10 thief challenge.",
+      "acceptance": "- AC-1 [e2e] Given the course, when loaded in the browser, then all 8 stations are reachable and no console errors appear.\n- AC-2 [content] Given the course data, when validated, then navmesh, portal graph and patrol routes pass validation.\n- AC-3 [integration] Given `tp station 3`, when entered, then the player is at the door maze start.\n- AC-4 [perf] Given the course with all guards active, when measured on the reference machine (High), then frame time p95 ≤ 16.7 ms.",
+      "depends_on": [
+        "e00-greybox-testbed",
+        "e11-navigation",
+        "e11-patrol-routines",
+        "e09-sound-propagation",
+        "e09-surface-acoustics"
+      ]
+    },
+    {
+      "key": "e09-infiltration-scenarios",
+      "epic": "mw-e09",
+      "type": "task",
+      "title": "Deterministic infiltration replay scenarios with asserted guard states",
+      "priority": 1,
+      "labels": [
+        "epic:e09",
+        "area:qa",
+        "area:sim",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nReleases must be trusted without reading code. Scripted infiltrations with asserted guard states prove the stealth systems work together and stay working.\n\n## What\nA suite of ≥ 10 headless scenarios using the AI scenario harness on the stealth course layouts, each with a scripted player path and asserted guard states over time. Scenarios: shadow sneak (never above Suspicious), sprint on gravel (Suspicious ≤ 1 s), closed-door muffling, thrown distraction lure, break LOS and hide (guard ends Searching then postAlert Unaware), body discovery → Alerted, alarm → zone level 2, rafters crossing, hiding-place seen-enter, ally communication chain. Each records a state-hash sequence as a regression baseline.\n\n## Scope\n- In: Scenario files, baselines, CI job\n- In: Readable failure timelines\n- Out: Browser e2e (course e2e ACs)\n\n## Notes\nScenarios reference fixture creatures only so bestiary tuning never breaks them.",
+      "acceptance": "- AC-1 [integration] Given the shadow-sneak scenario, when run, then no guard exceeds Suspicious for the full 60 s.\n- AC-2 [integration] Given the break-LOS scenario, when run, then the guard sequence is Combat → Searching → Unaware(postAlert) with the Searching phase starting within 5 s of LOS break.\n- AC-3 [integration] Given the closed-door scenario, when the same noise is made with the door open vs closed, then the guard enters Suspicious only in the open case.\n- AC-4 [integration] Given every scenario, when run twice, then state-hash sequences are identical to each other and to the committed baseline.\n- AC-5 [integration] Given a deliberately broken rule (test-only flag doubling light weight), when the suite runs, then at least 3 scenarios fail (the suite actually detects regressions).\n- AC-6 [perf] Given the full suite, when run in CI, then it completes in ≤ 30 s.",
+      "depends_on": [
+        "e11-ai-scenario-harness",
+        "e09-hiding-places",
+        "e09-anomaly-detection",
+        "e09-failed-stealth-outcomes",
+        "e10-thrown-distractions",
+        "e09-verticality"
+      ]
+    },
+    {
+      "key": "e09-stealth-assists",
+      "epic": "mw-e09",
+      "type": "feature",
+      "title": "Stealth accessibility assists: slower detection, stronger cues",
+      "priority": 2,
+      "labels": [
+        "epic:e09",
+        "area:ui",
+        "area:sim",
+        "milestone:m3",
+        "class:thief"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nStealth must be approachable for players with different reaction speeds, hearing or vision without removing its systemic nature.\n\n## What\nAs a player, I want stealth assist options so that I can enjoy infiltration at my own pace. Options: detection speed (50–150%), show indicators for unperceived agents, visual captions for noise events (“Footsteps — left”), stronger visibility gem contrast, extended hiding stagger window. Applied via the whitelisted stealth/AI tuning overrides.\n\n## Scope\n- In: Settings entries, override application, captions for noise events\n- Out: Global accessibility framework (E31)\n\n## Notes\nAssists alter tuning inputs only; rules stay identical so scenario tests still hold at 100%.",
+      "acceptance": "- AC-1 [unit] Given detection speed 50%, when a constant stimulus accumulates, then time to Suspicious doubles versus 100%.\n- AC-2 [integration] Given noise captions on, when a 40 dB noise is perceived by the player from the left, then a caption with direction `left` appears within 100 ms.\n- AC-3 [unit] Given an assist value outside the allowed range in settings storage, when loaded, then it clamps to the nearest bound.\n- AC-4 [integration] Given all assists off, when the infiltration suite runs, then baselines are unchanged.",
+      "depends_on": [
+        "e09-stealth-tuning-data",
+        "e09-awareness-indicators",
+        "e31-settings-framework"
+      ]
+    },
+    {
+      "key": "e09-stealth-feel-pass",
+      "epic": "mw-e09",
+      "type": "task",
+      "title": "Playtest and tune stealth feel on the grey-box course",
+      "priority": 2,
+      "labels": [
+        "epic:e09",
+        "area:design",
+        "area:qa",
+        "milestone:m4",
+        "class:thief"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nA perfectly executed infiltration should feel as satisfying as a hard fight; only playtesting confirms that.\n\n## What\nRun 5 playtest sessions on the stealth course and first dungeon grey-box, record telemetry (detections, causes, time in each state, restarts), adjust tuning data, document changes in `docs/design/stealth-tuning-log.md`.\n\n## Scope\n- In: Sessions, telemetry capture, tuning edits, log\n- Out: New mechanics (file new beads)\n\n## Notes\nTuning changes that alter scenario baselines must update them in the same PR with rationale.",
+      "acceptance": "- AC-1 [manual] Given 5 sessions, when players complete the course, then ≥ 4 of 5 rate stealth ≥ 4/5 for “I understood why I was seen”.\n- AC-2 [integration] Given telemetry events for alert transitions, when exported, then each includes cause, state, and time-in-state fields.\n- AC-3 [manual] Given the tuning log, when reviewed, then each change lists the metric that motivated it.",
+      "depends_on": [
+        "e09-infiltration-scenarios",
+        "e09-visibility-hud",
+        "e09-awareness-indicators",
+        "e34-telemetry-events"
+      ]
+    },
+    {
+      "key": "e10-thief-tool-items",
+      "epic": "mw-e10",
+      "type": "task",
+      "title": "Define thief tool item data: lockpicks, throwables, smoke, traps",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:content",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nThief tools are data-driven items so shops, loot and progression can hand them out without code.\n\n## What\nItem definitions (in the inventory schema) for: lockpick set (durability), coin/pebble/bottle throwables (impact noise, breakable), smoke bomb, flash powder, noisemaker trap, tripwire kit, caltrops, rope, water flask (extinguish), sap/blackjack (non-lethal), disguise items referencing faction. Each carries world properties (weight, fragile, noise) and tags consumed by E10 features.\n\n## Scope\n- In: Item data files + tests\n- In: Tags: `tool:lockpick`, `throwable`, `trap:*`, `disguise:<faction>`\n- Out: Loot/shop placement (E18/E20)\n- Out: Icons (asset beads)\n\n## Notes\nPlaceholder icon ids: `icon-tool-lockpick`, `icon-throw-coin`, `icon-throw-bottle`, `icon-smoke-bomb`, `icon-trap-noisemaker`, `icon-trap-tripwire`, `icon-caltrops`, `icon-water-flask`, `icon-sap`.",
+      "acceptance": "- AC-1 [content] Given each thief item file, when validated, then it passes the inventory item schema and carries its required tags.\n- AC-2 [content] Given a throwable without an impact noise value, when validated, then validation fails.\n- AC-3 [unit] Given a lockpick set with durability 10, when resolved, then durability is 10 and it stacks to max 5 sets.\n- AC-4 [content] Given every thief item, when the content harness runs, then each has at least one automated test (spawn into inventory + use).",
+      "depends_on": [
+        "e17-inventory-core",
+        "e03-world-properties"
+      ]
+    },
+    {
+      "key": "e10-thrown-distractions",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Throw objects to create noise distractions guards investigate",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nThrown distractions are the thief’s first verb in the progression ladder (Sneak → distractions → …) and a classic stealth tool.\n\n## What\nAs a thief, I want to throw a coin or bottle so that guards look away or walk over to investigate. Any `throwable` item or physics object can be aimed (trajectory preview arc) and thrown; on impact it emits a noise event = item impact dB + surface offset; `fragile` items shatter (louder, leave shards as `glass-shards` surface). Guards perceive the propagated noise and investigate the perceived position. Thrown object remains in the world (anomaly if found near a post repeatedly — hook).\n\n## Scope\n- In: Throw aim + arc preview + release\n- In: Impact noise via sound propagation + surface\n- In: Pickup-able thrown objects (non-fragile)\n- Out: Combat throwing damage (E04)\n- Out: Arrows (E05)\n\n## Notes\nUses physics objects for the throw; the noise rule is property-based (`throwable`, `fragile`), never item-specific.",
+      "acceptance": "- AC-1 [unit] Given a coin (impact 45 dB) landing on stone 10 m from a guard with threshold 30 dB, when propagated, then the guard receives a heard-noise stimulus and enters Suspicious.\n- AC-2 [unit] Given a bottle tagged `fragile` landing, when it hits any surface, then it shatters, emits the fragile-break loudness and adds a `glass-shards` surface patch.\n- AC-3 [unit] Given a coin landing on carpet, when propagated to the same guard, then perceived loudness is reduced by the carpet offset and the guard stays Unaware.\n- AC-4 [integration] Given the distraction-room scenario, when the player throws a bottle behind a guard, then the guard turns and investigates the impact location within 2 s.\n- AC-5 [unit] Given a throw into water, when it lands, then a `splash` noise kind is emitted and the object sinks (not retrievable unless shallow).\n- AC-6 [e2e] Given the stealth grey-box course, when the player aims, then a trajectory arc renders and the landing marker matches the actual landing point within 0.5 m.",
+      "depends_on": [
+        "e03-physics-objects",
+        "e09-sound-propagation",
+        "e09-surface-acoustics",
+        "e11-investigate-behaviour",
+        "e10-thief-tool-items",
+        "e02-input-actions"
+      ]
+    },
+    {
+      "key": "e10-extinguish-lights",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Extinguish and relight light sources to reshape the shadows",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nExtinguishing lights lets thieves create their own darkness, and any system that affects light (water, wind, frost magic) should work too.\n\n## What\nAs a thief, I want to snuff candles and douse torches so that I can create shadows where I need them. Light sources with property `extinguishable` go out from: interact (pinch/snuff, quiet), any `wet`/water effect via element propagation (thrown water flask, rain), strong wind/gust effects, frost. `ignitable` light sources relight from any fire source. Light-field updates immediately; extinguishing emits a small noise and creates an anomaly (e09-anomaly-detection).\n\n## Scope\n- In: Light source state + property-based rules\n- In: Interact snuff action\n- In: Light-field update + anomaly record\n- Out: Light-field implementation (e03-light-field)\n- Out: Water arrows (E05) — works automatically via property\n\n## Notes\nMagical lights may be tagged non-extinguishable; that is data.",
+      "acceptance": "- AC-1 [unit] Given any `extinguishable` light within a water/wet effect volume, when the effect applies, then the light turns off and the light-field level at 2 m drops to the ambient value within 1 tick.\n- AC-2 [unit] Given an `ignitable` unlit torch in contact with any fire source, when 0.5 s passes, then it relights.\n- AC-3 [unit] Given a light tagged non-extinguishable, when water hits it, then it stays lit.\n- AC-4 [integration] Given the player snuffs a candle via interact, when complete, then a ≤ 15 dB noise is emitted and an anomaly `light-out` is registered for that light.\n- AC-5 [integration] Given a guard walking past a torch the player extinguished, when perceived, then the guard enters Suspicious with cause `light-out`.",
+      "depends_on": [
+        "e03-light-field",
+        "e03-element-propagation",
+        "e02-interaction",
+        "e09-anomaly-detection"
+      ]
+    },
+    {
+      "key": "e10-takedowns",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Backstabs and non-lethal takedowns on unaware targets",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\nOpportunistic combat is the thief’s combat fantasy: ambushes and takedowns reward patience and positioning.\n\n## What\nAs a thief, I want to backstab or knock out an unaware enemy from behind so that a clean infiltration can thin the guard without a fight. Conditions: target alert state ∈ {Unaware, Suspicious}, player within rear arc (±60°) and 1.5 m, target does not perceive the player this think. Lethal backstab: damage multiplier from damage model (lethal on humanoids by default). Non-lethal (sap/choke): target becomes `unconscious` for a data-defined duration (default 10 min sim) unless woken. Creature schema flags (`immune-to-knockout` for undead/constructs, `no-backstab` for huge creatures) gate the verbs. Takedown emits noise (choke 20 dB, backstab 35 dB). Failed attempts (target turns) cause a scuffle: target enters Combat staggered.\n\n## Scope\n- In: Prompt availability, execution, outcomes, noise\n- In: Creature flags gating\n- In: Failure scuffle outcome\n- Out: Environmental takedowns (e10-environmental-takedowns)\n- Out: Animations (placeholder snaps)\n\n## Notes\nUnconscious bodies are carriable (e10-body-carry-hide) and anomalies (e09-anomaly-detection).",
+      "acceptance": "- AC-1 [unit] Given an Unaware humanoid and the player 1 m behind within 60°, when takedown is evaluated, then both backstab and knockout verbs are available.\n- AC-2 [unit] Given the same target in Investigating or higher, when evaluated, then no takedown verb is available.\n- AC-3 [unit] Given a creature flagged `immune-to-knockout`, when evaluated, then only backstab is available.\n- AC-4 [unit] Given a knockout, when executed, then the target is `unconscious` for 600 s sim and a 20 dB noise is emitted at its position.\n- AC-5 [unit] Given the target perceives the player during the 0.5 s wind-up, when the takedown resolves, then it fails, the target enters Combat and is staggered for 0.8 s.\n- AC-6 [integration] Given the patrol-yard scenario, when the player knocks out a guard out of sight of others, then the other guards remain Unaware.",
+      "depends_on": [
+        "e04-damage-model",
+        "e11-alert-states",
+        "e11-perception",
+        "e02-interaction",
+        "e12-creature-schema"
+      ]
+    },
+    {
+      "key": "e10-body-carry-hide",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Carry and hide unconscious or dead bodies",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nHiding bodies is how thieves cover their tracks; a body left in the light should cause the alarm the player earned.\n\n## What\nAs a thief, I want to pick up and hide bodies so that patrols do not discover what I did. Pick up unconscious/dead humanoid-size creatures (size class limit), carry at reduced speed (−40%) and no sneak-sprint, higher visibility (+profile), drop or place into hiding places with `body-capacity` (chests, wardrobes, deep shadow, water). Placed bodies inside containers are invisible to anomaly detection; bodies in darkness depend on visibility. Unconscious creatures carried keep their wake timer.\n\n## Scope\n- In: Carry state, movement modifiers, drop/place\n- In: Body containers\n- In: Integration with anomaly detection\n- Out: Ragdoll physics beyond placeholder (Related: physics/animation)\n- Out: Looting bodies (e17 / E18)\n\n## Notes\nDropping a body emits a thud noise scaled by surface (e.g. 35 dB on stone).",
+      "acceptance": "- AC-1 [unit] Given an unconscious guard, when the player picks it up, then player speed is ×0.6 and the visibility profile term increases by the configured amount.\n- AC-2 [unit] Given the player carrying a body, when placed into a container with body capacity 1, then the body is hidden and the container is full.\n- AC-3 [unit] Given a body placed in a container, when a guard perceives the container, then no body anomaly is raised unless the guard opens it.\n- AC-4 [unit] Given a creature larger than the carry size limit, when pickup is attempted, then it is refused with reason `too-heavy`.\n- AC-5 [unit] Given the unconscious carried guard’s wake timer expires, when it wakes while carried, then it is dropped, enters Alerted and the player is staggered 0.5 s.",
+      "depends_on": [
+        "e10-takedowns",
+        "e09-hiding-places",
+        "e09-anomaly-detection",
+        "e03-physics-objects"
+      ]
+    },
+    {
+      "key": "e10-lockpicking-design-spike",
+      "epic": "mw-e10",
+      "type": "spike",
+      "title": "Spike: systemic lockpicking design that stays in the world",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:design",
+        "area:sim",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nThe constitution prefers world systems over disconnected minigames. Lockpicking must keep the player in the world, exposed to guards and noise, while still involving skill.\n\n## What\nTime-box 1 day. Question: how can lockpicking be an in-world, interruptible action with a light skill layer (e.g. timing tension clicks while the camera stays third-person) instead of a full-screen minigame? Prototype 2 variants in the grey-box (A: timed hold with pin-click timing windows; B: pure duration by lock quality vs tool/skill with noise risk), evaluate readability, tension with nearby guards, accessibility (a no-skill option), and progression hooks. ADR with recommendation.\n\n## Scope\n- In: Two prototypes in `spikes/lockpicking/`\n- In: ADR with lock data shape (quality, pins, noise per failure, jam chance)\n- Out: Production lockpicking (e10-lockpicking)\n\n## Notes\nMust remain compatible with sorcerer/knight alternatives (Unlock spell, bashing) via the same lock component from e03-doors-locks-switches.",
+      "acceptance": "- AC-1 [manual] Given the ADR, when reviewed, then it records the choice, rejected alternatives, and a data shape for lock quality.\n- AC-2 [manual] Given 3 internal testers, when trying both prototypes near a patrolling guard, then preferences and time-to-open are recorded in the ADR.\n- AC-3 [manual] Given the ADR, when read, then it specifies an accessibility mode that removes timing requirements.",
+      "depends_on": [
+        "e03-doors-locks-switches",
+        "e00-greybox-testbed"
+      ]
+    },
+    {
+      "key": "e10-lockpicking",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Pick locks as an in-world, interruptible, noisy action",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "area:ui",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nLocked doors and chests are the thief’s signature alternate routes; picking them in the world while guards patrol creates tension.\n\n## What\nAs a thief, I want to pick locks while staying aware of my surroundings so that opening a door is a tense, skilful choice rather than a menu. Implements the ADR: locks carry quality (1–5), pin count, jam chance; picking is an in-world action (player stays visible and hearable, camera third-person) consuming lockpick durability; skill layer per ADR with an accessibility no-timing mode. Failures emit small noises and may break a pick; jamming a lock makes it unpickable (bash/magic still work). Progression hooks raise max quality.\n\n## Scope\n- In: Lock component extension, pick action, noise, durability, jam\n- In: In-world UI overlay (placeholder)\n- In: Accessibility mode\n- Out: Door/lock base mechanics (e03-doors-locks-switches)\n- Out: Unlock spells/bashing (E06/E04, same component)\n\n## Notes\nDefault noise per failed pin 18 dB; broken pick 25 dB.",
+      "acceptance": "- AC-1 [unit] Given a quality-2 lock and one lockpick set, when the pick action completes successfully, then the lock is unlocked and durability decreases by 1.\n- AC-2 [unit] Given a failed pin attempt, when resolved, then an 18 dB noise event is emitted at the lock.\n- AC-3 [unit] Given a lock jams (seeded chance), when evaluated, then further pick attempts are refused with reason `jammed` while other unlock methods still work.\n- AC-4 [unit] Given the player is attacked or moves > 0.5 m while picking, when resolved, then the action is interrupted and progress is lost.\n- AC-5 [unit] Given lock quality above the player’s unlocked max, when the prompt is evaluated, then picking is not offered and the prompt says why.\n- AC-6 [integration] Given accessibility no-timing mode, when picking a quality-3 lock, then it completes after the documented duration without input timing.\n- AC-7 [e2e] Given the stealth grey-box door maze, when the player picks a locked door, then the door opens and the navmesh link becomes traversable.",
+      "depends_on": [
+        "e10-lockpicking-design-spike",
+        "e03-doors-locks-switches",
+        "e10-thief-tool-items",
+        "e09-sound-propagation",
+        "e19-progression-core"
+      ]
+    },
+    {
+      "key": "e10-pickpocketing",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Pickpocket and plant items on creatures from behind",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "area:ui",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\nPickpocketing creates emergent solutions: steal a key instead of picking a lock, plant evidence, lift a guard’s disguise pass.\n\n## What\nAs a thief, I want to lift items from, or plant items on, unaware creatures so that I can solve problems without violence. Available when target is Unaware/Suspicious, not perceiving the player, within 1.2 m behind/side arc. Opens a compact in-world list of visible pockets (creature inventory items flagged `pocketable`). Each attempt takes time by item weight; success chance falls with target awareness and item weight; a failed attempt raises target awareness sharply (Alerted if it turns and sees you). Theft is recorded (disposition/faction events for witnesses).\n\n## Scope\n- In: Pickpocket and plant actions, success model, witness events\n- In: Creature inventory integration\n- In: Compact UI (placeholder)\n- Out: Creature loot tables (e18-loot-tables)\n- Out: Crime/bounty (Related: crime system)\n\n## Notes\nSuccess probability formula documented in tuning data; seeded RNG.",
+      "acceptance": "- AC-1 [unit] Given an Unaware guard with a `pocketable` key, when the player attempts from behind at 1 m, then the item transfers on success and the attempt takes the weight-scaled duration.\n- AC-2 [unit] Given a failed attempt, when resolved, then the target’s awareness increases by the configured spike and it turns toward the player.\n- AC-3 [unit] Given a witness guard perceives the theft, when resolved, then a `witnessed-theft` event fires applying disposition and faction modifiers.\n- AC-4 [unit] Given a target with no pocketable items, when the prompt is evaluated, then the verb is offered but the list shows “Nothing to take” (still allows planting).\n- AC-5 [unit] Given the target walks out of range mid-attempt, when resolved, then the attempt cancels without a transfer or awareness spike.\n- AC-6 [integration] Given the player plants an item on a guard, when saved and loaded, then the guard’s inventory contains the planted item.",
+      "depends_on": [
+        "e17-inventory-core",
+        "e11-alert-states",
+        "e11-perception",
+        "e02-interaction",
+        "e12-dispositions",
+        "e12-factions-relationships"
+      ]
+    },
+    {
+      "key": "e10-climbing",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Climb tagged surfaces, ledges and ropes with stamina",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nClimbing is how the thief reaches the window, the rooftop and the rafters — the class-specific alternate route.\n\n## What\nAs a thief, I want to climb rough walls, vines, ladders and ropes so that I can take routes other classes cannot. Surfaces with property `climbable` (with difficulty) allow climbing; ledges allow shimmy and mantle; placed ropes (from items) create temporary climbable lines. Climbing drains stamina per difficulty; running out causes a fall (noise + damage by height). Class/progression gates higher difficulties. Climbing is quiet (−10 dB vs walk) but you are silhouetted on walls (contrast rule).\n\n## Scope\n- In: Climb state machine on top of controller climb hooks\n- In: Stamina drain + fall\n- In: Rope placement creating climbable volume + nav link for climbers\n- Out: Core controller physics (e02-player-controller)\n- Out: Climbing animations (placeholders)\n\n## Notes\nClimb routes also produce off-mesh links usable by climber creatures (e11-navigation).",
+      "acceptance": "- AC-1 [unit] Given a `climbable` difficulty-2 wall and a thief with max climb difficulty 3, when climb is initiated, then the player enters Climbing state.\n- AC-2 [unit] Given a knight with max climb difficulty 1, when attempting the same wall, then climb is refused with a reason prompt.\n- AC-3 [unit] Given stamina reaches 0 while climbing 4 m up, when the tick runs, then the player falls, takes fall damage per curve and a landing noise is emitted.\n- AC-4 [unit] Given a rope placed on an anchor point, when complete, then a climbable volume and an off-mesh climb link exist until the rope is retrieved.\n- AC-5 [e2e] Given the stealth course vertical hall, when the player climbs to the rafters, then the player stands on the rafter platform within 10 s of input with no console errors.",
+      "depends_on": [
+        "e02-player-controller",
+        "e03-world-properties",
+        "e11-navigation",
+        "e19-progression-core"
+      ]
+    },
+    {
+      "key": "e10-disguises",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Disguises that fool factions until behaviour gives you away",
+      "priority": 2,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nDisguises are a later thief verb in the progression ladder and create social infiltration moments.\n\n## What\nAs a thief, I want to wear a faction’s uniform so that I can walk among guards if I behave. Equipping a `disguise:<faction>` item makes that faction’s members treat the player as `disguised` instead of intruder: sight stimuli accumulate a separate suspicion meter driven by proximity (< 3 m), suspicious behaviour (running, crouching, climbing, being in restricted zones, being seen committing crimes, carrying bodies), and observer traits (officers and dogs see through faster; `sees-through-disguise` flag). Suspicion full → disguise blown for that zone (remembered).\n\n## Scope\n- In: Disguise state, per-observer suspicion rules, restricted zone data, blown-state memory\n- Out: Dialogue with disguised player (E22)\n- Out: Uniform art (placeholder recolour)\n\n## Notes\nSuspicion rules are tuning data; restricted zones are level regions.",
+      "acceptance": "- AC-1 [unit] Given the player wears a disguise of faction A and walks at normal speed 8 m from an A guard in a public zone, when 30 s pass, then the guard remains Unaware.\n- AC-2 [unit] Given the same player sprints within 3 m, when evaluated, then disguise suspicion accumulates at the running rate and the guard enters Suspicious within 3 s.\n- AC-3 [unit] Given an observer flagged `sees-through-disguise`, when it perceives the player, then the disguise is ignored.\n- AC-4 [unit] Given the disguise is blown in zone Z, when the player re-enters Z still disguised, then Z’s guards treat the player as an intruder.\n- AC-5 [unit] Given a faction B guard, when perceiving the player in faction A disguise, then normal intruder rules apply.",
+      "depends_on": [
+        "e12-factions-relationships",
+        "e11-perception",
+        "e11-awareness-accumulation",
+        "e17-inventory-core",
+        "e10-thief-tool-items"
+      ]
+    },
+    {
+      "key": "e10-trap-placement",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Place traps: noisemakers, tripwires and caltrops",
+      "priority": 2,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nTraps let the thief shape the battlefield ahead of time — dirty tricks and disengagement are the thief combat fantasy.\n\n## What\nAs a thief, I want to place traps so that I can lure, slow or warn about enemies. Place trap items on valid surfaces with a placement preview: noisemaker (timed or triggered noise event), tripwire (trigger volume between two anchors → alarm noise for player, or trip/stagger), caltrops (slow + damage zone, noise when stepped). Traps are world objects with properties (flammable tripwire burns, etc.), perceivable by AI (visibility check); perceiving an armed trap makes AI avoid it and become Suspicious.\n\n## Scope\n- In: Placement preview + validity, trap objects, trigger logic via e03-triggers\n- In: AI avoidance of perceived traps (nav cost)\n- Out: World/dungeon traps and disarming (e10-trap-disarm)\n- Out: Trap art (placeholders)\n\n## Notes\nCreatures can trigger player traps; the player can too (friendly fire).",
+      "acceptance": "- AC-1 [unit] Given a caltrops item and a flat valid surface, when placed, then a slow zone (×0.5 speed) with damage 2/s exists at the location.\n- AC-2 [unit] Given a placement on a slope > 30° or in water, when previewed, then placement is invalid with reason.\n- AC-3 [unit] Given a tripwire between two anchors, when any creature crosses it, then its trigger fires once and it becomes spent.\n- AC-4 [unit] Given a guard perceives an armed caltrops zone, when pathing, then its path avoids the zone if an alternative exists and it enters Suspicious.\n- AC-5 [unit] Given a tripwire tagged `flammable` in a fire volume, when 1 s passes, then it burns and is removed without triggering.",
+      "depends_on": [
+        "e10-thief-tool-items",
+        "e03-triggers",
+        "e03-world-properties",
+        "e11-navigation",
+        "e11-perception"
+      ]
+    },
+    {
+      "key": "e10-trap-disarm",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Detect and disarm world traps; failures trigger them",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nTriggered traps should create new situations rather than reloads; spotting and disarming them is thief expertise.\n\n## What\nAs a thief, I want to notice and disarm pressure plates, tripwires and dart traps so that I can open safe routes — and accept the chaos when I fail. Traps have a `concealment` value; the player perceives them via a proximity/light-based check (thieves have a bonus; sneaking slower improves it) which reveals a subtle highlight. Disarm is an in-world timed action (like lockpicking) with a failure chance by trap quality; failure triggers the trap. Disarmed traps can be picked up (become placeable items where data allows).\n\n## Scope\n- In: Trap detection check, reveal highlight, disarm action, fail-trigger\n- In: Salvage to item\n- Out: Trap mechanics/effects themselves (e03-triggers / e03-doors-locks-switches)\n- Out: Dungeon trap placement (E26)\n\n## Notes\nDetection uses light-field at trap position: dark traps are harder to spot.",
+      "acceptance": "- AC-1 [unit] Given a trap with concealment 0.5 in light 0.8, when a thief sneaks within 3 m, then it is detected within 1 s.\n- AC-2 [unit] Given the same trap in light 0.1, when a knight walks within 3 m, then it is not detected.\n- AC-3 [unit] Given a disarm attempt that fails (seeded), when resolved, then the trap triggers its normal effect.\n- AC-4 [unit] Given a successfully disarmed pressure plate, when a creature steps on it, then nothing triggers.\n- AC-5 [integration] Given a disarmed tripwire, when salvaged, then a tripwire kit item is added to inventory.",
+      "depends_on": [
+        "e03-triggers",
+        "e03-doors-locks-switches",
+        "e03-light-field",
+        "e02-interaction",
+        "e10-thief-tool-items"
+      ]
+    },
+    {
+      "key": "e10-smoke-escape",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Smoke bombs and flash powder break line of sight for escapes",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:game",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nEscape tools turn failed stealth into a chase instead of a death — the thief’s disengagement fantasy.\n\n## What\nAs a thief, I want to throw a smoke bomb so that I can break line of sight and slip away. Smoke bomb creates a gas volume (via element propagation, drifts and dissipates over 12 s) tagged `occlusion: partial:0.1` for LOS; creatures inside have sight disabled and cough (noise). Flash powder: instant stun for creatures facing it within 5 m (sight-dependent — blind/life-sense creatures unaffected). Losing LOS feeds LKP rules, so guards search where you vanished.\n\n## Scope\n- In: Smoke gas volume + LOS occlusion + dissipation\n- In: Flash stun rule by sense profile\n- In: Integration with memory/LKP\n- Out: Gas propagation engine (e03-element-propagation)\n- Out: VFX art (placeholders)\n\n## Notes\nSmoke is a gas: a Gust effect should clear it via the same gas rules (property-based).",
+      "acceptance": "- AC-1 [unit] Given a smoke volume between guard and player, when LOS is queried, then visible fraction ≤ 0.1.\n- AC-2 [unit] Given a smoke volume, when 12 s pass without wind, then it has dissipated and LOS is restored.\n- AC-3 [unit] Given flash powder within 5 m and a guard facing it, when detonated, then the guard is stunned 3 s; a creature without sight senses is not stunned.\n- AC-4 [integration] Given a Combat guard chasing the player, when the player throws smoke and runs 10 m sideways, then the guard enters Searching with LKP at the smoke cloud, not the player’s position.\n- AC-5 [unit] Given any gas-clearing wind effect through the smoke volume, when applied, then the volume moves/dissipates per gas rules.",
+      "depends_on": [
+        "e03-element-propagation",
+        "e09-line-of-sight",
+        "e11-memory-lkp",
+        "e10-thief-tool-items",
+        "e29-vfx-framework"
+      ]
+    },
+    {
+      "key": "e10-silent-movement",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Silent movement unlocks: soft steps, muffled gear, shadow dash",
+      "priority": 2,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "area:content",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nAnti-grind rule: progression unlocks verbs, not +12%. Silent movement should grow into new capabilities.\n\n## What\nAs a thief, I want to unlock ways to move more silently so that I can take bolder routes. Capability unlocks via the progression model: `soft-step` (sneak gait ignores creaky-board creaks and gravel offset), `muffled-gear` (equipment noise halved while sneaking), `shadow-dash` (short burst of sneak-speed movement at walk noise while in light ≤ 0.2). Each is a data-defined modifier applied to the footstep/visibility rules.\n\n## Scope\n- In: Three capability modifiers as data + rule hooks\n- Out: Progression UI and unlock sources (E19)\n\n## Notes\nModifiers alter inputs to e09-footstep-noise and e09-visibility-model only; rules stay pure.",
+      "acceptance": "- AC-1 [unit] Given `soft-step` unlocked, when sneaking on `wood-creaky`, then no creak event is ever emitted over 1,000 seeded steps.\n- AC-2 [unit] Given `muffled-gear` and equipment noise +10 dB, when sneaking, then the footstep includes +5 dB equipment noise.\n- AC-3 [unit] Given `shadow-dash` in light 0.5, when activated, then it is refused because light exceeds 0.2.\n- AC-4 [unit] Given no unlocks, when evaluated, then footstep results equal the base rule exactly.",
+      "depends_on": [
+        "e09-footstep-noise",
+        "e19-progression-core"
+      ]
+    },
+    {
+      "key": "e10-peek-lean",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Lean around corners and peek through keyholes",
+      "priority": 2,
+      "labels": [
+        "epic:e10",
+        "area:game",
+        "area:sim",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nInformation is the thief’s currency; peeking lets players scout routines before committing.\n\n## What\nAs a thief, I want to lean around corners and peek through keyholes so that I can scout without exposing myself. Lean shifts camera and exposes only the head sample point to LOS (reduced visibility). Keyhole peek on doors with a `keyhole` flag gives a narrow view of the next room with the player fully hidden from that room.\n\n## Scope\n- In: Lean input + camera offset + LOS sample override\n- In: Keyhole peek interaction\n- Out: Camera system (e02-camera)\n\n## Notes\nDuring lean, only the head sample point counts for LOS (1 of 4).",
+      "acceptance": "- AC-1 [unit] Given the player leaning, when LOS is queried by an observer, then only the head sample point is considered.\n- AC-2 [unit] Given a door without a keyhole, when interaction options are built, then peek is not offered.\n- AC-3 [integration] Given a keyhole peek, when active, then the camera renders from the keyhole position and visibility to observers in the other room is 0.\n- AC-4 [unit] Given the player is attacked while peeking, when damage applies, then peek ends immediately.",
+      "depends_on": [
+        "e02-camera",
+        "e02-input-actions",
+        "e09-line-of-sight",
+        "e03-doors-locks-switches"
+      ]
+    },
+    {
+      "key": "e10-environmental-takedowns",
+      "epic": "mw-e10",
+      "type": "feature",
+      "title": "Environmental takedowns: drop, push and douse via world properties",
+      "priority": 2,
+      "labels": [
+        "epic:e10",
+        "area:sim",
+        "milestone:m3",
+        "class:thief"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nThe progression ladder ends at environmental takedowns; the world itself becomes the thief’s weapon, and it must be systemic.\n\n## What\nAs a thief, I want to drop a chandelier, cut a hanging load or push a crate from a ledge onto an enemy so that the world does my work. Any object with `suspended` property released (cut rope, shot chain, lever) falls under physics; impact damage = f(mass, fall height) via the damage model. Deaths/knockouts caused by environment are tagged `accident` so witnesses raise lower suspicion (Suspicious/Investigating instead of Alerted) unless they perceived the player causing it.\n\n## Scope\n- In: Falling-object damage rule by mass/height\n- In: Accident attribution + AI response weights\n- Out: Specific set-pieces (E26 content)\n- Out: Rope cutting by arrows (E05, works via property)\n\n## Notes\nProperty-based: never \"chandelier\" in rules.",
+      "acceptance": "- AC-1 [unit] Given any object tagged `suspended` with mass 80 kg released from 5 m onto a creature, when impact resolves, then damage equals the documented mass×height curve.\n- AC-2 [unit] Given a creature killed by a falling object with no witness perceiving the player within 3 s, when attributed, then the event is tagged `accident`.\n- AC-3 [unit] Given a witness to an `accident`, when evaluated, then it enters Investigating (not Alerted).\n- AC-4 [unit] Given a witness perceived the player releasing the object, when evaluated, then it enters Alerted with the player LKP.",
+      "depends_on": [
+        "e03-physics-objects",
+        "e04-damage-model",
+        "e10-takedowns",
+        "e09-anomaly-detection"
+      ]
+    },
+    {
+      "key": "e10-thief-greybox-challenge",
+      "epic": "mw-e10",
+      "type": "task",
+      "title": "Grey-box thief infiltration challenge with multiple scripted routes",
+      "priority": 1,
+      "labels": [
+        "epic:e10",
+        "area:content",
+        "area:qa",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nMilestone m2 requires the thief fantasy proven in grey-box; a perfect infiltration must feel as good as a hard fight.\n\n## What\nA grey-box vault infiltration `greybox/thief-vault`: guarded courtyard, lit halls, a locked vault with a key carried by a patrolling guard, climbable exterior wall, alarm bell, hiding places. At least 3 distinct solution routes (pickpocket key; climb + pick window lock; distraction + extinguish + takedown), each covered by a scripted e2e/scenario test. Records a “ghost” (never detected) flag on completion.\n\n## Scope\n- In: Level data, routes, scripted solution tests, completion flag\n- Out: Final dungeon (E26)\n- Out: Art\n\n## Notes\nFixture creatures only.",
+      "acceptance": "- AC-1 [integration] Given route A (pickpocket), when the scripted scenario runs, then the vault opens and no guard exceeds Suspicious.\n- AC-2 [integration] Given route B (climb + lockpick window), when run, then the vault is reached and the completion flag is set.\n- AC-3 [integration] Given route C (distract + extinguish + takedown), when run, then the vault opens with one unconscious guard hidden and no alarm.\n- AC-4 [integration] Given a scripted failure (player spotted in the courtyard), when run, then the alarm escalates the zone and the scripted escape via smoke + hiding place still completes the level.\n- AC-5 [manual] Given 3 playtesters, when completing the vault undetected, then ≥ 2 rate satisfaction ≥ 4/5.",
+      "depends_on": [
+        "e10-pickpocketing",
+        "e10-lockpicking",
+        "e10-climbing",
+        "e10-takedowns",
+        "e10-extinguish-lights",
+        "e10-smoke-escape",
+        "e09-stealth-greybox-course",
+        "e09-failed-stealth-outcomes"
+      ]
+    }
+  ]
+}

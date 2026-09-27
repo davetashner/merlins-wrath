@@ -1,0 +1,1917 @@
+{
+  "group": "foundation",
+  "epics": [
+    {
+      "id": "mw-e00",
+      "title": "E00 — Project Foundation",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "description": "## Outcome\nA trustworthy engineering foundation: every change lands through a green, coverage-gated, security-scanned PR; the sim core is deterministic and replayable; content is schema-validated; a greybox testbed boots in the chosen engine; and a public backlog.html always shows what is done and what is next.\n## Scope\n- In: Repo scaffold (TS strict, Vite, pnpm), lint/format/typecheck, Vitest + Playwright\n- In: CI pipeline with per-layer coverage thresholds, ratchet, determinism lint, secret scanning, dependency CVE gate\n- In: Branch protection, PR template with Closes lines, CHANGELOG, coverage-exclusions.md process\n- In: backlog.html generator + GitHub Pages deploy\n- In: Engine ADR spike (Three.js vs Babylon.js incl. physics/Rapier)\n- In: Deterministic sim core, state hashing, replay harness, content pipeline, greybox testbed\n- Out: Gameplay systems (E02+)\n- Out: Save/load (mw-e30)\n- Out: Perf budget suite beyond the baseline scene (mw-e32)\n- Out: Debug console and content tools (mw-e33)\n## Exit criteria\n- A PR that lowers coverage, calls Math.random in src/sim, leaks a secret, or adds a CRITICAL CVE dependency is blocked by required checks.\n- backlog.html on GitHub Pages reflects a merged PR's Closes lines within one workflow run of the merge.\n- ADR-0001 records the engine + physics choice with measured evidence from the reference machine.\n- The greybox testbed boots in Chrome, Firefox and Safari with zero console errors and a replay test reproduces identical sim state hashes.",
+      "acceptance": "- EC-1 A PR that lowers coverage, calls Math.random in src/sim, leaks a secret, or adds a CRITICAL CVE dependency is blocked by required checks.\n- EC-2 backlog.html on GitHub Pages reflects a merged PR's Closes lines within one workflow run of the merge.\n- EC-3 ADR-0001 records the engine + physics choice with measured evidence from the reference machine.\n- EC-4 The greybox testbed boots in Chrome, Firefox and Safari with zero console errors and a replay test reproduces identical sim state hashes."
+    },
+    {
+      "id": "mw-e30",
+      "title": "E30 — Save/Load",
+      "priority": 0,
+      "labels": [
+        "epic:e30",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "description": "## Outcome\nBrowser-safe saves reliably preserve character and world state across sessions, browser restarts and game updates; a corrupted or interrupted save never costs the player all their progress.\n## Scope\n- In: Versioned save envelope, sim-state serialization via a section registry, migrations\n- In: IndexedDB storage with fallback, slots, autosave, quicksave, death→reload flow\n- In: Corruption recovery, multi-tab guard, export/import, save/load UI\n- Out: Cloud saves / accounts (post-MVP, not planned)\n- Out: World-fact modelling itself (see e27-world-state-store)\n## Exit criteria\n- Every save schema change ships with a migration and a committed fixture that CI loads successfully.\n- Killing the tab mid-write never leaves zero loadable saves (automated test).\n- Save/load code paths have 100% coverage.",
+      "acceptance": "- EC-1 Every save schema change ships with a migration and a committed fixture that CI loads successfully.\n- EC-2 Killing the tab mid-write never leaves zero loadable saves (automated test).\n- EC-3 Save/load code paths have 100% coverage."
+    },
+    {
+      "id": "mw-e31",
+      "title": "E31 — Accessibility & Settings",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:ui",
+        "milestone:m3"
+      ],
+      "description": "## Outcome\nPlayers can tailor controls, text, camera, audio, visuals and difficulty so the game is comfortable and playable for a broad audience, meeting the basic tier of the Game Accessibility Guidelines.\n## Scope\n- In: Settings framework and options UI\n- In: Remapping, hold/toggle, text scaling, captions for gameplay-critical sounds, camera and motion comfort, colour-blind support, difficulty assists, menu keyboard/gamepad navigation\n- In: Accessibility audit\n- Out: Graphics quality presets implementation (see e32-quality-presets)\n- Out: Voice/TTS narration (no voice in MVP)\n## Exit criteria\n- Every setting persists across reloads and applies without restarting the game.\n- All menus are fully operable by keyboard only and by gamepad only (automated e2e).\n- Accessibility audit against GAG basic tier has no open P1 findings.",
+      "acceptance": "- EC-1 Every setting persists across reloads and applies without restarting the game.\n- EC-2 All menus are fully operable by keyboard only and by gamepad only (automated e2e).\n- EC-3 Accessibility audit against GAG basic tier has no open P1 findings."
+    },
+    {
+      "id": "mw-e32",
+      "title": "E32 — Performance & Browser Compatibility",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:perf",
+        "milestone:m4"
+      ],
+      "description": "## Outcome\nStable frame pacing and fast loading on the hardware baseline across current desktop Chrome, Edge, Firefox and Safari, protected by automated budgets so regressions are caught in PRs rather than playtests.\n## Scope\n- In: Perf budget suite, bundle/sim-tick budgets, browser matrix, capability detection, quality presets + dynamic resolution, asset loading/caching, context-loss recovery, memory-leak tests, reference-machine runbook\n- Out: Mobile performance profiles (mw-e36)\n- Out: Engine selection (e00-engine-decision)\n## Exit criteria\n- High preset holds 60 fps (p95 frame time ≤ 16.7 ms) in the combat stress scene on the reference machine.\n- Initial load to playable ≤ 10 s at 50 Mbps, warm reload ≤ 3 s, initial download ≤ 50 MB, JS heap ≤ 1.5 GB.\n- Smoke suite green on Chromium, Firefox and WebKit in CI.",
+      "acceptance": "- EC-1 High preset holds 60 fps (p95 frame time ≤ 16.7 ms) in the combat stress scene on the reference machine.\n- EC-2 Initial load to playable ≤ 10 s at 50 Mbps, warm reload ≤ 3 s, initial download ≤ 50 MB, JS heap ≤ 1.5 GB.\n- EC-3 Smoke suite green on Chromium, Firefox and WebKit in CI."
+    },
+    {
+      "id": "mw-e33",
+      "title": "E33 — Developer/Content Tools",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "description": "## Outcome\nDevelopers and designers can create, tune and debug spells, creatures, loot, encounters, dialogue and puzzles in minutes, with visual insight into the systemic simulation and one-keypress bug capture.\n## Scope\n- In: Debug console + cheats, entity inspector, time controls, overlays (AI, world systems), sandboxes (spells, creatures), content validator/scaffolder/hot reload, dialogue/quest/loot tooling, replay bug capture\n- Out: Full level editor (use external DCC/greybox kit)\n- Out: Player-facing modding\n## Exit criteria\n- Adding a new spell/creature/item from scaffold to in-game test takes ≤ 10 minutes without restarting the dev server.\n- All dev tools are stripped from production builds (bundle check).\n- A captured bug report replays deterministically on another machine.",
+      "acceptance": "- EC-1 Adding a new spell/creature/item from scaffold to in-game test takes ≤ 10 minutes without restarting the dev server.\n- EC-2 All dev tools are stripped from production builds (bundle check).\n- EC-3 A captured bug report replays deterministically on another machine."
+    },
+    {
+      "id": "mw-e34",
+      "title": "E34 — Telemetry & Playtesting",
+      "priority": 1,
+      "labels": [
+        "epic:e34",
+        "area:qa",
+        "milestone:m3"
+      ],
+      "description": "## Outcome\nPrivacy-first, local-first, opt-in measurement of deaths, abandoned encounters, spell usage, puzzle completion and other signals that complements — never replaces — direct observation of players.\n## Scope\n- In: Event schema + local store + export\n- In: Consent/opt-in, gameplay events, error capture, in-game feedback, playtest bundle export, analysis scripts, optional opt-in upload\n- Out: Third-party analytics SDKs, fingerprinting, ads (never)\n- Out: Running the playtests (mw-e35)\n## Exit criteria\n- With default settings the game makes zero telemetry network requests (automated e2e).\n- A playtester can export one bundle file and an analysis script turns N bundles into a death heatmap + spell/puzzle report.\n- No event contains free-text PII fields; schema tests enforce it.",
+      "acceptance": "- EC-1 With default settings the game makes zero telemetry network requests (automated e2e).\n- EC-2 A playtester can export one bundle file and an analysis script turns N bundles into a death heatmap + spell/puzzle report.\n- EC-3 No event contains free-text PII fields; schema tests enforce it."
+    },
+    {
+      "id": "mw-e35",
+      "title": "E35 — MVP Fun Validation",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:qa",
+        "milestone:m4"
+      ],
+      "description": "## Outcome\nExternal players demonstrate that combat, magic, stealth and exploration are intrinsically enjoyable, measured against fun hypotheses written before testing.\n## Scope\n- In: Fun hypotheses, playtest protocol, tester recruitment, playtest build channel\n- In: Internal greybox and class-fantasy playtests, external rounds, triage, go/no-go decision\n- Out: Telemetry tooling (mw-e34)\n- Out: Mobile (mw-e36)\n## Exit criteria\n- Two external rounds with ≥ 8 players each completed and reported.\n- Go/no-go decision recorded against the pre-registered hypotheses.",
+      "acceptance": "- EC-1 Two external rounds with ≥ 8 players each completed and reported.\n- EC-2 Go/no-go decision recorded against the pre-registered hypotheses."
+    },
+    {
+      "id": "mw-e36",
+      "title": "E36 — Mobile Adaptation",
+      "priority": 4,
+      "labels": [
+        "epic:e36",
+        "area:ui",
+        "milestone:post-mvp"
+      ],
+      "description": "## Outcome\nOnly after MVP validation: touch UX, mobile performance profiles, interface redesign and mobile browser support.\n## Scope\n- In: Coarse placeholder items to be re-planned after the MVP go decision\n- Out: Any mobile work before e35-mvp-go-no-go is decided\n## Exit criteria\n- A mobile plan is re-scoped into PR-sized beads after the MVP go decision.",
+      "acceptance": "- EC-1 A mobile plan is re-scoped into PR-sized beads after the MVP go decision."
+    }
+  ],
+  "items": [
+    {
+      "key": "e00-repo-scaffold",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Scaffold TypeScript/Vite/pnpm repo with lint, typecheck and Vitest",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nEvery other bead needs a consistent, strict toolchain; rapid iteration (constitution §10) starts with a fast, boring build.\n## What\nCreate the project skeleton: pnpm workspace root, Vite app, TypeScript strict, ESLint (flat config) + Prettier, Vitest with v8 coverage, Playwright installed, and the `src/{sim,content,game,render,audio,ui,tools}` layout from the backlog contract §2 with a placeholder module + test in each. Scripts: `dev`, `build`, `preview`, `lint`, `format`, `typecheck`, `test`, `test:coverage`, `e2e`.\n## Scope\n- In: package.json, pnpm-lock, .nvmrc/.node-version, tsconfig (strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes)\n- In: ESLint + Prettier config, EditorConfig\n- In: vitest.config.ts with v8 coverage (reporters: text, json-summary, lcov)\n- In: playwright.config.ts with one placeholder spec\n- In: README quickstart section\n- Out: CI workflows (e00-ci-pipeline)\n- Out: Per-layer thresholds and ratchet (e00-ci-pipeline)\n- Out: Determinism lint rules (e00-determinism-lint)\n- Out: Renderer dependency (e00-render-bootstrap)\n## Notes\n- Pin Node LTS via .node-version and `packageManager` field; use corepack.\n- Path aliases: `@sim/*`, `@content/*`, `@game/*`… mirrored in Vite and Vitest.",
+      "acceptance": "- AC-1 [integration] Given a fresh clone with the pinned Node, when `pnpm install && pnpm build` runs, then it exits 0 and produces `dist/index.html`.\n- AC-2 [integration] Given the scaffold, when `pnpm lint && pnpm typecheck && pnpm test` runs, then all pass with at least one test per `src/*` layer.\n- AC-3 [unit] Given a file with an implicit `any` or an unchecked index access, when `pnpm typecheck` runs, then it fails.\n- AC-4 [integration] Given `pnpm test:coverage`, when it completes, then `coverage/coverage-summary.json` and `coverage/lcov.info` exist.\n- AC-5 [e2e] Given `pnpm e2e`, when the placeholder Playwright spec opens the built app, then the page loads with zero console errors.\n- AC-6 [integration] Given a Node version other than the pinned one, when `pnpm install` runs, then it fails with an engine-mismatch message (engine-strict).",
+      "depends_on": []
+    },
+    {
+      "key": "e00-determinism-lint",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Lint src/sim for nondeterminism and forbidden layer imports",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nDeterministic sim (constitution §10) is only real if it is mechanically enforced; replays and save stability depend on it.\n## What\nESLint overrides scoped to `src/sim/**` banning `Math.random`, `Date.now`, `new Date()`, `performance.now`, `crypto.getRandomValues`, `setTimeout`/`setInterval`/`requestAnimationFrame`, `window`/`document`/`navigator` globals, and imports from `src/{game,render,audio,ui,tools}` or renderer/physics-rendering packages. Import-boundary rules for all layers: `render` may not import `ui`, `sim` imports only `sim` + `content` types, etc.\n## Scope\n- In: eslint no-restricted-globals / no-restricted-properties / no-restricted-syntax rules for src/sim\n- In: eslint-plugin-import (or boundaries) layer matrix for all src/* layers\n- In: Fixture files under `test/lint-fixtures/` proving each rule fires\n- Out: Runtime determinism checks (e00-replay-harness)\n## Notes\n- Allowed escape: `// eslint-disable-next-line` in src/sim is itself banned via `eslint-comments/no-restricted-disable` for these rules.\n- Iteration order: prefer arrays/Maps (insertion ordered); document that `for…in` over numeric-like keys is ordered by spec but discouraged.",
+      "acceptance": "- AC-1 [unit] Given a fixture `src/sim` file calling `Math.random()`, `Date.now()` or `performance.now()`, when ESLint runs, then each call is reported as an error naming the injected RNG/clock alternative.\n- AC-2 [unit] Given a `src/sim` file importing from `src/render` or referencing `document`, when ESLint runs, then an error is reported.\n- AC-3 [unit] Given `src/game` calling `performance.now()`, when ESLint runs, then no error is reported (rule scoped to sim only).\n- AC-4 [unit] Given a `src/sim` file with `// eslint-disable-next-line no-restricted-properties` above `Math.random()`, when ESLint runs, then the disable comment itself is reported as an error.\n- AC-5 [integration] Given the lint fixture suite, when `pnpm test` runs, then a test programmatically lints every fixture and asserts the expected rule IDs fire.",
+      "depends_on": [
+        "e00-repo-scaffold"
+      ]
+    },
+    {
+      "key": "e00-ci-pipeline",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Add CI with per-layer coverage gates, ratchet and Playwright smoke",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nThe contract goal is releases trusted without reading the code; that requires CI to enforce the §3 coverage policy mechanically, not by reviewer vigilance.\n## What\nGitHub Actions workflow `ci.yml` on pull_request and push to main with jobs: `lint` (incl. determinism lint), `typecheck`, `unit` (Vitest + coverage), `coverage-gate`, `coverage-ratchet`, `e2e-smoke` (Playwright, Chromium), `build`. Coverage enforcement:\n  1. **100% layer:** `vitest.config.ts` `coverage.thresholds` glob entries for `src/sim/**`, `src/content/**`, `src/game/save/**` (save/load), and runtime dirs registered in `coverage-layers.json` (economy, quest, dialogue runtimes, `scripts/backlog/**`) at 100 lines/branches/functions/statements with `perFile: true`.\n  2. **Glue layer:** `src/game/**`, `src/ui/**`, `src/audio/**`, `src/tools/**` at ≥ 90 lines and branches (per directory).\n  3. **Excluded layer:** `src/render/**`, shaders, WASM bindings, bootstrap are excluded only if listed in `coverage-exclusions.md` (validated by e00-coverage-exclusions).\n  4. **Ratchet:** on push to main CI uploads `coverage-summary.json` as artifact `coverage-baseline`; PR runs download the latest main artifact and `scripts/coverage-ratchet.mjs` fails if any of the four metrics decreases (tolerance 0.01 pp) globally or for any layer in `coverage-layers.json`. If no artifact is available it falls back to committed `coverage-baseline.json` and emits a warning annotation.\n## Scope\n- In: .github/workflows/ci.yml, pnpm store caching, Playwright browser caching\n- In: coverage-layers.json (single source for layer → globs → thresholds) consumed by vitest.config.ts and the ratchet script\n- In: scripts/coverage-ratchet.mjs with 100% unit coverage\n- In: Job summary table of coverage per layer vs baseline\n- Out: Secret scanning and CVE audit jobs (e00-secret-scanning, e00-dependency-audit)\n- Out: beads validation job (e00-beads-validate)\n- Out: Cross-browser matrix (e32-browser-matrix)\n- Out: Required-check configuration (e00-branch-protection)\n## Notes\n- Stable job names matter: branch protection references them (`lint`, `typecheck`, `unit`, `coverage-gate`, `coverage-ratchet`, `e2e-smoke`, `build`).\n- Use `concurrency` to cancel superseded PR runs.\n- Adding a new 100%-layer runtime directory = one line in coverage-layers.json.",
+      "acceptance": "- AC-1 [integration] Given a PR that adds an uncovered branch in `src/sim`, when CI runs, then `coverage-gate` fails naming the file and metric below 100%.\n- AC-2 [integration] Given a PR that drops `src/ui` line coverage to 89%, when CI runs, then `coverage-gate` fails; at 90% it passes.\n- AC-3 [unit] Given a baseline summary and a PR summary where global branches fell from 95.20% to 95.10%, when `coverage-ratchet.mjs` runs, then it exits non-zero and prints the metric, layer, old and new values.\n- AC-4 [unit] Given no main-branch artifact is available, when the ratchet runs, then it compares against committed `coverage-baseline.json` and emits a GitHub warning annotation instead of silently passing.\n- AC-5 [unit] Given a PR summary equal to baseline within 0.01 pp, when the ratchet runs, then it passes (float tolerance).\n- AC-6 [integration] Given a PR with a failing Playwright smoke test, when CI runs, then `e2e-smoke` fails and uploads the trace and screenshot as artifacts.\n- AC-7 [integration] Given a clean PR, when CI runs with warm caches, then the full pipeline completes in ≤ 10 minutes.",
+      "depends_on": [
+        "e00-repo-scaffold",
+        "e00-determinism-lint"
+      ]
+    },
+    {
+      "key": "e00-coverage-exclusions",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Enforce coverage-exclusions.md as the only source of exclusions",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nExclusions are where coverage policies quietly rot; each one must be visible, justified and owned.\n## What\nCreate `coverage-exclusions.md` with a machine-readable table (path glob | reason | bead | alternative verification). `scripts/check-coverage-exclusions.mjs` parses it and asserts the Vitest `coverage.exclude` list is exactly the set in the file (beyond default test/config ignores), every row has a non-empty reason and a `mw-` bead id, no glob matches `src/sim/**` or `src/content/**`, and glue-layer gaps below 100% are listed with justification. Also bans `/* v8 ignore */` / `istanbul ignore` comments outside excluded paths.\n## Scope\n- In: coverage-exclusions.md template + initial rows (src/render/**, bootstrap main.ts)\n- In: check script + CI step in the coverage-gate job\n- In: Docs section in CONTRIBUTING on how to request an exclusion\n- Out: Threshold numbers themselves (e00-ci-pipeline)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given vitest excludes `src/render/**` but the markdown table does not list it, when the check runs, then it fails naming the unlisted glob.\n- AC-2 [unit] Given a row with an empty reason or without a `mw-` bead id, when the check runs, then it fails naming the row.\n- AC-3 [unit] Given a row excluding `src/sim/rng.ts`, when the check runs, then it fails because 100% layers cannot be excluded.\n- AC-4 [unit] Given a `/* v8 ignore next */` comment in `src/game/foo.ts` (non-excluded path), when the check runs, then it fails with file and line.\n- AC-5 [integration] Given the committed repo state, when CI runs the check, then it passes and the script has 100% coverage.",
+      "depends_on": [
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e00-secret-scanning",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Block secrets via gitleaks in CI and an optional pre-commit hook",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 150,
+      "description": "## Why\nThe repo is public; a leaked token is permanent. Secrets must never reach a commit.\n## What\nAdd a `secrets` CI job running gitleaks over the PR commit range (and full history on push to main), a `.gitleaks.toml` with an allowlist mechanism that requires a comment, enable GitHub secret scanning + push protection in repo settings, and a lefthook/husky pre-commit hook running gitleaks on staged files.\n## Scope\n- In: .github/workflows/security.yml `secrets` job\n- In: .gitleaks.toml\n- In: pre-commit hook (opt-in install via `pnpm prepare`)\n- In: Enable GitHub secret scanning + push protection (documented; needs-human if API token lacks admin)\n- Out: Dependency CVEs (e00-dependency-audit)\n## Notes\n- Test the job with a fake high-entropy token in a throwaway branch; do not commit real-format tokens into fixtures — use gitleaks test fixtures generated at runtime.",
+      "acceptance": "- AC-1 [integration] Given a PR commit containing a string matching the GitHub PAT pattern, when CI runs, then `secrets` fails and reports file and line without echoing the full secret.\n- AC-2 [integration] Given a clean PR, when CI runs, then `secrets` passes in ≤ 60 s.\n- AC-3 [integration] Given a staged file containing an AWS-key-shaped string, when `git commit` runs with hooks installed, then the commit is rejected.\n- AC-4 [manual] Given repository settings, when inspected, then secret scanning and push protection are enabled.\n- AC-5 [unit] Given an allowlist entry without an explanatory comment, when the config lint step runs, then it fails.",
+      "depends_on": [
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e00-dependency-audit",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Fail CI on CRITICAL dependency CVEs and enable Dependabot",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nPolicy: never ship libraries with known CRITICAL CVEs. A free public game still owes players a safe page.\n## What\nAdd an `audit` CI job (`pnpm audit --audit-level critical --prod` plus dev deps reported) that fails on any CRITICAL advisory, runs on PRs, on push to main and nightly on a schedule. Add Dependabot (npm + github-actions, weekly, grouped minor/patch) and dependency-review-action on PRs to block newly-introduced critical/high-licence problems. Temporary waivers live in `audit-waivers.json` with advisory id, reason, bead and expiry date.\n## Scope\n- In: security.yml `audit` job + nightly schedule\n- In: .github/dependabot.yml\n- In: dependency-review-action with licence denylist (GPL-3.0/AGPL for runtime deps, since assets/code must permit free distribution)\n- In: audit-waivers.json + validator (expired waiver fails CI)\n- Out: Secret scanning (e00-secret-scanning)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given a PR adding a dependency version with a known CRITICAL advisory, when CI runs, then `audit` fails listing the advisory id and package path.\n- AC-2 [integration] Given a HIGH (not critical) advisory, when CI runs, then `audit` passes but writes a warning to the job summary.\n- AC-3 [unit] Given a waiver whose expiry date is in the past, when the waiver validator runs, then it fails naming the advisory.\n- AC-4 [unit] Given a waiver missing a bead id or reason, when the validator runs, then it fails.\n- AC-5 [integration] Given the nightly schedule, when a new CRITICAL advisory affects main, then the workflow fails and opens/updates a GitHub issue titled with the advisory id.",
+      "depends_on": [
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e00-beads-validate",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Validate .beads/issues.jsonl parses and is well-formed in CI",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 150,
+      "description": "## Why\nThe backlog is a project artefact that drives backlog.html; a malformed line from a bad merge must be caught before it breaks the page.\n## What\nScript `scripts/validate-beads.mjs` (100% covered) run in CI job `beads-validate` when `.beads/**` changes (and always on main): every non-empty line parses as JSON; each record has `id`, `title`, `status`; ids match `^mw-`; no duplicate ids (last-wins is reported as an error unless bd format allows it); dependency targets exist; epic children reference an existing epic. Emits GitHub annotations with line numbers.\n## Scope\n- In: validate script + tests with fixture jsonl files\n- In: CI job with path filter plus always-run on main\n- Out: Label/AC style linting of bead content (possible follow-up)\n## Notes\n- Confirm bd issues.jsonl semantics (one line per issue vs append log) when implementing; the duplicate rule must match bd behaviour.",
+      "acceptance": "- AC-1 [unit] Given a jsonl with a truncated line 42, when the validator runs, then it exits non-zero with an annotation pointing to line 42.\n- AC-2 [unit] Given a record whose dependency references `mw-e99.7` which does not exist, when validated, then it fails naming both ids.\n- AC-3 [unit] Given an empty trailing line or CRLF line endings, when validated, then it passes.\n- AC-4 [integration] Given the committed `.beads/issues.jsonl`, when CI runs `beads-validate`, then it passes.\n- AC-5 [integration] Given the script and fixtures, when coverage runs, then `scripts/validate-beads.mjs` is at 100% on all metrics.",
+      "depends_on": [
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e00-pr-template",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Add PR template with Closes lines and a PR-body lint check",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 150,
+      "description": "## Why\nbacklog.html and bead closure rely on explicit `Closes mw-…` lines; they must be present and well-formed on every PR.\n## What\nAdd `.github/pull_request_template.md` (Summary, Closes lines, Test evidence, DoD checklist from contract §3, CHANGELOG note, coverage exclusions touched). Add a `pr-lint` job (pull_request: opened/edited/synchronize) that parses the PR body and fails if there is no `Closes mw-<id>` line (unless label `no-bead` is applied by a maintainer for trivial chores) or if a referenced id does not exist in `.beads/issues.jsonl` on the PR head.\n## Scope\n- In: PR template\n- In: scripts/pr-body-lint.mjs (shared parser with e00-backlog-pr-status, 100% covered)\n- In: pr-lint job\n- Out: Closing beads after merge (process, CLAUDE.md)\n## Notes\n- Share the `Closes` regex with the backlog generator: `^\\s*Closes\\s+(mw-[a-z0-9.]+)\\s*$` (case-insensitive, one id per line).",
+      "acceptance": "- AC-1 [unit] Given a body with lines `Closes mw-e00.3` and `closes mw-e30.1`, when parsed, then both ids are returned.\n- AC-2 [unit] Given a body mentioning `mw-e00.3` only in prose (`fixes part of mw-e00.3`), when parsed, then no ids are returned.\n- AC-3 [integration] Given a PR without any Closes line and without the `no-bead` label, when `pr-lint` runs, then it fails with a message showing the expected format.\n- AC-4 [integration] Given a PR whose Closes line references an id not in issues.jsonl, when `pr-lint` runs, then it fails naming the id.\n- AC-5 [integration] Given the PR body is edited to add a valid Closes line, when the `edited` event fires, then `pr-lint` re-runs and passes.",
+      "depends_on": [
+        "e00-beads-validate"
+      ]
+    },
+    {
+      "key": "e00-changelog",
+      "epic": "mw-e00",
+      "type": "chore",
+      "title": "Create CHANGELOG.md and a check for user-facing changes",
+      "priority": 1,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 120,
+      "description": "## Why\nDoD item 8: players and testers need to know what changed between playtest builds.\n## What\nAdd `CHANGELOG.md` (Keep a Changelog format, `Unreleased` section). Add a lightweight CI check: if a PR touches `src/{game,ui,render,audio,sim,content}/**` and has neither a CHANGELOG diff nor the `no-changelog` label, fail with guidance.\n## Scope\n- In: CHANGELOG.md\n- In: changelog check job/script\n- Out: Release tagging automation (later, if needed)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given a PR modifying `src/sim/foo.ts` without touching CHANGELOG.md or labelling `no-changelog`, when CI runs, then the changelog check fails.\n- AC-2 [integration] Given a PR touching only `docs/**` or `.github/**`, when CI runs, then the check passes without a CHANGELOG entry.\n- AC-3 [unit] Given a CHANGELOG with no `## [Unreleased]` heading, when the check parses it, then it fails.",
+      "depends_on": [
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e00-branch-protection",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Protect main: squash-only, required checks, auto-delete branches",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0",
+        "needs-human"
+      ],
+      "estimate_minutes": 120,
+      "description": "## Why\nContract §1: all work via PR, squash merge only, CI green. Protection makes that a rule rather than a habit.\n## What\nConfigure (and codify in `scripts/configure-repo.sh` using `gh api`) main branch protection: require PR, require status checks `lint`, `typecheck`, `unit`, `coverage-gate`, `coverage-ratchet`, `e2e-smoke`, `build`, `secrets`, `audit`, `beads-validate`, `pr-lint`; require branches up to date; disallow force-push and deletion; squash merge only (merge commits and rebase disabled); auto-delete head branches; linear history. Document the settings in `docs/repo-settings.md`.\n## Scope\n- In: configure-repo.sh (idempotent) + docs\n- In: Verification script that reads settings via API and diffs against expected\n- Out: Adding new checks later (each check bead updates the script)\n## Notes\n- Solo-maintainer project: do not require approving reviews (would block the only maintainer); rely on required checks. Revisit if contributors join.",
+      "acceptance": "- AC-1 [manual] Given repository settings, when a direct push to main is attempted, then it is rejected.\n- AC-2 [manual] Given a PR with a failing required check, when merge is attempted, then GitHub blocks it.\n- AC-3 [integration] Given the verify script, when run against the repo, then it reports zero drift from expected settings (squash-only, required checks list, auto-delete on).\n- AC-4 [manual] Given a PR merged via the UI, when it completes, then only \"Squash and merge\" was offered and the head branch was deleted.\n- AC-5 [integration] Given configure-repo.sh run twice, when the second run completes, then it makes no changes (idempotent).",
+      "depends_on": [
+        "e00-ci-pipeline",
+        "e00-secret-scanning",
+        "e00-dependency-audit",
+        "e00-pr-template"
+      ]
+    },
+    {
+      "key": "e00-backlog-html",
+      "epic": "mw-e00",
+      "type": "feature",
+      "title": "Generate backlog.html from issues.jsonl and deploy to GitHub Pages",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:tools",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 900,
+      "description": "## Why\nA human-friendly public view of what is done and what is next keeps the project honest and lets playtesters and collaborators follow progress without installing bd.\n## What\nAs a developer or follower, I want a single-file backlog.html with Completed and Upcoming / In progress tabs so that I can see progress per epic and milestone at a glance.\n`scripts/backlog/generate.mjs` reads `.beads/issues.jsonl` and writes `site/backlog.html` (also served as `index.html`): one self-contained file (inline CSS/JS, no external requests), two tabs \"Completed\" and \"Upcoming / In progress\", grouped by epic then milestone, each bead showing ID, title, priority, status, labels, expandable ACs and description (`<details>`), and dependencies (linked in-page, with blocker status). Per-epic progress bar (closed/total). Generated-at timestamp and source commit SHA. Workflow `.github/workflows/backlog-pages.yml` builds and deploys to GitHub Pages on push to main and `workflow_dispatch`.\n## Scope\n- In: Generator (pure functions: parse → model → render) with 100% coverage (listed in coverage-layers.json)\n- In: HTML escaping of all bead text; a safe minimal markdown subset (headings, lists, code, bold) rendered without raw HTML passthrough\n- In: Pages workflow using actions/upload-pages-artifact + actions/deploy-pages with `concurrency: pages`\n- In: Light/dark theme via prefers-color-scheme; readable at 375 px width\n- Out: GitHub PR overlay (merged/open PR status) and pull_request_target trigger — see e00-backlog-pr-status\n- Out: Issue-editing UI (read-only page)\n## Notes\n- Status mapping: closed → Completed; open/in_progress/blocked/deferred → Upcoming tab with status pill; epics sorted by id, milestones m0→post-mvp, then priority, then id.\n- Keep render pure and deterministic given (issues, prStatus, now, sha) so snapshot tests are stable.\n- Workflow permissions: `contents: read`, `pages: write`, `id-token: write`.",
+      "acceptance": "- AC-1 [unit] Given a jsonl with one closed and two open beads under `mw-e09`, when generated, then the Completed tab lists 1 and the Upcoming tab lists 2 under the E09 heading with a 1/3 progress bar.\n- AC-2 [unit] Given a bead title containing `<script>alert(1)</script>`, when rendered, then the output contains the escaped text and no executable script element from bead content.\n- AC-3 [unit] Given a bead with acceptance criteria, when rendered, then the ACs appear inside a collapsed `<details>` element and the bead row shows ID, priority, status, labels and dependency links.\n- AC-4 [unit] Given a bead depending on an id not present in the file, when rendered, then the dependency shows as \"unknown\" rather than throwing.\n- AC-5 [unit] Given an empty issues.jsonl, when generated, then both tabs render an empty-state message and the script exits 0.\n- AC-6 [integration] Given the generated file, when opened in Playwright with network disabled, then it renders fully, tab switching works by click and keyboard, and there are zero console errors.\n- AC-7 [integration] Given a push to main, when backlog-pages.yml runs, then the Pages URL serves the new file within that run; `workflow_dispatch` produces the same result.\n- AC-8 [integration] Given coverage runs, when complete, then `scripts/backlog/**` is at 100% lines/branches/functions/statements.",
+      "depends_on": [
+        "e00-ci-pipeline",
+        "e00-beads-validate"
+      ]
+    },
+    {
+      "key": "e00-backlog-pr-status",
+      "epic": "mw-e00",
+      "type": "feature",
+      "title": "Reflect merged/open PR Closes lines in backlog.html immediately",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:tools",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nBeads are closed locally after merge, so issues.jsonl lags reality; the public page must be accurate the moment a PR merges.\n## What\nAs a follower, I want beads referenced by merged PRs to appear as Completed (with a PR link) and beads in open PRs to appear In progress so that the page is correct even before local bead closure is pushed.\nThe generator gains a GitHub overlay: using `GITHUB_TOKEN`, list PRs (paginated, REST or GraphQL), parse `Closes mw-…` lines with the shared parser from e00-pr-template, and compute: merged PR → bead Completed with link \"PR #N\" and merge date; open PR → bead In progress with link; closed-unmerged PR → ignored. Bead closed in jsonl wins over open-PR status. The Pages workflow adds `pull_request_target` (types: opened, reopened, edited, closed) so the page updates on PR open/close; under pull_request_target it checks out the default branch only and never checks out or executes PR code.\n## Scope\n- In: scripts/backlog/github.mjs with injectable fetch, pagination and rate-limit handling (100% covered, fixture-based tests)\n- In: Overlay merge rules + \"source\" badges (jsonl vs PR)\n- In: Workflow trigger changes with `permissions: pull-requests: read` and explicit `ref: ${{ github.event.repository.default_branch }}`\n- In: Offline flag `--no-github` for local runs\n- Out: Automatically closing beads in jsonl from CI (process stays local per CLAUDE.md)\n## Notes\n- Security: pull_request_target runs with a write-capable token in base context — never `actions/checkout` with `ref: github.event.pull_request.head.sha`, never run scripts from the PR; the PR body is treated as untrusted data (only regex-extracted ids are used).\n- Cache API responses per run; cap to last 500 PRs by default.",
+      "acceptance": "- AC-1 [unit] Given jsonl bead `mw-e09.3` open and a merged PR #57 whose body has `Closes mw-e09.3`, when generated, then `mw-e09.3` is in the Completed tab with a link to PR #57.\n- AC-2 [unit] Given an open PR #60 with `Closes mw-e09.4`, when generated, then `mw-e09.4` shows status \"in progress (PR #60)\" in the Upcoming tab.\n- AC-3 [unit] Given a closed-unmerged PR referencing `mw-e09.5`, when generated, then `mw-e09.5` keeps its jsonl status.\n- AC-4 [unit] Given the GitHub API returns 403 rate-limited or a network error, when generated, then the page is still produced from jsonl alone with a visible \"GitHub status unavailable\" banner and exit code 0.\n- AC-5 [unit] Given a PR body referencing an id not present in jsonl, when generated, then it is listed in an \"Unknown references\" footer instead of crashing.\n- AC-6 [unit] Given 3 pages of PR results, when fetched, then all pages are consumed via the Link header and results merged.\n- AC-7 [integration] Given the workflow file, when statically checked by a test, then no step under pull_request_target checks out a PR head ref or runs `pnpm install` from PR contents.\n- AC-8 [integration] Given a PR is merged on GitHub, when the resulting workflow run completes, then the Pages site shows its beads as Completed without any local bd action.",
+      "depends_on": [
+        "e00-backlog-html",
+        "e00-pr-template"
+      ]
+    },
+    {
+      "key": "e00-engine-decision",
+      "epic": "mw-e00",
+      "type": "spike",
+      "title": "Spike: choose Three.js vs Babylon.js and physics engine (ADR-0001)",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:render",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 1440,
+      "description": "## Why\nThe renderer and physics choice shapes every render, animation and physics story; making it on evidence against our hardware baseline avoids a costly mid-project switch.\n## What\nTime-box: 3 days. Question: which of Three.js + Rapier or Babylon.js + (Rapier | Havok) best serves a stylized third-person action RPG in the browser given our baseline? Build the same benchmark scene in `spikes/engine-three/` and `spikes/engine-babylon/`: greybox dungeon room, 1 skinned glTF character with 3 blended animations + 30 skinned NPCs, 200 dynamic rigid bodies (boxes/barrels) with collisions, 8 dynamic point lights + 1 shadowed directional light, 1 particle emitter, post-processing bloom. Measure on the reference machine (High, 1440p-equivalent) and a low-tier machine if available: p50/p95 frame time, gzip bundle size, time-to-first-frame, JS heap. Evaluate physics determinism: Rapier deterministic build (`@dimforge/rapier3d-deterministic`) snapshot/restore and cross-browser state-hash equality, and whether gameplay physics can live behind the `src/sim` boundary. Also score TS ergonomics, glTF/animation retargeting, inspector/debug tooling, WebGPU path, docs/community, licence.\n## Scope\n- In: Two spike prototypes (not production code), scripted benchmark harness, results table\n- In: docs/adr/0001-engine-and-physics.md with weighted scorecard, decision, consequences, rejected option and revisit triggers\n- In: docs/adr/README.md + ADR template (first ADR)\n- Out: Production renderer bootstrap (e00-render-bootstrap)\n- Out: 3D asset sourcing pipeline (e37-3d-pipeline-decision)\n## Notes\n- Keep spike code out of src/ and out of coverage; delete or archive after the ADR merges.\n- Related: e37-3d-pipeline-decision should consume the glTF/animation findings.",
+      "acceptance": "- AC-1 [manual] Given both prototypes, when run on the reference machine with the scripted harness, then a results table (p50/p95 frame time, bundle gz KB, TTFF, heap) for each is recorded in the ADR with browser/OS versions.\n- AC-2 [integration] Given the Rapier deterministic build, when the same 600-step input script runs twice in Chrome and once in Firefox, then the ADR records whether final state hashes match, with the script committed in `spikes/`.\n- AC-3 [manual] Given the evaluation, when ADR-0001 is written, then it contains a weighted scorecard, the chosen renderer and physics engine, rejected options with reasons, and explicit revisit triggers.\n- AC-4 [manual] Given neither option reaches p95 ≤ 16.7 ms in the benchmark on High, when the ADR is written, then it records the gap, the mitigations assumed (e.g. LOD, instancing, fewer shadow casters) and proposes budget changes rather than silently accepting.\n- AC-5 [manual] Given the ADR, when merged, then the ADR states whether gameplay physics runs inside `src/sim` (deterministic) or in `src/game` with sim-owned outcomes, and the contract's \"the renderer\" wording remains valid.",
+      "depends_on": [
+        "e00-repo-scaffold"
+      ]
+    },
+    {
+      "key": "e00-sim-rng-clock",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Implement seeded RNG streams and injected clock for the sim",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:sim",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nDeterminism starts with randomness and time being inputs, not ambient globals — required for replays, saves and reproducible bugs.\n## What\nAdd `src/sim/rng`: a fast, serializable PRNG (e.g. PCG32 or xoshiro128**) with named sub-streams (`rng.stream(\"loot\")`) so adding a consumer in one system does not perturb others; helpers (int range, float, chance, pick, shuffle, weighted). Add `src/sim/clock`: a sim clock advanced only by the fixed-step loop (tick count, sim time in ms as integer ticks × step).\n## Scope\n- In: PRNG with serialize/restore state\n- In: Named stream derivation from a root seed (hash of seed + name)\n- In: Sim clock type used by all systems\n- Out: The loop itself (e00-sim-core)\n## Notes\n- Avoid Math.* transcendental functions in RNG; use 32-bit integer ops (`Math.imul`, `>>> 0`) which are specified exactly.",
+      "acceptance": "- AC-1 [unit] Given seed 12345, when 1,000 values are drawn from stream \"loot\", then they equal a committed golden sequence.\n- AC-2 [unit] Given a stream whose state is serialized after 500 draws and restored into a new instance, when 500 more draws are made, then they equal the original instance's next 500.\n- AC-3 [unit] Given streams \"loot\" and \"ai\", when extra draws are added to \"ai\", then the \"loot\" sequence is unchanged.\n- AC-4 [unit] Given `int(5, 5)` or `pick([])`, when called, then it returns 5 and throws a typed `EmptyChoiceError` respectively.\n- AC-5 [unit] Given 1,000,000 `float()` draws, when bucketed into 10 bins, then each bin holds 10% ± 0.5%.",
+      "depends_on": [
+        "e00-determinism-lint"
+      ]
+    },
+    {
+      "key": "e00-sim-core",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Build deterministic fixed-step sim loop, entity store and event bus",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:sim",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 900,
+      "description": "## Why\nEvery rule of the game (constitution: systemic world, \"Wait… I can do that?\") lives in one deterministic, testable simulation core.\n## What\nAdd `src/sim/core`: `World` with fixed timestep (default 60 Hz, configurable), ordered system scheduler, entity/component store (typed component definitions, stable integer entity ids, dense storage, queries with deterministic iteration order), deferred entity creation/destruction applied at end of tick, and a typed event bus (events emitted during tick N are delivered in emission order at defined phase boundaries). `step(inputs)` is the only way time advances; inputs are a per-tick command list.\n## Scope\n- In: World, scheduler, component registry, queries, event bus, command/input queue\n- In: Snapshot/restore API hook for components (consumed by state hash and saves)\n- In: Micro-benchmarks via `vitest bench`\n- Out: Canonical state hashing (e00-sim-state-hash)\n- Out: Render interpolation and rAF binding (e00-game-loop-bridge)\n- Out: Physics integration (per ADR-0001)\n## Notes\n- Entity ids are never reused within a session (generation counter) to avoid stale-reference bugs.\n- Cross-browser float determinism is not guaranteed for Math.sin/cos/exp; document the policy: determinism target is same build + same engine; gameplay-critical trig goes through `src/sim/math` wrappers so a deterministic implementation can be swapped in.",
+      "acceptance": "- AC-1 [unit] Given systems A, B, C registered in that order, when `step()` runs, then they execute in order A→B→C every tick.\n- AC-2 [unit] Given an entity destroyed by system A during tick N, when system B queries in the same tick, then the entity is still visible, and from tick N+1 it is gone.\n- AC-3 [unit] Given two worlds with the same seed and identical input lists for 1,000 ticks, when compared, then their component snapshots are deep-equal.\n- AC-4 [unit] Given an event emitted by a handler of another event, when the bus flushes, then the nested event is delivered after the current event in FIFO order and a cycle guard throws after 10,000 events in one flush.\n- AC-5 [unit] Given a query for components [Position, Flammable], when entities are added in random order, then iteration order is ascending entity id.\n- AC-6 [perf] Given 5,000 entities with 3 components and 10 trivial systems, when `vitest bench` runs in Node on CI, then mean `step()` time is ≤ 1 ms.",
+      "depends_on": [
+        "e00-sim-rng-clock"
+      ]
+    },
+    {
+      "key": "e00-sim-state-hash",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Add canonical sim state serialization and hashing",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:sim",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nReplays, save verification and desync debugging all need one canonical, order-independent fingerprint of sim state.\n## What\nAdd `src/sim/snapshot`: canonical serialization of world state (sorted entity ids, component fields in declared order, floats encoded via their IEEE-754 bits, RNG states, clock) and a fast non-cryptographic hash (e.g. xxHash32/FNV-1a 64) over it. Provide `diffSnapshots(a, b)` returning the first differing entity/component/field for debugging.\n## Scope\n- In: Canonical encoder, hash, diff utility\n- Out: Save file format (e30-save-serialization reuses the encoder)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given two worlds with identical state built via different entity insertion orders but the same ids, when hashed, then the hashes are equal.\n- AC-2 [unit] Given a single component float differing by 1 ULP, when hashed, then the hashes differ and `diffSnapshots` names the entity, component and field.\n- AC-3 [unit] Given `-0` vs `+0` and two different NaN payloads, when encoded, then the documented canonicalisation rule is applied consistently (NaN canonicalised; ±0 distinct) and tested.\n- AC-4 [perf] Given 5,000 entities × 3 components, when hashed in Node, then it completes in ≤ 5 ms.",
+      "depends_on": [
+        "e00-sim-core"
+      ]
+    },
+    {
+      "key": "e00-replay-harness",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Record inputs and replay them to identical state hashes in tests",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:sim",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nContract §3 determinism policy: recorded input logs must replay to identical sim state hashes — our strongest regression net for emergent systems.\n## What\nAdd `src/sim/replay`: a replay file format (`{formatVersion, buildSha, contentHash, seed, stepHz, inputs: per-tick command lists (run-length encoded), checkpoints: [{tick, hash}]}`), a recorder that captures commands fed to `World.step`, and a player that re-runs them asserting checkpoint hashes. Vitest helper `expectReplay(\"replays/foo.json\")` and a `pnpm replay:record` dev hook in the game layer. Golden replays live in `test/replays/` and run in CI.\n## Scope\n- In: Format (zod schema), recorder, player, checkpoint every N ticks (default 60)\n- In: Vitest helper + one golden replay against the core sim\n- In: Clear failure output using `diffSnapshots` at the first mismatching checkpoint\n- Out: Bug-report capture UX (e33-replay-bug-capture)\n- Out: Game-layer keyboard/mouse capture (lives with e02-input-actions integration)\n## Notes\n- Replays record *sim commands* (post input mapping), not raw DOM events, so they survive key remapping.\n- When content or sim changes intentionally alter outcomes, `pnpm replay:rebless` regenerates hashes and the diff must be reviewed in the PR.",
+      "acceptance": "- AC-1 [unit] Given a recorded 3,600-tick session, when replayed, then every checkpoint hash matches and the final hash equals the recorded final hash.\n- AC-2 [unit] Given a sim change that alters one component at tick 1,234, when the golden replay runs, then it fails reporting checkpoint tick 1,260 (first after divergence) and the differing entity/field.\n- AC-3 [unit] Given a replay whose `formatVersion` is newer than supported, when loaded, then it fails with a typed `UnsupportedReplayVersion` error.\n- AC-4 [unit] Given a replay whose `contentHash` differs from current content, when run, then the harness reports \"content changed\" distinctly from a determinism failure.\n- AC-5 [integration] Given `test/replays/*.json`, when CI runs unit tests, then all golden replays execute and pass.",
+      "depends_on": [
+        "e00-sim-state-hash"
+      ]
+    },
+    {
+      "key": "e00-content-pipeline",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Load schema-validated content with a per-entry test harness",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:content",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nSpells, items, creatures and puzzles are data, not code (constitution §10); designers need fast, safe iteration with errors caught before runtime.\n## What\nAdd `src/content`: a registry of content types, each with a zod schema and a folder under `content/<type>/*.json`; a loader (Vite `import.meta.glob` in the app, fs in Node tests) that validates, reports all errors with file path + JSON path, and freezes results into a typed, id-indexed catalogue. Cross-reference helper (`ref(\"creature\", id)`) validated after load. Content hash over canonical content for replay/save compatibility. Test harness: `describeContent(\"spell\", (entry) => …)` generates one test per entry, and a coverage check fails if any content entry has no exercising test.\n## Scope\n- In: Registry, loader, error formatting, cross-ref validation, content hash\n- In: Example content type `testprop` with 2 entries\n- In: Per-entry test generator + \"every entry exercised\" check\n- In: JSON Schema export from zod for editor autocompletion (`content/*.schema.json`)\n- Out: Specific schemas (spells e06, creatures e12, items e17, …)\n- Out: CLI validator/scaffolder and hot reload (e33-content-validator-cli, e33-content-scaffolder, e33-content-hot-reload)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given a content file with a missing required field and a wrong type in two places, when loaded, then all three errors are reported with file path and JSON pointer in one run.\n- AC-2 [unit] Given two entries with the same id in different files, when loaded, then loading fails naming both files.\n- AC-3 [unit] Given an entry referencing `creature:goblin-archer` that does not exist, when cross-refs validate, then it fails naming source entry and missing target.\n- AC-4 [unit] Given unchanged content in a different file order, when the content hash is computed, then it is identical.\n- AC-5 [integration] Given a content entry with no test that exercises it, when the content-coverage check runs in CI, then it fails listing the entry id.\n- AC-6 [content] Given the example `testprop` entries, when validated, then they pass and the loaded catalogue is deeply frozen.",
+      "depends_on": [
+        "e00-sim-core"
+      ]
+    },
+    {
+      "key": "e00-render-bootstrap",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Bootstrap the chosen renderer and physics with a boot smoke test",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:render",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nThe ADR decision must become a running, measurable baseline before any visual gameplay work begins.\n## What\nInstall the renderer and physics chosen in ADR-0001; add `src/render/bootstrap` creating canvas, renderer, scene, camera, resize/DPR handling (render scale setting hook) and a clear teardown; lazy-load the physics WASM with a loading state. Playwright smoke: app boots, first frame renders, no console errors, canvas non-blank (pixel sample check), resize works.\n## Scope\n- In: Renderer + physics bootstrap, dispose(), DPR cap\n- In: Unsupported-browser fallback screen (WebGL2/WASM missing) — minimal version\n- In: Playwright boot smoke spec with screenshot artifact\n- In: coverage-exclusions.md row for render bootstrap\n- Out: Full capability detection matrix (e32-capability-detection)\n- Out: Greybox content (e00-greybox-testbed)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given the built app, when loaded in Chromium, then the first frame renders within 3 s locally, the canvas has non-uniform pixels, and there are zero console errors or warnings from our code.\n- AC-2 [e2e] Given the viewport resizes from 1280×720 to 1920×1080, when the next frame renders, then canvas drawing-buffer size matches viewport × min(devicePixelRatio, cap).\n- AC-3 [e2e] Given WebAssembly is disabled via init script, when the app loads, then a readable \"unsupported browser\" screen appears instead of a blank page or uncaught error.\n- AC-4 [integration] Given `dispose()` is called, when the renderer is recreated 5 times, then WebGL context count does not grow and no errors are logged.",
+      "depends_on": [
+        "e00-engine-decision",
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e00-game-loop-bridge",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Bind fixed-step sim to rAF rendering with interpolation",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:game",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nSmooth visuals at any refresh rate with a deterministic sim underneath is the backbone of \"responsive controls feel excellent\" (E02).\n## What\nAdd `src/game/loop`: an accumulator-based loop on requestAnimationFrame that advances `World.step` at the fixed rate, caps catch-up steps (spiral-of-death guard), exposes interpolation alpha to render sync, and pauses the sim when the tab is hidden. Render sync reads sim snapshots (read-only view) and updates scene objects. Input sampling produces per-tick command lists (hook for e02-input-actions).\n## Scope\n- In: Loop, accumulator, max-steps-per-frame cap, pause/resume on visibilitychange\n- In: Sim→render sync interface (entity ↔ scene object binding registry)\n- In: Injected time source for tests\n- Out: Action mapping (e02-input-actions)\n- Out: Frame pacing analytics (e32-frame-pacing)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given a fake clock advancing 33.3 ms per frame at 60 Hz sim, when 60 frames run, then exactly 120 sim steps occur and alpha stays in [0,1).\n- AC-2 [unit] Given a single frame delta of 2,000 ms (debugger pause), when the loop processes it, then at most 5 steps run and the excess time is dropped with a logged warning.\n- AC-3 [unit] Given `visibilitychange` to hidden, when 10 s pass and the tab becomes visible, then 0 sim steps ran while hidden and no catch-up burst occurs.\n- AC-4 [integration] Given a 144 Hz and a 60 Hz simulated display, when the same inputs run for 600 sim ticks, then final sim state hashes are identical.\n- AC-5 [unit] Given an entity destroyed in the sim, when render sync runs, then its bound scene object is disposed within the same frame.",
+      "depends_on": [
+        "e00-sim-core",
+        "e00-render-bootstrap"
+      ]
+    },
+    {
+      "key": "e00-greybox-testbed",
+      "epic": "mw-e00",
+      "type": "feature",
+      "title": "Create greybox testbed scene, level kit, scene loader and debug camera",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:tools",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nGameplay is never blocked by art; every system needs a fast place to be tried in-engine from day one.\n## What\nAs a developer, I want a greybox testbed and modular level kit so that I can prototype rooms, corridors and encounters in minutes.\nGreybox kit primitives (floor, wall, ramp, stairs, pillar, doorway, platform, crate) with grid snapping and colour-coded materials by purpose (walkable, climbable, interactive, hazard). Scenes are data (`content/scenes/*.json`: placements + entity spawns) loaded by a scene loader into both sim and renderer. Free-fly debug camera (toggle), scene picker via `?scene=` URL param, and a default `testbed` scene (room → corridor → arena).\n## Scope\n- In: Level kit + scene schema (via e00-content-pipeline)\n- In: Scene loader/unloader (sim entities + render objects + physics colliders)\n- In: Debug fly camera, `?scene=` param, on-screen scene name + build SHA\n- In: Playwright smoke loading each scene in `content/scenes`\n- Out: Player controller and gameplay camera (e02-player-controller, e02-camera)\n- Out: Debug console (e33-debug-console)\n## Notes\n- Scenes may be authored by hand in JSON or exported from Blender via glTF extras later; keep the schema simple.",
+      "acceptance": "- AC-1 [e2e] Given `?scene=testbed`, when the app loads, then the room→corridor→arena scene renders with zero console errors within 5 s locally.\n- AC-2 [unit] Given a scene file, when loaded then unloaded, then the sim world has zero remaining scene entities and the physics world zero colliders.\n- AC-3 [content] Given every file in `content/scenes`, when validated, then it passes the scene schema and all referenced kit pieces exist.\n- AC-4 [e2e] Given `?scene=does-not-exist`, when loaded, then a visible error lists available scenes and the app does not crash.\n- AC-5 [e2e] Given the debug camera toggled on, when WASD/mouse input is sent, then the camera moves and toggling off restores the prior camera.\n- AC-6 [perf] Given the testbed scene, when measured on the reference machine (High), then p95 frame time ≤ 8 ms (half budget, leaving headroom for gameplay).",
+      "depends_on": [
+        "e00-game-loop-bridge",
+        "e00-content-pipeline"
+      ]
+    },
+    {
+      "key": "e00-contributing-guide",
+      "epic": "mw-e00",
+      "type": "chore",
+      "title": "Write CONTRIBUTING.md covering worktrees, beads, DoD and ADRs",
+      "priority": 1,
+      "labels": [
+        "epic:e00",
+        "area:infra",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nHumans and agents both contribute; one short guide prevents process drift (wrong branch, missing Closes lines, unsigned commits).\n## What\nDocument: worktree-per-branch flow, bead lifecycle (claim → PR with Closes lines → close after merge), commit sign-off (DCO), squash-merge, DoD, coverage layers and how to request an exclusion, determinism rules for src/sim, ADR process (docs/adr), CHANGELOG convention, how to regenerate backlog.html locally. Add a DCO check job if sign-off is required.\n## Scope\n- In: CONTRIBUTING.md, link from README and AGENTS.md\n- In: DCO check (GitHub DCO app or action) as a required check\n- Out: Code of conduct / licence choice (separate decision if needed)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given a new contributor following only CONTRIBUTING.md, when they make a trivial change, then they produce a PR with a Closes line, signed-off commit and green CI without further guidance.\n- AC-2 [integration] Given a PR with an unsigned commit, when CI runs, then the DCO check fails.\n- AC-3 [integration] Given markdown link checking, when CI runs on docs changes, then CONTRIBUTING.md has no broken relative links.",
+      "depends_on": [
+        "e00-branch-protection",
+        "e00-coverage-exclusions"
+      ]
+    },
+    {
+      "key": "e30-save-serialization",
+      "epic": "mw-e30",
+      "type": "task",
+      "title": "Define versioned save format with section registry and migrations",
+      "priority": 0,
+      "labels": [
+        "epic:e30",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nSave-game stability is a constitution technical priority; one versioned format with a migration chain prevents \"your save is incompatible\" after every update.\n## What\nAdd `src/game/save/format` (100% coverage layer): save envelope `{formatVersion, saveSchemaVersion, gameVersion, buildSha, contentHash, createdAtTick, wallClockSavedAt (injected), metadata, sections: Record<sectionId, {version, data}>, checksum}`. Systems register a section (`registerSaveSection({id, version, schema, serialize(world), deserialize(world, data), migrations})`). Serialization reuses the canonical encoder from e00-sim-state-hash; checksum over sections. Migration runner applies per-section migrations in order (vN→vN+1) before zod validation.\n## Scope\n- In: Envelope schema (zod), section registry, serialize/deserialize whole world\n- In: Per-section migration chain + runner\n- In: Checksum verification\n- In: Round-trip property test: random world → save → load → identical state hash\n- Out: Persistence to IndexedDB (e30-indexeddb-storage)\n- Out: Fixture-based migration CI harness (e30-migration-fixtures)\n- Out: World facts content (e27-world-state-store registers its own section)\n## Notes\n- Sections allow e17 inventory, e27 world state, e19 progression, e23 quests to own their data without a central god-schema.\n- Unknown sections from a newer build are preserved verbatim on re-save (forward-compat) but flagged.",
+      "acceptance": "- AC-1 [unit] Given a world with 3 registered sections, when saved and loaded into a fresh world, then the sim state hash equals the original.\n- AC-2 [unit] Given a section at data version 1 and code at version 3, when loaded, then migrations 1→2 and 2→3 run in order and the result validates against the v3 schema.\n- AC-3 [unit] Given a save whose checksum does not match its sections, when loaded, then a typed `SaveCorruptError` is returned and the world is untouched.\n- AC-4 [unit] Given a save containing a section id not registered in this build, when loaded, then load succeeds, a warning lists the unknown section, and re-saving preserves it verbatim.\n- AC-5 [unit] Given a missing migration step (v1 data, only 2→3 registered), when loaded, then a typed `MissingMigrationError` names section and versions.\n- AC-6 [unit] Given `saveSchemaVersion` newer than the running build supports, when loaded, then it refuses with `SaveFromNewerBuildError` rather than attempting to parse.",
+      "depends_on": [
+        "e00-sim-state-hash",
+        "e00-content-pipeline"
+      ]
+    },
+    {
+      "key": "e30-indexeddb-storage",
+      "epic": "mw-e30",
+      "type": "task",
+      "title": "Persist saves to IndexedDB with atomic writes and fallbacks",
+      "priority": 0,
+      "labels": [
+        "epic:e30",
+        "area:game",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nBrowser storage is fragile (quota, private mode, eviction); saves must survive or fail loudly, never silently.\n## What\nAdd `src/game/save/storage`: a `SaveStore` interface with an IndexedDB implementation (db `mw-saves`, stores `slots`, `blobs`) using single-transaction atomic writes (write new blob + update slot pointer in one transaction, keep previous blob as backup), `navigator.storage.persist()` request on first save, quota estimate, and an in-memory fallback when IndexedDB is unavailable with a visible \"saves will not persist\" warning.\n## Scope\n- In: IndexedDB store (idb wrapper or hand-rolled), in-memory store, shared contract tests run against both (fake-indexeddb in Node)\n- In: Quota and persist-permission handling\n- Out: Slot UX (e30-save-slots)\n- Out: Cross-tab locking (e30-multi-tab-guard)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given the IndexedDB store, when a save is written then read back, then bytes are identical (contract test runs against both implementations).\n- AC-2 [integration] Given a transaction aborted mid-write (simulated), when the slot is read, then the previous save is returned intact.\n- AC-3 [integration] Given a QuotaExceededError on write, when saving, then the error surfaces as a typed `SaveQuotaError`, the previous save remains, and the UI can show \"free up space\".\n- AC-4 [e2e] Given IndexedDB throws on open (private-mode simulation), when the game starts, then the in-memory store is used and a persistent warning banner is shown.\n- AC-5 [integration] Given `navigator.storage.persist` is unavailable, when first save occurs, then saving proceeds without error.",
+      "depends_on": [
+        "e30-save-serialization"
+      ]
+    },
+    {
+      "key": "e30-migration-fixtures",
+      "epic": "mw-e30",
+      "type": "task",
+      "title": "Gate save-schema changes on committed migration fixtures in CI",
+      "priority": 0,
+      "labels": [
+        "epic:e30",
+        "area:qa",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nContract §3: versioned migration tests for every save-schema change; forgetting a migration must be impossible, not merely discouraged.\n## What\nCommit `test/save-fixtures/<saveSchemaVersion>/*.json` generated from representative worlds. A CI test loads every fixture through the current migration chain and asserts it validates and loads. A schema fingerprint (hash of each section's JSON Schema export) is committed in `save-schema.lock.json`; if a section schema changes without bumping its version and adding a migration + fixture, CI fails with instructions. `pnpm save:fixture` generates a fixture for the current version.\n## Scope\n- In: Fixture loader test, schema fingerprint lock + check, fixture generator script\n- Out: Runtime migration logic (e30-save-serialization)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given fixtures for versions 1..N, when CI runs, then each loads under the current build and yields a world passing invariant checks.\n- AC-2 [unit] Given a section schema field added without bumping the section version, when the lock check runs, then it fails naming the section and telling the developer to bump + add migration + fixture.\n- AC-3 [unit] Given a version bump without a new fixture directory, when the check runs, then it fails.\n- AC-4 [unit] Given a fixture that fails to load, when CI runs, then the failure names fixture path and the migration step that threw.",
+      "depends_on": [
+        "e30-save-serialization"
+      ]
+    },
+    {
+      "key": "e30-save-slots",
+      "epic": "mw-e30",
+      "type": "feature",
+      "title": "Support manual save slots with metadata and thumbnails",
+      "priority": 0,
+      "labels": [
+        "epic:e30",
+        "area:game",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nPlayers experiment (\"what if I anger the minotaur?\"); multiple slots make experimentation safe.\n## What\nAs a player, I want several named save slots showing class, location, playtime and a thumbnail so that I can keep parallel playthroughs.\nSlot model: 10 manual slots + autosave ring + quicksave; metadata (character name, class, area name, playtime ticks, saved-at, game version, 256×144 WebP thumbnail captured from the canvas). Operations: save, load, overwrite (confirm), delete (confirm), rename.\n## Scope\n- In: Slot manager in game layer\n- In: Thumbnail capture (render-side, excluded-coverage helper)\n- Out: Menu UI screens (e30-save-load-ui)\n## Notes\n- None.\n\n**Integration note:** Promoted to P0/m1 — required by the E01 grey-box vertical slice.",
+      "acceptance": "- AC-1 [unit] Given 10 filled manual slots, when the player attempts an 11th new save, then the slot manager requires choosing an overwrite target.\n- AC-2 [unit] Given a slot saved with class knight in area \"testbed-arena\" after 3,600 ticks, when metadata is read, then it reports those values and playtime 60 s.\n- AC-3 [integration] Given a thumbnail capture fails (canvas tainted or context lost), when saving, then the save still succeeds with a placeholder thumbnail.\n- AC-4 [unit] Given a slot deletion, when confirmed, then the slot and its backup blob are both removed.",
+      "depends_on": [
+        "e30-indexeddb-storage"
+      ]
+    },
+    {
+      "key": "e30-autosave",
+      "epic": "mw-e30",
+      "type": "feature",
+      "title": "Autosave on area transitions and checkpoints into a rotating ring",
+      "priority": 0,
+      "labels": [
+        "epic:e30",
+        "area:game",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nFailure should create stories, not lost hours; autosaves keep risk fun rather than punishing.\n## What\nAs a player, I want the game to autosave at safe moments so that a crash or death never costs much progress.\nAutosave triggers: area transition, checkpoint trigger volumes, after quest state changes, and every 5 minutes of playtime when safe. Never while in combat/alerted state, mid-air, or during dialogue — deferred until safe. Ring of 3 autosave slots, oldest overwritten. Unobtrusive HUD indicator.\n## Scope\n- In: Autosave scheduler with \"safe to save\" predicate supplied by systems\n- In: Ring buffer slots\n- In: HUD indicator hook\n- Out: Trigger volume implementation (e03-triggers)\n- Out: Alert/combat state source (e11-alert-states)\n## Notes\n- Safe predicate is a registry so combat/stealth/dialogue can veto without save code knowing them.",
+      "acceptance": "- AC-1 [unit] Given 3 autosaves exist, when a 4th autosave occurs, then the oldest is replaced and the other two remain.\n- AC-2 [unit] Given an autosave trigger fires while a registered veto (combat) is active, when the veto clears 20 s later, then exactly one autosave occurs at that point.\n- AC-3 [unit] Given playtime passes 5 minutes with no other autosave, when safe, then a timed autosave occurs; given another autosave happened 1 minute ago, then the timer resets.\n- AC-4 [integration] Given an autosave write fails, when the next safe moment arrives, then it retries once and surfaces a non-blocking HUD warning on second failure.\n- AC-5 [e2e] Given the testbed with a checkpoint volume, when the player enters it, then an autosave appears in the slot list with the area name.",
+      "depends_on": [
+        "e30-indexeddb-storage",
+        "e03-triggers"
+      ]
+    },
+    {
+      "key": "e30-quicksave",
+      "epic": "mw-e30",
+      "type": "feature",
+      "title": "Add quicksave and quickload actions",
+      "priority": 2,
+      "labels": [
+        "epic:e30",
+        "area:game",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nExperimentation-heavy play (constitution: \"too useful\" spells) benefits from instant save-scumming for players who want it.\n## What\nAs a player, I want quicksave/quickload keys so that I can try risky ideas instantly.\nQuicksave writes the single quicksave slot (subject to the same safety vetoes as autosave, except combat is allowed); quickload asks for confirmation if unsaved progress > 60 s.\n## Scope\n- In: Quicksave/quickload actions registered in the action map\n- In: Confirmation prompt\n- Out: Default key bindings list (e02-input-actions)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given quicksave during combat, when triggered, then the save succeeds (combat not vetoed for quicksave) but mid-air/dialogue still vetoes with a HUD message.\n- AC-2 [integration] Given no quicksave exists, when quickload is pressed, then a \"no quicksave\" toast appears and nothing else changes.\n- AC-3 [e2e] Given progress of 90 s since the last save, when quickload is pressed, then a confirmation dialog appears before loading.",
+      "depends_on": [
+        "e30-save-slots",
+        "e02-input-actions"
+      ]
+    },
+    {
+      "key": "e30-death-reload",
+      "epic": "mw-e30",
+      "type": "feature",
+      "title": "On death, offer reload of latest save or checkpoint",
+      "priority": 0,
+      "labels": [
+        "epic:e30",
+        "area:game",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nThe m1 loop requires die → reload; it must be fast so failure invites another try.\n## What\nAs a player, I want a death screen offering \"Load last save\" (most recent of any slot type) and \"Load…\" so that I return to play within seconds.\nDeath screen appears after the death sequence; reload completes to playable in ≤ 3 s warm.\n## Scope\n- In: Death screen flow, most-recent-save resolution, full world teardown/rebuild on load\n- Out: Death conditions and animation (e04-damage-model and E02)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given an autosave at t=100 and a manual save at t=120, when resolving \"last save\", then the manual save is chosen.\n- AC-2 [e2e] Given the player dies in the testbed, when \"Load last save\" is chosen, then the game is playable in ≤ 3 s and the sim state hash equals the save's state hash.\n- AC-3 [e2e] Given no saves exist at death, when the death screen shows, then it offers \"Restart area\" instead and does not error.\n- AC-4 [integration] Given load of a corrupt latest save, when chosen from death screen, then the recovery flow (e30-corruption-recovery) offers the backup.",
+      "depends_on": [
+        "e30-autosave",
+        "e04-damage-model"
+      ]
+    },
+    {
+      "key": "e30-corruption-recovery",
+      "epic": "mw-e30",
+      "type": "feature",
+      "title": "Recover from corrupt saves using backups and clear messaging",
+      "priority": 1,
+      "labels": [
+        "epic:e30",
+        "area:game",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nNothing kills goodwill faster than a lost 10-hour save; recovery must be automatic and honest.\n## What\nAs a player, I want the game to fall back to a backup when a save is damaged so that I never lose everything.\nOn `SaveCorruptError`/migration failure: try the slot's backup blob, then the next most recent save; show what was restored and its age; offer to export the corrupt file for a bug report.\n## Scope\n- In: Recovery chain, messaging, corrupt-file export\n- Out: General export/import (e30-export-import)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given a slot whose primary blob fails checksum and whose backup is valid, when loaded, then the backup loads and the UI states \"restored backup from <time>\".\n- AC-2 [integration] Given primary and backup both corrupt, when loaded, then the next most recent valid save across slots is offered.\n- AC-3 [integration] Given all saves corrupt, when loading, then the player can start a new game and export the corrupt files; the game does not crash.\n- AC-4 [unit] Given a migration that throws, when loading, then it is treated like corruption (recovery chain) and the error is logged to local telemetry.",
+      "depends_on": [
+        "e30-save-slots"
+      ]
+    },
+    {
+      "key": "e30-multi-tab-guard",
+      "epic": "mw-e30",
+      "type": "task",
+      "title": "Prevent two open tabs from clobbering each other's saves",
+      "priority": 2,
+      "labels": [
+        "epic:e30",
+        "area:game",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nBrowser games are easily opened twice; concurrent writers silently overwrite progress.\n## What\nUse the Web Locks API (fallback: BroadcastChannel heartbeat) to elect a single \"active\" tab. A second tab shows \"Game already open in another tab\" with a \"Play here instead\" option that asks the first tab to release (it autosaves and pauses).\n## Scope\n- In: Lock acquisition, takeover protocol, fallback\n- Out: Cross-device sync (not planned)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given the game open in tab A, when opened in tab B, then B shows the already-open message and makes no writes.\n- AC-2 [e2e] Given B chooses \"Play here instead\", when A receives the request, then A autosaves, pauses with a notice, and B loads that autosave.\n- AC-3 [e2e] Given tab A crashes (closed abruptly), when tab B retries, then it acquires the lock within 5 s.",
+      "depends_on": [
+        "e30-autosave"
+      ]
+    },
+    {
+      "key": "e30-export-import",
+      "epic": "mw-e30",
+      "type": "feature",
+      "title": "Export and import save files",
+      "priority": 2,
+      "labels": [
+        "epic:e30",
+        "area:game",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nBrowser storage can be cleared; players and playtesters need a way to back up and share saves.\n## What\nAs a player, I want to export a save to a file and import it later so that clearing browser data does not erase my adventure.\nExport produces `merlins-wrath-<slot>-<date>.mwsave` (JSON envelope, gzip). Import validates envelope, checksum and version, then runs migrations and places it into a chosen slot.\n## Scope\n- In: Export/import in settings/load menu\n- In: Validation errors shown in plain language\n- Out: Cloud sync\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given an exported save, when imported into a fresh profile, then loading it yields the same sim state hash.\n- AC-2 [integration] Given a file that is not a save (random JSON or PNG), when imported, then a clear \"not a Merlin's Wrath save\" error is shown and no slot changes.\n- AC-3 [integration] Given a save from an older schema version, when imported, then migrations run and it loads.\n- AC-4 [unit] Given a save file larger than 20 MB, when imported, then it is rejected before parsing.",
+      "depends_on": [
+        "e30-save-slots"
+      ]
+    },
+    {
+      "key": "e30-save-load-ui",
+      "epic": "mw-e30",
+      "type": "feature",
+      "title": "Build Continue / Load / Save menu screens",
+      "priority": 0,
+      "labels": [
+        "epic:e30",
+        "area:ui",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nThe m1 loop needs saves reachable from the title screen and pause menu.\n## What\nAs a player, I want Continue, Load and Save screens so that I can resume and manage my saves.\nTitle: Continue (most recent), New Game, Load. Pause: Save, Load. Slot list shows thumbnail + metadata; confirmation dialogs for overwrite/delete; keyboard and gamepad navigable.\n## Scope\n- In: Title and pause menu save screens\n- In: Empty/error states\n- Out: Settings screens (e31-settings-framework)\n## Notes\n- None.\n\n**Integration note:** Promoted to P0/m1 — required by the E01 grey-box vertical slice.",
+      "acceptance": "- AC-1 [e2e] Given one or more saves, when the title screen shows, then Continue is focused by default and loads the most recent save.\n- AC-2 [e2e] Given no saves, when the title screen shows, then Continue is hidden and New Game is focused.\n- AC-3 [e2e] Given the slot list, when navigated by keyboard only (arrows/Enter/Esc), then every action (load, save, overwrite confirm, delete confirm) is reachable.\n- AC-4 [integration] Given the storage in in-memory fallback mode, when the save screen opens, then the non-persistence warning is visible.",
+      "depends_on": [
+        "e30-save-slots",
+        "e31-settings-framework"
+      ]
+    },
+    {
+      "key": "e31-settings-framework",
+      "epic": "mw-e31",
+      "type": "task",
+      "title": "Create typed settings store and options menu skeleton",
+      "priority": 0,
+      "labels": [
+        "epic:e31",
+        "area:ui",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nEvery accessibility and comfort feature needs one place to live, persist and notify systems of change.\n## What\nAdd `src/game/settings`: a zod-typed settings schema with defaults and categories (controls, camera, display, audio, accessibility, gameplay/difficulty), versioned persistence in localStorage (small, sync) with migration, change subscriptions (`settings.on(\"camera.invertY\", cb)`), and \"apply immediately\" semantics. Options UI skeleton: tabbed categories, generic controls (toggle, slider, select, keybind placeholder), reset category to defaults, keyboard/gamepad navigable.\n## Scope\n- In: Schema, defaults, persistence + version migration, subscriptions\n- In: Options menu shell with generic controls generated from schema metadata (label, help text, range)\n- Out: Individual settings features (other e31 items)\n- Out: Graphics presets implementation (e32-quality-presets)\n## Notes\n- Settings are per-browser, not per-save. Difficulty assists are settings too but read by sim via an injected config (never global reads from sim).\n\n**Integration note:** Promoted to P0 — input actions, HUD vitals and inventory UI (all P0/m1) depend on it.",
+      "acceptance": "- AC-1 [unit] Given stored settings with an unknown key and an out-of-range value, when loaded, then the unknown key is dropped, the value is clamped/defaulted and a warning is logged.\n- AC-2 [unit] Given a subscriber to `audio.master`, when the value changes, then the callback fires once with the new value; unchanged sets do not fire.\n- AC-3 [unit] Given stored settings at schema v1 and code at v2, when loaded, then the migration maps renamed keys and preserves user values.\n- AC-4 [e2e] Given the options menu, when a toggle is changed and the page reloaded, then the change persists.\n- AC-5 [e2e] Given \"Reset to defaults\" in Camera, when confirmed, then only camera settings reset.\n- AC-6 [integration] Given localStorage is unavailable, when the game starts, then defaults are used in-memory and no uncaught error occurs.",
+      "depends_on": [
+        "e00-greybox-testbed"
+      ]
+    },
+    {
+      "key": "e31-remap-ui",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Let players remap keyboard, mouse and gamepad bindings",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:ui",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nRemapping is the single most-requested accessibility feature and a baseline expectation for PC action games.\n## What\nAs a player, I want to rebind every action for keyboard/mouse and gamepad so that controls fit my hands and hardware.\nBindings screen lists actions from the action map with primary/secondary bindings per device; \"press a key\" capture with Esc to cancel; conflict detection with swap/replace prompt; reset per action and all; bindings persisted in settings.\n## Scope\n- In: Bindings UI over e02-input-actions API\n- In: Conflict detection within the same context (e.g. exploration vs menu)\n- Out: The action map itself (e02-input-actions)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given \"Dodge\" bound to Space, when rebound to Shift, then pressing Shift in the testbed triggers dodge and Space no longer does.\n- AC-2 [unit] Given a new binding that conflicts with another action in the same context, when applied, then the user is prompted to swap or cancel and no silent duplicate exists.\n- AC-3 [unit] Given an attempt to unbind the last binding for a required action (Pause/Menu), when applied, then it is refused with an explanation.\n- AC-4 [e2e] Given capture mode, when Esc is pressed, then capture cancels without binding Esc.\n- AC-5 [e2e] Given remapped bindings, when the page reloads, then bindings persist.",
+      "depends_on": [
+        "e31-settings-framework",
+        "e02-input-actions"
+      ]
+    },
+    {
+      "key": "e31-hold-toggle",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Offer hold vs toggle for sprint, crouch, block and aim",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:game",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nSustained key holds are a common motor-accessibility barrier; stealth and knight play involve long holds.\n## What\nAs a player, I want to choose hold or toggle for sustained actions so that I do not need to keep keys pressed.\nPer-action setting for sprint, crouch/sneak, block, aim/draw; toggle mode auto-releases on context change (e.g. entering dialogue).\n## Scope\n- In: Setting + input-layer adapter that converts toggle into a held state\n- Out: Action definitions (e02-input-actions)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given crouch in toggle mode, when the key is pressed and released once, then the crouch command stays active until pressed again.\n- AC-2 [unit] Given block toggled on, when dialogue opens, then block is released and does not resume after dialogue.\n- AC-3 [e2e] Given the setting changed mid-hold, when applied, then the action state resets to released without getting stuck.",
+      "depends_on": [
+        "e31-settings-framework",
+        "e02-input-actions"
+      ]
+    },
+    {
+      "key": "e31-text-scaling",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Scale UI text 80–200% with readable defaults",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:ui",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nBooks are central to the sorcerer fantasy and dialogue is text-only; unreadable text excludes players.\n## What\nAs a player, I want to scale UI and book/dialogue text so that I can read comfortably at my screen distance.\nGlobal UI scale and separate text size (80–200%), minimum default body size 18 px at 1080p, optional dyslexia-friendly font toggle, text background opacity for subtitles/dialogue.\n## Scope\n- In: CSS variable-driven scaling (or engine UI equivalent)\n- In: Layout reflow at 200% without clipping\n- Out: Captions content (e31-captions)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given text size 200%, when the dialogue, book reader and inventory screens are opened at 1280×720, then no text is clipped (Playwright overflow check on text nodes).\n- AC-2 [unit] Given a stored value of 350%, when loaded, then it is clamped to 200%.\n- AC-3 [e2e] Given the dyslexia-friendly font toggled, when menus render, then the font family changes without reload.\n- AC-4 [manual] Given default settings at 1080p on the reference machine, when a tester reads dialogue from 70 cm, then it is legible (body text ≥ 18 px).",
+      "depends_on": [
+        "e31-settings-framework"
+      ]
+    },
+    {
+      "key": "e31-captions",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Caption gameplay-critical sounds with direction indicators",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:ui",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nStealth and combat depend on sound (footsteps, alerts, creature cues); deaf and hard-of-hearing players need that information visually.\n## What\nAs a player, I want captions for important sounds with direction so that I can react to threats I cannot hear.\nSound events tagged `caption` (content data: text key, priority) display as short captions with an on-screen direction arrow relative to the camera; stacking/merging rules; size/background from text settings; toggle on/off.\n## Scope\n- In: Caption event pipeline from audio/sim noise events\n- In: Direction indicator\n- In: Content field `caption` on sound definitions\n- Out: Audio engine (e28-audio-engine)\n- Out: Noise event model (e09-sound-propagation)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given a captioned noise event 90° to the player's right, when displayed, then the indicator points right (±15°).\n- AC-2 [unit] Given 5 identical \"footsteps\" events within 2 s, when displayed, then they merge into one caption with a refreshed timer rather than 5 lines.\n- AC-3 [unit] Given more than 4 simultaneous captions, when displayed, then the lowest-priority captions are dropped first.\n- AC-4 [content] Given every sound definition flagged gameplay-critical, when validated, then it has a caption text key that exists in the strings table.\n- AC-5 [e2e] Given captions enabled in the testbed, when a scripted guard alert sound plays, then its caption appears within 100 ms.",
+      "depends_on": [
+        "e31-settings-framework",
+        "e28-audio-engine",
+        "e09-sound-propagation"
+      ]
+    },
+    {
+      "key": "e31-camera-options",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Add camera sensitivity, invert, FOV and auto-centre options",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:game",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nCamera discomfort drives players away from third-person action games; control over it is basic comfort.\n## What\nAs a player, I want to adjust camera sensitivity, inversion, FOV, distance and auto-centering so that the camera feels right to me.\nSettings: mouse and stick sensitivity (separate X/Y), invert X/Y, FOV 60–100°, camera distance, auto-recentre on/off, lock-on switch sensitivity.\n## Scope\n- In: Settings wired to camera parameters via subscriptions\n- Out: Camera implementation (e02-camera)\n- Out: Shake/motion (e31-motion-comfort)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given invert Y enabled, when mouse moves up by 100 px, then camera pitch changes in the opposite direction to the default.\n- AC-2 [unit] Given FOV set to 120 via storage tampering, when loaded, then it clamps to 100.\n- AC-3 [e2e] Given sensitivity changed in the options menu, when returning to play, then the new sensitivity applies without reload.",
+      "depends_on": [
+        "e31-settings-framework",
+        "e02-camera"
+      ]
+    },
+    {
+      "key": "e31-motion-comfort",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Add motion comfort and photosensitivity safeguards",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:render",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nSpectacular magic (constitution: magic should feel magical) must not trigger motion sickness or photosensitive seizures.\n## What\nAs a player, I want to reduce camera shake, motion blur, head bob and flashes so that the game is comfortable and safe.\nSettings: camera shake 0–100%, motion blur off, reduce flashing (caps full-screen luminance change frequency to ≤ 3 flashes/s and limits intensity), reduce screen effects (vignette/chromatic aberration). Honour `prefers-reduced-motion` as initial default.\n## Scope\n- In: Settings + a global \"flash limiter\" utility VFX must route through\n- In: Default from prefers-reduced-motion\n- Out: VFX system (e29-vfx-framework)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given reduce-flashing on, when VFX request 10 full-screen flashes within 1 s, then the limiter lets at most 3 through with intensity capped.\n- AC-2 [unit] Given camera shake at 0%, when an impact requests shake, then camera offset remains zero.\n- AC-3 [e2e] Given `prefers-reduced-motion: reduce` emulated on first launch, when settings initialise, then shake defaults to 0% and reduce-flashing to on.\n- AC-4 [manual] Given the spell/VFX showcase with reduce-flashing on, when reviewed against the Harding test guidance, then no sequence exceeds the flash threshold.",
+      "depends_on": [
+        "e31-settings-framework",
+        "e29-vfx-framework"
+      ]
+    },
+    {
+      "key": "e31-colorblind-support",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Ensure no gameplay information relies on colour alone",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:ui",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nStealth awareness states, damage types and puzzle cues must be readable by colour-blind players (~8% of men).\n## What\nAs a player, I want gameplay cues distinguishable without colour so that colour-blindness does not block me.\nAudit and fix HUD/indicators to pair colour with shape/icon/pattern (alert states, element types, interactables), plus optional palette presets (deuteranopia, protanopia, tritanopia) for UI indicator colours.\n## Scope\n- In: UI indicator palette tokens + presets\n- In: Design rule in docs/art/style-bible.md cross-reference\n- Out: Full-screen colour filters (not planned; they degrade art)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given each awareness state indicator (Unaware→Combat), when rendered, then each has a distinct icon/shape independent of colour.\n- AC-2 [e2e] Given each palette preset, when the HUD test page renders all indicators, then adjacent indicator colours differ by a contrast ratio ≥ 3:1 under simulated deficiency.\n- AC-3 [manual] Given a colour-blind tester or simulator run through the testbed, when playing a stealth encounter, then all state changes are identified correctly.",
+      "depends_on": [
+        "e31-settings-framework",
+        "e37-style-bible"
+      ]
+    },
+    {
+      "key": "e31-audio-settings",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Add per-bus volume sliders and mono audio",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:audio",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nPlayers must balance music against gameplay-critical sound; single-sided hearing requires mono.\n## What\nAs a player, I want master/music/SFX/UI/ambience volume sliders and a mono toggle so that I can hear what matters.\nSliders map to audio engine buses (perceptual/log curve); mono downmix; mute when tab unfocused (optional).\n## Scope\n- In: Settings wired to e28 bus API\n- Out: Mixer implementation (e28-audio-engine)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given music slider at 0, when the music bus gain is read, then it is 0 (silent) and SFX unaffected.\n- AC-2 [unit] Given slider value 50%, when mapped, then gain follows the documented perceptual curve (≈ −10 dB ±1).\n- AC-3 [integration] Given mono enabled, when a sound positioned hard left plays, then both output channels carry equal signal.",
+      "depends_on": [
+        "e31-settings-framework",
+        "e28-audio-engine"
+      ]
+    },
+    {
+      "key": "e31-difficulty-assists",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Provide difficulty presets and granular assists read by the sim",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:sim",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nSouls-like weight should not mean exclusion; granular assists let players keep the fantasy while tuning the challenge.\n## What\nAs a player, I want difficulty presets and individual assists so that combat and stealth challenge suit me.\nA sim-side `DifficultyConfig` (injected, part of save metadata): damage taken multiplier, parry/dodge timing window multiplier, enemy detection speed multiplier, stealth last-known-position search duration, puzzle hint availability, fall damage on/off. Presets Story/Adventurer/Veteran map to values; custom allowed. Changing mid-game allowed and recorded in local telemetry.\n## Scope\n- In: DifficultyConfig schema + injection into World\n- In: Settings UI section\n- In: Sim helper `difficulty.scale(\"damageTaken\", x)` for systems to use\n- Out: Systems applying the multipliers (each combat/stealth bead reads the config)\n## Notes\n- Related: e04 and e09 systems must read these multipliers; integration pass should add ACs there.",
+      "acceptance": "- AC-1 [unit] Given preset Story, when resolved, then damageTaken=0.5, parryWindow=1.5, detectionSpeed=0.6 per the documented table.\n- AC-2 [unit] Given damageTaken multiplier 0.5, when a 20-damage hit is scaled, then 10 damage results (integer rounding rule documented and tested).\n- AC-3 [unit] Given a config value outside allowed bounds (e.g. parryWindow 10), when injected, then it is rejected by schema validation.\n- AC-4 [unit] Given difficulty changed mid-session, when saved and reloaded, then the new config is restored and the change event was emitted once.\n- AC-5 [integration] Given two replays identical except difficulty preset, when run, then state hashes differ (config is an input) and each replays deterministically.",
+      "depends_on": [
+        "e31-settings-framework",
+        "e00-sim-core"
+      ]
+    },
+    {
+      "key": "e31-menu-navigation",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Make every menu keyboard- and gamepad-operable with visible focus",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:ui",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nMenus that require a mouse block keyboard-only and gamepad players, and screen readers need labelled controls.\n## What\nAs a player, I want to navigate all menus with keyboard or gamepad and see where focus is so that I never need a mouse.\nShared focus manager (spatial navigation), visible focus ring meeting 3:1 contrast, Esc/B back, ARIA labels/roles on DOM menus, axe-core checks in Playwright.\n## Scope\n- In: Focus manager, gamepad UI navigation, ARIA roles\n- In: Playwright axe scan of each menu screen\n- Out: In-game HUD screen reader support (post-MVP)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given each menu screen, when traversed with Tab/arrow keys only, then every interactive element is reachable and focus is always visible.\n- AC-2 [e2e] Given each menu screen, when axe-core runs, then there are zero serious or critical violations.\n- AC-3 [e2e] Given an emulated gamepad, when D-pad/A/B are used, then the same navigation works and B always returns to the previous screen.\n- AC-4 [e2e] Given a modal dialog open, when Tab reaches its last control, then focus wraps inside the modal (focus trap).",
+      "depends_on": [
+        "e31-settings-framework"
+      ]
+    },
+    {
+      "key": "e31-gamepad-settings",
+      "epic": "mw-e31",
+      "type": "feature",
+      "title": "Add gamepad deadzone, sensitivity curve and vibration settings",
+      "priority": 2,
+      "labels": [
+        "epic:e31",
+        "area:game",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nGamepad is second-class but supported; stick drift and vibration sensitivity vary by player and hardware.\n## What\nAs a player, I want to tune stick deadzones, response curves and vibration so that my gamepad feels accurate.\nInner/outer deadzone per stick, response curve (linear/exponential), vibration intensity 0–100% (where Gamepad haptics are supported).\n## Scope\n- In: Settings + input-layer processing\n- Out: Gamepad action mapping (e02-input-actions)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given inner deadzone 0.15, when stick magnitude is 0.1, then output is 0; at 1.0 output is 1.0 (rescaled).\n- AC-2 [unit] Given vibration 0%, when a haptic request is made, then no vibration API call occurs.\n- AC-3 [integration] Given a browser without `vibrationActuator`, when haptics are requested, then no error is thrown.",
+      "depends_on": [
+        "e31-settings-framework",
+        "e02-input-actions"
+      ]
+    },
+    {
+      "key": "e31-accessibility-audit",
+      "epic": "mw-e31",
+      "type": "task",
+      "title": "Audit MVP against Game Accessibility Guidelines basic tier",
+      "priority": 1,
+      "labels": [
+        "epic:e31",
+        "area:qa",
+        "milestone:m4",
+        "needs-human"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nIndividual features do not guarantee an accessible whole; an audit before external playtests catches gaps.\n## What\nWalk through every GAG \"basic\" guideline (motor, cognitive, vision, hearing, speech, general) against the MVP build; record pass/fail/N-A with evidence in `docs/accessibility/audit-<date>.md`; file beads for each failure.\n## Scope\n- In: Audit doc, beads for findings\n- Out: Fixing findings (separate beads)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given the MVP build, when every GAG basic guideline is assessed, then the audit doc records a status and evidence for each.\n- AC-2 [manual] Given any failing guideline, when the audit completes, then a bead exists for it with priority and a link from the audit doc.\n- AC-3 [manual] Given the audit, when complete, then zero failures are left without a decision (fix, defer with reason, or N/A).",
+      "depends_on": [
+        "e31-remap-ui",
+        "e31-captions",
+        "e31-text-scaling",
+        "e31-menu-navigation"
+      ]
+    },
+    {
+      "key": "e32-perf-budgets",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Build automated perf budget suite against the hardware baseline",
+      "priority": 0,
+      "labels": [
+        "epic:e32",
+        "area:perf",
+        "milestone:m0"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nPerformance regressions are cheapest to fix the day they land; budgets make \"good browser performance\" (constitution §10) enforceable.\n## What\nA Playwright-based perf suite (`pnpm perf`) with `perf-budgets.json` citing the contract baseline: frame time p50/p95 per scene and preset, time to first frame / playable, initial transfer size, JS heap after N minutes, long tasks count. Two execution modes:\n  1. **CI mode** (GPU-less runners): enforces deterministic-ish budgets — transfer size, bundle size, heap, load time under network throttling (50 Mbps), long tasks > 200 ms, and relative regression of software-rendered frame time vs main (± 15%) as a warning.\n  2. **Reference mode** (`pnpm perf:ref`, manual on the M1 Pro reference machine): enforces absolute frame-time budgets and writes `perf/results/<date>-<sha>.json`; committed results feed the trend chart.\nIncludes a baseline stress scene in the greybox kit (N moving physics props + lights).\n## Scope\n- In: Perf harness (frame-time sampling via rAF + PerformanceObserver long tasks, CDP heap), budget file, reporters (JSON + job summary)\n- In: CI job `perf-budget`\n- In: Baseline stress scene `perf-baseline`\n- Out: Creature/combat stress scene (e32-combat-stress-scene)\n- Out: Cross-browser runs (e32-browser-matrix)\n## Notes\n- Budget numbers come only from backlog-contract §1 Hardware baseline; stories cite them rather than inventing new ones.\n- Frame-time sampling excludes the first 3 s (warm-up) and uses ≥ 1,800 frames.",
+      "acceptance": "- AC-1 [perf] Given the `perf-baseline` scene in reference mode on the reference machine (High, 1440p-equivalent), when measured over 1,800 frames, then p95 frame time ≤ 16.7 ms or the run fails with a per-metric report.\n- AC-2 [integration] Given CI mode, when initial transfer size exceeds 50 MB or throttled load-to-playable exceeds 10 s, then `perf-budget` fails naming the metric and delta vs budget.\n- AC-3 [unit] Given a samples array, when percentiles are computed, then p50/p95/p99 match a committed reference implementation, and fewer than 300 samples yields an \"insufficient samples\" failure rather than a pass.\n- AC-4 [integration] Given heap after 5 minutes idle in the testbed exceeds 1.5 GB, when measured, then the suite fails.\n- AC-5 [integration] Given a PR whose software-rendered frame time regresses > 15% vs main, when CI runs, then a warning annotation appears (non-blocking).\n- AC-6 [unit] Given `perf-budgets.json` with a budget lacking a `source` field citing the baseline, when validated, then it fails.",
+      "depends_on": [
+        "e00-greybox-testbed",
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e32-sim-tick-bench",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Benchmark sim tick cost in CI with regression alerts",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:perf",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nThe sim runs every tick regardless of GPU; its cost is measurable headlessly and must stay well inside the frame budget.\n## What\n`vitest bench` suites for representative sim loads (500 entities with propagation, 30 AI agents perceiving, 200 physics props) with a budget: mean tick ≤ 4 ms in Node on CI hardware. CI compares against main baseline artifact and fails on > 25% regression.\n## Scope\n- In: Bench suites, baseline artifact, comparison script\n- Out: Frame-time budgets (e32-perf-budgets)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [perf] Given the \"full-load\" bench, when run in CI, then mean tick ≤ 4 ms and p99 ≤ 8 ms.\n- AC-2 [unit] Given baseline 2.0 ms and PR 2.6 ms, when compared, then the check fails (30% > 25%); at 2.4 ms it passes.\n- AC-3 [unit] Given no baseline available, when compared, then it records a new baseline and passes with a warning.",
+      "depends_on": [
+        "e32-perf-budgets",
+        "e00-sim-core"
+      ]
+    },
+    {
+      "key": "e32-bundle-budget",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Enforce JS bundle and asset size budgets per PR",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:perf",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nInitial download ≤ 50 MB and load ≤ 10 s are easiest to protect byte by byte at PR time.\n## What\nsize-limit (or custom script) over `dist/`: initial JS ≤ 1.5 MB gz, total initial payload ≤ 50 MB, per-asset caps by type (texture ≤ 4 MB, audio loop ≤ 3 MB). PR comment/job summary shows delta vs main; dev tools must not appear in the production bundle.\n## Scope\n- In: Size budget config + check job\n- In: Assertion that `src/tools/**` modules are absent from prod chunks\n- Out: Asset compression pipeline (e32-asset-loading)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given a PR increasing initial JS beyond 1.5 MB gz, when CI runs, then the size check fails showing the delta.\n- AC-2 [integration] Given a production build, when chunk contents are inspected, then no module from `src/tools/` is present.\n- AC-3 [unit] Given a single texture of 6 MB added, when checked, then it fails naming the file and the 4 MB cap.",
+      "depends_on": [
+        "e32-perf-budgets"
+      ]
+    },
+    {
+      "key": "e32-browser-matrix",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Run smoke suite on Chromium, Firefox and WebKit in CI",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:qa",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nTarget browsers are current Chrome, Edge, Firefox and Safari; engine-specific breakage must be caught before players see it.\n## What\nPlaywright projects for chromium, firefox, webkit running the boot + testbed smoke specs in CI (chromium required per-PR; firefox/webkit required on main and nightly, optional per-PR label `full-matrix`). Known-difference allowlist per browser with bead references.\n## Scope\n- In: Playwright project matrix, CI job(s), docs of manual Edge/Safari checks\n- Out: Mobile browsers (mw-e36)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given the smoke suite, when run on chromium, firefox and webkit, then the testbed boots with zero console errors on all three.\n- AC-2 [integration] Given a nightly run failing on webkit only, when complete, then a GitHub issue is opened/updated with the failing spec and trace artifact.\n- AC-3 [integration] Given a known-difference allowlist entry without a bead id, when validated, then CI fails.",
+      "depends_on": [
+        "e00-greybox-testbed",
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e32-capability-detection",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Detect GPU/browser capabilities and pick a safe default preset",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:game",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nFirst impressions matter: a low-end laptop should start on Low, and unsupported browsers need a clear message.\n## What\nOn boot detect WebGL2 (and WebGPU if the ADR uses it), WASM + SIMD, max texture size, `deviceMemory`, `hardwareConcurrency`, renderer string (where exposed); choose default preset (High/Low) on first launch; show an unsupported screen listing what is missing; log capabilities to local telemetry.\n## Scope\n- In: Capability probe, preset heuristic table, unsupported screen\n- Out: Dynamic resolution at runtime (e32-quality-presets)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given capabilities {deviceMemory: 4, renderer contains \"Intel\"}, when the heuristic runs, then Low is chosen; given an Apple M1 Pro renderer string, then High.\n- AC-2 [e2e] Given WebGL2 unavailable (init-script override), when loaded, then the unsupported screen names WebGL2 and links to browser help.\n- AC-3 [unit] Given the renderer string is masked/unavailable, when the heuristic runs, then it falls back to deviceMemory/cores and never throws.\n- AC-4 [unit] Given the player has already chosen a preset, when the game boots again, then detection does not override it.",
+      "depends_on": [
+        "e00-render-bootstrap",
+        "e31-settings-framework"
+      ]
+    },
+    {
+      "key": "e32-quality-presets",
+      "epic": "mw-e32",
+      "type": "feature",
+      "title": "Implement Low/High graphics presets and dynamic resolution",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:render",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nThe baseline defines two presets; they must actually hit 60 fps on their target hardware.\n## What\nAs a player, I want Low/High presets plus individual toggles and optional dynamic resolution so that the game runs smoothly on my machine.\nPreset controls render scale, shadow resolution/cascades, max dynamic lights, post-processing, particle density, LOD bias, draw distance. Dynamic resolution adjusts render scale between 50–100% to hold a frame-time target, with hysteresis.\n## Scope\n- In: Preset table, settings UI section, dynamic resolution controller (pure logic unit-tested)\n- Out: Asset LODs creation (art epics)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given frame times consistently 20 ms with target 16.7 ms, when the controller updates, then render scale steps down by ≤ 10% per second and never below 50%.\n- AC-2 [unit] Given frame times oscillating around target ±0.5 ms, when the controller runs, then scale changes at most once per 2 s (hysteresis).\n- AC-3 [perf] Given the combat stress scene on Low at 1080p on an Iris Xe / base M1 class machine, when measured, then p50 ≥ 60 fps and p95 frame time ≤ 33.3 ms.\n- AC-4 [e2e] Given a preset switch at runtime, when applied, then it takes effect within 1 s without reload or console errors.",
+      "depends_on": [
+        "e32-capability-detection",
+        "e00-render-bootstrap"
+      ]
+    },
+    {
+      "key": "e32-asset-loading",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Stream and compress assets with a progress-reporting loader",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:perf",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nLoad to playable ≤ 10 s requires compressed assets and loading only what the current area needs.\n## What\nAsset manifest generated at build (id → hashed URL, size, area tags); area-based preloading with priority; texture compression (KTX2/Basis), mesh compression (meshopt or Draco per ADR), audio as Opus/AAC with fallback; loading screen showing real progress; failed-fetch retry with backoff.\n## Scope\n- In: Manifest build step, loader with priorities/retries, compression tooling scripts\n- In: Loading screen progress\n- Out: Service-worker/HTTP caching (e32-asset-caching)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [perf] Given a cold load at 50 Mbps throttling in CI mode, when Briar-Glen-equivalent testbed area loads, then playable ≤ 10 s.\n- AC-2 [unit] Given a fetch failing twice then succeeding, when loading, then the loader retries with backoff and completes; after 3 failures it surfaces a retry UI.\n- AC-3 [unit] Given the manifest, when an asset id is missing, then a typed error names the id at build time (build fails).\n- AC-4 [e2e] Given the loading screen, when assets load, then the progress bar increases monotonically from 0 to 100%.",
+      "depends_on": [
+        "e32-perf-budgets",
+        "e37-3d-pipeline-decision"
+      ]
+    },
+    {
+      "key": "e32-asset-caching",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Cache hashed assets for warm reload ≤ 3 s",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:perf",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nWarm reload ≤ 3 s keeps the death/retry and playtest loops snappy.\n## What\nImmutable caching for content-hashed assets (Pages headers are limited, so add a service worker with cache-first for hashed URLs and network-first for index.html); versioned cache names with cleanup of old versions on activate; opt-out via `?nosw`.\n## Scope\n- In: Service worker (Workbox or hand-rolled), update flow (\"new version available — reload\")\n- Out: Offline play guarantee (nice side effect, not a goal)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [perf] Given a previously loaded build, when the page is reloaded, then load to playable ≤ 3 s on the reference machine.\n- AC-2 [e2e] Given a new deployment, when the page loads, then the old cache version is deleted after activation and a \"new version available\" prompt appears.\n- AC-3 [e2e] Given `?nosw`, when loaded, then no service worker is registered and existing ones are unregistered.",
+      "depends_on": [
+        "e32-asset-loading"
+      ]
+    },
+    {
+      "key": "e32-frame-pacing",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Eliminate frame hitches from GC, shader compilation and long tasks",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:perf",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nStable frame pacing matters more than average fps for combat feel (parry timing).\n## What\nDetect and fix hitch sources: shader/pipeline pre-warm during loading, object pooling for projectiles/particles/events on hot paths, long-task detection in dev overlay, allocation audit of the sim tick (target near-zero allocations per tick).\n## Scope\n- In: Shader pre-warm, pools, allocation test for sim tick\n- Out: Perf HUD (e32-perf-hud)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [perf] Given the combat stress scene for 60 s on the reference machine, when measured, then frames > 33 ms number ≤ 3 and none > 50 ms after warm-up.\n- AC-2 [unit] Given 1,000 steady-state sim ticks, when heap allocations are measured in Node (`--expose-gc` heap delta), then growth ≤ 64 KB.\n- AC-3 [e2e] Given the first cast of each VFX type after loading, when measured, then no frame exceeds 33 ms (pre-warm effective).",
+      "depends_on": [
+        "e32-perf-budgets",
+        "e00-game-loop-bridge"
+      ]
+    },
+    {
+      "key": "e32-perf-hud",
+      "epic": "mw-e32",
+      "type": "feature",
+      "title": "Show a dev perf HUD with frame graph, draw calls and heap",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nDevelopers need to see performance cost while building content, not after CI complains.\n## What\nAs a developer, I want an overlay showing fps, frame-time graph (last 240 frames), sim tick ms, draw calls, triangles, textures/geometries count and JS heap so that I can spot regressions immediately.\nToggle via debug console or F3; dev builds only.\n## Scope\n- In: Overlay, renderer stats adapter\n- Out: Automated budgets (e32-perf-budgets)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given a dev build, when F3 is pressed, then the HUD shows fps, frame-time graph, sim ms, draw calls and heap values that update each frame.\n- AC-2 [integration] Given a production build, when F3 is pressed, then nothing happens and HUD code is absent from the bundle.\n- AC-3 [unit] Given `performance.memory` is unavailable (Firefox/Safari), when the HUD renders, then heap shows \"n/a\" without errors.",
+      "depends_on": [
+        "e33-debug-console",
+        "e00-render-bootstrap"
+      ]
+    },
+    {
+      "key": "e32-context-loss",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Recover gracefully from WebGL/GPU context loss",
+      "priority": 2,
+      "labels": [
+        "epic:e32",
+        "area:render",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nGPU resets happen (driver updates, sleep/wake); losing a session to a black screen is avoidable.\n## What\nHandle `webglcontextlost`/`restored` (or WebGPU device lost): pause sim, show overlay, rebuild GPU resources from the asset cache on restore, resume; if restore fails within 10 s, autosave (if safe) and offer reload.\n## Scope\n- In: Context-loss handler, resource rebuild path\n- Out: Save logic (e30-autosave)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given `WEBGL_lose_context.loseContext()` then `restoreContext()`, when triggered in the testbed, then rendering resumes within 5 s with the same sim state hash as before loss.\n- AC-2 [e2e] Given the context is never restored, when 10 s pass, then an autosave is attempted and a reload prompt appears.\n- AC-3 [e2e] Given loss during loading, when restored, then loading completes without duplicate resources or errors.",
+      "depends_on": [
+        "e00-render-bootstrap",
+        "e30-autosave"
+      ]
+    },
+    {
+      "key": "e32-memory-leak-test",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Detect memory leaks across repeated scene loads",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:qa",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nArea transitions and reloads after death repeat hundreds of times per session; leaks compound into crashes.\n## What\nPlaywright test (Chromium, CDP heap) loads/unloads testbed scenes and save/load cycles 20 times, forcing GC, and asserts heap growth and GPU resource counts stay bounded.\n## Scope\n- In: Leak test spec, renderer resource counters\n- Out: Fixing specific leaks (bug beads)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given 20 scene load/unload cycles, when heap is sampled after forced GC, then growth from cycle 2 to cycle 20 ≤ 5%.\n- AC-2 [e2e] Given 20 save/load cycles, when renderer geometry/texture counts are read, then they return to the cycle-2 value (±2).\n- AC-3 [integration] Given a deliberately leaking fixture, when the test runs, then it fails (test proves it can detect leaks).",
+      "depends_on": [
+        "e32-perf-budgets",
+        "e30-save-serialization"
+      ]
+    },
+    {
+      "key": "e32-combat-stress-scene",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Add combat stress scene with 12 creatures and heavy VFX",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:perf",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nThe worst case — a chaotic fight with spells flying — is what players remember; budgets must be measured there.\n## What\nScene `perf-combat` in the greybox kit: 12 active creatures in combat AI, 4 simultaneous spell effects, 30 physics props, fire propagation active, 8 dynamic lights. Scripted deterministic camera path and input replay so measurements are repeatable. Added to both perf modes.\n## Scope\n- In: Scene data, scripted replay, perf-budgets.json entries\n- Out: Creature content (mw-e13)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [perf] Given `perf-combat` on the reference machine (High), when measured over 1,800 frames, then p95 frame time ≤ 16.7 ms.\n- AC-2 [perf] Given `perf-combat` on Low at 1080p on the low-tier class machine, when measured, then worst-case frames stay ≥ 30 fps (p99 ≤ 33.3 ms).\n- AC-3 [unit] Given the scripted replay, when run twice, then sim state hashes match (repeatable measurement).",
+      "depends_on": [
+        "e32-perf-budgets",
+        "e12-creature-schema",
+        "e06-spell-pipeline",
+        "e03-element-propagation",
+        "e00-replay-harness"
+      ]
+    },
+    {
+      "key": "e32-reference-runbook",
+      "epic": "mw-e32",
+      "type": "task",
+      "title": "Run and record a full perf pass on reference and low-tier machines",
+      "priority": 1,
+      "labels": [
+        "epic:e32",
+        "area:perf",
+        "milestone:m4",
+        "needs-human"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nAbsolute frame-time budgets cannot run on GPU-less CI; a documented manual pass before playtests closes the loop.\n## What\nWrite `docs/perf/runbook.md` (machine prep, browser versions, `pnpm perf:ref` steps) and execute it on the reference machine and a low-tier machine across Chrome, Edge, Firefox, Safari; commit results to `perf/results/`; file beads for any budget misses.\n## Scope\n- In: Runbook doc, committed results, beads for misses\n- Out: Fixes (separate beads)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given the runbook, when executed on the reference machine in all 4 browsers, then results files are committed with browser/OS versions.\n- AC-2 [perf] Given the results, when compared to the baseline, then every budget passes or has a filed bead with owner and priority.\n- AC-3 [manual] Given the low-tier machine run, when complete, then Low preset results are recorded for `perf-baseline` and `perf-combat`.",
+      "depends_on": [
+        "e32-combat-stress-scene",
+        "e32-quality-presets",
+        "e32-browser-matrix"
+      ]
+    },
+    {
+      "key": "e33-debug-console",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Add in-game debug console with commands, cheats and spawners",
+      "priority": 0,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nFast content creation and debugging (constitution §10) need a way to poke the running game without editing code.\n## What\nAs a developer, I want a toggleable console with typed commands so that I can spawn, teleport, cheat and inspect instantly.\nBacktick toggles an overlay console (dev builds and `?debug=1` on playtest builds); command registry (`registerCommand({name, args schema, run})`) with autocomplete, history (persisted), help. Built-ins: `help`, `spawn <contentId> [count]`, `give <itemId> [n]`, `god`, `noclip`, `kill`, `tp <x y z|bookmark>`, `timescale <n>`, `scene <id>`, `set <setting> <value>`, `seed`. Commands that mutate sim state go through the sim command queue (deterministic, recorded in replays).\n## Scope\n- In: Console UI, registry, parser with zod arg validation, autocomplete against content ids\n- In: Built-in commands\n- In: Production stripping (dynamic import behind build flag)\n- Out: Entity inspector (e33-entity-inspector)\n- Out: Domain-specific commands (each system registers its own)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given `spawn testprop-crate 3`, when executed, then 3 crate entities exist in the sim next tick and the command is present in the replay input log.\n- AC-2 [unit] Given `spawn does-not-exist`, when executed, then the console prints \"unknown content id\" with the 3 closest matches and the sim is unchanged.\n- AC-3 [unit] Given `give` with a non-numeric count, when executed, then argument validation fails with usage help.\n- AC-4 [e2e] Given a dev build, when backtick is pressed, then the console opens, captures keyboard input (player does not move) and Esc/backtick closes it.\n- AC-5 [integration] Given a production build without `?debug=1`, when backtick is pressed, then nothing opens and console modules are absent from the main bundle.\n- AC-6 [e2e] Given typing `sp` + Tab, when autocomplete runs, then it completes to `spawn`.",
+      "depends_on": [
+        "e00-greybox-testbed"
+      ]
+    },
+    {
+      "key": "e33-time-controls",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Pause, slow-motion and frame-step the simulation",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nTuning parry windows and debugging propagation needs time slowed or stepped one tick at a time.\n## What\nAs a developer, I want to pause, change timescale (0.1×–4×) and step single ticks so that I can inspect fast interactions.\nImplemented in the game loop (sim steps at fixed dt; timescale changes how many steps per real second), so determinism is preserved.\n## Scope\n- In: Loop timescale, pause, step; console commands and hotkeys (dev)\n- Out: Replay scrubbing (possible follow-up)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given timescale 0.5, when 1 real second passes at 60 Hz, then 30 sim steps occur.\n- AC-2 [unit] Given paused, when \"step\" is invoked 3 times, then exactly 3 ticks advance.\n- AC-3 [integration] Given a session played at mixed timescales and recorded, when replayed at 1×, then the final state hash matches.",
+      "depends_on": [
+        "e33-debug-console",
+        "e00-game-loop-bridge"
+      ]
+    },
+    {
+      "key": "e33-entity-inspector",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Inspect and edit entity components live",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nSystemic bugs (\"why didn't the rope burn?\") are solved by seeing the properties involved.\n## What\nAs a developer, I want to click an entity and see/edit its components live so that I can debug systemic interactions.\nPick via raycast (or list/search), panel showing components with schema-driven editors (number, bool, enum, vector), edits applied through a `debug.setComponent` sim command (recorded), highlight selected entity.\n## Scope\n- In: Picker, inspector panel, edit command\n- Out: World overlays (e33-world-overlays)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given the testbed, when a crate is clicked in inspect mode, then its components (e.g. Position, Physics) are listed with current values updating live.\n- AC-2 [unit] Given an edit setting a numeric field to a string, when applied, then schema validation rejects it and the sim is unchanged.\n- AC-3 [integration] Given an edit to `flammable=true`, when recorded and replayed, then the replay reproduces the edited state.\n- AC-4 [e2e] Given the selected entity is destroyed, when the next frame renders, then the panel shows \"entity destroyed\" instead of throwing.",
+      "depends_on": [
+        "e33-debug-console",
+        "e03-world-properties"
+      ]
+    },
+    {
+      "key": "e33-content-validator-cli",
+      "epic": "mw-e33",
+      "type": "task",
+      "title": "Add `pnpm content:check` validator with cross-reference report",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nDesigners need fast, readable validation of all content before committing; CI needs the same check.\n## What\nCLI wrapping the content pipeline: validates all content types, cross-references (loot tables → items, spawns → creatures, dialogue → quests), orphan detection (defined but never referenced), string-table key existence; human-readable output with file:line, `--json` for CI annotations; runs in CI job `content`.\n## Scope\n- In: CLI, CI job, GitHub annotation formatter\n- Out: Schemas themselves (owned by respective epics)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given all committed content, when `pnpm content:check` runs, then it exits 0 in ≤ 10 s.\n- AC-2 [unit] Given a loot table referencing a missing item, when checked, then it exits non-zero printing the file, JSON path and missing id.\n- AC-3 [unit] Given an item defined but never referenced by any loot table, shop or placement, when checked with `--orphans`, then it is listed as a warning (not an error).\n- AC-4 [integration] Given `--json`, when run in CI with an error, then a GitHub annotation appears on the offending file.",
+      "depends_on": [
+        "e00-content-pipeline",
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e33-content-scaffolder",
+      "epic": "mw-e33",
+      "type": "task",
+      "title": "Scaffold new content entries with a test stub via CLI",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nEvery content entry must have a test (contract §3); scaffolding makes the right thing the easy thing.\n## What\n`pnpm new <type> <id>` creates `content/<type>/<id>.json` from a per-type template (valid defaults) and a test stub `test/content/<type>/<id>.test.ts` that exercises the entry via `describeContent`; refuses duplicate ids; validates id format (kebab-case).\n## Scope\n- In: CLI, per-type templates registered alongside schemas\n- Out: GUI editors (not planned for MVP)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given `pnpm new testprop lantern`, when run, then the JSON and test stub are created, `pnpm content:check` passes and the new test runs green.\n- AC-2 [unit] Given an id that already exists, when run, then it exits non-zero without overwriting.\n- AC-3 [unit] Given id `Big Lantern`, when run, then it rejects with a kebab-case suggestion `big-lantern`.",
+      "depends_on": [
+        "e00-content-pipeline"
+      ]
+    },
+    {
+      "key": "e33-content-hot-reload",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Hot-reload content JSON into the running game",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nTuning spells and creatures by editing JSON and seeing the change in under a second is the core of fast content iteration.\n## What\nAs a designer, I want edits to content files to apply to the running game without restart so that tuning is instant.\nVite HMR for `content/**` → re-validate the changed file → swap catalogue entry → notify systems (`content.on(\"changed\", id)`) which refresh live instances where safe (e.g. spell damage, creature speed); invalid edits keep the old version and show an overlay error.\n## Scope\n- In: HMR handler, catalogue swap, change notifications, error overlay\n- Out: Production (dev only)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given the dev server and testbed running, when a testprop JSON field is edited, then the change is visible in-game within 1 s without page reload.\n- AC-2 [e2e] Given an edit introducing a schema error, when saved, then an overlay shows the error with file and path and the game keeps running on the previous valid data.\n- AC-3 [unit] Given a hot-swapped entry, when the content hash is recomputed, then it changes and the replay recorder marks the recording as content-modified.",
+      "depends_on": [
+        "e00-content-pipeline",
+        "e00-greybox-testbed"
+      ]
+    },
+    {
+      "key": "e33-teleport-bookmarks",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Add named teleport bookmarks and dev state snapshots",
+      "priority": 2,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nReaching the room you are working on in seconds, in the right world state, removes most iteration friction.\n## What\nAs a developer, I want named bookmarks and instant dev snapshots so that I can jump to a place and state repeatedly.\nBookmarks as content (`content/dev/bookmarks.json`) + console `tp <name>`; `snap save <name>` / `snap load <name>` store full save envelopes in a dev IndexedDB store; URL `?snap=<name>` boots into a snapshot.\n## Scope\n- In: Bookmarks, snapshot commands, URL param\n- Out: Player save slots (e30-save-slots)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given bookmark `arena-center`, when `tp arena-center` runs, then the player is placed there next tick.\n- AC-2 [integration] Given `snap save a` then changes then `snap load a`, when compared, then the state hash equals the snapshot's.\n- AC-3 [integration] Given a snapshot from an older save schema, when loaded, then save migrations apply; if they fail, a clear error is shown.",
+      "depends_on": [
+        "e33-debug-console",
+        "e30-save-serialization"
+      ]
+    },
+    {
+      "key": "e33-replay-bug-capture",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Capture a reproducible bug report with one keypress",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nEmergent systems create hard-to-reproduce bugs; a deterministic replay of the last minutes turns \"it happened once\" into a failing test.\n## What\nAs a developer or playtester, I want to press F9-dev (configurable) to save a bug bundle so that the exact situation can be replayed.\nThe game continuously keeps a rolling buffer: a save snapshot every 60 s plus input commands since. Capture writes `bug-<timestamp>.mwbug` (snapshot + inputs + build SHA + content hash + settings + recent console/errors + screenshot + optional note). `?bug=<file>` or drag-drop loads and replays it; `pnpm bug:test <file>` converts it into a golden replay test.\n## Scope\n- In: Rolling buffer, bundle format (zod), loader, conversion to test\n- Out: Telemetry export bundles (e34-playtest-export) — reuse format pieces\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given 3 minutes of play then capture, when the bundle is replayed on a fresh load of the same build, then the final state hash equals the captured final hash.\n- AC-2 [unit] Given a bundle from a different build SHA, when loaded, then the user is warned that replay may diverge and divergence is reported at the first checkpoint mismatch.\n- AC-3 [perf] Given the rolling buffer active, when measured in the testbed, then added cost is ≤ 0.2 ms per frame and memory ≤ 20 MB.\n- AC-4 [integration] Given `pnpm bug:test`, when run on a bundle, then a replay test file is generated that passes.",
+      "depends_on": [
+        "e00-replay-harness",
+        "e30-save-serialization",
+        "e33-debug-console"
+      ]
+    },
+    {
+      "key": "e33-ai-debug-overlay",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Visualize perception cones, alert states and noise events",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nStealth that feels fair requires designers to see exactly what creatures perceive and why.\n## What\nAs a designer, I want overlays for sight cones, hearing radii, current alert state, last-known-position markers, search paths and noise events so that I can tune stealth encounters.\nOverlay toggles per category; reads sim data only (no sim changes).\n## Scope\n- In: Overlay renderer for AI/perception data, toggles via console\n- Out: AI logic (mw-e11)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given a guard in the testbed with the overlay on, when the player is in the sight cone, then the cone renders and the guard's alert label changes as the state progresses.\n- AC-2 [e2e] Given a noise event, when emitted, then an expanding ring shows its propagated radius for 1 s.\n- AC-3 [integration] Given overlays toggled on vs off, when the same replay runs, then sim state hashes are identical (overlay is read-only).",
+      "depends_on": [
+        "e33-debug-console",
+        "e11-perception",
+        "e11-alert-states",
+        "e09-sound-propagation"
+      ]
+    },
+    {
+      "key": "e33-world-overlays",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Visualize light levels, element propagation and trigger volumes",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nThe systemic world (fire, water, light, triggers) is invisible data until visualized; debugging emergent interactions depends on it.\n## What\nAs a designer, I want heatmap overlays for light level, temperature/fire, wetness/electricity and trigger volume outlines so that I can see why systemic interactions do or do not happen.\nGrid-sampled overlays from sim queries; property-tag filter (\"show all flammable\").\n## Scope\n- In: Light field heatmap, element overlays, trigger volume wireframes, property filter\n- Out: The systems themselves (mw-e03)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given the light overlay in a room with one torch, when shown, then sampled values decrease with distance from the torch.\n- AC-2 [e2e] Given the property filter `flammable`, when enabled, then exactly the entities with that tag are highlighted.\n- AC-3 [integration] Given overlays on vs off, when the same replay runs, then state hashes are identical.",
+      "depends_on": [
+        "e33-debug-console",
+        "e03-light-field",
+        "e03-element-propagation",
+        "e03-triggers"
+      ]
+    },
+    {
+      "key": "e33-spell-sandbox",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Create a spell sandbox scene with live parameter tuning",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nMagic must feel magical; designers need a playground to cast every spell against every material and creature.\n## What\nAs a designer, I want a sandbox with material stations (water, oil, wood, rope, metal) and dummies where I can cast any spell and tweak its parameters live so that I can find surprising combinations.\nScene `sandbox-spells`, console `learnall`, `cast <spellId>`, parameter panel bound to hot-reloadable spell data.\n## Scope\n- In: Sandbox scene, commands, parameter panel\n- Out: Spell content (mw-e08)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given `?scene=sandbox-spells` and `learnall`, when opened, then every spell in content is castable from a list.\n- AC-2 [e2e] Given a spell's radius changed in the panel, when cast again, then the new radius applies without reload.\n- AC-3 [content] Given the sandbox scene, when validated, then it contains at least one entity for every property tag defined in e03-world-properties.",
+      "depends_on": [
+        "e33-content-hot-reload",
+        "e06-spell-pipeline",
+        "e03-world-properties"
+      ]
+    },
+    {
+      "key": "e33-creature-arena",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Create a creature arena to spawn and pit creatures",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nCreatures are creatures, not target dummies; their behaviours and relationships need a place to be observed.\n## What\nAs a designer, I want an arena where I can spawn any creature with chosen disposition/faction and watch interactions so that I can tune behaviours.\nScene `sandbox-creatures`, commands `spawn <creature> --faction --disposition`, `ai freeze/unfreeze`, `faction set`.\n## Scope\n- In: Arena scene, commands\n- Out: AI implementation (mw-e11/mw-e12)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given the arena, when `spawn goblin-grunt --disposition hostile` and `spawn wolf --disposition neutral` run, then both spawn with those dispositions visible in the inspector.\n- AC-2 [unit] Given `ai freeze`, when ticks advance, then frozen creatures' AI systems do not update while physics still does.\n- AC-3 [unit] Given a creature id with invalid disposition, when spawned, then validation fails with allowed values listed.",
+      "depends_on": [
+        "e33-debug-console",
+        "e12-creature-schema"
+      ]
+    },
+    {
+      "key": "e33-narrative-debugger",
+      "epic": "mw-e33",
+      "type": "feature",
+      "title": "Preview dialogue graphs and edit quest/world state in-game",
+      "priority": 1,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nBranching quests with multiple resolutions are untestable by playing through every path manually.\n## What\nAs a narrative designer, I want a dialogue previewer and a quest/world-fact editor so that I can test any branch instantly.\nDialogue previewer runs a dialogue graph standalone with editable condition inputs (disposition, facts, inventory). Quest panel lists quests, states, objectives; set state/fact via recorded debug commands. Graph lint: unreachable nodes, dead ends without exit.\n## Scope\n- In: Previewer panel, quest/fact panel, graph lint in content:check\n- Out: Runtimes (e22-dialogue-runtime, e23-quest-runtime, e27-world-state-store)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given a dialogue id, when opened in the previewer with disposition=friendly, then only nodes whose conditions pass are selectable.\n- AC-2 [unit] Given a dialogue graph with an unreachable node, when linted, then content:check reports the node id.\n- AC-3 [integration] Given `quest set <id> <state>`, when executed, then dependent world facts update and the change is recorded in the replay.",
+      "depends_on": [
+        "e33-debug-console",
+        "e22-dialogue-runtime",
+        "e23-quest-runtime",
+        "e27-world-state-store"
+      ]
+    },
+    {
+      "key": "e33-loot-simulator",
+      "epic": "mw-e33",
+      "type": "task",
+      "title": "Simulate loot tables and report drop distributions",
+      "priority": 2,
+      "labels": [
+        "epic:e33",
+        "area:tools",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nExploration should produce interesting discoveries; designers need to see actual distributions, not guess from weights.\n## What\nCLI `pnpm loot:sim <tableId> --rolls 10000 --seed 1` prints item frequencies, expected gold, and flags items with 0 drops or duplicates of \"unique\" items; also available as console command.\n## Scope\n- In: CLI + console command using sim loot roller with seeded RNG\n- Out: Loot runtime (e18-loot-tables)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given a table with weights 1:3, when 10,000 rolls simulate with seed 1, then frequencies are 25% ± 1.5% and 75% ± 1.5% and the output is identical across runs.\n- AC-2 [unit] Given a unique item that can drop twice in one roll, when simulated, then it is flagged.\n- AC-3 [unit] Given an unknown table id, when run, then it exits non-zero listing close matches.",
+      "depends_on": [
+        "e18-loot-tables",
+        "e33-content-validator-cli"
+      ]
+    },
+    {
+      "key": "e34-telemetry-events",
+      "epic": "mw-e34",
+      "type": "task",
+      "title": "Define local-first telemetry event schema, store and export",
+      "priority": 1,
+      "labels": [
+        "epic:e34",
+        "area:game",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nMeasuring deaths, abandonments and spell usage guides design — but this is a free game and players' privacy comes first.\n## What\nAdd `src/game/telemetry`: a zod-typed event catalogue (`{type, v, sessionId (random per session), tick, simTimeMs, area, payload}`), a typed `emit()` API, a bounded local ring buffer in IndexedDB (max 50k events / 20 MB, oldest dropped), and export to NDJSON (gzip). No network code in this item. Events are only recorded if telemetry is enabled (e34-consent) except a small in-memory buffer used for bug reports.\n## Scope\n- In: Event catalogue, emitter, IndexedDB store, export, clear-all\n- In: Schema rule: no free-text string fields except enumerated ids (enforced by schema test)\n- Out: Consent UI (e34-consent)\n- Out: Specific gameplay events (e34-gameplay-events)\n- Out: Any upload (e34-opt-in-upload)\n## Notes\n- Session id is random, not derived from device; no user id, no IP, no fingerprinting data (UA only as coarse browser family + version).\n\n**Integration note:** Moved to m2 — e04-skeleton-fun-validation (m2) consumes it.",
+      "acceptance": "- AC-1 [unit] Given an event missing a required payload field, when emitted, then it is dropped and a dev-only warning logged (never throws into gameplay).\n- AC-2 [unit] Given the ring buffer at capacity, when a new event is stored, then the oldest is evicted and count stays at the cap.\n- AC-3 [unit] Given the event catalogue, when a schema-lint test inspects it, then no event has an unconstrained free-text string field.\n- AC-4 [integration] Given 1,000 stored events, when exported, then the NDJSON file has 1,000 valid lines that re-parse against the schema.\n- AC-5 [e2e] Given telemetry disabled (default), when playing for 2 minutes, then nothing is written to the telemetry IndexedDB store and zero network requests carry telemetry.",
+      "depends_on": [
+        "e00-greybox-testbed",
+        "e31-settings-framework"
+      ]
+    },
+    {
+      "key": "e34-consent",
+      "epic": "mw-e34",
+      "type": "feature",
+      "title": "Add opt-in telemetry consent, privacy notice and data controls",
+      "priority": 1,
+      "labels": [
+        "epic:e34",
+        "area:ui",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nPrivacy-first: players must knowingly opt in, see exactly what is recorded, and delete it anytime.\n## What\nAs a player, I want to choose whether gameplay statistics are recorded, see what is recorded and delete it so that I stay in control.\nOff by default. First-launch (or playtest-mode) prompt explains local-first recording; settings toggle; \"View my data\" (event counts by type + sample), \"Export\", \"Delete all\". `docs/privacy.md` published with the site.\n## Scope\n- In: Consent prompt, settings controls, privacy doc\n- Out: Upload consent (separate, e34-opt-in-upload)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given a fresh profile, when the game starts, then telemetry is off until the player explicitly opts in.\n- AC-2 [e2e] Given telemetry on with stored events, when \"Delete all\" is confirmed, then the store is empty and the counts show 0.\n- AC-3 [e2e] Given the player opts out after opting in, when playing further, then no new events are stored.\n- AC-4 [manual] Given docs/privacy.md, when reviewed, then it lists every event type and field recorded and states nothing leaves the device without a separate explicit action.",
+      "depends_on": [
+        "e34-telemetry-events"
+      ]
+    },
+    {
+      "key": "e34-gameplay-events",
+      "epic": "mw-e34",
+      "type": "task",
+      "title": "Emit core gameplay events: deaths, encounters, spells, puzzles",
+      "priority": 1,
+      "labels": [
+        "epic:e34",
+        "area:game",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nE34 outcome names these signals explicitly: deaths, abandoned encounters, spell usage and puzzle completion.\n## What\nInstrument: `session_start/end` (class, build), `death` (cause type, killer content id, area, position bucketed to 2 m), `encounter_start/complete/abandon` (encounter id, duration, resolution: combat/stealth/social/avoid), `spell_cast` (spell id, target type, outcome tags), `puzzle_start/solve/abandon` (puzzle id, solution path id), `ability_used` (class verb id), `setting_changed` (difficulty/assist ids only), `item_acquired` (source: loot/shop/steal).\n## Scope\n- In: Event definitions + emit points in game glue listening to sim events\n- In: Encounter/puzzle id conventions in content\n- Out: Analysis (e34-analysis-scripts)\n## Notes\n- Emit from game layer listening to the sim event bus — never call telemetry from src/sim.\n- Abandon = left encounter/puzzle volume for > 60 s without resolution (configurable).",
+      "acceptance": "- AC-1 [integration] Given the testbed with a scripted fight replay ending in player death, when run, then exactly one `death` event is recorded with cause, killer id and 2 m-bucketed position.\n- AC-2 [integration] Given the player leaves an encounter volume for 61 s unresolved, when evaluated, then `encounter_abandon` is emitted once; returning at 59 s emits nothing.\n- AC-3 [integration] Given a puzzle solved via an alternative solution path, when emitted, then `puzzle_solve.solutionPath` identifies that path id.\n- AC-4 [unit] Given telemetry disabled, when sim events fire, then emitters short-circuit without allocation-heavy work (≤ 0.01 ms per event measured).",
+      "depends_on": [
+        "e34-telemetry-events",
+        "e03-triggers",
+        "e06-spell-pipeline",
+        "e15-puzzle-kit"
+      ]
+    },
+    {
+      "key": "e34-error-capture",
+      "epic": "mw-e34",
+      "type": "task",
+      "title": "Capture uncaught errors locally for playtest bundles",
+      "priority": 1,
+      "labels": [
+        "epic:e34",
+        "area:game",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nPlaytesters rarely report console errors; capturing them locally makes crashes diagnosable without third-party services.\n## What\nGlobal `error`/`unhandledrejection` handlers record `{message, stack (sanitized of URLs query strings), buildSha, area, tick}` into a small local error log (always on, local only, max 200 entries) shown in the bug/feedback bundle and \"View my data\".\n## Scope\n- In: Handlers, sanitizer, local log\n- Out: Remote error reporting services (not used)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given a thrown error with a stack containing `?token=abc`, when sanitized, then query strings are stripped.\n- AC-2 [e2e] Given an unhandled promise rejection, when it occurs, then an entry is logged and the game continues running.\n- AC-3 [unit] Given 250 errors, when logged, then only the latest 200 are kept and repeated identical errors are counted rather than duplicated.",
+      "depends_on": [
+        "e34-telemetry-events"
+      ]
+    },
+    {
+      "key": "e34-feedback-prompt",
+      "epic": "mw-e34",
+      "type": "feature",
+      "title": "Add an in-game feedback hotkey capturing context and a note",
+      "priority": 1,
+      "labels": [
+        "epic:e34",
+        "area:ui",
+        "milestone:m3"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nPlayers' moments of delight or confusion are best captured in the moment, tied to where and when they happened.\n## What\nAs a playtester, I want to press a key, type a quick note and tag it (bug / confusing / fun / idea) so that my feedback carries its context.\nCaptures screenshot, area, position, tick, recent 60 s of events (if enabled), optional bug bundle (e33-replay-bug-capture); stored locally and included in the playtest export.\n## Scope\n- In: Feedback overlay, local storage, inclusion in export\n- Out: Uploading (e34-opt-in-upload)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given the feedback key pressed, when the overlay opens, then the game pauses and resumes on close.\n- AC-2 [e2e] Given a submitted note tagged \"fun\", when exported, then the bundle contains the note, tag, screenshot and area/tick.\n- AC-3 [unit] Given a note longer than 2,000 characters, when submitted, then it is truncated with an indicator.",
+      "depends_on": [
+        "e34-telemetry-events"
+      ]
+    },
+    {
+      "key": "e34-playtest-export",
+      "epic": "mw-e34",
+      "type": "feature",
+      "title": "Export a single playtest bundle file for testers to send",
+      "priority": 1,
+      "labels": [
+        "epic:e34",
+        "area:game",
+        "milestone:m4"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nExternal testers need a one-click way to share everything useful, without accounts or servers.\n## What\nAs a playtester, I want one \"Export playtest data\" button producing one file so that sending results to the team is trivial.\nBundle `.mwplay` (zip): telemetry NDJSON, error log, feedback notes + screenshots, settings, build SHA, capability summary, optional latest save and bug bundles. Shows file size and a contents preview before saving.\n## Scope\n- In: Bundle writer (zip in browser), preview dialog\n- Out: Analysis (e34-analysis-scripts)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given a session with events, feedback and errors, when exported, then the bundle contains each component and a manifest listing them with counts.\n- AC-2 [integration] Given telemetry disabled, when exported, then the bundle omits telemetry and the manifest says so.\n- AC-3 [unit] Given the bundle manifest schema, when an exported bundle is parsed by the analysis tooling, then it validates.",
+      "depends_on": [
+        "e34-gameplay-events",
+        "e34-feedback-prompt",
+        "e34-error-capture"
+      ]
+    },
+    {
+      "key": "e34-analysis-scripts",
+      "epic": "mw-e34",
+      "type": "task",
+      "title": "Aggregate playtest bundles into a death heatmap and usage report",
+      "priority": 1,
+      "labels": [
+        "epic:e34",
+        "area:tools",
+        "milestone:m4"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nTelemetry only matters if it turns into decisions; the team needs a quick report per playtest round.\n## What\n`pnpm playtest:report <dir>` reads N `.mwplay` bundles and writes a single-file HTML report: death heatmap over top-down area maps, encounter resolution breakdown (combat/stealth/social/avoid) and abandonment rates, spell usage frequency per class, puzzle solve rates and solution-path distribution, session length, feedback notes by tag with screenshots.\n## Scope\n- In: Node aggregation (100% covered pure functions), HTML report generator\n- In: Top-down map images generated from greybox scenes\n- Out: Qualitative observation notes (e35 protocol)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [unit] Given 3 fixture bundles with known deaths, when aggregated, then per-area death counts and heatmap bins match expected values.\n- AC-2 [unit] Given a corrupt or wrong-version bundle among valid ones, when processed, then it is skipped with a warning and the report still builds.\n- AC-3 [integration] Given the report, when opened in Playwright offline, then it renders all sections with zero console errors.\n- AC-4 [unit] Given encounters resolved 5 combat / 3 stealth / 2 avoided, when aggregated, then the breakdown shows 50/30/20%.",
+      "depends_on": [
+        "e34-playtest-export"
+      ]
+    },
+    {
+      "key": "e34-opt-in-upload",
+      "epic": "mw-e34",
+      "type": "feature",
+      "title": "Offer optional, explicit upload of a playtest bundle",
+      "priority": 3,
+      "labels": [
+        "epic:e34",
+        "area:infra",
+        "milestone:post-mvp"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nManual file sending adds friction for remote testers; an explicit upload button can help, but only with separate consent.\n## What\nAs a playtester, I want to optionally upload my bundle with one click after reviewing it so that I do not have to email files.\nSeparate consent per upload (preview + \"Upload\" button), minimal endpoint (e.g. serverless function writing to private storage) with size limit and rate limiting, no cookies, delete-by-receipt-code.\n## Scope\n- In: Upload UI, endpoint spec, ADR on hosting choice\n- Out: Automatic/background upload (never)\n## Notes\n- Deferred post-MVP: file export covers MVP playtests. Requires secret handling for the endpoint — no secrets in the repo.",
+      "acceptance": "- AC-1 [e2e] Given the upload dialog, when the player does not press Upload, then zero network requests leave the page.\n- AC-2 [integration] Given a bundle > 25 MB, when upload is attempted, then it is refused client-side with a message.\n- AC-3 [integration] Given a successful upload, when complete, then a receipt code is shown that can be used to request deletion.",
+      "depends_on": [
+        "e34-playtest-export"
+      ]
+    },
+    {
+      "key": "e35-fun-hypotheses",
+      "epic": "mw-e35",
+      "type": "decision",
+      "title": "Pre-register measurable fun hypotheses for MVP validation",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:design",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nFun validation is only honest if success criteria are written before playtests, not rationalized after.\n## What\nWrite `docs/playtesting/fun-hypotheses.md`: per pillar (combat intrinsically fun, magic feels magical, stealth satisfying, world rewards curiosity, classes change possibilities) define hypotheses with measures and thresholds, e.g. \"≥ 70% of testers rate fighting a skeleton ≥ 4/5 with loot/XP disabled\", \"≥ 3 self-reported 'Wait… I can do that?' moments per hour (median)\", \"≥ 25% of dungeon encounters resolved without combat across thief players\", \"≥ 60% of sorcerers try a spell on the environment unprompted within 15 min\". Includes go/no-go rule.\n## Scope\n- In: Hypotheses doc with measures, thresholds, data source (survey/observation/telemetry)\n- Out: Running tests (later e35 items)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given the doc, when reviewed, then each constitution design pillar has ≥ 1 hypothesis with a numeric threshold and named data source.\n- AC-2 [manual] Given the doc, when merged, then it defines an explicit go/no-go rule (e.g. which hypotheses must pass).\n- AC-3 [manual] Given a hypothesis relying on telemetry, when reviewed, then the corresponding event exists or is listed as a needed bead.",
+      "depends_on": []
+    },
+    {
+      "key": "e35-playtest-protocol",
+      "epic": "mw-e35",
+      "type": "task",
+      "title": "Write playtest protocol, consent form, surveys and observation sheet",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:qa",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nTelemetry must not replace direct observation; a consistent protocol makes sessions comparable.\n## What\n`docs/playtesting/protocol.md`: session script (setup, minimal briefing, think-aloud prompts, no-help rule, time-boxes), observer sheet (timestamped notes, \"confusion/delight/wait-I-can-do-that\" tags aligned with feedback tags), post-session survey (Likert items mapped to hypotheses + open questions), consent/recording form template, remote-session variant.\n## Scope\n- In: Protocol, templates in docs/playtesting/templates/\n- Out: Recruitment (e35-recruit-testers)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given the survey, when mapped to fun-hypotheses.md, then every survey-sourced hypothesis has a corresponding question.\n- AC-2 [manual] Given a dry-run session with one internal tester, when completed, then the protocol fits in 60 minutes and gaps found are fixed in the doc.\n- AC-3 [manual] Given the consent form, when reviewed, then it states what is recorded, how long it is kept, and how to withdraw.",
+      "depends_on": [
+        "e35-fun-hypotheses"
+      ]
+    },
+    {
+      "key": "e35-playtest-builds",
+      "epic": "mw-e35",
+      "type": "task",
+      "title": "Deploy playtest builds to GitHub Pages with build IDs",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:infra",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nTesters need a stable URL per round and bug reports must identify the exact build.\n## What\nCI workflow deploys the game to Pages under `/play/` (latest main) and `/play/<tag>/` for tagged playtest releases (`playtest-rN`), alongside backlog.html. Build SHA + tag shown in the title screen corner and embedded in bundles; `?debug=1` enables console on playtest builds.\n## Scope\n- In: Pages workflow extension (shared Pages site with backlog)\n- In: Version stamping\n- In: Release notes from CHANGELOG\n- Out: Hosting elsewhere (itch.io mirror optional later)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [integration] Given tag `playtest-r1` pushed, when the workflow runs, then `/play/playtest-r1/` serves that build and `/play/` still serves main.\n- AC-2 [e2e] Given a deployed build, when loaded, then the title screen shows the tag/SHA matching the commit.\n- AC-3 [integration] Given a backlog-only workflow run, when deploying, then existing `/play/` builds are preserved (no Pages artifact clobbering).",
+      "depends_on": [
+        "e00-backlog-html",
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e35-greybox-combat-test",
+      "epic": "mw-e35",
+      "type": "task",
+      "title": "Internal playtest: is greybox combat fun with no rewards?",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:qa",
+        "milestone:m1",
+        "needs-human"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nConstitution: fighting a skeleton should be enjoyable even without XP or loot — test this at greybox, when it is cheapest to fix.\n## What\nRun 5 internal/friendly sessions of the m1 greybox fight with loot/XP disabled using the protocol; record ratings and observations; report in `docs/playtesting/reports/m1-combat.md` with recommended changes filed as beads.\n## Scope\n- In: Sessions, report, beads for findings\n- Out: Implementing fixes\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given 5 sessions, when completed, then the report includes per-tester combat fun rating, median, and top 3 frictions with timestamps.\n- AC-2 [manual] Given the median rating < 4/5, when the report is written, then it proposes specific changes as beads before m2 begins.\n- AC-3 [manual] Given the report, when merged, then every finding links to a bead or is marked won't-fix with a reason.",
+      "depends_on": [
+        "e35-playtest-protocol",
+        "e04-melee-core"
+      ]
+    },
+    {
+      "key": "e35-class-fantasy-tests",
+      "epic": "mw-e35",
+      "type": "task",
+      "title": "Internal playtests proving each class fantasy in greybox",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:qa",
+        "milestone:m2",
+        "needs-human",
+        "class:all"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nm2 exit: each class's core verbs must feel like its fantasy before content production scales up.\n## What\nPer class (knight, archer, sorcerer, thief): 3 sessions on a greybox encounter with multiple routes; measure route choice, verb usage (telemetry), and fantasy rating; report `docs/playtesting/reports/m2-classes.md`.\n## Scope\n- In: 12 sessions, telemetry report, written findings, beads\n- Out: Content (m3)\n## Notes\n- None.\n\n**Integration note:** Dropped hard dependency on e34-analysis-scripts (m4); m2 sessions are analysed from exported logs by hand.",
+      "acceptance": "- AC-1 [manual] Given 3 sessions per class, when completed, then each class has a fantasy rating and a list of verbs used vs available.\n- AC-2 [manual] Given a class whose testers used < 50% of its core verbs unprompted, when reported, then discoverability beads are filed.\n- AC-3 [integration] Given the sessions' playtest bundles, when `pnpm playtest:report` runs, then per-class ability usage charts are included in the report.",
+      "depends_on": [
+        "e35-greybox-combat-test",
+        "mw-e04",
+        "mw-e05",
+        "mw-e06",
+        "mw-e10"
+      ]
+    },
+    {
+      "key": "e35-recruit-testers",
+      "epic": "mw-e35",
+      "type": "task",
+      "title": "Recruit external playtesters and schedule sessions",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:qa",
+        "milestone:m4",
+        "needs-human"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nExternal players, not the team, must demonstrate the game is fun.\n## What\nRecruit ≥ 16 external testers (two rounds of ≥ 8) spanning genre veterans and casual players, with at least 2 using accessibility settings; screener form, scheduling, consent collection; tracking sheet (no personal data in the repo).\n## Scope\n- In: Screener, outreach, scheduling\n- Out: Paid recruitment platforms (only if needed)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given recruitment, when complete, then ≥ 16 consenting testers are scheduled across two rounds with a mix recorded as aggregate counts only.\n- AC-2 [manual] Given the repo, when checked, then no tester personal data (names, emails) is committed.\n- AC-3 [manual] Given no-shows exceed 25% in a round, when detected, then backup testers are scheduled to maintain ≥ 8 sessions.",
+      "depends_on": [
+        "e35-playtest-protocol"
+      ]
+    },
+    {
+      "key": "e35-external-round-1",
+      "epic": "mw-e35",
+      "type": "task",
+      "title": "Run external playtest round 1 on the MVP build",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:qa",
+        "milestone:m4",
+        "needs-human"
+      ],
+      "estimate_minutes": 900,
+      "description": "## Why\nThe first honest measurement of the fun hypotheses with players who owe us nothing.\n## What\nRun ≥ 8 sessions with the protocol on a tagged `playtest-r1` build; collect bundles, observer notes and surveys; produce `docs/playtesting/reports/r1.md` scoring each hypothesis.\n## Scope\n- In: Sessions, report with hypothesis scorecard\n- Out: Triage (e35-findings-triage)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given ≥ 8 completed sessions, when the report is written, then each pre-registered hypothesis has a measured value and pass/fail.\n- AC-2 [integration] Given the collected bundles, when the analysis script runs, then the report embeds its heatmap and usage sections.\n- AC-3 [manual] Given a session with a crash, when reported, then its error log and bug bundle are attached to a bead.",
+      "depends_on": [
+        "e35-recruit-testers",
+        "e35-playtest-builds",
+        "e34-analysis-scripts"
+      ]
+    },
+    {
+      "key": "e35-findings-triage",
+      "epic": "mw-e35",
+      "type": "task",
+      "title": "Triage round-1 findings into prioritized beads",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:design",
+        "milestone:m4"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nFindings are worthless unless they become prioritized work before round 2.\n## What\nCluster observations, survey comments and telemetry anomalies into issues; file beads with evidence links; prioritize by hypothesis impact; select the set to fix before round 2.\n## Scope\n- In: Triage doc section in r1 report, beads\n- Out: Fixes themselves\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given the r1 report, when triaged, then every failed hypothesis has at least one linked bead with a proposed change.\n- AC-2 [manual] Given the triaged beads, when prioritized, then a \"before round 2\" set is labelled and each has an owner/estimate.\n- AC-3 [manual] Given a finding judged out of scope, when recorded, then the reason is written in the report.",
+      "depends_on": [
+        "e35-external-round-1"
+      ]
+    },
+    {
+      "key": "e35-external-round-2",
+      "epic": "mw-e35",
+      "type": "task",
+      "title": "Run external playtest round 2 to validate fixes",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:qa",
+        "milestone:m4",
+        "needs-human"
+      ],
+      "estimate_minutes": 900,
+      "description": "## Why\nConfirms changes improved the experience rather than just changing it.\n## What\nRun ≥ 8 sessions with new testers on `playtest-r2`; same protocol and analysis; report r2 with deltas vs r1 per hypothesis.\n## Scope\n- In: Sessions, r2 report with r1→r2 deltas\n- Out: Decision (e35-mvp-go-no-go)\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given ≥ 8 sessions with testers not in round 1, when reported, then each hypothesis shows r1 value, r2 value and delta.\n- AC-2 [manual] Given a hypothesis that regressed, when reported, then the likely cause is analysed and a bead filed.\n- AC-3 [integration] Given r1 and r2 bundles, when the analysis script runs in comparison mode, then side-by-side charts are produced.",
+      "depends_on": [
+        "e35-findings-triage"
+      ]
+    },
+    {
+      "key": "e35-mvp-go-no-go",
+      "epic": "mw-e35",
+      "type": "decision",
+      "title": "Record MVP go/no-go decision against fun hypotheses",
+      "priority": 1,
+      "labels": [
+        "epic:e35",
+        "area:design",
+        "milestone:m4"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nConstitution: mobile and expansion only after the MVP proves the game is fun; this is that gate.\n## What\nADR `docs/adr/NNNN-mvp-go-no-go.md` applying the pre-registered go/no-go rule to r2 results: go (proceed to post-MVP: E36 etc.), iterate (another round with named changes), or pivot; lists evidence and next steps.\n## Scope\n- In: ADR with evidence links\n- Out: Post-MVP planning itself\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given r2 results, when the ADR is written, then it applies the pre-registered rule verbatim and states the outcome.\n- AC-2 [manual] Given an \"iterate\" outcome, when recorded, then the ADR names the hypotheses to re-test and the changes planned.\n- AC-3 [manual] Given a \"go\" outcome, when recorded, then mw-e36 stubs are unblocked for re-planning.",
+      "depends_on": [
+        "e35-external-round-2"
+      ]
+    },
+    {
+      "key": "e36-mobile-feasibility",
+      "epic": "mw-e36",
+      "type": "spike",
+      "title": "Spike: mobile browser feasibility and target devices",
+      "priority": 4,
+      "labels": [
+        "epic:e36",
+        "area:perf",
+        "milestone:post-mvp"
+      ],
+      "estimate_minutes": 960,
+      "description": "## Why\nMobile only after MVP validation; before committing, measure what mobile browsers can actually run.\n## What\nTime-box 2 days: run the MVP build on representative iOS Safari and Android Chrome devices, measure fps/memory/load on a mobile preset, identify blockers (memory limits, WASM, audio unlock, fullscreen/orientation); ADR recommending target devices and scope.\n## Scope\n- In: Measurements, ADR\n- Out: Implementation\n## Notes\n- None.",
+      "acceptance": "- AC-1 [manual] Given 2 iOS and 2 Android devices, when the MVP build runs, then fps, memory and load time are recorded in the ADR.\n- AC-2 [manual] Given a device that crashes or fails to load, when recorded, then the cause (memory, API) is identified or marked unknown with next steps.\n- AC-3 [manual] Given the ADR, when merged, then it states go/no-go for mobile and target device floor.",
+      "depends_on": [
+        "e35-mvp-go-no-go"
+      ]
+    },
+    {
+      "key": "e36-touch-controls",
+      "epic": "mw-e36",
+      "type": "feature",
+      "title": "Design touch controls for movement, camera and class verbs",
+      "priority": 4,
+      "labels": [
+        "epic:e36",
+        "area:ui",
+        "milestone:post-mvp"
+      ],
+      "estimate_minutes": 960,
+      "description": "## Why\nKeyboard/mouse verbs must map to touch without losing class expressiveness.\n## What\nAs a mobile player, I want virtual stick, camera drag and contextual verb buttons so that I can play every class on touch. Coarse placeholder — split after the feasibility spike.\n## Scope\n- In: Touch input adapter onto the action map, layout customization\n- Out: Anything before e36-mobile-feasibility\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given touch emulation, when the virtual stick is dragged, then the player moves proportionally.\n- AC-2 [e2e] Given simultaneous stick + camera drags (multi-touch), when performed, then both apply independently.\n- AC-3 [manual] Given each class, when played on a phone for 10 minutes, then its core verbs are usable (rated ≥ 3/5 by testers).",
+      "depends_on": [
+        "e36-mobile-feasibility",
+        "e02-input-actions"
+      ]
+    },
+    {
+      "key": "e36-mobile-perf-profile",
+      "epic": "mw-e36",
+      "type": "task",
+      "title": "Create a mobile performance preset and memory budget",
+      "priority": 4,
+      "labels": [
+        "epic:e36",
+        "area:perf",
+        "milestone:post-mvp"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nMobile GPUs and memory limits (esp. iOS Safari) need their own budgets.\n## What\nMobile preset (render scale, shadows off/low, reduced particles, texture downscale), memory budget per spike findings, added to perf suite. Coarse placeholder.\n## Scope\n- In: Preset, budgets, perf suite entries\n- Out: Desktop presets\n## Notes\n- None.",
+      "acceptance": "- AC-1 [perf] Given the target floor device, when the combat stress scene runs on the mobile preset, then p95 frame time ≤ 33.3 ms.\n- AC-2 [perf] Given iOS Safari, when played for 20 minutes, then the tab is not killed for memory (heap within the spike-defined budget).\n- AC-3 [unit] Given a desktop capability profile, when presets are chosen, then the mobile preset is never auto-selected.",
+      "depends_on": [
+        "e36-mobile-feasibility",
+        "e32-quality-presets"
+      ]
+    },
+    {
+      "key": "e36-responsive-ui",
+      "epic": "mw-e36",
+      "type": "feature",
+      "title": "Redesign HUD and menus for small touch screens",
+      "priority": 4,
+      "labels": [
+        "epic:e36",
+        "area:ui",
+        "milestone:post-mvp"
+      ],
+      "estimate_minutes": 960,
+      "description": "## Why\nDesktop menus and dense HUDs are unusable at phone sizes with touch targets.\n## What\nAs a mobile player, I want HUD and menus sized for touch so that I can manage inventory, books and dialogue comfortably. Coarse placeholder.\n## Scope\n- In: Touch-target sizing (≥ 44 px), portrait/landscape handling, safe areas\n- Out: Desktop UI\n## Notes\n- None.",
+      "acceptance": "- AC-1 [e2e] Given a 390×844 viewport, when each menu renders, then all interactive targets are ≥ 44×44 CSS px and nothing overflows.\n- AC-2 [e2e] Given a device rotation, when it occurs, then layout adapts without losing game state.\n- AC-3 [e2e] Given a notched device safe area, when the HUD renders, then no HUD element is under the notch.",
+      "depends_on": [
+        "e36-mobile-feasibility",
+        "e31-menu-navigation"
+      ]
+    }
+  ]
+}

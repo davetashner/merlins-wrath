@@ -1,0 +1,581 @@
+{
+  "group": "integration",
+  "epics": [],
+  "items": [
+    {
+      "key": "e02-animation-system",
+      "epic": "mw-e02",
+      "type": "task",
+      "title": "Build layered animation state machine synced to sim timelines",
+      "priority": 0,
+      "labels": [
+        "epic:e02",
+        "area:render",
+        "milestone:m1",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nCombat is intrinsically fun only if what the player sees lines up with what the sim decides: a parry flash on the frame the sword connects, a skeleton's windup that honestly telegraphs its attack. Every character — player, NPC, creature — needs one shared animation runtime that never becomes a second source of truth.\n\n## What\nAs a developer, I want one data-driven animation runtime for every rig so that the player, NPCs and creatures animate from sim state and events without animation ever deciding gameplay.\n\n- **State machine + blending:** per-rig state graphs in content data (zod-validated): states, blend trees (1D/2D by sim-published parameters such as speed and turn rate), transitions with crossfade durations and conditions on sim state. Layers: base locomotion, upper-body/action (masked), additive hit-react. Humanoid and non-humanoid rigs use the same runtime with different graphs.\n- **Root motion policy:** the sim is authoritative for position. Clips are played in place and the renderer never moves an entity's transform from animation. Root translation found in source clips is extracted as a velocity curve for tuning reference only (matches e37-animation-pipeline AC-5).\n- **Animation events:** gameplay-relevant timing (footsteps from stride distance, hit/active frames from e04 move data, release/cast frames) is emitted by the **sim**. Clip markers (`footstep`, `hit`, `release`, `cast`) are for alignment only: the runtime time-warps action clips so the `hit` marker lands on the sim's first active tick, and the content validator reports drift between markers and move data. Render-side hooks (VFX/SFX flourishes) may subscribe to marker callbacks, but sim hooks subscribe only to sim events.\n- **Time:** animation follows each entity's sim local time-scale (hit-stop, slow-motion, pause). Distant characters update at a lower rate (LOD).\n\n## Scope\n- In: Runtime (src/render/animation), state-graph schema (src/content), sim-parameter binding, crossfades, layers/masks, marker-to-sim alignment and drift validator, animation LOD, dev state probe for tests\n- In: One humanoid and one non-humanoid grey-box placeholder rig with idle/move/attack/hit-react clips\n- Out: Player locomotion parameter mapping — see e02-animation-hooks (consumes this runtime)\n- Out: Clip sourcing, retargeting and manifests — see e37-animation-pipeline\n- Out: Move frame data — see e04-move-data-schema\n- Out: IK (foot placement, look-at) — post-MVP polish\n\n## Notes\nResolves an inconsistency across groups: e28-footsteps mentions \"foot plant events from animation\" while e02-animation-hooks produces footsteps from sim stride distance. Per this item the sim event is authoritative; audio may use the clip marker only to fine-align the one-shot within the same rendered frame. Engine-agnostic API; the implementation targets whatever e00-engine-decision picks. Related: creature users e04-creature-attack-hooks, e04-melee-core, e10-takedowns (paired placeholder snaps).",
+      "acceptance": "- AC-1 [content] Given a state graph with a transition to an unknown state or a clip id missing from the clip manifest, when validated, then validation fails naming the graph file and path (edge).\n- AC-2 [unit] Given a 0.2 s crossfade from idle to run, when the blend is sampled at 0.1 s, then weights are 0.5/0.5 ± 0.01 and weights across all layers sum to 1.0 on every sample.\n- AC-3 [integration] Given a move whose first active tick is 12 and a clip whose `hit` marker is at 0.40 s, when played at the 60 Hz sim rate, then the clip is time-warped so the marker coincides with tick 12 ± 1 tick; a marker drifting > 1 tick from move data is reported by the content validator.\n- AC-4 [integration] Given an entity whose sim local time-scale is 0 for 4 ticks (hit-stop), when rendered, then its pose holds for those ticks and resumes with no pop (max bone rotation delta on resume ≤ 5°).\n- AC-5 [unit] Given a clip containing root translation loaded under the in-place policy, when played for 2 s, then the entity transform equals the interpolated sim position on every frame (animation never moves the entity).\n- AC-6 [e2e] Given the greybox testbed with one humanoid and one non-humanoid placeholder rig, when each cycles idle → move → attack → hit-react via sim state, then the animation state probe reports each state in order and no console errors occur.\n- AC-7 [perf] Given 24 animated characters (those beyond 30 m updated at reduced rate), when running for 30 s, then animation update cost ≤ 1.5 ms per frame p95 on the reference machine (High).",
+      "depends_on": [
+        "e00-render-bootstrap",
+        "e00-game-loop-bridge",
+        "e00-content-pipeline",
+        "e00-greybox-testbed"
+      ]
+    },
+    {
+      "key": "e00-ui-framework",
+      "epic": "mw-e00",
+      "type": "task",
+      "title": "Build HUD/menu UI layer, component kit, focus nav and UI test harness",
+      "priority": 0,
+      "labels": [
+        "epic:e00",
+        "area:ui",
+        "milestone:m1",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 840,
+      "description": "## Why\nEvery group has HUD and menu work (vitals, inventory, containers, death screen, class select, dialogue, spell hotbar, stealth HUD) and nobody owned the layer underneath. Without one kit, each screen reinvents focus handling, input capture and text scaling, and accessibility becomes a retrofit.\n\n## What\nAs a developer, I want one UI layer with a screen stack, reusable components, keyboard/gamepad focus navigation and test helpers so that every HUD element and menu is consistent, accessible and cheap to build.\n\n- **Layer & screen stack:** `src/ui` renders DOM UI over the canvas (unless the engine ADR mandates engine UI). A HUD layer (non-focusable, pointer-through) plus a menu stack: push/pop screens and modals; each screen declares `pausesSim` and `capturesInput`. While a capturing screen is open, gameplay action frames are suppressed and (if `pausesSim`) the loop bridge pauses the sim.\n- **Component kit:** button, list/grid (virtualised), tabs, toggle, slider, select, meter/bar (with delayed-damage segment), icon slot with count/cooldown, tooltip, toast, modal confirm, key-glyph prompt. Themed only through CSS custom-property tokens that follow the style bible's UI section.\n- **Focus & navigation:** focus manager with spatial navigation, focus trap inside modals, focus restore on pop, visible focus ring. UI navigation reads keyboard and the Gamepad API through a small UI input adapter (`ui.up/down/left/right/confirm/back/tabPrev/tabNext`), so it does not depend on gameplay remapping; key glyphs are resolved later from e02-input-actions bindings.\n- **Scaling & comfort hooks:** `--ui-text-scale` (0.8–2.0) and `prefers-reduced-motion`/setting hooks consumed by e31-text-scaling and e31-motion-comfort.\n- **HUD binding:** HUD widgets read an immutable view model derived from sim snapshots after each tick; they never mutate sim state (commands go through action frames). Dirty-checking avoids DOM writes when nothing changed.\n- **Test harness:** component tests (Vitest + DOM environment) and Playwright helpers: `openScreen`, `navigate(path)`, text-overflow check, axe-core scan; a component gallery screen used by e2e tests.\n\n## Scope\n- In: Screen stack, input capture, component kit, focus manager, UI input adapter, tokens, view-model binding pattern, test helpers, component gallery\n- Out: Settings store and options screens — see e31-settings-framework (builds on this)\n- Out: Per-screen features (inventory, dialogue, shop…) — owned by their epics\n- Out: Full accessibility audit and per-menu ARIA coverage — see e31-menu-navigation, e31-accessibility-audit\n- Out: Final UI art — see mw-e37 UI assets\n\n## Notes\nOverlap resolved: e31-menu-navigation specified a \"shared focus manager (spatial navigation)\" at m3; the focus manager now lives here at m1, and e31-menu-navigation becomes the audit/ARIA/axe pass over every screen. Must not depend on e02-input-actions or e31-settings-framework (both build on top of it; avoiding a cycle).",
+      "acceptance": "- AC-1 [unit] Given the HUD plus an open inventory modal that captures input, when `ui.back` (Esc / gamepad B) is pressed, then the modal pops, focus returns to the element focused before it opened, and gameplay input capture is released on the same frame.\n- AC-2 [integration] Given a screen with `pausesSim: true` open, when gameplay keys are pressed for 60 ticks, then no gameplay action frames are recorded and the sim tick counter does not advance.\n- AC-3 [e2e] Given the component gallery, when traversed with arrow keys and with an emulated gamepad D-pad, then every interactive component is reachable, the focus ring is visible with contrast ≥ 3:1, and focus never escapes an open modal.\n- AC-4 [integration] Given `--ui-text-scale` set to 2.0, when the component gallery renders at 1280×720, then the overflow helper finds no clipped text node.\n- AC-5 [unit] Given a HUD bar bound to a view model, when the sim snapshot is unchanged between frames, then zero DOM writes occur; when health changes, the bar updates within one rendered frame.\n- AC-6 [unit] Given a gamepad disconnects while a menu item is focused, when input continues from the keyboard, then focus is preserved and no error is thrown (edge).\n- AC-7 [e2e] Given the component gallery, when axe-core runs, then there are zero serious or critical violations.\n- AC-8 [perf] Given a HUD with health, stamina and 4 quick slots updating every tick, when profiled for 30 s, then UI update cost ≤ 0.5 ms per frame p95 on the reference machine (High).",
+      "depends_on": [
+        "e00-repo-scaffold",
+        "e00-game-loop-bridge",
+        "e00-ci-pipeline"
+      ]
+    },
+    {
+      "key": "e27-world-clock",
+      "epic": "mw-e27",
+      "type": "feature",
+      "title": "Run a deterministic in-game clock with time-of-day and schedules",
+      "priority": 1,
+      "labels": [
+        "epic:e27",
+        "area:sim",
+        "milestone:m2",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\nBookshops rotate stock \"every few in-game days\", quests have deadlines, the Sleepers' Path is visible only at night, rest advances time and jail sentences cost days. Several groups assumed a world clock that nobody owned; without one, each invents its own notion of time and saves disagree.\n\n## What\nAs a designer, I want one deterministic in-game clock with time-of-day phases and schedulable events so that restocks, deadlines, NPC schedules and night-only secrets all agree on what time it is.\n\n- Game time derives from sim ticks at a data-configured rate (default: 1 game day = 60 real minutes). Clock = day number + minute of day; phases (dawn, day, dusk, night) with boundaries in data.\n- **Pause rules:** the clock advances only while the sim steps. Menus that pause the sim pause the clock; dialogue, shop and inventory screens pause it by default (data flag per screen).\n- **Explicit advancement:** `advanceTime(duration, reason)` for rest, study, jail and travel; the only way time jumps.\n- **Events:** `time.hourChanged`, `time.phaseChanged`, `time.dayStarted`; `schedule.at(gameTime, eventId, payload)` and `schedule.every(period, …)` with deterministic ordering by (time, priority, id). On a jump, subscribers choose `each` (fire once per crossed boundary, in order) or `latest` (coalesce into one callback) — lazy consumers such as shop restock use `latest` plus elapsed time.\n- Query API for other systems (`timeOfDay`, `phase`, `elapsedSince`), used by the condition DSL and light-field sun/moon intensity.\n- Clock and pending schedule serialise through the world-state save section.\n\n## Scope\n- In: Clock component, phase table data, pause rules, advanceTime, events, scheduler, save integration, debug commands (`time set`, `time advance`)\n- Out: Sky/lighting visuals — render/E37 (subscribe to phaseChanged)\n- Out: Rest points — see e27-rest-points\n- Out: Specific schedules (restock, deadlines, NPC routines) — owned by consumers\n\n## Notes\nConsumers: e20-restock-rotation, e21-rotating-stock, e23-failure-continuations (deadlines), e12-needs-hooks, e07-spellbook-learning (study time), e27-offscreen-catchup, e22-condition-effect-dsl (`timeOfDay` condition), e22-crime-bounty (jail sentences). e11-patrol-routines deliberately keeps simple time windows at m1; later schedules can read this clock.",
+      "acceptance": "- AC-1 [unit] Given day length 60 real minutes, a 60 Hz sim and a start of day 1 06:00, when 216,000 ticks elapse, then the clock reads day 2 06:00 and exactly one `time.dayStarted` event has fired.\n- AC-2 [unit] Given a sim-pausing menu open for 10 real minutes, when it closes, then game time has not advanced.\n- AC-3 [unit] Given advanceTime(8 h) from day 1 22:00, when applied, then `time.hourChanged` fires 8 times in order, `time.phaseChanged` night→dawn fires once, `time.dayStarted` fires once, and a `latest`-mode subscriber receives exactly one callback with elapsed = 480 game minutes.\n- AC-4 [unit] Given two events scheduled for the same game minute and registered in either order, when that minute is reached, then they fire in (time, priority, id) order identically across 100 seeded runs.\n- AC-5 [unit] Given a save at day 3 14:30 with 2 pending scheduled events, when reloaded, then the clock and schedule are restored and the sim state hash equals the pre-save hash.\n- AC-6 [unit] Given advanceTime called with a zero, negative or non-finite duration, when applied, then it is rejected with reason `invalid-duration` and no events fire (edge).",
+      "depends_on": [
+        "e00-sim-core",
+        "e27-world-state-store",
+        "e27-save-integration"
+      ]
+    },
+    {
+      "key": "e22-crime-bounty",
+      "epic": "mw-e22",
+      "type": "feature",
+      "title": "Turn witnessed crimes into settlement bounties with pay/jail/flee",
+      "priority": 1,
+      "labels": [
+        "epic:e22",
+        "area:sim",
+        "milestone:m2",
+        "class:thief",
+        "size:m"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nThief play needs stakes: getting caught should create a new situation (a fine, a night in the Watch House cell, a chase out of town), not an instant reload. Theft, fence recognition, shoplifting, disguises and failure narratives all emit or expect crime consequences, but no item owned bounty or guard outcomes.\n\n## What\nAs a thief, I want crimes that are actually witnessed to raise a bounty in that settlement and lead to a confrontation I can pay, serve or flee so that failure changes the story instead of ending it.\n\n- **Crime types (data):** theft (from `crime.theft` / `crime.theft.recognized`), trespass (entering a `restricted` trigger volume owned by a settlement/faction while seen, after one warning bark), assault (damage to a non-hostile NPC via damage events), disguise exposure (`crime.disguise.exposed` from e10-disguises), murder. Each has severity, report delay and consequence effects written in the condition/effect DSL.\n- **Witnesses:** a crime counts only if a witness perceives it (e11 perception). A witness must *report* — survive and stay conscious for the report delay or reach a guard — before bounty is added. Silencing a witness is a (risky) choice.\n- **Bounty & reputation:** bounty per settlement stored as world facts (`crime.bounty.<settlement>`), crime records with witness and game time; disposition/faction effects via e22-disposition.\n- **Guard response hook:** when a guard of that settlement perceives a player whose bounty ≥ threshold, emit one `crime.confront{guard, settlement, bounty}`; e11 behaviour and dialogue consume it.\n- **Outcomes that continue the story:** *pay* (gold ≥ bounty → cleared; stolen items confiscated), *jail* (advanceTime by sentence, stolen items to the settlement evidence container, `player.jailed.count`++, player placed at the jail spawn — world content may offer an escape), *resist/flee* (settlement guards go to Combat toward the player, bounty += resist severity, DSL-gated services refuse while bounty > 0). A `clearBounty` DSL effect lets quests pardon.\n\n## Scope\n- In: Crime definitions schema, witness/report pipeline, bounty facts per settlement, trespass and assault detection, confront event, pay/jail/resist outcome effects, save via world facts, debug commands\n- Out: Theft detection and stolen flag — see e18-ownership-stolen\n- Out: Guard movement/arrest behaviour and barks — mw-e11 (consume `crime.confront`)\n- Out: Jail geometry and escape route — world content (Related: E24/E26)\n- Out: Failure-narrative text — see e39-failure-narratives\n\n## Notes\nCanon (docs/narrative/story-bible.md): Briar Glen's Watch House has a one-cell jail; the failure-narrative fact is `player.jailed.count`. The story's \"bounty: 500 crowns, raised to 800\" is the missing-persons reward on the notice board, not a crime bounty — keep the terms distinct in UI text (\"fine\"/\"wanted\" vs \"reward\").\n\n**Integration note:** Emits `crime.confront`; guard arrest/confront behaviour in E11 consumes it (E11 guard behaviour items should subscribe when this lands).",
+      "acceptance": "- AC-1 [unit] Given a `crime.theft` event with one witness who reports, when processed, then the bounty for that witness's settlement increases by the theft severity scaled by item value tier and one crime record (type, witness, game time) is stored as a fact.\n- AC-2 [unit] Given a witnessed theft where the witness is knocked out before the report delay (default 20 s) expires, when the delay passes, then no bounty is added (edge: silenced witness).\n- AC-3 [unit] Given a player with bounty ≥ the confront threshold perceived by a guard of that settlement, when perception fires repeatedly, then exactly one `crime.confront` event is emitted per encounter and the pay option is disabled when gold < bounty.\n- AC-4 [unit] Given the jail outcome with a 2-day sentence, when applied, then the world clock advances 2 days, stolen items move to the evidence container, the bounty clears, `player.jailed.count` increments and the player is placed at the jail spawn without a reload.\n- AC-5 [unit] Given the resist outcome, when chosen, then every guard of that settlement within alert radius enters the Combat alert state toward the player and the bounty increases by the resist severity.\n- AC-6 [unit] Given crimes in two settlements, when one bounty is paid, then the other settlement's bounty is unchanged.\n- AC-7 [content] Given the crime definitions, when validated, then every crime type has severity, report delay and DSL-valid consequences, and an unknown settlement id fails validation naming the file.",
+      "depends_on": [
+        "e18-ownership-stolen",
+        "e11-perception",
+        "e11-alert-states",
+        "e22-disposition",
+        "e22-condition-effect-dsl",
+        "e27-world-state-store",
+        "e27-world-clock",
+        "e03-triggers",
+        "e04-damage-model"
+      ]
+    },
+    {
+      "key": "e27-rest-points",
+      "epic": "mw-e27",
+      "type": "feature",
+      "title": "Rest at inns, campfires and shrines to reset facts and pass time",
+      "priority": 1,
+      "labels": [
+        "epic:e27",
+        "area:sim",
+        "milestone:m2",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\nPersistence policies reset \"on rest\", archers assemble arrows and everyone swaps loadouts \"at rest points\", artifacts recharge on rest — but no item defined what resting is. A shared rest verb gives the world a rhythm and gives failure a place to happen (a campfire in the wild can be interrupted).\n\n## What\nAs a player, I want to rest at an inn bed, a campfire or a shrine so that I recover, the world moves on and I can reorganise my kit.\n\n- **Rest point entity:** kind `inn` (paid through e20-services later; free in grey-box), `campfire` (must be burning — any heat stimulus lights it; wet/extinguished fires refuse), `shrine`. Data per kind: restoration table, allowed durations, interrupt table.\n- **Request:** interact → choose duration (until dawn / until dusk / N hours). Refused when unsafe: reuses the autosave \"unsafe\" veto registry (combat/alert ≥ Searching/hostile within radius) with reasons.\n- **Rest:** `advanceTime`, restore health/stamina/mana per kind, emit `rest.completed{kind, hours, point}` which triggers rest-reset persistence policies. A scheduled or data-rolled (seeded RNG) interrupt stops rest early with prorated restoration and fires its event — a new situation, not a reload.\n- **Rest actions hook:** a registry lets other systems add actions to the rest menu while at a rest point (arrow assembly, loadout swap, artifact recharge). This item owns the hook only.\n- Autosave once after a completed or interrupted rest.\n\n## Scope\n- In: Rest point component/schema, safety check, duration selection, time advance, restoration, rest.completed event, interrupts, rest-action registry, autosave trigger, minimal rest menu on e00-ui-framework\n- Out: Inn payment — see e20-services\n- Out: Arrow assembly — e19-archer-arrow-channel; loadout swap — e19-respec-policy; artifact recharge — e18-unique-artifacts (register rest actions)\n- Out: Which facts reset — see e27-persistence-policies\n\n## Notes\nCanon: the Sleeping Ox is Briar Glen's inn (story bible §3.5). Resting is not a save-scum tool: autosave after rest uses the normal ring.\n\n**Integration note:** Quest-registered vetoes (e.g. the E24 first-night beat) use the same veto registry as AC-2.",
+      "acceptance": "- AC-1 [unit] Given a campfire rest point that is not burning, when rest is requested, then it fails with reason `no-fire`; after a heat stimulus ignites it, the same request succeeds.\n- AC-2 [unit] Given a registered unsafe veto (hostile within 20 m or any alert state ≥ Searching), when rest is requested, then it fails with reason `unsafe` and game time does not advance.\n- AC-3 [unit] Given rest until dawn requested at 22:00, when completed, then the clock reads 06:00 next day, `rest.completed` fires once, restoration follows the kind's table, rest-reset facts reset and permanent facts are unchanged.\n- AC-4 [unit] Given two registered rest actions, when the rest menu opens at a rest point, then both are listed in priority order; when invoked away from a rest point, then each fails with reason `not-at-rest`.\n- AC-5 [unit] Given an interrupt scheduled at 02:00 during an 8 h rest starting 22:00, when resting, then rest stops at 02:00, restoration is prorated to 4/8 and the interrupt event fires once (edge).\n- AC-6 [integration] Given a completed rest, when it ends, then exactly one autosave is written after the `rest.completed` event.\n- AC-7 [e2e] Given the greybox testbed with an unlit campfire, when the player lights it and rests 8 h, then the HUD clock shows +8 h, health is full and no console errors occur.",
+      "depends_on": [
+        "e27-world-clock",
+        "e27-persistence-policies",
+        "e02-interaction",
+        "e30-autosave",
+        "e00-ui-framework"
+      ]
+    },
+    {
+      "key": "e03-property-vocabulary-consolidation",
+      "epic": "mw-e03",
+      "type": "task",
+      "title": "Consolidate world-property vocabulary assumed by other epics",
+      "priority": 0,
+      "labels": [
+        "epic:e03",
+        "area:sim",
+        "milestone:m1",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nInteractions come from properties, never pairings — which only works if every group uses the same property names. Magic, combat, stealth and systems each assumed properties that e03-world-properties does not define, some with conflicting spellings (`soft_anchor` vs camelCase keys).\n\n## What\nAs a designer, I want every property other systems rely on defined once, with type, range, default and meaning, so that spells, arrows, tools and AI all read the same vocabulary.\n\nAdd to the closed, versioned property set (camelCase, matching e03-world-properties):\n- `flammable` (explicit boolean alongside ignitionPoint), `flammableGas` (gas type ignites/explodes), `extinguishable` (fire/light source that water, force or interaction can put out)\n- `reflective` (confirm semantics for beams), `waterSurface` (liquid top surface; freezable into walkable ice)\n- `unstable` (collapses/topples when force or charge exceeds threshold), `suspended` (hangs from a support entity; falls when it breaks/burns/is cut)\n- `breakable` + `toughness` per damage type (blunt/slash/pierce/force, joules) alongside `fragile`; `bashable` (shield bash/kick shove/break), `cuttable` (slash/pierce severs), `shootable` (projectile hit emits a signal)\n- `softAnchor` (rope arrows embed), `surfaceHardness` (soft/medium/hard: footstep loudness and arrow sticking)\n- `chargeActivated` / `lightActivated` (mechanism inputs with thresholds)\n- `hidden` (not perceivable/targetable until revealed), `trapped` (links a trap definition; triggers on interaction unless disarmed), `container` (marker linking to the e18 container component), `remains` (skeletal/corpse remains usable by summoning)\n- Actor-derived `noiseMultiplier` (product of equipped items' noise multipliers, read by stealth)\n\nPlus query helpers (`breaksUnder(type, energy)`, `isRevealed`, `supportOf`) and a generated docs table.\n\n## Scope\n- In: Schema additions, defaults, invariants, query helpers, material preset updates, alias rejection, docs table, save-schema bump with migration fixture\n- Out: Behaviour using the properties — owned by consumers (e03-breakables, e03-ropes-supports, e05-arrow-schema, e10-trap-disarm, e08 spells…)\n- Out: Container inventory logic — see e18-containers\n\n## Notes\nSources: magic (reflective, unstable, remains, container, water-surface, flammable-gas, charge-activated, light-activated, hidden, trapped), combat (breakable+toughness, shootable, cuttable, bashable, soft_anchor, surface hardness, armor noiseMultiplier), core/stealth (extinguishable, suspended, fragile). e18-containers (P0/m1) must not wait on this item: it keeps its own container component and this item only adds the marker/alias.",
+      "acceptance": "- AC-1 [content] Given the property schema, when validated, then every property listed in this bead exists with type, range, default and doc string, and the generated docs table lists each one.\n- AC-2 [unit] Given an entity with breakable toughness {blunt: 200 J, slash: 800 J}, when breaksUnder is queried for a 300 J blunt hit and a 300 J slash hit, then only the blunt hit returns true.\n- AC-3 [unit] Given an entity with hidden=true, when perception and interaction-targeting queries run, then it is excluded until a reveal clears the flag, and the reveal emits exactly one propertyChanged event.\n- AC-4 [content] Given content using a non-canonical alias such as `soft_anchor` or `water-surface`, when validated, then validation fails with a message naming the canonical key (edge).\n- AC-5 [unit] Given invalid combinations (suspended without a support reference, trapped without a trap definition, waterSurface on a non-liquid material), when invariants run, then each is reported with the entity id.\n- AC-6 [content] Given the material presets, when resolved, then every preset declares surfaceHardness and softAnchor (wood and earth true; stone, iron and glass false).\n- AC-7 [unit] Given armour items with noiseMultiplier 1.4 and 1.2 equipped, when actor properties are derived, then the actor noiseMultiplier is 1.68, clamped to 0.2–3.0.",
+      "depends_on": [
+        "e03-world-properties",
+        "e03-material-presets",
+        "e30-migration-fixtures"
+      ]
+    },
+    {
+      "key": "e31-difficulty-config",
+      "epic": "mw-e31",
+      "type": "task",
+      "priority": 0,
+      "title": "Inject a DifficultyConfig of tunable multipliers into the sim",
+      "labels": [
+        "epic:e31",
+        "area:sim",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nCombat and stealth rules (P0/m1) must read difficulty/assist multipliers from day one, but the assists UI (e31-difficulty-assists) lands at m3. A tiny config seam avoids a milestone inversion and keeps assists data-driven.\n\n## What\nAs a developer, I want a typed, immutable DifficultyConfig injected into the sim at world creation so that any rule can read multipliers (damageTaken, damageDealt, detectionSpeed, parryWindow, dodgeWindow, fallDamage, puzzleHints) without knowing about settings or UI.\n\n## Scope\n- In: schema with defaults (all 1.0), validation (ranges), injection into sim context, inclusion in state hash + save, change-at-runtime event.\n- Out: the assists UI and presets (e31-difficulty-assists), per-system consumption ACs (owned by each consumer).\n\n## Notes\nConsumers: e04-damage-model, e04-parry-riposte, e04-dodge-iframes, e04-environmental-damage, e11-awareness-accumulation, e15 hints.",
+      "acceptance": "- AC-1 [unit] Given no overrides, when a world is created, then every multiplier equals 1.0 and the config is frozen.\n- AC-2 [unit] Given a multiplier outside its allowed range (e.g. detectionSpeed 0 or 10), when the config is validated, then validation fails with the field name and range.\n- AC-3 [unit] Given two worlds differing only in damageTaken, when their state is hashed, then the hashes differ; given identical configs, they match.\n- AC-4 [integration] Given a save made with detectionSpeed 0.5, when it is loaded, then the restored sim reads 0.5.\n- AC-5 [unit] Given a runtime change event, when applied between ticks, then the new value takes effect on the next tick and is recorded in the replay log so replays stay identical.",
+      "depends_on": [
+        "e00-sim-core",
+        "e00-content-pipeline",
+        "e00-sim-state-hash"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "e31-settings-framework",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e04-hud-vitals",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e17-inventory-ui",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e30-death-reload",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e19-class-selection",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e31-text-scaling",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e31-menu-navigation",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e09-visibility-hud",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e09-awareness-indicators",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e06-spell-hotbar-ui",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e07-book-reader-ui",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e21-bookshop-ui",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e19-capabilities-screen",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e22-dialogue-ui",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e23-journal-ui",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e22-barks-subtitles",
+      "to": "e00-ui-framework"
+    },
+    {
+      "from": "e02-animation-hooks",
+      "to": "e02-animation-system"
+    },
+    {
+      "from": "e04-melee-core",
+      "to": "e02-animation-system"
+    },
+    {
+      "from": "e04-creature-attack-hooks",
+      "to": "e02-animation-system"
+    },
+    {
+      "from": "e37-animation-pipeline",
+      "to": "e02-animation-system"
+    },
+    {
+      "from": "e20-restock-rotation",
+      "to": "e27-world-clock"
+    },
+    {
+      "from": "e21-rotating-stock",
+      "to": "e27-world-clock"
+    },
+    {
+      "from": "e23-failure-continuations",
+      "to": "e27-world-clock"
+    },
+    {
+      "from": "e12-needs-hooks",
+      "to": "e27-world-clock"
+    },
+    {
+      "from": "e07-spellbook-learning",
+      "to": "e27-world-clock"
+    },
+    {
+      "from": "e27-offscreen-catchup",
+      "to": "e27-world-clock"
+    },
+    {
+      "from": "e22-condition-effect-dsl",
+      "to": "e27-world-clock"
+    },
+    {
+      "from": "e19-archer-arrow-channel",
+      "to": "e27-rest-points"
+    },
+    {
+      "from": "e19-respec-policy",
+      "to": "e27-rest-points"
+    },
+    {
+      "from": "e18-unique-artifacts",
+      "to": "e27-rest-points"
+    },
+    {
+      "from": "e20-services",
+      "to": "e27-rest-points"
+    },
+    {
+      "from": "e20-shoplifting",
+      "to": "e22-crime-bounty"
+    },
+    {
+      "from": "e10-disguises",
+      "to": "e22-crime-bounty"
+    },
+    {
+      "from": "e39-failure-narratives",
+      "to": "e22-crime-bounty"
+    },
+    {
+      "from": "e05-arrow-schema",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e04-shield-bash",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e03-breakables",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e03-ropes-supports",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e03-light-sources",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e03-shootable-mechanisms",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e03-freeze-melt",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e03-gas-clouds",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e09-surface-acoustics",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e06-world-stimulus-emitters",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e08-spell-animate-bones",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e08-spell-arcane-sight",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e10-trap-disarm",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e18-placed-treasure",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e04-armor-weight",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e37-readability-kit",
+      "to": "e03-property-vocabulary-consolidation"
+    },
+    {
+      "from": "e21-bookshop-system",
+      "to": "e20-merchant-schema"
+    },
+    {
+      "from": "e21-book-pricing",
+      "to": "e20-price-model"
+    },
+    {
+      "from": "e21-rotating-stock",
+      "to": "e20-restock-rotation"
+    },
+    {
+      "from": "e21-rare-stock",
+      "to": "e22-condition-effect-dsl"
+    },
+    {
+      "from": "e21-stolen-forbidden-stock",
+      "to": "e18-ownership-stolen"
+    },
+    {
+      "from": "e10-pickpocketing",
+      "to": "e18-ownership-stolen"
+    },
+    {
+      "from": "e10-pickpocketing",
+      "to": "e18-creature-drops"
+    },
+    {
+      "from": "e10-pickpocketing",
+      "to": "e19-thief-tools-channel"
+    },
+    {
+      "from": "e10-lockpicking",
+      "to": "e18-containers"
+    },
+    {
+      "from": "e10-lockpicking",
+      "to": "e19-thief-tools-channel"
+    },
+    {
+      "from": "e10-trap-disarm",
+      "to": "e18-containers"
+    },
+    {
+      "from": "e10-trap-disarm",
+      "to": "e19-thief-tools-channel"
+    },
+    {
+      "from": "e06-spell-pipeline",
+      "to": "e03-stimulus-api"
+    },
+    {
+      "from": "e06-world-stimulus-emitters",
+      "to": "e03-stimulus-api"
+    },
+    {
+      "from": "e05-arrow-schema",
+      "to": "e03-stimulus-api"
+    },
+    {
+      "from": "e06-spell-cue-binding",
+      "to": "e29-spell-vfx-hooks"
+    },
+    {
+      "from": "e09-footstep-noise",
+      "to": "e02-stance-profiles"
+    },
+    {
+      "from": "e09-footstep-noise",
+      "to": "e02-footstep-events"
+    },
+    {
+      "from": "e09-footstep-noise",
+      "to": "e04-armor-weight"
+    },
+    {
+      "from": "e03-world-noise-events",
+      "to": "e09-sound-propagation"
+    },
+    {
+      "from": "e10-thrown-distractions",
+      "to": "e03-world-noise-events"
+    },
+    {
+      "from": "e09-surface-acoustics",
+      "to": "e03-material-presets"
+    },
+    {
+      "from": "e28-footsteps",
+      "to": "e02-footstep-events"
+    },
+    {
+      "from": "e28-occlusion",
+      "to": "e09-sound-propagation"
+    },
+    {
+      "from": "e22-condition-effect-dsl",
+      "to": "e27-fact-queries"
+    },
+    {
+      "from": "e04-combat-assists",
+      "to": "e31-difficulty-assists"
+    },
+    {
+      "from": "e09-stealth-assists",
+      "to": "e31-difficulty-assists"
+    },
+    {
+      "from": "e15-hint-ladder",
+      "to": "e31-difficulty-assists"
+    },
+    {
+      "from": "e11-combat-behaviour",
+      "to": "e30-autosave"
+    },
+    {
+      "from": "e22-npc-conversation",
+      "to": "e30-autosave"
+    },
+    {
+      "from": "e28-adaptive-music",
+      "to": "e38-music-state-data"
+    },
+    {
+      "from": "e37-style-bible",
+      "to": "e39-story-bible"
+    },
+    {
+      "from": "e38-audio-bible",
+      "to": "e39-story-bible"
+    },
+    {
+      "from": "e09-hiding-places",
+      "to": "e03-hiding-containers"
+    },
+    {
+      "from": "e11-search-behaviour",
+      "to": "e03-hiding-containers"
+    },
+    {
+      "from": "e10-extinguish-lights",
+      "to": "e03-light-sources"
+    },
+    {
+      "from": "e18-ownership-stolen",
+      "to": "e27-ownership-theft"
+    },
+    {
+      "from": "e04-smash-breakables",
+      "to": "e03-breakables"
+    },
+    {
+      "from": "e05-shoot-mechanisms",
+      "to": "e03-shootable-mechanisms"
+    },
+    {
+      "from": "e05-rope-arrow",
+      "to": "e03-climbable-surfaces"
+    },
+    {
+      "from": "e10-climbing",
+      "to": "e02-climb-surfaces"
+    },
+    {
+      "from": "e02-carry-throw",
+      "to": "e17-world-pickup-drop"
+    },
+    {
+      "from": "e22-disposition",
+      "to": "e12-dispositions"
+    },
+    {
+      "from": "e31-captions",
+      "to": "e28-sound-captions"
+    },
+    {
+      "from": "e31-audio-settings",
+      "to": "e28-mixer-settings"
+    },
+    {
+      "from": "e33-world-overlays",
+      "to": "e03-debug-overlay"
+    },
+    {
+      "from": "e33-ai-debug-overlay",
+      "to": "e11-debug-visualisation"
+    },
+    {
+      "from": "e04-damage-model",
+      "to": "e31-difficulty-config"
+    },
+    {
+      "from": "e11-awareness-accumulation",
+      "to": "e31-difficulty-config"
+    },
+    {
+      "from": "e04-parry-riposte",
+      "to": "e31-difficulty-config"
+    },
+    {
+      "from": "e04-dodge-iframes",
+      "to": "e31-difficulty-config"
+    },
+    {
+      "from": "e04-environmental-damage",
+      "to": "e31-difficulty-config"
+    },
+    {
+      "from": "e31-difficulty-assists",
+      "to": "e31-difficulty-config"
+    }
+  ]
+}

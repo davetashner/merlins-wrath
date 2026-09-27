@@ -1,0 +1,21 @@
+name: Backlog checks
+
+on:
+  pull_request:
+    paths: ['plan/**', '.beads/issues.jsonl', 'scripts/**']
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate plan files against the backlog contract
+        run: node scripts/load-plan.mjs --check
+      - name: Validate issues.jsonl parses and renders
+        run: node scripts/build-backlog-html.mjs .beads/issues.jsonl /tmp/backlog.html

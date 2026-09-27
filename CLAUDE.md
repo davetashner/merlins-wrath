@@ -58,20 +58,30 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 <!-- END BEADS INTEGRATION -->
 
 
+## Source of truth
+
+- `CONSTITUTION.md` — product vision and design pillars. Everything is subordinate to it.
+- `docs/backlog-contract.md` — how beads are written, coverage policy, DoD, asset workflow, hardware baseline.
+- `docs/narrative/story-bible.md` — story canon (names, places, plot). `docs/art/style-bible.md` and `docs/audio/audio-bible.md` — asset consistency; every asset prompt starts from their preambles.
+- Backlog: `bd` (prefix `mw-`), published at https://davetashner.github.io/merlins-wrath/backlog.html on every merge to main.
+
+## Workflow
+
+1. Pick work from `bd ready`; claim it (`bd update <id> --claim`).
+2. Create a worktree from latest main: `git fetch origin main && git worktree add .claude/worktrees/<branch> -b <branch> origin/main`.
+3. Implement with tests that name the ACs (`it('AC-2: ...')`). Coverage rules in the contract §3 are enforced by CI; never lower coverage.
+4. Commit with sign-off (`git commit -s`), reference the bead ID in the message.
+5. Open a PR to `main` with one `Closes mw-…` line per completed bead. Squash merge only.
+6. After merge: `bd close <id> --reason "Completed in PR #N"`, export (`bd export -o .beads/issues.jsonl`) in the next PR, remove the worktree.
+
 ## Build & Test
 
-_Add your build and test commands here_
-
-```bash
-# Example:
-# npm install
-# npm test
-```
+_Filled in by `mw-e00` (repo scaffold). Expected: `pnpm install`, `pnpm test`, `pnpm test:e2e`, `pnpm lint`, `pnpm typecheck`._
 
 ## Architecture Overview
 
-_Add a brief overview of your project architecture_
+Deterministic, engine-agnostic game rules in `src/sim` (100% coverage, no DOM/renderer/wall clock/Math.random); data-driven content in `src/content`; renderer/audio/UI glue in `src/game`, `src/render`, `src/audio`, `src/ui`. World interactions are property-based (flammable, wet, conductive…) via a single stimulus API — never pairwise scripted. See contract §2.
 
-## Conventions & Patterns
+## Assets
 
-_Add your project-specific conventions here_
+Images: Claude generates via Codex CLI. 3D: Claude generates via Meshy/Tripo API from owner-approved flat images. SFX: ElevenLabs API. Music: owner pastes Claude's prompt into Suno. The owner approves every asset (flat image, 3D turntable, music take, SFX batch); approvals are recorded and enforced in CI. API keys only via environment variables — never commit or log them.
