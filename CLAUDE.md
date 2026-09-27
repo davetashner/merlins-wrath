@@ -76,7 +76,15 @@ This protocol applies when ending a Beads implementation workflow. It is subordi
 
 ## Build & Test
 
-_Filled in by `mw-e00` (repo scaffold). Expected: `pnpm install`, `pnpm test`, `pnpm test:e2e`, `pnpm lint`, `pnpm typecheck`._
+Node 24 (`.node-version`, engine-strict) and pnpm via corepack. See README Quickstart.
+
+```bash
+pnpm install
+pnpm lint && pnpm typecheck && pnpm test   # quality gates
+pnpm test:coverage                        # coverage/ (json-summary + lcov)
+pnpm e2e                                  # Playwright smoke vs production build
+pnpm build                                # dist/
+```
 
 ## Architecture Overview
 

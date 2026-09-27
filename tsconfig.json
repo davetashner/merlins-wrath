@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node", "vite/client"],
+    "noEmit": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    "paths": {
+      "@sim/*": ["./src/sim/*"],
+      "@content/*": ["./src/content/*"],
+      "@game/*": ["./src/game/*"],
+      "@render/*": ["./src/render/*"],
+      "@audio/*": ["./src/audio/*"],
+      "@ui/*": ["./src/ui/*"],
+      "@tools/*": ["./src/tools/*"]
+    }
+  },
+  "include": ["src", "tests", "e2e", "*.config.ts"],
+  // Deliberately ill-typed files that the AC-3 test feeds to the compiler one at a time.
+  "exclude": ["tests/toolchain/fixtures"]
+}
