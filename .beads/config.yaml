@@ -72,3 +72,5 @@
 # - github.token    → use GITHUB_TOKEN env var instead
 
 sync.remote: "git+https://github.com/davetashner/merlins-wrath.git"
+export:
+    auto: true
