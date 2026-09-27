@@ -5,7 +5,7 @@
 | Asset id | `prop-rest-lamp-01` |
 | Category | prop (signature) + UI icon + favicon |
 | Consuming bead(s) | `e27-rest-points` (mw-e27.13), site favicon, future UI iconography |
-| Source | Owner-supplied image, 2026-09-27 (1295×1215 PNG, transparent background) |
+| Source | Owner-made in ChatGPT image generation, 2026-09-27 (1295×1215 PNG, transparent background) |
 
 ## Role in the game
 
@@ -38,4 +38,4 @@ so the flame reads.
 
 | Asset id | Source file | Tool | Date | Licence / terms | Prompt file |
 |---|---|---|---|---|---|
-| prop-rest-lamp-01 | `assets/_incoming/prop-rest-lamp-01/v1.png` | owner-supplied (tool to confirm) | 2026-09-27 | to confirm | this file |
+| prop-rest-lamp-01 | `assets/_incoming/prop-rest-lamp-01/v1.png` | ChatGPT image generation (OpenAI), owner-made | 2026-09-27 | OpenAI terms: output owned by the user | this file |
