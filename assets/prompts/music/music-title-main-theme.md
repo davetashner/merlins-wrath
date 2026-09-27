@@ -77,3 +77,24 @@ vocals, lyrics, rap, pop, EDM, dubstep, trap, drum kit, electric guitar, synth, 
 | # | Date | Tool / model / tier | Prompt change | Result | Keep? |
 |---|---|---|---|---|---|
 | 1 | 2026-09-27 | Suno / Pro plan (annual) | initial | `assets/_incoming/music/music-title-main-theme.wav` (3:03, 48 kHz 16-bit stereo, −16.5 LUFS integrated, LRA 4.7 LU) | yes — owner's pick |
+
+## Website copies (`site/audio/`, `mw-e00.25`)
+
+Opt-in player on thevesperbell.com (off by default, `preload="none"`). Encoded from the v1 master
+(SHA-256 `030f5f70e4e192fef570142f469ef8e263b88555689c363b7b8ef6d2cd0171e9`) with metadata stripped and
+**no loudness processing**, so the site copy stays at −16.5 LUFS / −4.8 dBTP. The in-game −18 LUFS
+target above applies when the pipeline imports it (`mw-e38.104`).
+
+| File | Codec | Bitrate | Size |
+|---|---|---|---|
+| `main-theme-v1.ogg` | Opus in Ogg, 48 kHz | 112 kbps | 3.0 MB |
+| `main-theme-v1.m4a` | AAC-LC in MP4, 48 kHz, faststart | 160 kbps | 3.7 MB |
+
+Files are versioned by name because the site caches non-HTML files for a day: ship a new take as `-v2`
+rather than overwriting v1.
+
+## Provenance
+
+| Asset id | Source file | Tool | Date | Licence / terms | Prompt file |
+|---|---|---|---|---|---|
+| music-title-main-theme | `assets/_incoming/music/music-title-main-theme.wav` | Suno (Pro plan, annual), owner-made | 2026-09-27 | Suno terms: paid-tier output owned by the user | this file |
