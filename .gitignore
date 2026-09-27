@@ -8,3 +8,10 @@
 .claude/worktrees/
 assets/_incoming/
 .DS_Store
+
+# Node / build / test output
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/

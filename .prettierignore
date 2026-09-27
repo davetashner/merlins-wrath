@@ -1,0 +1,20 @@
+# Generated
+dist/
+coverage/
+playwright-report/
+test-results/
+pnpm-lock.yaml
+
+# Hand-written prose, backlog data and assets: not reformatted by the code formatter.
+*.md
+.beads/
+plan/
+site/
+assets/
+scripts/
+.agents/
+.claude/
+.codex/
+.cursor/
+.github/
+infra/

@@ -1,0 +1,3 @@
+# Single-package workspace for now; packages: will list sub-packages if we ever split.
+engineStrict: true
+onlyBuiltDependencies: []
