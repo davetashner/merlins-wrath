@@ -7,3 +7,4 @@
 *.gate.lock*
 .claude/worktrees/
 assets/_incoming/
+.DS_Store
