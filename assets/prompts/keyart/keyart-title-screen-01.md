@@ -31,9 +31,10 @@
 |---|---|---|---|---|---|
 | image | v1 | approved as logo / key-art master | owner | 2026-09-27 | title painted in |
 | image | v2 | approved as textless background | owner | 2026-09-27 | same scene, 1672×941; used as the website hero (lanczos-scaled copies in `site/img/`); regenerate or upscale to ≥ 2560×1440 before the in-game title screen |
+| image | v3 | approved; replaces v2 as the textless background | owner | 2026-09-27 | snow-capped peaks, hero moved inboard; 1672×941; website hero now uses v3 |
 
 ## Provenance (copy into `assets/CREDITS.md` on integrate)
 
 | Asset id | Source file | Tool | Date | Licence / terms | Prompt file |
 |---|---|---|---|---|---|
-| keyart-title-screen-01 | `assets/_incoming/keyart-title-screen-01/v1.png`, `v2.png` (textless) | ChatGPT image generation (OpenAI) | 2026-09-27 | OpenAI terms: output owned by the user | this file |
+| keyart-title-screen-01 | `assets/_incoming/keyart-title-screen-01/v1.png`, `v2.png` (textless), `v3.png` (textless, current) | ChatGPT image generation (OpenAI) | 2026-09-27 | OpenAI terms: output owned by the user | this file |
