@@ -1,0 +1,601 @@
+{
+  "group": "art-audio",
+  "epics": [
+    {
+      "id": "mw-e37",
+      "title": "E37 — Art Direction & Asset Pipeline",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:art",
+        "milestone:m3"
+      ],
+      "description": "## Outcome\nMerlin's Wrath has one coherent, readable, performant visual identity — a hand-painted, chunky low-poly storybook world — produced by a solo developer with GPT image generation, CC0 kits and one image-to-3D tool, and every art asset flows through a validated, licence-tracked pipeline from prompt to runtime.\n\n## Scope\n- In: style bible (`docs/art/style-bible.md`) and GPT style preamble; image prompt templates; 3D sourcing decision (CC0 kits + image-to-3D bake-off); model/texture import pipeline (glTF, meshopt, KTX2, atlases); asset validator (naming, budgets, licences); placeholder asset kit; animation retargeting pipeline; shared stylized material; gameplay Legibility Language kit; style-target diorama; style consistency gate; CREDITS/licence audit.\n- Out: per-asset prompt/generate/integrate beads (created by a later planning wave per contract §6); VFX system itself (`e29-vfx-framework`); perf budget suite (`e32-perf-budgets`); level building (E24–E26).\n\n## Exit criteria\n- Style bible signed off by the owner and referenced by every prompt file.\n- Style-target diorama renders within High/Low budgets and passes the consistency review.\n- Every runtime art asset passes the validator (naming, budgets, CREDITS entry, allowed licence) in CI.\n- Licence audit clean at m3.",
+      "acceptance": "- EC-1 `docs/art/style-bible.md` is marked signed-off with a date and version.\n- EC-2 The asset validator runs in CI and fails on any art asset with a naming, budget or licence violation.\n- EC-3 The style-target diorama holds 60 fps on the reference machine (High) and the Low preset target on an Iris Xe-class device.\n- EC-4 `assets/CREDITS.md` audit at m3 finds zero unlicensed or placeholder-flagged shipping assets."
+    },
+    {
+      "id": "mw-e38",
+      "title": "E38 — Audio Direction & Asset Pipeline",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:music",
+        "milestone:m3"
+      ],
+      "description": "## Outcome\nMerlin's Wrath sounds like one world — acoustic dark-folk music (hurdy-gurdy, nyckelharpa, low strings, wordless choir) that adapts to exploration, stealth, tension and combat, and tactile SFX whose loudness and character match the stealth/sound simulation — produced with Suno and a decided SFX source through a validated, licence-tracked pipeline.\n\n## Scope\n- In: audio bible (`docs/audio/audio-bible.md`) with Suno and SFX preambles; music + SFX prompt templates; SFX tool decision; audio import pipeline (resample, encode Opus + AAC, loop metadata); audio validator (LUFS, true peak, loop seams, naming, licence); placeholder audio kit; Suno adaptive-family feasibility spike; music state mapping data; audio style target; mix review gate.\n- Out: the Web Audio engine, buses and occlusion (`e28-audio-engine`); sound propagation rules (`e09-sound-propagation`); per-asset prompt/generate/integrate beads (later wave); voice acting (not in MVP).\n\n## Exit criteria\n- Audio bible signed off by the owner.\n- Every runtime audio file passes the validator in CI.\n- One location has a complete adaptive family (explore/stealth/tension/combat + stingers) transitioning on bar lines in-game.\n- Mix review passes at m3.",
+      "acceptance": "- EC-1 `docs/audio/audio-bible.md` is marked signed-off with a date and version.\n- EC-2 The audio validator runs in CI and fails on loudness, loop-seam, naming or licence violations.\n- EC-3 A location music family transitions between explore, tension and combat on bar boundaries with no audible clicks in a recorded playtest.\n- EC-4 All shipping music was generated on a tier whose terms permit free public distribution, as recorded in `assets/CREDITS.md`."
+    }
+  ],
+  "items": [
+    {
+      "key": "e37-style-bible",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Review and sign off the visual style bible and GPT style preamble",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:art",
+        "milestone:m1",
+        "needs-human"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nConsistency across hundreds of generated assets is only possible if it is defined once, up-front (contract §6). The draft exists; the owner must own the look before any prompt bead is written.\n\n## What\nThe owner reads the draft `docs/art/style-bible.md`; Claude test-runs the GPT STYLE PREAMBLE on 4 sample prompts (one concept, one icon, one tileable, one portrait) via `codex exec` and the owner judges them; the owner adjusts palette/pillars/budgets where they disagree, and marks the bible signed-off (version + date in the header).\n\n## Scope\n- In: Owner review of every section; edits to the draft\n- In: Preamble smoke test: 4 Claude-generated samples (ad-hoc `codex exec` if `e37-image-gen-runner` is not ready) committed under `assets/source/concept/` as style probes with CREDITS rows\n- In: Sign-off header\n- Out: Prompt templates (see `e37-prompt-templates`)\n- Out: Story/lore names (owned by `e39-story-bible`; placeholders in the bible are updated when it lands)\n\n## Notes\nDraft written by the art-direction planning pass. Key decisions to confirm: 60/30/10 palette ratio, warm-key/cool-fill rule, Legibility Language table (§7), budgets (§13) vs `e32-perf-budgets`, fonts (all OFL). Related: e39-story-bible (minotaur heart-chamber and NPC names are placeholders).",
+      "acceptance": "- AC-1 [manual] Given the draft style bible, when the owner completes review, then the header shows `Status: SIGNED OFF vX.Y — <date>` and all open questions are resolved or filed as beads.\n- AC-2 [manual] Given the GPT STYLE PREAMBLE pasted verbatim, when 4 sample prompts (concept, item icon, tileable, portrait) are generated, then at least 3 of 4 match the palette/lighting checklist on the first or second attempt; failures lead to a preamble revision recorded in the bible changelog.\n- AC-3 [content] Given the 4 style probe images committed, when the asset validator (or a manual check before it exists) runs, then each has an `assets/CREDITS.md` row with tool, model version, tier and date.\n- AC-4 [manual] Given the budgets in §13, when compared with `e32-perf-budgets`, then any mismatch is reconciled so both documents cite the same numbers.\n- AC-5 [manual] Edge: given a preamble sample that produces text/letters or photorealism in 2 consecutive attempts, when reviewed, then the preamble negative clause is strengthened and re-tested before sign-off.",
+      "depends_on": []
+    },
+    {
+      "key": "e37-asset-validator",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Asset validator: naming, budgets and licence entries in CI",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:tools",
+        "area:art",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nA solo developer cannot manually police hundreds of assets. Budgets and licences must be enforced by machine or they will drift — and a licence mistake in a public repo is expensive to undo.\n\n## What\nAs a developer, I want `pnpm assets:validate` to check every asset against the bibles so that CI rejects misnamed, over-budget or unlicensed assets. Checks: asset-id naming regex and category prefix; source/runtime folder mirroring; `assets/CREDITS.md` row exists with an allowed licence and required fields; glTF budgets (triangles, materials, bones, texture sizes by asset class per style bible §13.2); texture power-of-two + KTX2 for runtime; filled prompt files contain the verbatim preamble; placeholder flags reported.\n\n## Scope\n- In: Validator module in `src/tools/assets/` with pure functions (parsing CREDITS table, naming, budget rules as data)\n- In: glTF inspection via a glTF parsing library (no renderer)\n- In: CI job + JSON/markdown report\n- In: Budget table as a data file shared with docs\n- Out: Audio-specific checks (see `e38-audio-validator`, which extends this)\n- Out: Import/compression (see `e37-model-import-pipeline`)\n\n## Notes\nOwner requirement: **100 % tested** (lines/branches/functions/statements) even though `src/tools` normally needs ≥ 90 % — add the path to the 100 % group in coverage config. Budget classes are inferred from the asset-id prefix (`model-char-*`, `model-creature-*`, `model-prop-*`) with an override in a sidecar JSON.",
+      "acceptance": "- AC-1 [unit] Given asset ids `model-creature-minotaur-01` and `Model_Minotaur`, when validated, then the first passes and the second fails with a message naming the naming rule.\n- AC-2 [unit] Given a runtime asset with no matching `assets/CREDITS.md` row, or a row whose licence is `CC-BY-NC-4.0`, when validated, then validation fails listing the asset id and reason.\n- AC-3 [unit] Given a glTF fixture for a standard creature with 7 000 triangles, 2 materials or a 2048² texture, when validated against the creature budget (≤ 6 k tris, 1 material, ≤ 512²), then each violation is reported separately with actual vs limit.\n- AC-4 [unit] Given a filled prompt file whose preamble differs from style bible §14 by one character, when validated, then it fails and shows the first differing position.\n- AC-5 [integration] Given the CI pipeline, when a PR adds an invalid asset, then the `assets:validate` job fails and uploads a markdown report artifact.\n- AC-6 [unit] Edge: given a malformed CREDITS table row (missing columns) or a corrupt .glb, when validated, then the validator reports a parse error for that file and continues validating the rest instead of crashing.\n- AC-7 [unit] Given the validator source, when coverage runs, then lines, branches, functions and statements are all 100 %.",
+      "depends_on": [
+        "e00-repo-scaffold",
+        "e00-content-pipeline"
+      ]
+    },
+    {
+      "key": "e37-asset-approval-log",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Record owner approval gates and block unapproved assets in CI",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:tools",
+        "area:art",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nClaude generates the assets; the owner's taste is exercised only at approval gates (flat image, 3D turntable, music take, SFX batch). Those decisions must be durable and machine-checked, or unapproved generations will slip into the game.\n\n## What\nAs the owner, I want every approval I give recorded with the exact file version so that nothing I have not approved can ship. Add `assets/approvals.json` (zod schema): entries of `{ assetId, gate: \"image\"|\"turntable\"|\"music-take\"|\"sfx-batch\", version, sha256, decision: \"approved\"|\"rejected\", approver, date, note }`; a small CLI (`pnpm assets:approve <asset-id> <gate> <version> [--reject --note]`) that hashes the candidate and appends the record; and a validator rule: any non-placeholder runtime asset must have `approved` records for every gate its category requires, matching the committed source file hash.\n\n## Scope\n- In: Schema + CLI in `src/tools/assets/approvals/`\n- In: Required gates per category as data (images: image; 3D: image + turntable; music: music-take; SFX: sfx-batch)\n- In: Validator rule wired into `assets:validate`\n- Out: The preview UIs themselves (turntable: see `e37-turntable-preview`)\n- Out: Licence checks (see `e37-asset-validator`)\n\n## Notes\n100 % coverage (same rule as the validator). The approver field is a name/handle only — no emails or secrets.",
+      "acceptance": "- AC-1 [unit] Given a final 3D asset with an approved `image` record but no `turntable` record, when validated, then validation fails naming the missing gate.\n- AC-2 [unit] Given an approval record whose sha256 does not match the committed source file (file changed after approval), when validated, then validation fails with \"approval stale\" and both hashes.\n- AC-3 [unit] Given `pnpm assets:approve model-creature-minotaur-01 turntable v3`, when run, then a schema-valid record with the file sha256 and ISO date is appended and the file is otherwise unchanged.\n- AC-4 [unit] Given a placeholder asset (`placeholder: yes` in CREDITS), when validated, then no approval is required.\n- AC-5 [unit] Edge: given a rejected record followed by an approved record for a later version, when validated, then only the approved version's hash is accepted; a malformed approvals.json fails with a parse error location.\n- AC-6 [unit] Given the approvals module, when coverage runs, then all four metrics are 100 %.",
+      "depends_on": [
+        "e37-asset-validator"
+      ]
+    },
+    {
+      "key": "e37-image-gen-runner",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Image generation runner wrapping codex exec with Images API fallback",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:tools",
+        "area:art",
+        "milestone:m1",
+        "asset:concept"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nClaude generates all 2D images; the owner only approves. A reliable, logged runner turns a filled prompt file into a versioned candidate image with provenance, so image \"generate\" tasks are Claude-run rather than needs-human.\n\n## What\nAs a developer, I want `pnpm assets:gen-image <prompt-file>` to run the OpenAI Codex CLI non-interactively (`codex exec`, signed in with the owner's ChatGPT subscription, built-in gpt-image tool), pick up the new image from `~/.codex/generated_images/`, and copy it to `assets/_incoming/<asset-id>/vN.png` with `vN.json` recording prompt file path + hash, tool, model, date and attempt count. On usage-limit errors: exponential backoff with jitter and resumable batch queue. Fallback: OpenAI Images API when `OPENAI_API_KEY` is set and subscription generation is unavailable/rate-limited beyond a threshold.\n\n## Scope\n- In: Runner in `src/tools/assets/image-gen/` with the codex process and HTTP behind injectable interfaces\n- In: Prompt-file parsing (extract filled prompt block; verify verbatim preamble before spending a generation)\n- In: Batch mode over a list of prompt files with a max-per-session cap\n- In: Versioning vN, never overwriting\n- Out: Approval recording (see `e37-asset-approval-log`)\n- Out: Post-processing/compression (see `e37-model-import-pipeline`)\n\n## Notes\nOwner requirement: **100 % coverage** with the codex process mocked (spawn stub emitting stdout/exit codes; fake generated_images dir). Risk: ChatGPT subscription image usage limits — generate in planned batches, not bursts; the runner must stop cleanly and report remaining queue. `OPENAI_API_KEY` read from env only, never logged (redact in error output). Transparent backgrounds: request in prompt; validate alpha channel for categories that need it.",
+      "acceptance": "- AC-1 [unit] Given a filled prompt file for `icon-item-lockpick-iron-01` and a mocked codex run that writes one PNG to the generated-images dir, when the runner executes, then `assets/_incoming/icon-item-lockpick-iron-01/v1.png` and `v1.json` (prompt hash, tool \"codex-gpt-image\", model, ISO date) exist; a second run produces v2 without touching v1.\n- AC-2 [unit] Given a prompt file whose preamble differs from the style bible, when the runner starts, then it refuses before invoking codex and reports the first differing position.\n- AC-3 [unit] Given codex exits with a usage-limit error twice then succeeds, when run, then the runner retries with exponential backoff (injected clock) and succeeds on attempt 3, recording attempts: 3.\n- AC-4 [unit] Given usage-limit errors persist past the threshold and `OPENAI_API_KEY` is set, when run, then the runner falls back to the mocked Images API and records tool \"openai-images-api\"; without the key it stops and reports the remaining batch queue.\n- AC-5 [unit] Edge: given codex exits 0 but produces no new image (or a non-PNG), when run, then the attempt is marked failed with a clear message and no empty version folder is left behind.\n- AC-6 [unit] Given any error path, when logs are captured, then no API key or auth token value appears in output (redaction test).\n- AC-7 [unit] Given the runner module, when coverage runs, then all four metrics are 100 %.",
+      "depends_on": [
+        "e00-repo-scaffold"
+      ]
+    },
+    {
+      "key": "e37-prompt-templates",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Review and finalize image prompt templates",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:art",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nEvery per-asset prompt bead copies a template; errors or gaps in templates multiply across the whole asset set.\n\n## What\nReview the 14 image templates in `assets/prompts/_templates/` (concept-art, character-reference-sheet, creature-reference-sheet, environment-concept, tileable-texture, prop-sheet, ui-element, item-icon, spell-icon, npc-portrait, book-cover-and-page, vfx-flipbook-texture, skybox-backdrop, key-art-title-screen) and `assets/prompts/README.md` against the signed-off style bible; fill one example per template category that has a first real asset (anchor assets for series: item icon, spell frame, portrait, UI panel).\n\n## Scope\n- In: Template edits to match the signed-off bible\n- In: One worked example each for item-icon, spell-icon, npc-portrait and ui-element (these become the series anchors)\n- In: README workflow review\n- Out: Music/SFX templates (see `e38-prompt-templates`)\n- Out: Per-asset prompt beads (later wave)\n\n## Notes\nTemplates carry `{{GPT_STYLE_PREAMBLE}}` placeholders — the validator (`e37-asset-validator`) can check filled prompt files contain the verbatim preamble text.",
+      "acceptance": "- AC-1 [content] Given every file in `assets/prompts/_templates/` for image categories, when inspected, then each contains the contract §6 fields: asset id, consuming bead(s), filled prompt with preamble placeholder, output spec, consistency checklist, iteration log and provenance table.\n- AC-2 [manual] Given the 4 worked examples, when Claude generates them via `e37-image-gen-runner`, then each passes its own consistency checklist, is approved by the owner (recorded in `assets/approvals.json`) and is committed as the series anchor with a CREDITS row.\n- AC-3 [content] Given a filled prompt file, when the validator checks it, then it fails if the preamble text differs from style bible §14 by any character.\n- AC-4 [manual] Edge: given a template whose instructions produced a failed generation twice (e.g. flipbook grid misalignment), when reviewed, then the template intro documents the workaround used.",
+      "depends_on": [
+        "e37-style-bible",
+        "e37-image-gen-runner",
+        "e37-asset-approval-log"
+      ]
+    },
+    {
+      "key": "e37-3d-pipeline-decision",
+      "epic": "mw-e37",
+      "type": "spike",
+      "title": "Spike: 3D sourcing — CC0 kits plus Meshy vs Tripo API bake-off",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:art",
+        "milestone:m1",
+        "asset:model"
+      ],
+      "estimate_minutes": 960,
+      "description": "## Why\nThe owner will do NO 3D work: Claude must produce every model by API from owner-approved flat concept images, within budget on Iris Xe and consistent with the style bible. Hero creatures (the misunderstood minotaur) must be memorable, so they need bespoke models without hand-modelling.\n\n## What\nTime-box 2 days. Question: how does Claude, with zero owner 3D work, source (a) bulk props/environments, (b) player/NPC characters with animations, and (c) hero/unique creatures, consistent with the style bible and licensable for a free public repo? Run a head-to-head **Meshy API vs Tripo API** bake-off using the SAME owner-approved GPT minotaur concept, scripted end-to-end by Claude (ad-hoc scripts in `spikes/3d-pipeline/`), and validate the CC0-kit path with one character + one prop set. Output an ADR in `docs/adr/` naming ONE image-to-3D provider and at most ONE paid month / prepaid credit purchase, with rationale.\n\n## Scope\n- In: CC0 kit evaluation: KayKit (characters, dungeon, skeletons), Quaternius (modular village/dungeon, monsters, universal animation library), Kenney — style fit after palette recolour\n- In: Meshy API vs Tripo API bake-off on one owner-approved GPT minotaur concept (generated with the creature template), each run image-to-3D → remesh/retopo → rig → animation → glb download\n- In: Scoring rubric (below) and time log\n- In: Round-trip into the renderer via the draft import path\n- In: Animation source evaluation (CC0 animation libraries vs Mixamo)\n- Out: Production import pipeline (see `e37-model-import-pipeline`)\n- Out: Retargeting tooling (see `e37-animation-pipeline`)\n- Out: Generating production hero assets (later prompt/generate beads)\n\n## Notes\n**Recommendation going in (to confirm or overturn with evidence):**\n1. **Default for bulk props, environments, modular architecture and most characters: CC0 low-poly kits** (KayKit + Quaternius as the primary families, Kenney for gaps). They are already chunky/bevelled, use gradient/palette atlases that we recolour with `tex-palette-master-01`, and carry zero licence risk. Mixing kit families is the main consistency risk — mitigated by one shared stylized material and palette remap.\n2. **Animations: CC0 first** (KayKit character animations, Quaternius Universal Animation Library) retargeted to one humanoid skeleton. **Mixamo only as fallback**: its terms allow use in games but restrict redistributing raw animation files, and our repo is public — only commit animations baked into our own .glb, never raw FBX, and record the decision in the ADR.\n3. **Hero/unique assets (minotaur, bespoke NPCs such as the bookseller, unique props): Meshy** is the named candidate (owner preference), contested by **Tripo** in the bake-off. Flow: approved GPT reference sheet → image-to-3D → remesh/retopo to budget (≤ 20 k tris minotaur, 4–7 k key NPC) → auto-rig → export glTF → gltf-transform (meshopt + KTX2) → renderer.\n4. **No DCC at all:** the owner never opens Blender. Everything is API + gltf-transform CLI (simplify/weld/compress/pivot/scale fixes) scripted by Claude; if a model needs manual DCC fixes to be usable, that counts against it in scoring.\n5. **Workflow (style bible §17.2):** concept → OWNER GATE (flat image) → API image-to-3D → remesh/retopo → rig/animate via API → glb → validator → turntable preview → OWNER GATE (turntable) → commit + CREDITS + approvals.\n\n**Meshy facts (owner-verified, Sept 2026):** Web app — Free = 100 credits/mo, outputs **CC BY 4.0** (attribution in `assets/CREDITS.md` + in-game credits — acceptable for this free game); Pro = $20/mo ($240/yr), 1,000 credits/mo, private licence; image-to-3D 25 (Meshy 7) / 20 (Meshy 6), text-to-3D 20 (Meshy 6 only), AI texturing 10, remesh/rigging/animation free in-app. **API (what Claude uses): prepaid API credits** — image-to-3D 30 (2K textures), remesh 5, rigging 5, animation 3 per action ⇒ ≈ 46 credits for one hero with 2 actions. Confirm output licence for API-generated assets in the ADR.\n**Tripo facts (Aug–Sep 2026, official pricing page blocked — medium confidence, re-verify):** Web — Free 200–300 credits/mo, **CC BY 4.0**, ~15 downloads/mo cap; Pro $19.90/mo with ~3,000 credits. **API: $0.01/credit** — image-to-3D 20–30, smart low-poly retopo 30, auto-rig 25, animation retarget 10 each ⇒ ≈ 95–105 credits (≈ $1) per hero with 2 actions.\n\n**Bake-off scoring rubric (each 1–5, weighted):** topology & tri count after reduction to budget (×3), texture fidelity vs style bible palette/painted look (×3), rig quality — deformation at shoulders/hips/knees in walk + attack (×2), time-to-glTF in our renderer incl. automated fixes (×2), API ergonomics for an unattended client — task submit/poll/download, errors, rate limits (×2), licence clarity for a public repo (×1), cost for the MVP hero set (×1). Same input image, same target budget.\nOwner prerequisites: API keys in env (`MESHY_API_KEY`, `TRIPO_API_KEY`) and a small prepaid credit top-up for each provider; keys never logged or committed.\n**Decision output:** one image-to-3D provider, at most one paid month / one prepaid credit purchase sized for the MVP hero set, with rationale and evidence files. Feeds `e37-3d-gen-api-client`.\nRelated: e39-story-bible (minotaur design intent).",
+      "acceptance": "- AC-1 [integration] Given the owner-approved GPT minotaur concept (approval recorded), when Claude runs it through the Meshy API image-to-3D → remesh to ≤ 20 k triangles → rigging → one animation → glb download → KTX2/meshopt compression → import into the renderer test scene, then the model renders animated (idle + one attack) with no console errors, and elapsed time and credits used are logged in the ADR.\n- AC-2 [manual] Given the SAME concept image, when run through the equivalent Tripo API pipeline (image-to-3D → smart low-poly retopo → auto-rig → retarget → glb → import), then its results are scored with the same rubric and both scorecards appear side by side in the ADR with turntable renders under `spikes/3d-pipeline/`, and the owner picks a winner at a recorded turntable gate.\n- AC-3 [manual] Given one KayKit or Quaternius character and one prop set, when recoloured with the palette texture and rendered with the draft stylized material next to the minotaur, then the ADR records whether kit and generated assets read as one style (with screenshot).\n- AC-4 [content] Given every spike output kept in the repo, when inspected, then each has an `assets/CREDITS.md` row (tool, model, tier, date, CC BY 4.0 attribution text where applicable) and is flagged `placeholder: yes`.\n- AC-5 [manual] Given the ADR, when read, then it names exactly one image-to-3D provider, at most one paid month / credit purchase (with timing and size), the animation source (provider API vs CC0 library vs Mixamo with redistribution caveat), and confirms no step requires owner DCC work.\n- AC-6 [manual] Edge: given an image-to-3D result that cannot reach the tri budget without visible collapse, a rig that breaks at the shoulders, or an API task that fails/times out, when scored, then the ADR documents the fallback (retry policy, CC0 kit recolour, or simplified hero concept) rather than accepting an over-budget asset.",
+      "depends_on": [
+        "e00-engine-decision",
+        "e37-style-bible",
+        "e37-asset-approval-log"
+      ]
+    },
+    {
+      "key": "e37-greybox-asset-kit",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Placeholder asset kit: CC0 stand-ins at correct scale and naming",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:art",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nGameplay is never blocked by final art (contract §5). Placeholders with the final naming, scale and pivots make integration a file swap later.\n\n## What\nAssemble a placeholder kit from CC0 packs: one humanoid for each class (colour-coded by class accent), skeleton, goblin, wolf, spider, minotaur stand-in (scaled humanoid/ogre), and props for every Legibility cue (door, lever, chest, climbable ledge, flammable rope/barrel, breakable crate, weak wall, pushable block, lockable door), each named with its final asset id and placed under `assets/kits/` + `assets/source/`.\n\n## Scope\n- In: CC0 selection and download, unmodified kits in `assets/kits/<kit>/` with licence files\n- In: Scale (1 unit = 1 m), pivot at base centre, forward = +Z (or engine convention)\n- In: CREDITS rows flagged `placeholder: yes`\n- In: Kit catalogue page listing asset id → placeholder file\n- Out: Greybox level geometry kit (owned by `e00-greybox-testbed`)\n- Out: Final assets (per-asset beads)\n\n## Notes\nCandidate sources: KayKit Adventurers/Skeletons/Dungeon, Quaternius Ultimate Monsters/Modular Dungeon, Kenney. Keep total kit ≤ 15 MB built.",
+      "acceptance": "- AC-1 [content] Given the kit catalogue, when validated, then every placeholder has a final-format asset id, a CREDITS row with CC0-1.0 and `placeholder: yes`.\n- AC-2 [e2e] Given the greybox testbed, when the kit showcase scene loads, then all placeholders render at correct relative scale (humanoid 1.7–1.9 m, minotaur stand-in 2.6–3.2 m) and screenshot sanity passes.\n- AC-3 [integration] Given the built kit, when measured, then total runtime size ≤ 15 MB and every asset passes the validator budgets.\n- AC-4 [manual] Given each Legibility cue prop, when viewed at 20 m on the Low preset, then the cue (cracks, pale ledge, straw/rope, brass keyhole) is identifiable by a second person.\n- AC-5 [integration] Edge: given a placeholder swapped for a file with a different pivot or scale, when the validator runs, then it flags the pivot/scale deviation beyond 5 %.",
+      "depends_on": [
+        "e00-greybox-testbed",
+        "e37-asset-validator"
+      ]
+    },
+    {
+      "key": "e37-model-import-pipeline",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Model import pipeline: glTF optimise, meshopt and KTX2 compression",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:tools",
+        "area:art",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 840,
+      "description": "## Why\nThe 50 MB initial download and Iris Xe texture memory budgets are only reachable if every model is optimised the same way, automatically.\n\n## What\nAs a developer, I want `pnpm assets:build` to turn `assets/source/**` models and textures into optimised runtime files under `public/assets/` so that I never hand-optimise. Steps: glTF/GLB/FBX-converted input → weld/dedup/prune → optional simplify to budget → meshopt compression → textures resized to tier (High/Low variants) and encoded KTX2 (ETC1S albedo, UASTC normals/UI) → validator run → manifest JSON (asset id → URLs, sizes, tris).\n\n## Scope\n- In: Node build script using gltf-transform (and KTX-Software/basis encoder)\n- In: High/Low texture variants\n- In: Incremental builds (hash cache)\n- In: Manifest for the loader\n- In: Loader smoke test in the renderer\n- Out: Texture atlas packing (see `e37-texture-atlas-build`)\n- Out: Animation retargeting (see `e37-animation-pipeline`)\n- Out: Audio (see `e38-audio-import-pipeline`)\n\n## Notes\nCompression choice (meshopt vs Draco) follows `e00-engine-decision`; default meshopt. The encoder binary must be installable on CI (pin version). Outputs are generated — do not hand-edit `public/assets/`.",
+      "acceptance": "- AC-1 [integration] Given a source .glb with 2048² PNG textures, when `pnpm assets:build` runs, then the output .glb uses meshopt compression and KTX2 textures, with High (≤ tier size) and Low (half-size) variants, and the manifest lists both with byte sizes.\n- AC-2 [integration] Given no source changes, when the build runs a second time, then no files are rewritten and the run completes in ≤ 5 s for 100 cached assets.\n- AC-3 [e2e] Given a built model in the greybox testbed, when the scene loads in Playwright, then the model renders with no console errors and a screenshot sanity check passes.\n- AC-4 [integration] Given a model exceeding its budget, when the build runs, then the validator step fails the build and names the asset (no silent auto-decimation beyond the configured simplify ratio).\n- AC-5 [integration] Edge: given a source file with a missing texture reference or an unsupported format, when built, then the build fails with the asset id and path and leaves previous outputs untouched.",
+      "depends_on": [
+        "e00-engine-decision",
+        "e37-3d-pipeline-decision",
+        "e37-asset-validator"
+      ]
+    },
+    {
+      "key": "e37-3d-gen-api-client",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Image-to-3D API client and CLI for the chosen provider",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:tools",
+        "area:art",
+        "milestone:m2",
+        "asset:model"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nThe owner does no 3D work; Claude produces every bespoke model by API. A tested, idempotent client makes 3D \"generate\" tasks Claude-run and repeatable rather than needs-human.\n\n## What\nAs a developer, I want `pnpm assets:gen-3d <asset-id> --from <approved-image>` to submit an image-to-3D task to the provider chosen by `e37-3d-pipeline-decision`, poll to completion, chain remesh/retopo to the asset class tri budget, rigging and requested animations where applicable, download the .glb to `assets/_incoming/<asset-id>/vN.glb` with `vN.json` (task ids, provider, model, credits used, date), then invoke the validator.\n\n## Scope\n- In: Client in `src/tools/assets/gen3d/` behind a provider interface (Meshy and Tripo adapters; only the chosen one must be complete)\n- In: Submit, poll with backoff, download, retries on 5xx/429, timeouts\n- In: Idempotency by asset id + source image hash (re-running resumes existing task ids instead of paying again)\n- In: Refuses to run unless the source image has an approved `image` gate record\n- Out: Turntable rendering (see `e37-turntable-preview`)\n- Out: Compression (see `e37-model-import-pipeline`)\n- Out: Retargeting CC0 animation libraries (see `e37-animation-pipeline`)\n\n## Notes\nAPI key only from `MESHY_API_KEY` / `TRIPO_API_KEY` env vars — never logged, committed or written to vN.json. **100 % coverage with HTTP mocked** (recorded fixture responses, no live calls in CI). Pricing for credit estimates (print before submit): Meshy API image-to-3D 30 (2K tex), remesh 5, rigging 5, animation 3/action; Tripo API $0.01/credit — image-to-3D 20–30, smart low-poly 30, auto-rig 25, retarget 10. A `--dry-run` prints the credit estimate only.",
+      "acceptance": "- AC-1 [unit] Given a mocked provider that returns a task id, two `IN_PROGRESS` polls then `SUCCEEDED` with a model URL, when `gen-3d` runs, then the .glb is downloaded to `assets/_incoming/<asset-id>/v1.glb` and v1.json records task ids, credits and date.\n- AC-2 [unit] Given the same asset id and source image hash re-run after a crash mid-poll, when `gen-3d` runs, then it resumes polling the stored task id and submits no new paid task.\n- AC-3 [unit] Given 429 and 503 responses, when calls are made, then the client retries with exponential backoff up to the configured limit and then fails with a clear error naming the stage (submit/poll/remesh/rig/download).\n- AC-4 [unit] Given a source image with no approved `image` gate record, when `gen-3d` runs, then it refuses before any HTTP call.\n- AC-5 [unit] Given `--dry-run` for a creature with 2 animations on Meshy, when run, then it prints an estimate of 30 + 5 + 5 + 2×3 = 46 credits and makes no HTTP calls.\n- AC-6 [unit] Edge: given a missing `MESHY_API_KEY`/`TRIPO_API_KEY`, or any error response, when logs are captured, then the key value never appears in output and the missing-key case exits non-zero with setup instructions.\n- AC-7 [unit] Given the client module, when coverage runs, then all four metrics are 100 %.",
+      "depends_on": [
+        "e37-3d-pipeline-decision",
+        "e37-asset-approval-log",
+        "e00-repo-scaffold"
+      ]
+    },
+    {
+      "key": "e37-turntable-preview",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Headless turntable preview of a glb as PNG strip and GIF",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:tools",
+        "area:render",
+        "milestone:m2",
+        "asset:model"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nThe owner approves 3D models without opening any 3D tool. A consistent turntable rendered with the game's own material and lighting shows exactly what will ship.\n\n## What\nAs the owner, I want `pnpm assets:turntable <glb>` to produce an 8-angle PNG contact strip and a looping GIF (plus a silhouette frame and a stats overlay: tris, materials, bones, texture sizes, budget pass/fail) so that I can approve or reject a model from an image. Runs the real renderer headless via Playwright with the shared stylized material, golden-hour preset, a 1.8 m scale figure, and optional animation frames.\n\n## Scope\n- In: Playwright-driven render page in `src/tools/turntable/`\n- In: Outputs next to the candidate: `vN-turntable.png`, `vN-turntable.gif`, `vN-silhouette.png`\n- In: Animation sampling (idle + one action) when clips exist\n- In: CI-safe (software GL/SwiftShader acceptable)\n- Out: Approval recording (see `e37-asset-approval-log`)\n- Out: In-game model viewer (Related: e33-debug-console)\n\n## Notes\nSilhouette frame = solid ink on parchment at 64 px height (style bible §5 test). Uses `e37-stylized-material` once available; before that, a basic lit material with the same light rig.",
+      "acceptance": "- AC-1 [e2e] Given a valid .glb fixture, when `assets:turntable` runs headless, then it writes an 8-frame PNG strip, a looping GIF and a silhouette PNG, with no console errors.\n- AC-2 [e2e] Given a rigged fixture with an idle clip, when rendered with `--anim idle`, then the strip contains sampled animation frames (frames differ pixel-wise from the bind pose).\n- AC-3 [integration] Given a model exceeding its budget, when rendered, then the stats overlay shows the failing budget in `ember` red with actual vs limit.\n- AC-4 [e2e] Given the same fixture rendered twice, when compared, then outputs are pixel-identical (deterministic camera, lighting and animation sampling).\n- AC-5 [e2e] Edge: given a corrupt .glb or missing textures, when rendered, then the command exits non-zero with the asset id and error, and writes no partial output files.",
+      "depends_on": [
+        "e00-engine-decision",
+        "e00-repo-scaffold",
+        "e37-model-import-pipeline"
+      ]
+    },
+    {
+      "key": "e37-animation-pipeline",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Character animation pipeline with retargeting to a shared humanoid rig",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:art",
+        "area:tools",
+        "milestone:m2",
+        "asset:model"
+      ],
+      "estimate_minutes": 840,
+      "description": "## Why\nFour classes, NPCs and humanoid creatures need locomotion, combat and interaction animations; authoring per-character is impossible solo. Retargeting one library onto one skeleton makes every humanoid animate for free.\n\n## What\nAs a developer, I want animations from the chosen source (per `e37-3d-pipeline-decision`) retargeted onto one canonical humanoid skeleton and packed into per-character clip sets so that any humanoid model gains the full move set. Includes clip naming (`anim-humanoid-<action>-<nn>`), root-motion policy, clip trimming/looping, and a clip manifest consumed by the renderer's animation layer.\n\n## Scope\n- In: Canonical skeleton definition + bone-name mapping tables (KayKit/Quaternius/Mixamo/Meshy/Tripo rigs)\n- In: Batch retarget script (headless)\n- In: Root-motion extraction or in-place policy\n- In: Clip manifest with loop flags and event markers (footstep, hit frame)\n- In: Hero creature (minotaur) rig handled as its own skeleton\n- Out: Animation state machine/blending (render/game layer; Related: e02-player-controller)\n- Out: Hand-keyed bespoke animations\n\n## Notes\nFootstep and hit-frame markers feed audio (footstep surface set) and combat timing — markers must be data, not baked guesses. If Mixamo is used, raw FBX never enters the public repo (terms); only retargeted clips baked into our .glb.",
+      "acceptance": "- AC-1 [integration] Given a source animation on a KayKit-style rig and a target model on the canonical skeleton, when the retarget script runs, then the output clip plays on the target with per-bone rotation error ≤ 2° versus the reference pose sample set.\n- AC-2 [unit] Given the bone mapping tables, when a source rig is missing a mapped bone, then the script reports the missing bone and skips only affected tracks.\n- AC-3 [content] Given the clip manifest, when validated, then every locomotion clip has `loop: true`, every attack clip has a `hit` event marker, and every walk/run clip has ≥ 2 `footstep` markers.\n- AC-4 [e2e] Given each of the 4 class placeholders, when the animation showcase cycles idle/walk/run/attack/interact, then no clip errors appear in the console and screenshots show no collapsed limbs.\n- AC-5 [integration] Edge: given a clip with root motion when the policy is in-place, when processed, then horizontal root translation is removed and stored as a velocity curve in the manifest.",
+      "depends_on": [
+        "e37-3d-pipeline-decision",
+        "e37-model-import-pipeline"
+      ]
+    },
+    {
+      "key": "e37-texture-atlas-build",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Texture atlas and palette-remap build step for prop sets",
+      "priority": 2,
+      "labels": [
+        "epic:e37",
+        "area:tools",
+        "area:art",
+        "milestone:m2",
+        "asset:texture"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nDraw-call budgets (≤ 150 on Low) require one material per prop set; kits from different families only look like one world after palette remapping.\n\n## What\nAs a developer, I want prop sets declared in a data file to be packed into one atlas with UVs rewritten, and kit gradient textures remapped to `tex-palette-master-01`, so that each set uses one material. Supports palette-atlas (KayKit-style) and painted-texture atlases, padding/bleed for mips, High/Low sizes.\n\n## Scope\n- In: Set definition data (`assets/sets/*.json`)\n- In: Atlas packer with UV rewrite in glTF\n- In: Palette remap table (kit colour → palette token)\n- In: Integration with `assets:build`\n- Out: Tileable textures (not atlased)\n- Out: Character atlases (authored per character)\n\n## Notes\nMip bleed: ≥ 8 px padding at 2048² so Low (1024²) mips do not bleed.",
+      "acceptance": "- AC-1 [integration] Given a set of 12 props with 12 materials, when atlased, then output meshes reference exactly 1 material and render pixel-identical within ΔE ≤ 3 against the unatlased screenshot at LOD0.\n- AC-2 [unit] Given a palette remap table, when applied to a kit gradient texture, then every mapped source colour is replaced by its palette token hex and unmapped colours are reported.\n- AC-3 [integration] Given the atlas at Low size, when mip level 2 is inspected, then no island samples a neighbour island (bleed check passes).\n- AC-4 [integration] Edge: given a set whose islands cannot fit in the maximum atlas size, when packed, then the build fails with the set id and the required size instead of shrinking texel density silently.",
+      "depends_on": [
+        "e37-model-import-pipeline"
+      ]
+    },
+    {
+      "key": "e37-stylized-material",
+      "epic": "mw-e37",
+      "type": "feature",
+      "title": "Shared stylized lit material with ramp, rim and wet/emissive masks",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:render",
+        "area:art",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nOne shader used by every model is the cheapest way to make kits, generated models and painted textures read as one world, and keeps the material count within budget.\n\n## What\nAs a player, I want every object lit in the same warm-key/cool-shadow painterly way so that the world feels hand-crafted and coherent. Soft 3-band ramp diffuse, shadow tint toward `dusk`, rim light, optional wet mask (darker + sheen), emissive mask for glyphs/magic, per-location colour-grade LUT hook, High/Low variants.\n\n## Scope\n- In: Material implementation in `src/render/materials/`\n- In: Parameters exposed as data per location preset (style bible §3)\n- In: Low variant without normal maps\n- In: Visual regression screenshots\n- Out: Lightmap baking tool choice (Related: e37-3d-pipeline-decision notes)\n- Out: VFX shaders (Related: e29-vfx-framework)\n\n## Notes\nWet mask must be drivable at runtime by the `wet` world property (Related: e03-world-properties) so rain/water/ice states are visible.",
+      "acceptance": "- AC-1 [e2e] Given the material test scene, when rendered at High and Low, then screenshots match approved baselines within a 2 % pixel-difference threshold.\n- AC-2 [perf] Given 200 instances of 20 distinct props using the material, when rendered on the reference machine (High), then GPU frame time for the scene ≤ 6 ms.\n- AC-3 [integration] Given an object whose `wet` property becomes true, when the next frame renders, then its albedo value drops by 20–30 % and specular sheen appears; reverting clears it.\n- AC-4 [e2e] Given the Low preset, when the material compiles, then no normal-map sampling occurs (shader variant check) and no console errors are logged.\n- AC-5 [manual] Edge: given pure-black and pure-white albedo test textures, when lit, then shadows render toward `#3B3A5A` and highlights clamp below `#FFF4DC`-equivalent, never pure black/white.",
+      "depends_on": [
+        "e00-engine-decision",
+        "e37-style-bible"
+      ]
+    },
+    {
+      "key": "e37-readability-kit",
+      "epic": "mw-e37",
+      "type": "feature",
+      "title": "Legibility kit: visual cues for every exploitable world property",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:art",
+        "area:design",
+        "milestone:m2",
+        "class:all"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nSystemic play (\"Wait… I can do that?\") only works if players can read what the world allows: climbable, flammable, breakable, movable, lockable, freezable, conductive, alternate routes (constitution §2, §8).\n\n## What\nAs a player, I want climbable ledges, flammable ropes, weak walls and other affordances to look consistently distinct so that I can discover solutions by observation. Build the style bible §7 cue set as reusable decals, trims and material variants, plus a validator rule linking world-property tags to required cues.\n\n## Scope\n- In: Decals: cracks, scuffs, chalk thieves' marks, drag marks, oil stains\n- In: Trim/material variants: pale ledge bevel, climb-ivy, tan hemp vs grey chain, pale breakable wood, brass wear\n- In: Data rule: objects tagged `climbable`/`flammable`/`breakable`… must reference a cue asset\n- In: Optional \"highlight affordances\" accessibility tint hook\n- Out: Property simulation (see `e03-world-properties`)\n- Out: Focus highlight UI (Related: e02-interaction)\n\n## Notes\nRule of the kit: a cue is never used decoratively. The content validator should flag a cue asset on an object lacking the matching property tag, and vice versa.",
+      "acceptance": "- AC-1 [content] Given level/content data, when validated, then any object tagged `climbable`, `flammable`, `breakable`, `movable` or `lockable` without its cue asset fails validation, and any cue asset on an object lacking the property also fails.\n- AC-2 [manual] Given the cue showcase scene on the Low preset, when 3 playtesters who have not read the bible are asked to identify climbable, flammable and breakable objects at 20 m, then ≥ 80 % of answers are correct.\n- AC-3 [e2e] Given the \"highlight affordances\" setting enabled, when the showcase renders, then each cue category is tinted with its accessibility colour and screenshots match baselines.\n- AC-4 [manual] Given deuteranopia and protanopia simulation filters, when the showcase is viewed, then every cue remains identifiable by shape/pattern.\n- AC-5 [content] Edge: given an object whose property changes at runtime (a wall that has already been broken, a burnt rope), when its state updates, then its cue decal is removed or swapped so the world never advertises an affordance that no longer exists.",
+      "depends_on": [
+        "e03-world-properties",
+        "e37-stylized-material"
+      ]
+    },
+    {
+      "key": "e37-style-target-diorama",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Build the style-target diorama as the visual and performance benchmark",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:art",
+        "area:perf",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 960,
+      "description": "## Why\nA single finished \"this is what the game looks like\" slice settles style arguments, proves the pipeline end-to-end and becomes the perf benchmark before we art-up whole locations.\n\n## What\nA small vertical diorama (~30 × 30 m): Briar Glen edge at golden hour — a cottage, a well that hides a tunnel, a stretch of forest, a ruined wall with a weak section, a climbable ledge, a flammable rope bridge, one class character, one creature, one spell VFX in flight, one lantern-lit shadow pocket. Built only from pipeline outputs (kits + generated textures + one hero model if available).\n\n## Scope\n- In: Scene assembly with final-quality stand-ins\n- In: High/Low presets\n- In: Screenshot baselines and a camera flythrough path\n- In: Perf capture on reference + Iris Xe-class device\n- Out: Gameplay logic beyond walking around\n- Out: Audio (see `e38-audio-style-target`)\n\n## Notes\nTreat as the living visual benchmark: later art passes are compared against it. Related: e24 Briar Glen level work reuses its pieces.",
+      "acceptance": "- AC-1 [perf] Given the diorama flythrough on the reference machine at High (1440p-equivalent), when measured, then frame time p95 ≤ 16.7 ms, draw calls ≤ 250 and visible triangles ≤ 1.2 M.\n- AC-2 [perf] Given the diorama on an Iris Xe-class device at Low (1080p), when measured, then frame time p95 ≤ 16.7 ms (floor ≤ 33.3 ms), draw calls ≤ 150, visible triangles ≤ 500 k.\n- AC-3 [integration] Given the diorama package, when built, then its download size is ≤ 25 MB and every asset passes the validator.\n- AC-4 [manual] Given the diorama screenshots, when reviewed against the style bible checklist (palette ratio, warm/cool, shape language, Legibility cues), then the owner signs off or files specific fix beads.\n- AC-5 [e2e] Edge: given a texture or model missing at load, when the diorama loads, then a placeholder is shown, a warning is logged once, and the scene remains navigable.",
+      "depends_on": [
+        "e37-stylized-material",
+        "e37-model-import-pipeline",
+        "e37-readability-kit",
+        "e29-vfx-framework",
+        "e32-perf-budgets"
+      ]
+    },
+    {
+      "key": "e37-style-consistency-review",
+      "epic": "mw-e37",
+      "type": "task",
+      "title": "Style consistency review gate before MVP content lock",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:art",
+        "milestone:m3",
+        "needs-human"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nGenerated assets drift: each prompt is \"on style\" alone but the set diverges. A scheduled gate catches drift before it ships.\n\n## What\nA structured review of all integrated art per location against the style bible and the style-target diorama: contact sheets of icons, portraits, props and textures; in-engine captures per location; silhouette lineup of classes and creatures; Legibility cue audit. Output: pass, or fix beads per offending asset.\n\n## Scope\n- In: Contact-sheet generator script output (icons/portraits/textures side by side)\n- In: Per-location capture set\n- In: Review checklist + findings file in `docs/art/reviews/`\n- Out: Fixing assets (filed as beads)\n- Out: Audio review (see `e38-mix-review`)\n\n## Notes\nRun once at m2 exit (informal) and once before m3 content lock (formal gate).",
+      "acceptance": "- AC-1 [integration] Given all icon, portrait and texture assets, when the contact-sheet script runs, then it produces one sheet per category ordered by asset id with each tile labelled.\n- AC-2 [manual] Given the class and creature silhouette lineup rendered in solid ink at 64 px, when reviewed, then every class and creature family is identified correctly by a reviewer unfamiliar with the models.\n- AC-3 [manual] Given the review checklist, when completed, then every failing asset has a filed fix bead referencing its asset id, and the review file records pass/fail per location.\n- AC-4 [manual] Edge: given an asset that fails review but is on the MVP critical path, when triaged, then it is either fixed before m3 or explicitly waived by the owner with a reason in the review file.",
+      "depends_on": [
+        "e37-style-target-diorama"
+      ]
+    },
+    {
+      "key": "e37-credits-audit",
+      "epic": "mw-e37",
+      "type": "chore",
+      "title": "Audit CREDITS.md and asset licences at each milestone exit",
+      "priority": 1,
+      "labels": [
+        "epic:e37",
+        "area:art",
+        "area:music",
+        "area:sfx",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nThe game is free and the repo public: every committed asset is redistributed. One unlicensed file is a takedown risk for the whole project.\n\n## What\nAt each milestone exit (m1, m2, m3), reconcile every file under `assets/` and `public/assets/` with `assets/CREDITS.md`; re-check tool terms for any tier-dependent rights (Suno, ChatGPT/gpt-image, Meshy/Tripo, SFX tool); confirm CC BY attributions appear on the in-game credits screen; list remaining placeholders.\n\n## Scope\n- In: Validator run + manual terms check\n- In: Cross-check `assets/approvals.json`: every final asset has approval records for all its gates\n- In: Audit log row in CREDITS.md\n- In: In-game credits screen data generated from CREDITS.md (CC BY rows)\n- Out: Replacing flagged assets (filed as beads)\n\n## Notes\nThis bead covers the m1 audit; clone it for m2/m3 exits (or reopen). Terms pages change — record the date read. Related: in-game credits screen UI (E31/E01 owners).",
+      "acceptance": "- AC-1 [integration] Given the repository, when the validator runs in audit mode, then it lists every asset file lacking a CREDITS row and every row lacking a file, and exits non-zero if either list is non-empty.\n- AC-2 [content] Given CREDITS rows with licence `CC-BY-4.0`, when the credits data is generated, then each appears in the in-game credits data file with its attribution text.\n- AC-3 [manual] Given tier-dependent generated assets, when audited, then each row's tier/date is checked against the tool terms as of that date and the audit log records the terms URLs consulted.\n- AC-4 [manual] Edge: given an asset whose licence cannot be confirmed, when audited, then it is flagged `placeholder: yes` and a replacement bead is filed before the milestone is closed.",
+      "depends_on": [
+        "e37-asset-validator"
+      ]
+    },
+    {
+      "key": "e38-audio-bible",
+      "epic": "mw-e38",
+      "type": "task",
+      "title": "Review and sign off the audio bible with Suno and SFX preambles",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:music",
+        "area:sfx",
+        "milestone:m1",
+        "needs-human"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nMusic and SFX from different tools and sessions only sound like one game if identity, loudness and naming are fixed first (contract §6).\n\n## What\nThe owner reviews the draft `docs/audio/audio-bible.md`, runs the SUNO STYLE PREAMBLE on 2 test tracks (Briar Glen explore, labyrinth explore) and the SFX PREAMBLE on 3 test sounds (footstep, spell cast, UI click), adjusts, and signs off.\n\n## Scope\n- In: Owner review and edits\n- In: Preamble probes committed as placeholders with CREDITS rows\n- In: Sign-off header\n- Out: Templates (see `e38-prompt-templates`)\n- Out: Audio engine (see `e28-audio-engine`)\n\n## Notes\nDecisions to confirm: instrumentation and \"never\" list, D Dorian home key, leitmotif shapes, LUFS targets (music −18/−16, ambience −24), Opus + AAC fallback, surface set alignment with `e09-sound-propagation`.",
+      "acceptance": "- AC-1 [manual] Given the draft audio bible, when reviewed, then the header shows `Status: SIGNED OFF vX.Y — <date>` and open questions are resolved or filed as beads.\n- AC-2 [manual] Given the SUNO STYLE PREAMBLE, when 2 instrumental test tracks are generated, then both contain no intelligible vocals and use the listed instrumentation; otherwise the preamble/exclusions are revised and re-tested.\n- AC-3 [manual] Given the footstep surface list, when compared with `e09-sound-propagation` surface ids, then the lists match exactly or the bible is updated.\n- AC-4 [manual] Edge: given a Suno take that includes vocals despite the Instrumental toggle, when reviewed, then it is rejected and the failure pattern is documented in bible §4 usage notes.",
+      "depends_on": []
+    },
+    {
+      "key": "e38-sfx-tool-decision",
+      "epic": "mw-e38",
+      "type": "spike",
+      "title": "Spike: SFX sourcing — ElevenLabs Sound Effects API vs CC0",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:sfx",
+        "milestone:m1",
+        "asset:sfx"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nWe need hundreds of SFX (footsteps × surfaces × gaits, 13 spell schools, creature states, UI) with clean licences for a public repo and consistent character.\n\n## What\nTime-box 1 day. Question: which source (or hybrid) gives the best quality/consistency/licence-safety per hour for our SFX list? Claude produces the same 12-sound test set via (a) the ElevenLabs Sound Effects **API** with the SFX PREAMBLE (end-to-end, no owner generation work) and (b) CC0 libraries (Kenney, freesound CC0-only filter, OpenGameArt CC0), scores them, the owner listens at a recorded SFX-batch gate, and an ADR records the decision.\n\n## Scope\n- In: 12-sound test set: stone walk ×3 round-robin, gravel run, wood door creak, sword parry metal, arrow release, fire cast, frost impact, skeleton collapse, goblin chatter, minotaur bellow (angry + calm), UI page turn\n- In: Scoring: fit to audio bible palette, dryness/cleanliness, round-robin variety, time per usable sound, licence clarity for a public repo, cost\n- In: Licence/terms review per source and tier\n- Out: Producing the full SFX set (later prompt/generate beads)\n- Out: Import pipeline (see `e38-audio-import-pipeline`)\n\n## Notes\n**Recommendation going in:** **ElevenLabs Sound Effects API as primary** — official API lets Claude generate end-to-end from the template (text prompt, duration, prompt influence) and the owner only approves by listening; strongest for signature sounds (13 schools of magic, the minotaur's dual-character vocals, goblin gibberish, creature state sets). **CC0 libraries as fallback/bulk** (Kenney, freesound CC0-only, OpenGameArt CC0) for footsteps, UI, doors and ambience where they are better or cheaper. Use a paid ElevenLabs tier for shipping sounds (free tiers typically require attribution and/or restrict commercial use — verify at spike time). Avoid \"royalty-free, no redistribution\" libraries for files committed to a public repo. Key from `ELEVENLABS_API_KEY` env only. Feeds `e38-sfx-gen-client`.",
+      "acceptance": "- AC-1 [manual] Given the 12-sound test set produced from each source, when scored with the rubric, then an ADR in `docs/adr/` records per-sound scores, time spent, cost and the chosen approach per SFX category.\n- AC-2 [manual] Given each candidate source and tier, when licence terms are reviewed, then the ADR quotes the relevant clauses (with URL and date) on redistribution in a public repository and attribution.\n- AC-3 [content] Given the test sounds committed as placeholders, when validated, then each has a CREDITS row with source URL/tool, tier, date and licence.\n- AC-4 [manual] Given the minotaur angry and calm bellows, when played back-to-back, then the ADR records whether the chosen source can produce the \"same creature, two emotions\" requirement from audio bible §7.5.\n- AC-5 [manual] Edge: given a CC0 library sound whose licence metadata is ambiguous or later changed, when found, then it is excluded and the ADR notes the rule \"CC0 confirmed on the file page at download time, screenshot or archived URL kept\".",
+      "depends_on": [
+        "e38-audio-bible"
+      ]
+    },
+    {
+      "key": "e38-prompt-templates",
+      "epic": "mw-e38",
+      "type": "task",
+      "title": "Review and finalize music, stinger and SFX prompt templates",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:music",
+        "area:sfx",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 120,
+      "description": "## Why\nPer-asset music and SFX prompt beads copy these templates; they must encode key/BPM family locking, loudness and loop rules so every asset arrives pipeline-ready.\n\n## What\nReview `assets/prompts/_templates/music-track.md`, `music-stinger.md` and `sfx.md` against the signed-off audio bible and the SFX tool ADR; add one worked example each (`music-briar-glen-day-explore`, `music-stinger-combat-start-d-dorian`, `sfx-foot-stone-walk-01..06`).\n\n## Scope\n- In: Template edits\n- In: Three worked examples\n- In: Suno UI field names updated to the current product\n- Out: Per-asset music/SFX prompt beads (later wave)\n\n## Notes\nThe SFX template must support both library sourcing (search brief + per-file provenance) and generation (SFX PREAMBLE).",
+      "acceptance": "- AC-1 [content] Given the three audio templates, when inspected, then each contains asset id, consuming bead(s), filled prompt with preamble placeholder, output spec (key/BPM/length/loop/format/LUFS), consistency checklist, iteration log and provenance table.\n- AC-2 [manual] Given the worked music example, when run in Suno, then the result matches the requested key and BPM (verified with an analyser) and contains no vocals.\n- AC-3 [manual] Given the worked SFX example, when sourced per the ADR, then 6 round-robin footsteps pass the audio validator and the loudness ordering sneak < walk < run holds.\n- AC-4 [manual] Edge: given a Suno UI change that renames or removes a field referenced by a template (e.g. Exclude styles), when discovered, then the template documents the fallback (append negatives to Style).",
+      "depends_on": [
+        "e38-audio-bible",
+        "e38-sfx-tool-decision"
+      ]
+    },
+    {
+      "key": "e38-audio-validator",
+      "epic": "mw-e38",
+      "type": "task",
+      "title": "Audio validator: loudness, true peak, loop seams, naming and licence",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:tools",
+        "area:sfx",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nLoudness and loop quality are invisible in code review and easy to get wrong across many files and tools; a clicking loop or a 6 dB-hot SFX ruins feel.\n\n## What\nAs a developer, I want `pnpm assets:validate` to check audio against the audio bible so that CI rejects files outside loudness targets, with bad loop seams, wrong channel counts or missing credits. Checks: integrated LUFS and true peak per category (BS.1770 K-weighting, gating); leading silence for one-shots; mono for positional SFX; sidecar JSON schema (bpm, beatsPerBar, loop points); loop length = whole bars (± 1 ms); seam discontinuity (sample delta + short-window RMS jump); naming + CREDITS (reusing `e37-asset-validator`).\n\n## Scope\n- In: Pure TS loudness meter (BS.1770-4) and loop analysis over decoded PCM\n- In: Category targets as data (shared with the bible)\n- In: Sidecar zod schema\n- In: CI integration\n- Out: Encoding/normalising (see `e38-audio-import-pipeline`)\n- Out: Runtime mixing (see `e28-audio-engine`)\n\n## Notes\nOwner requirement: **100 % tested**. Test fixtures: synthetic sines/noise with known LUFS (e.g. 1 kHz sine at −20 dBFS ≈ −20.0 LUFS mono per spec reference) and deliberately clicking loops.",
+      "acceptance": "- AC-1 [unit] Given the EBU reference 1 kHz stereo sine at −23 dBFS, when measured, then integrated loudness is −23.0 ± 0.1 LUFS.\n- AC-2 [unit] Given a music file measured at −14 LUFS in the `music-explore` category (target −18 ± 1), when validated, then it fails with actual vs target.\n- AC-3 [unit] Given a loop whose end sample jumps by > 0.1 full-scale versus its start, or whose length is not a whole number of bars at its sidecar BPM, when validated, then it fails naming the seam or length error.\n- AC-4 [unit] Given a positional SFX file with 2 channels or > 10 ms leading silence, when validated, then it fails with the specific rule.\n- AC-5 [unit] Edge: given a silent file, a truncated/corrupt file or a sidecar with loopEnd ≤ loopStart, when validated, then each produces a clear error (no NaN loudness, no crash) and validation continues with other files.\n- AC-6 [unit] Given the validator source, when coverage runs, then lines, branches, functions and statements are all 100 %.",
+      "depends_on": [
+        "e00-repo-scaffold",
+        "e37-asset-validator"
+      ]
+    },
+    {
+      "key": "e38-audio-import-pipeline",
+      "epic": "mw-e38",
+      "type": "task",
+      "title": "Audio import pipeline: normalise, encode Opus/AAC, loop metadata",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:tools",
+        "area:music",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nSuno, SFX tools and libraries deliver inconsistent sample rates, levels and formats; the browser needs small Opus files with AAC fallback and sample-accurate loops.\n\n## What\nAs a developer, I want `pnpm assets:build` to ingest the owner's Suno takes from `assets/_incoming/music/<asset-id>.wav` (and generated/CC0 SFX from `assets/_incoming/<asset-id>/`), promote approved files to `assets/source/`, and process them into `public/assets/audio/` so that every file is 48 kHz, loudness-normalised to its category target, trimmed, encoded (Opus .ogg + AAC .m4a) and accompanied by a sidecar JSON with loop points compensated for encoder pre-skip/priming, then validated.\n\n## Scope\n- In: ffmpeg-based (pinned) node script: resample, trim, normalise (two-pass loudnorm), encode\n- In: Pre-skip/priming compensation for loop points\n- In: Audio manifest (asset id → URLs, duration, bytes, loop info)\n- In: Incremental cache\n- Out: Loudness/loop checking logic (see `e38-audio-validator`, invoked as final step)\n- Out: Playback (see `e28-audio-engine`)\n\n## Notes\nOpus pre-skip is typically 312 samples at 48 kHz; read the actual value from the Ogg header. Bitrates per audio bible §5.2. Initial-load audio ≤ 8 MB.",
+      "acceptance": "- AC-1 [integration] Given a 44.1 kHz WAV music source at −10 LUFS, when built, then outputs are 48 kHz Opus .ogg and AAC .m4a measuring within the category target ± 1 LU and ≤ its true-peak ceiling.\n- AC-2 [integration] Given a source with sidecar loop points, when built and decoded, then the decoded Opus loop region matches the source loop region sample-for-sample within ± 1 sample after pre-skip compensation.\n- AC-3 [e2e] Given a built loop played in the browser via the audio engine test page for 3 iterations, when recorded, then no seam discontinuity is detected by the validator's seam check.\n- AC-4 [integration] Given the built audio manifest, when summed for files tagged `initial`, then the total is ≤ 8 MB, otherwise the build fails.\n- AC-5 [integration] Edge: given a source that is clipped (true peak > 0 dBTP) or mostly silent, when built, then the build reports it and does not normalise silence upward beyond +20 dB gain.",
+      "depends_on": [
+        "e38-audio-validator"
+      ]
+    },
+    {
+      "key": "e38-placeholder-audio-kit",
+      "epic": "mw-e38",
+      "type": "task",
+      "title": "Placeholder audio kit: CC0 stand-ins with final asset ids",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:sfx",
+        "area:music",
+        "milestone:m1"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nThe m1 vertical slice needs feedback sounds (footsteps, hits, UI, a loop) to judge feel; final audio must not block gameplay.\n\n## What\nAssemble CC0 placeholders named with their final asset ids: footsteps for stone/wood/dirt/grass (walk/run/sneak, 4 round-robins), melee hit/block/parry, bow draw/release, one spell cast/impact, door/lever/chest, skeleton/goblin vocals, UI set, one ambience bed and one placeholder music loop — processed by the import pipeline.\n\n## Scope\n- In: CC0 selection (Kenney, freesound CC0-only)\n- In: Final-format ids + CREDITS rows flagged placeholder\n- In: Catalogue listing id → placeholder\n- Out: Final audio (per-asset beads)\n- Out: Audio engine wiring (Related: e28-audio-engine consumers)\n\n## Notes\nKeep placeholder loudness on-target so mix decisions made in m1/m2 still hold when finals arrive.",
+      "acceptance": "- AC-1 [content] Given the catalogue, when validated, then every placeholder has a final-format id, passes loudness/format checks and has a CC0 CREDITS row with `placeholder: yes`.\n- AC-2 [integration] Given the footstep set, when measured, then mean loudness orders sneak < walk < run for every surface.\n- AC-3 [e2e] Given the greybox testbed with the audio engine, when the player walks across each placeholder surface, then the matching surface sound plays (verified via the audio debug log).\n- AC-4 [integration] Edge: given an asset id referenced by content data with no placeholder or final file, when content validation runs, then it fails naming the missing id.",
+      "depends_on": [
+        "e38-audio-import-pipeline",
+        "e28-audio-engine"
+      ]
+    },
+    {
+      "key": "e38-sfx-gen-client",
+      "epic": "mw-e38",
+      "type": "task",
+      "title": "ElevenLabs Sound Effects API client for Claude-run SFX generation",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:tools",
+        "area:sfx",
+        "milestone:m2",
+        "asset:sfx"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nWith an official API, Claude can generate SFX end-to-end from the template while the owner just listens and approves — SFX \"generate\" tasks become Claude-run.\n\n## What\nAs a developer, I want `pnpm assets:gen-sfx <prompt-file>` to call the ElevenLabs Sound Effects API with the SFX PREAMBLE + template prompt (duration, prompt influence, round-robin count), save each take to `assets/_incoming/<asset-id>/vN.wav` (or the API's format converted to WAV) with `vN.json` provenance, run the audio import pipeline and validator, and build a batch listening page/playlist for the owner's SFX-batch approval gate.\n\n## Scope\n- In: Client in `src/tools/assets/sfx-gen/` with HTTP behind an injectable interface\n- In: Round-robin generation (n takes per sound)\n- In: Retry/backoff on 429/5xx, character/credit usage recorded\n- In: Batch preview HTML listing takes with approve/reject commands\n- Out: Approval recording (see `e37-asset-approval-log`)\n- Out: CC0 library sourcing (manual/Claude-scripted per ADR)\n\n## Notes\nOnly if `e38-sfx-tool-decision` confirms ElevenLabs. Key only from `ELEVENLABS_API_KEY` env — never logged, committed or written to vN.json. 100 % coverage with HTTP mocked (no live calls in CI). Refuse to run if the prompt file preamble differs from audio bible §8.",
+      "acceptance": "- AC-1 [unit] Given a filled SFX prompt file with round-robin count 4 and a mocked API returning audio, when `gen-sfx` runs, then 4 takes are saved as v1..v4 with vN.json provenance (tool, model, duration, date) and the validator is invoked on each.\n- AC-2 [unit] Given a prompt file whose SFX PREAMBLE differs from the audio bible, when run, then it refuses before any HTTP call.\n- AC-3 [unit] Given 429 then success, when called, then the client backs off (injected clock) and succeeds, recording attempts.\n- AC-4 [integration] Given a completed batch, when the preview page is generated, then it lists every take with its asset id, loudness and an approve/reject command line.\n- AC-5 [unit] Edge: given a missing `ELEVENLABS_API_KEY` or an error response body echoing headers, when logs are captured, then the key value never appears and the missing-key case exits non-zero with setup instructions.\n- AC-6 [unit] Given the client module, when coverage runs, then all four metrics are 100 %.",
+      "depends_on": [
+        "e38-sfx-tool-decision",
+        "e38-audio-import-pipeline",
+        "e37-asset-approval-log"
+      ]
+    },
+    {
+      "key": "e38-suno-adaptive-spike",
+      "epic": "mw-e38",
+      "type": "spike",
+      "title": "Spike: prove a key/BPM-locked Suno family with bar-synced cuts",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:music",
+        "milestone:m2",
+        "asset:music",
+        "needs-human"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nAdaptive music (explore/stealth/tension/combat) is core to stealth feel, but Suno outputs full mixes of unpredictable key/length; we must prove a workable method before producing ~12 location families.\n\n## What\nTime-box 1.5 days. Using the labyrinth family (E Phrygian, ~58/116 BPM), generate an explore anchor and derive stealth/tension/combat variants via Extend/Cover/audio-reference; test stem export/separation if available on the tier; cut loop points; prototype bar-synced crossfades + stingers in the audio engine test page. ADR records the method, success rate and Suno tier needed.\n\n## Scope\n- In: One full family + 2 stingers\n- In: Key/BPM verification method\n- In: Stem evaluation\n- In: Transition prototype\n- In: Suno licence tier confirmation for shipping music\n- Out: Producing other location families\n- Out: Final music state mapping (see `e38-music-state-data`)\n\n## Notes\nFallbacks if derivation fails: (1) accept separate generations in the same key/BPM and mask transitions with stingers; (2) vertical-only approach using separated stems of one track; (3) use drone-only states. Generate shipping takes on a paid tier (audio bible §4).",
+      "acceptance": "- AC-1 [manual] Given the labyrinth family, when analysed, then all four state tracks share the same key/mode and a BPM relationship of 1:1 or 1:2, and the ADR records how many generations were needed per usable track.\n- AC-2 [e2e] Given the transition prototype, when state switches explore→tension→combat→resolve are triggered at random times, then each transition begins on the next bar boundary (± 10 ms) and the validator seam check reports no clicks.\n- AC-3 [manual] Given stem export/separation on the current tier, when evaluated on the anchor track, then the ADR states whether stems are clean enough for vertical layering (yes/no with listening notes).\n- AC-4 [manual] Given the ADR, when read, then it states the required Suno tier, the terms URL and date consulted, and the per-family production recipe.\n- AC-5 [manual] Edge: given a derived variant that drifts in key or tempo, when detected, then the ADR documents the detection method and the chosen fallback.",
+      "depends_on": [
+        "e38-audio-bible",
+        "e38-audio-import-pipeline",
+        "e28-audio-engine"
+      ]
+    },
+    {
+      "key": "e38-music-state-data",
+      "epic": "mw-e38",
+      "type": "feature",
+      "title": "Data-driven music state mapping from alert states with hysteresis",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:music",
+        "area:content",
+        "milestone:m2",
+        "class:thief"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nMusic is a stealth cue: tension must start exactly when a creature investigates and never lie (audio bible §2.1). The rules belong in data so designers can tune them per location.\n\n## What\nAs a thief, I want the music to shift to tension only when a creature is actually investigating me so that the score is a trustworthy cue. Define a zod-validated music-state config per location (tracks per state, BPM/beatsPerBar, hysteresis delays, stingers, silence budget) and a pure sim-side selector: highest-priority creature alert state → music state, with enter-immediate / exit-after-delay hysteresis.\n\n## Scope\n- In: Schema + data files in `src/content/music/`\n- In: Pure selector in `src/sim` (deterministic, injected clock)\n- In: Game-layer binding to the audio engine's transition API\n- Out: Audio engine transitions/crossfades (Related: e28-audio-engine)\n- Out: Alert state logic (see `e11-alert-states`)\n\n## Notes\nDefaults from audio bible §2.1: combat enter next beat, exit after 4 s; tension exit after 6 s; silence 60–180 s after 1–2 explore loops.",
+      "acceptance": "- AC-1 [unit] Given one creature transitioning Unaware → Investigating, when the selector runs, then the music state becomes `tension` on that tick.\n- AC-2 [unit] Given the last combat creature leaving Combat, when 3.9 s elapse the state is still `combat`, and when 4.0 s elapse it becomes `resolve` then `tension`/`explore` per the remaining creatures.\n- AC-3 [unit] Given rapid Searching ↔ Alerted flapping every 1 s, when the selector runs for 20 s, then the music state changes at most twice.\n- AC-4 [content] Given every location music config, when validated, then each referenced track id exists in the audio manifest and all tracks in a family share BPM and beatsPerBar.\n- AC-5 [unit] Edge: given a creature that loses track of the player (Searching → Unaware) while another is Suspicious, when evaluated, then music stays at the highest remaining state (`stealth`) rather than dropping to `explore`.",
+      "depends_on": [
+        "e11-alert-states",
+        "e00-content-pipeline",
+        "e28-audio-engine",
+        "e38-suno-adaptive-spike"
+      ]
+    },
+    {
+      "key": "e38-audio-style-target",
+      "epic": "mw-e38",
+      "type": "task",
+      "title": "Audio style target: full soundscape for the style-target diorama",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:sfx",
+        "area:music",
+        "milestone:m2"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nLike the visual diorama, one finished sonic slice sets the benchmark for mix, reverb and palette before full production.\n\n## What\nGive the style-target diorama its final-quality soundscape: golden-hour ambience bed + randomised one-shots, footsteps on each diorama surface, weak-wall draught, flammable rope bridge creak and burn, one spell (cast/loop/impact), one creature vocal set, the Briar Glen explore→tension→combat family and stingers, location reverb.\n\n## Scope\n- In: Assets via the chosen SFX source and Suno per templates\n- In: Mix pass on the audio engine buses\n- In: Reference recording (video capture) committed for comparison\n- Out: Other locations\n- Out: Engine features (Related: e28-audio-engine)\n\n## Notes\nIts reference capture becomes the mix benchmark for `e38-mix-review`.",
+      "acceptance": "- AC-1 [integration] Given a 3-minute scripted diorama walkthrough capture, when measured, then master integrated loudness is −16 ± 2 LUFS and true peak ≤ −1 dBTP.\n- AC-2 [manual] Given the weak wall and the hidden well tunnel, when approached with eyes closed, then a listener can locate them by the draught/air cue within 5 m.\n- AC-3 [integration] Given all diorama audio assets, when validated, then each passes the audio validator and has a non-placeholder CREDITS row.\n- AC-4 [manual] Edge: given 6 simultaneous impact sounds plus combat music, when played, then no clipping occurs and the parry sound remains audible (voice-limiting/priority works).",
+      "depends_on": [
+        "e37-style-target-diorama",
+        "e38-placeholder-audio-kit",
+        "e38-suno-adaptive-spike"
+      ]
+    },
+    {
+      "key": "e38-mix-review",
+      "epic": "mw-e38",
+      "type": "task",
+      "title": "Audio consistency and mix review gate before MVP content lock",
+      "priority": 1,
+      "labels": [
+        "epic:e38",
+        "area:music",
+        "area:sfx",
+        "milestone:m3",
+        "needs-human"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nSuno sessions and mixed SFX sources drift in timbre and level; a gate catches it before external playtests (m4).\n\n## What\nStructured listening review per location against the audio bible and the audio style target: music family transitions, leitmotif presence (Glen, Labyrinth, Minotaur and its reveal variant), footstep loudness ordering vs sim, spell school distinctness (blind identification test), creature state readability, loudness report across all assets.\n\n## Scope\n- In: Loudness/format report across all audio\n- In: Blind school-identification test\n- In: Findings file `docs/audio/reviews/` with fix beads\n- Out: Fixing assets (filed as beads)\n\n## Notes\nRun informally at m2 exit, formally before m3 content lock.",
+      "acceptance": "- AC-1 [integration] Given all runtime audio, when the report script runs, then it lists per-file LUFS/true peak/category and flags any out-of-target file (expected zero at gate pass).\n- AC-2 [manual] Given 13 spell-cast sounds played in random order to 3 listeners with the school list, when identified, then ≥ 70 % of identifications are correct.\n- AC-3 [manual] Given the minotaur encounter and reveal, when reviewed, then the minotaur motif and its reveal variant are both present and recognisable by the reviewer.\n- AC-4 [manual] Edge: given a failing asset on the MVP critical path, when triaged, then it is fixed before m3 or explicitly waived by the owner with a reason in the review file.",
+      "depends_on": [
+        "e38-audio-style-target",
+        "e38-music-state-data"
+      ]
+    }
+  ]
+}

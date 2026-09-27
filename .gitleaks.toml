@@ -1,0 +1,9 @@
+# Extends the default gitleaks rules. Bead plan keys (e.g. "key": "e22-crime-bounty") look like
+# generic API keys to the default ruleset; allow exactly that shape and nothing else.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Beads plan keys"
+regexTarget = "match"
+regexes = ['''key\\?"\s*:\s*\\?"e\d{2}-[a-z0-9-]+\\?"''']

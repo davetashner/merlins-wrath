@@ -1,0 +1,556 @@
+{
+  "group": "narrative",
+  "epics": [
+    {
+      "id": "mw-e39",
+      "title": "E39 — Story & Narrative",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3"
+      ],
+      "description": "## Outcome\nThe MVP adventure \"The Labyrinth Beneath Briar Glen\" is a coherent, reactive story: the town, the Briarwood, the River Wend, Mooring's Watch, the Deepworks, Bellhollow Priory, the Knot and the optional harbour town of Wendmouth are populated with memorable characters, class-flavoured dialogue, multi-resolution quests, rumours that lead somewhere, and books/item text that carry the lore. The minotaur twist lands, failure bends the story instead of ending it, and every class experiences the key beats differently.\n\n## Scope\n- In: story bible sign-off and title decision; all MVP dialogue, quest, rumour, book, spellbook-flavour, item/creature description, intro and ending text as schema-validated data in `src/content`; class-specific variants; failure-state narrative; a narrative lint pass; a playtest comprehension check.\n- Out: dialogue/quest runtimes (E22/E23), bookshop rules (E21), spell mechanics (E06/E08), creature behaviour (E12/E13/E14), voice acting (none in MVP), art/audio (E37/E38).\n\n## Exit criteria\n- Story bible signed off by the owner; title decided.\n- Main quest completable to all four headline endings with data only (no bespoke scripting).\n- Every principal NPC has dialogue with class-variant lines; 5 core side quests and 3 Wendmouth side quests each have ≥ 2 resolutions.\n- The main quest is completable without ever visiting Wendmouth.\n- Narrative lint is green in CI; playtesters can explain the twist unprompted.",
+      "acceptance": "- AC-1 EC-1 Story bible signed off and title decision recorded in docs/decisions.\n- AC-2 EC-2 All narrative content files validate against dialogue/quest/content schemas in CI.\n- AC-3 EC-3 Main quest reaches each of the 4 headline endings in automated quest-graph tests.\n- AC-4 EC-4 Narrative lint (names, canon facts, dangling IDs) passes with zero errors.\n- AC-5 EC-5 ≥ 4 of 5 playtesters explain the minotaur twist and the bell solution in their own words."
+    }
+  ],
+  "items": [
+    {
+      "key": "e39-story-bible",
+      "epic": "mw-e39",
+      "type": "task",
+      "title": "Owner review and sign-off of the story bible; lock MVP canon",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m1",
+        "needs-human",
+        "size:s"
+      ],
+      "estimate_minutes": 180,
+      "description": "## Why\nEvery dialogue line, quest, book and asset prompt depends on stable canon. The constitution values memorable NPCs and creatures-as-characters; the bible defines them once so parallel work stays consistent.\n\n## What\nThe owner reviews the drafted `docs/narrative/story-bible.md` (premise, world history, factions, main quest beat sheet and endings, cast, side quests, rumours, creature lore, failure-creates-stories rules, naming conventions, glossary, canon quick-reference facts) and either signs it off or requests changes. The title section is reviewed and handed to the title decision bead. Signed-off canon is marked with a \"Status: CANON v1\" header and a change log.\n\n## Scope\n- In: owner read-through and comments\n- In: revisions requested by the owner\n- In: marking canon v1 and adding a change-log section\n- In: confirming the 12 principal NPCs, 10 creature types, 5 side quests and 4 headline endings\n- Out: the final title choice (see e39-title-decision)\n- Out: writing any content data (later e39 items)\n\n## Notes\nDraft exists at docs/narrative/story-bible.md. Canon changes after sign-off require a bible change-log entry and a lint update (e39-narrative-lint). Related: art style bible (e37-style-bible) and audio bible (e38-audio-bible) should read §3.5 Locations and §5 Cast.",
+      "acceptance": "- AC-1 [manual] Given the drafted bible, when the owner has reviewed it, then every owner comment is resolved or recorded as an open question in the bible.\n- AC-2 [content] Given the signed-off bible, when opened, then its header reads \"Status: CANON v1\" with a date and a change-log section exists.\n- AC-3 [content] Given the bible, when checked, then §11.3 lists every canon number (timeline, counts, ages, bounty) that the narrative lint will enforce.\n- AC-4 [content] Given the bible, when checked, then it names exactly the principal cast, creature roster, side quests and endings that downstream e39 items reference, with no TBD placeholders.\n- AC-5 [manual] Edge: given the owner rejects a core element (e.g. the minotaur twist), when revised, then the beat sheet, cast and endings sections are updated together so no section contradicts another.",
+      "depends_on": []
+    },
+    {
+      "key": "e39-title-decision",
+      "epic": "mw-e39",
+      "type": "decision",
+      "title": "Decide the shipping title and record it as an ADR",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m1",
+        "needs-human",
+        "size:s"
+      ],
+      "estimate_minutes": 120,
+      "description": "## Why\n\"Merlin's Wrath\" is a working title; Merlin is not in the story and \"wrath\" signals the wrong tone. The title shapes asset prompts, the title screen and discoverability.\n\n## What\nThe owner chooses between retaining the codename and the bible's shortlist (top pick: \"Nightjar — The Labyrinth Beneath Briar Glen\"; runner-up \"The Vesper Bell\"). A basic name-collision search (games stores, trademark databases, domain/handle availability) is done for the top 3. The decision is recorded as an ADR.\n\n## Scope\n- In: collision search for the top 3 candidates\n- In: ADR at docs/decisions/NNNN-game-title.md\n- In: updating the bible title section and backlog-contract working-title line\n- Out: renaming the repository (optional follow-up)\n- Out: logo/title art (E37 prompt beads)\n\n## Notes\nOptions and rationale: story-bible §1. If the codename is kept, the bible suggests the \"Merlin Watch\" (falcon) retrofit so the name means something in-world.",
+      "acceptance": "- AC-1 [content] Given the ADR, when read, then it states the chosen title, the alternatives considered, the collision-search results for each of the top 3, and the rationale.\n- AC-2 [manual] Given the collision search, when a candidate collides with an existing game or trademark in the same class, then it is marked rejected in the ADR with the evidence link.\n- AC-3 [content] Given the decision, when merged, then story-bible §1 and the backlog-contract working-title line reflect the chosen title.\n- AC-4 [content] Edge: given the owner defers the decision, when the ADR is written, then it records \"codename retained until <milestone>\" and the bead stays open.",
+      "depends_on": [
+        "e39-story-bible"
+      ]
+    },
+    {
+      "key": "e39-narrative-conventions",
+      "epic": "mw-e39",
+      "type": "task",
+      "title": "Set narrative content layout, ID scheme and class-variant tagging",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "size:s"
+      ],
+      "estimate_minutes": 240,
+      "description": "## Why\nMany narrative items are written in parallel; without one file layout and ID scheme, the lint and validators cannot catch dangling references and class variants will be inconsistent.\n\n## What\nAs a designer, I want a documented, validator-backed convention for narrative data so that every dialogue, quest, rumour, book and description file is found, referenced and tested the same way. Defines: directory layout under src/content (dialogue/, quests/, rumors/, books/, descriptions/, narrative/), ID prefixes from bible §11.1 (npc-, quest-, book-, rumor-NN-, desc-), a class-variant field convention (knight|archer|sorcerer|thief|all), world-state fact naming (e.g. horn.fate, clatter.restored), and a canon glossary data file consumed by the lint.\n\n## Scope\n- In: docs/narrative/content-conventions.md\n- In: src/content/narrative/glossary.json (names, places, canon facts)\n- In: one worked example file per content kind passing the existing validators\n- Out: the dialogue/quest schemas themselves (e22-dialogue-runtime, e23-quest-runtime)\n- Out: the lint tool (e39-narrative-lint)\n\n## Notes\nWorld-state fact keys must be registered with the world-state store (e27-world-state-store). Keep in-game text British-leaning, code identifiers US spelling (bible §11.1).",
+      "acceptance": "- AC-1 [content] Given the conventions doc, when read, then it defines directory, ID prefix, class-variant field and world-state fact naming for all six content kinds.\n- AC-2 [unit] Given each worked example file, when run through the content pipeline validators, then it validates with zero errors.\n- AC-3 [unit] Given glossary.json, when validated, then every principal NPC, location, creature type and canon number from bible §5, §3.5, §8 and §11.3 is present exactly once.\n- AC-4 [unit] Edge: given an example dialogue line tagged with an unknown class value (e.g. \"paladin\"), when validated, then validation fails naming the file and field.",
+      "depends_on": [
+        "e39-story-bible",
+        "e00-content-pipeline",
+        "e22-dialogue-runtime",
+        "e23-quest-runtime"
+      ]
+    },
+    {
+      "key": "e39-main-quest-data",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Script the main quest graph with four endings as quest data",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 720,
+      "description": "## Why\nThe MVP scenario must exercise the constitution through one adventure with multiple resolutions; the quest runtime should carry it with data, not bespoke scripts.\n\n## What\nAs a player, I want the Labyrinth Beneath Briar Glen quest to track what I actually did so that my choices about the minotaur, the abbot and Vane produce different outcomes. Encodes bible §4.1 beats 1–16 as quest stages/objectives: the first night, investigation hub (any order) with the optional Wendmouth thread, six entry routes into the Deepworks (including the Weeping Adit river route), the Warden encounter with six resolutions (kill, spare, trick, befriend, help, Trial of Horns), abbot resolutions (fight, trick, persuade, join), the Climb, Vespers, the morning after, and the four headline endings assembled from world-state facts.\n\n## Scope\n- In: quest-labyrinth-beneath-briar-glen data file(s)\n- In: world-state facts: horn.fate, abbot.fate, vane.fate, breach.sealed, tansy.saved, clatter.restored, goblins.standing, wendmouth.visited, crate.intercepted, tern.sailed\n- In: the Gilded Tern sailing trigger at Act III start\n- In: ending selection rules for the 4 headline endings and their epilogue-slide variants\n- In: quest-graph tests reaching every ending\n- Out: dialogue lines (e39-dialogue-* items)\n- Out: intro/ending prose (e39-intro-endings-text)\n- Out: encounter/level layout (E26)\n\n## Notes\nInvestigation hub objectives must be completable in any order (bible §4.1 beat 4). Wendmouth is optional (bible §3.6): no main-quest objective may require it; harbour facts only add evidence, a befriend trigger (name-stone) and epilogue slides. Horn yields rather than dying at low health; killing requires an explicit choice. Related: E26 first dungeon for spatial placement.",
+      "acceptance": "- AC-1 [unit] Given the quest data, when validated by the quest runtime validator, then it passes with zero errors and every referenced world-state fact is registered.\n- AC-2 [unit] Given scripted fact sets, when the ending rules are evaluated, then each of the 4 headline endings is reachable (including with wendmouth.visited = false throughout) and each fact set maps to exactly one ending.\n- AC-3 [unit] Given the investigation hub, when its objectives are completed in each of 3 different orders, then the quest advances to \"Getting in\" identically.\n- AC-4 [unit] Given any of the 6 Deepworks entry routes is completed, when the quest updates, then the \"Getting in\" stage completes and the route used is recorded.\n- AC-5 [unit] Edge: given Horn is killed, when Act III begins, then the Climb uses the goblin or Clatter defender variant if available, else the chase variant, and the quest never soft-locks.\n- AC-6 [unit] Edge: given Act III begins with crate.intercepted = false, when the stage starts, then tern.sailed is set and no Wendmouth objective blocks progress.\n- AC-7 [unit] Edge: given Tansy is not intercepted in Act III, when the Cradle stage starts, then the hostage variant activates and all abbot resolutions remain available.\n- AC-8 [manual] Given a full playthrough per class, when the quest completes, then the narrative designer confirms beats 1–16 play in order with no missing objective text.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e23-quest-runtime",
+        "e27-world-state-store"
+      ]
+    },
+    {
+      "key": "e39-dialogue-town-core",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write dialogue for Mirela, Dot and Captain Hale",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nThe bookseller, the rumour-monger and the guard captain are the investigation hub; memorable, reactive town NPCs are the QfG/DOS2 heart of the game.\n\n## What\nAs a player, I want the three hub NPCs to remember me, react to my class and point me at real places so that talking feels as rewarding as exploring. Dialogue graphs for Mirela Thorne (Lamplit Stacks: shop banter, restricted-shelf access, Nine Sleeps secret, Mortimer), Dot Farrow (Sleeping Ox: rumour trading hook, fence for thieves, Fitch), and Captain Hale (missing-persons list, sleepwalking secret, jail dialogue, Act III testimony). Voice per bible §5.1, §5.2, §5.4.\n\n## Scope\n- In: npc-mirela, npc-dot, npc-hale dialogue data\n- In: class-variant greetings and ≥ 2 class-specific branches per NPC\n- In: disposition-gated lines\n- In: post-quest reactions to each headline ending\n- Out: rumour content itself (e39-rumor-set)\n- Out: shop inventory rules (e21-bookshop-system)\n\n## Notes\nMirela must never sell Nine Sleeps. Hale must not know he delivered the \"friend below\" note until The Captain's Boots reveals it.",
+      "acceptance": "- AC-1 [unit] Given the three dialogue files, when validated by the dialogue validator, then all pass and every node is reachable from an entry node.\n- AC-2 [unit] Given each class in turn, when each NPC greets the player for the first time, then a class-specific greeting line is selected (4 distinct lines per NPC).\n- AC-3 [unit] Given the fact hale.sleepwalking.revealed is false, when any Hale node is evaluated, then no line references him delivering the note.\n- AC-4 [content] Given Mirela's dialogue, when searched, then no option transfers the book-nine-sleeps item to the player.\n- AC-5 [unit] Edge: given Mirela's disposition is \"banned\" (Mortimer caught the player), when the player talks to her, then the banned branch plays and access resets after the documented condition (biscuits or one in-game day).\n- AC-6 [manual] Given a read-through, when the narrative designer compares lines to bible §5 voice samples, then each NPC's voice is consistent and no line breaks the tone guide (§2.4).",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e22-dialogue-runtime"
+      ]
+    },
+    {
+      "key": "e39-dialogue-town-secondary",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write dialogue for Vane, the Pells, Juniper, Oswin and Duggan",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\nThe mine owner's grey morality, the baker's grief and the merchants' personalities make Briar Glen a living town rather than a quest dispenser.\n\n## What\nAs a player, I want the rest of Briar Glen to react to the crisis and to me so that the town feels lived-in. Dialogue for Harrow Vane (bounty, charm, confrontation with ledger/Duggan, confess/bribe/flee outcomes), Hollis Pell (grief, family Bible, reunion with Tansy), Tansy Pell (post-rescue), Juniper Fenn (wolves, sleep-draught guilt, merchant lines), Oswin Brand (merchant, bell-tongue mould), Duggan Marl (crate captive, testimony).\n\n## Scope\n- In: npc-vane, npc-hollis, npc-tansy, npc-juniper, npc-oswin, npc-duggan dialogue data\n- In: Vane confrontation branch with 4 outcomes (exposed, confesses, bribes, flees)\n- In: merchant greeting/farewell lines with class variants\n- Out: shop mechanics (e20-shop-system — Related, not anchor-linked here)\n- Out: side quest objective data (e39-side-quests-*)\n\n## Notes\nVane is redeemable (bible §5.3); avoid moustache-twirling. Oswin's mould enables a recast tongue if the original is destroyed — must match main quest fallback.",
+      "acceptance": "- AC-1 [unit] Given the six dialogue files, when validated, then all pass with zero unreachable nodes.\n- AC-2 [unit] Given the facts vane.ledger.obtained and duggan.testimony, when the confrontation is evaluated with each combination, then the available Vane outcomes match the table in the file header.\n- AC-3 [unit] Given tansy.saved is true, when Hollis is spoken to after the quest, then the reunion branch plays; given false, the grief branch plays.\n- AC-4 [unit] Edge: given the Vesper Bell tongue was destroyed, when Oswin is spoken to, then the recast-tongue option is offered exactly once.\n- AC-5 [manual] Given a read-through, when compared to bible §5.3–5.7, then voices match and Vane reads as morally grey rather than purely villainous.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e22-dialogue-runtime"
+      ]
+    },
+    {
+      "key": "e39-dialogue-horn",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write Brother Horn's dialogue across all Warden resolutions",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nThe minotaur twist is the emotional core of the MVP and the constitution's flagship \"fight, trick, befriend or help\" creature.\n\n## What\nAs a player, I want the minotaur to speak with me differently depending on how I reached him so that the reveal feels earned. Dialogue for Horn: the yield line, spare/kill choice, post-trick confrontation in the Fold, befriend triggers (Vesper hymn, horn-ring, vouching by Snig or Clatter, lowered weapon), the knight's Trial of Horns, help/heal/seal-the-breach lines, rescue-count remarks after player deaths, Act III shaft-defence barks, and ending lines.\n\n## Scope\n- In: npc-horn dialogue data\n- In: class-specific first-meeting lines (bible §4.3)\n- In: rescue-count lines for 1, 2, 3 and 5+ rescues\n- Out: Horn combat behaviour (E14 social creatures, E13 bestiary)\n- Out: quest state logic (e39-main-quest-data)\n\n## Notes\nVoice: slow, short, plain sentences with pauses; never roars words. \"The monks called me Brother Horn. It was a kindness. I have kept it.\" Related: E14 social creature hooks for yield/befriend.",
+      "acceptance": "- AC-1 [unit] Given Horn's dialogue file, when validated, then it passes and each of the 6 Warden resolutions has at least one terminal node that sets horn.fate.\n- AC-2 [unit] Given each befriend trigger fact independently, when the first-meeting node is evaluated, then the befriend branch is offered.\n- AC-3 [unit] Given player.rescues.byHorn = 1, 2, 3 and 6, when Horn is spoken to, then the matching rescue-count line is selected.\n- AC-4 [unit] Edge: given the player tricked Horn and then flees the Fold confrontation, when Horn is next met, then the \"angry, then weary\" re-entry branch plays instead of the first-meeting branch.\n- AC-5 [manual] Given a playtest of the reveal, when the Fold is entered, then the reveal is understood from the scene before Horn explains it (confirmed in e39-playtest-comprehension).",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e22-dialogue-runtime"
+      ]
+    },
+    {
+      "key": "e39-dialogue-labyrinth-folk",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write dialogue for Clatter, Mother Kettleback and Snig",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\nA skeleton who remembers and goblins you can talk to are explicit constitution examples; they carry the game's humour and warmth in the dark.\n\n## What\nAs a player, I want the skeleton and the goblins to be people so that the dungeon has characters, not just enemies. Clatter: memory fragments that grow as The Name on the Bones progresses, apology barks when hostile, rest/join choice. Mother Kettleback: negotiation after capture or approach, Horn arrangement, Duggan crate, trade lines. Snig: bookshop burglar scenes, reading attempts, vouching for the player.\n\n## Scope\n- In: npc-clatter, npc-kettleback, npc-snig dialogue data\n- In: memory-stage variants for Clatter (0–3 pieces recovered)\n- In: goblin standing variants (hostile, wary, friendly)\n- Out: goblin camp AI (E11/E14)\n- Out: side quest objectives (e39-side-quests-*)\n\n## Notes\nGoblins cannot read and do not dream (canon). Clatter loses recovered memories if the song swells before he is restored.",
+      "acceptance": "- AC-1 [unit] Given the three dialogue files, when validated, then all pass with zero unreachable nodes.\n- AC-2 [unit] Given clatter.memories = 0..3, when Clatter is spoken to, then a distinct memory-stage line set is used for each value.\n- AC-3 [unit] Given goblins.standing = hostile, wary and friendly, when Kettleback is approached, then the matching opening branch plays.\n- AC-4 [unit] Edge: given the player was captured by goblins while hostile, when brought to Kettleback, then the negotiation branch is available (capture never ends in a game-over).\n- AC-5 [content] Given Snig's lines, when linted, then none depict a goblin successfully reading full sentences before the Bookshop Burglar \"lessons\" outcome.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e22-dialogue-runtime"
+      ]
+    },
+    {
+      "key": "e39-dialogue-abbot",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write the Sleepless Abbot's notes, temptations and Cradle dialogue",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:s"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\nThe second twist — the helpful \"friend below\" is the abbot — gives the story its Souls-like sting and re-reads earlier notes in a new light.\n\n## What\nAs a player, I want the notes that helped me to turn out to be manipulation so that I feel the twist and want to re-read them. Content: 6–8 \"a friend below\" notes (genuinely useful), the Act III reveal speech, class-targeted temptations (Somnomancy for sorcerers, duty for knights, the hunt for archers, treasure for thieves), Cradle dialogue for fight/trick/persuade/join, and the persuade-to-rest scene with Clatter.\n\n## Scope\n- In: npc-abbot dialogue data\n- In: note-friend-below-01..08 note items\n- In: persuade branch gated on clatter.restored\n- Out: wraith combat (E13)\n- Out: the Lull spell mechanics (E08/E06)\n\n## Notes\nVoice: courteous, never raises his voice. Notes must be re-readable after the reveal; include at least two lines that read differently once the player knows.",
+      "acceptance": "- AC-1 [unit] Given the abbot dialogue file, when validated, then it passes and each of the 4 Cradle resolutions sets abbot.fate.\n- AC-2 [unit] Given clatter.restored is false, when the Cradle dialogue is evaluated, then the persuade-to-rest option is not offered.\n- AC-3 [unit] Given each class, when the temptation node is evaluated, then the class-specific temptation line is selected.\n- AC-4 [content] Given the friend-below notes, when validated as items, then there are 6–8 notes and each references only locations that exist in the glossary.\n- AC-5 [unit] Edge: given the sorcerer accepted Lull, when Horn or Mirela is next spoken to, then the \"dreamer mark\" fact is readable by their dialogue conditions.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e22-dialogue-runtime"
+      ]
+    },
+    {
+      "key": "e39-side-quests-town",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Script side quests The Bookshop Burglar and The Captain's Boots",
+      "priority": 2,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nTown side quests make Briar Glen dense and reward talking to people; both feed the main quest (Snig vouches for you; Hale backs your testimony).\n\n## What\nAs a player, I want small town mysteries with several honest solutions so that my class and choices matter even in town. The Bookshop Burglar: stake out, track to the well, find Snig; resolutions turn in / broker lessons / sell the book / Mortimer scare. The Captain's Boots: follow Hale at night; resolutions wakeful tea / wrong draught / tie down / bell on door / follow route; then tell the town or keep the secret.\n\n## Scope\n- In: quest-bookshop-burglar and quest-captains-boots data\n- In: world-state facts they set (snig.lessons, hale.secret.kept, route.briarwood.revealed)\n- Out: NPC dialogue text (e39-dialogue-town-core, e39-dialogue-labyrinth-folk)\n\n## Notes\nPicking the sleep draught instead of wakeful tea must create a story (Hale walks into the Deepworks and must be retrieved), not a fail state. Bible §6.1.",
+      "acceptance": "- AC-1 [unit] Given both quest files, when validated by the quest validator, then they pass and each has ≥ 3 resolutions.\n- AC-2 [unit] Given each Bookshop Burglar resolution, when completed, then the documented goblin-standing and snig facts are set.\n- AC-3 [unit] Edge: given the player gives Hale the sleep draught, when night falls, then the \"Hale walks in\" branch starts and the quest remains completable.\n- AC-4 [unit] Given The Captain's Boots completes with the secret kept, when Act III testimony is evaluated, then Hale backs the player.\n- AC-5 [manual] Given a playtest, when each quest is completed with two different solutions, then both feel intentional and neither is flagged as a \"failure\" by the tester.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e23-quest-runtime",
+        "e27-world-state-store"
+      ]
+    },
+    {
+      "key": "e39-side-quests-wilds",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Script The Watch Still Stands, Framed in Brass, Name on the Bones",
+      "priority": 2,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 600,
+      "description": "## Why\nThese quests carry class-specific solutions (knight relieves the Sentinels, archer rings the cord), Vane's exposure and the game's most emotional thread (Clatter remembering).\n\n## What\nAs a player, I want wilderness and dungeon side quests with class-flavoured solutions so that exploring off the main path changes the story. The Watch Still Stands (watchword / knight formal relief / archer bell cord / sorcerer dispel / thief stealth / smash). Framed in Brass (free Duggan by force, trade the kettle, persuade, take the kit; combine with ledger — and optionally Quell's foundry invoice from Wendmouth — to expose Vane). The Name on the Bones (psalter, pear tree, sister's letter; sorcerer memory-read risk; join or rest).\n\n## Scope\n- In: quest-watch-still-stands, quest-framed-in-brass, quest-name-on-the-bones data\n- In: facts: sentinels.relieved, duggan.freed, vane.exposed, clatter.memories, clatter.restored, clatter.choice\n- Out: Sentinel/goblin AI (E11/E13)\n- Out: pear tree bloom VFX (E29)\n\n## Notes\nA failed sorcerer memory-read permanently removes one memory piece option but must still allow completion via the remaining pieces plus an alternate (bible §6.1).",
+      "acceptance": "- AC-1 [unit] Given the three quest files, when validated, then they pass and each has ≥ 3 resolutions.\n- AC-2 [unit] Given the player class is knight, when The Watch Still Stands is evaluated at the Sentinels, then the formal-relief resolution is available; given other classes, it is not.\n- AC-3 [unit] Given vane.ledger.obtained and duggan.freed, when Framed in Brass completes, then vane.exposed can be set.\n- AC-4 [unit] Edge: given a failed memory-read, when The Name on the Bones is re-evaluated, then it remains completable and clatter.memories max is reduced by exactly 1.\n- AC-5 [unit] Given clatter.restored, when the join/rest choice is made, then clatter.choice is set and the main quest Cradle/Climb variants read it.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e23-quest-runtime",
+        "e27-world-state-store"
+      ]
+    },
+    {
+      "key": "e39-rumor-set",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write the rumour set with sources, truth values and targets",
+      "priority": 2,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:s"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nThe constitution promises that NPC rumours lead somewhere; rumours are the town's map of secrets.\n\n## What\nAs a player, I want rumours that are true, half-true or false and point at real places so that listening pays off. Encodes town/wilderness rumours 1–12 in bible §6.2 (plus up to 6 more; harbour rumours 13–18 live in e39-harbor-rumors-texts) with source NPC(s), truth value, target location/secret, unlock conditions, and follow-up lines when the player confirms or debunks one with Dot.\n\n## Scope\n- In: src/content/rumors data\n- In: truth value (true | half | false) and target reference per rumour\n- In: Dot trade-back lines for confirmed/debunked rumours\n- Out: rumour UI/journal (E22)\n- Out: Dot's general dialogue (e39-dialogue-town-core)\n\n## Notes\nEvery target must resolve to a glossary location, quest or fact. Goblin rumours are only available after goblin standing ≥ wary.",
+      "acceptance": "- AC-1 [unit] Given the rumour data, when validated, then there are 12–18 rumours and each has a source, truth value and target that resolves to an existing ID.\n- AC-2 [unit] Given goblins.standing = hostile, when rumour availability is evaluated, then no goblin-sourced rumour is offered.\n- AC-3 [unit] Given the player has visited a rumour's target, when Dot is spoken to, then the confirm/debunk follow-up line is available once.\n- AC-4 [content] Given the set, when counted, then at least 2 rumours are false or half-true and each false rumour has a debunk path.\n- AC-5 [unit] Edge: given all rumours are already known, when Dot offers to trade, then a fallback line plays and no coin is taken.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e22-dialogue-runtime"
+      ]
+    },
+    {
+      "key": "e39-books-lore",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write in-game books, notes and inscriptions",
+      "priority": 2,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\n\"Bookshelves can contain books.\" Lore should come from contradicting voices in objects and texts, Souls- and Elder Scrolls-style, and the bookshop must feel stocked.\n\n## What\nAs a player, I want to find short, readable books and notes that reveal the world in pieces so that curiosity is rewarded. Full texts for the bible §7.2 books (Vesperine Hours, Traveller's Account, On the Silence of Goblins, The Ox Beneath the Hill, Keeper's Log, Abbot's Letters, Nine Sleeps lore pages, Deepworks Ledger), 8–12 additional short books for the Lamplit Stacks and shelves, notes (Hale's list, Duggan's instructions, sleepwalker scrawls), and statue/wall inscriptions.\n\n## Scope\n- In: book-* data files with title, author, text, location(s)\n- In: note-* and inscription-* data\n- In: ≥ 3 independent sources for each major fact (Long Vespers, Horn, the bell)\n- Out: spellbook teaching texts (e39-spellbook-flavor)\n- Out: bookshop stock rules (e21-bookshop-system)\n\n## Notes\nLength 100–300 words per book (readable in under a minute); the Vesper hymn text must be identical everywhere it appears.",
+      "acceptance": "- AC-1 [unit] Given all book, note and inscription files, when validated, then they pass and each has ≥ 1 placement location from the glossary.\n- AC-2 [unit] Given each book text, when measured, then word count is between 40 and 400.\n- AC-3 [unit] Given the Vesper hymn, when every occurrence is compared, then all occurrences are byte-identical.\n- AC-4 [content] Given the lore map in the file header, when checked, then the Long Vespers, Horn's role and the bell each have ≥ 3 independent sources (book, object, person).\n- AC-5 [content] Edge: given the damaged-book convention, when a book is flagged damaged, then its text includes the missing/illegible markers the UI renders.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e00-content-pipeline"
+      ]
+    },
+    {
+      "key": "e39-spellbook-flavor",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write spellbook titles, authors and flavour texts",
+      "priority": 2,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:sorcerer",
+        "size:s"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nFor the sorcerer, books are progression; each spellbook should feel like a found object with a voice, not a stat card.\n\n## What\nAs a sorcerer, I want each spellbook to have a title, an author and a human detail so that buying or finding one feels special. Flavour for every MVP spell (~15–20), following bible §7.3 house style, plus Lantern Court seal status (licensed/restricted/forbidden), and damaged-copy variant text for books that teach misfiring versions.\n\n## Scope\n- In: flavour fields on spellbook item data (title, author, blurb, seal status, damaged variant)\n- In: Nine Sleeps ch. 1 (Lull) forbidden flavour\n- Out: spell mechanics and the spell catalogue (Related: E08 spell catalogue)\n- Out: learning mechanics (e07-spellbook-learning)\n\n## Notes\nSchool legality per bible §3.3. Keep each blurb ≤ 80 words and include one concrete, human or funny detail.",
+      "acceptance": "- AC-1 [unit] Given the spellbook data, when validated, then every spell in the MVP catalogue has exactly one spellbook with title, author, blurb and seal status.\n- AC-2 [unit] Given each spellbook, when its seal status is compared with its school, then it matches the legality table in bible §3.3.\n- AC-3 [unit] Given each blurb, when measured, then it is ≤ 80 words.\n- AC-4 [content] Edge: given a book with a damaged variant, when validated, then the damaged text differs from the intact text and names the misfire flavour.\n- AC-5 [manual] Given a read-through, when the narrative designer reviews all blurbs, then none reads as a numeric stat description.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e07-spellbook-learning"
+      ]
+    },
+    {
+      "key": "e39-item-creature-text",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write item and creature description text",
+      "priority": 2,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nLore lives in item text (Dark Souls) and creatures are characters, not target dummies; descriptions should imply history and hint at non-combat options.\n\n## What\nAs a player, I want item and creature descriptions that hint at stories and weaknesses so that reading them helps me play. 1–3 sentence descriptions for every MVP key item, quest item, notable equipment and consumable; descriptions for Wendmouth imports (foreign weapons/armour, exotic arrows, Undertow thief tools) and the harbour's human factions (Low Tide Company, harbour watch, Tern crew); bestiary/inspect text for all 10 creature types in bible §8 (Wendmouth adds none), each hinting at at least one non-lethal or systemic option (fear of light, sound sensitivity, flammability, feeding).\n\n## Scope\n- In: desc-* fields for items and creatures\n- In: bestiary entries with unlock tiers (seen / studied)\n- Out: creature stats/behaviour (Related: E12/E13)\n- Out: loot placement (Related: E18)\n\n## Notes\nVoice examples in bible §7.4. Avoid numbers in flavour text; mechanics belong in tooltips.",
+      "acceptance": "- AC-1 [unit] Given item and creature data, when validated, then every MVP item and each of the 10 creature types has a description of 1–3 sentences.\n- AC-2 [content] Given each creature entry, when reviewed against bible §8, then it hints at ≥ 1 non-combat or systemic interaction.\n- AC-3 [unit] Given all flavour text, when scanned, then it contains no digits (numbers belong in tooltips).\n- AC-4 [unit] Edge: given a creature at \"seen\" tier, when its bestiary entry is shown, then only the seen-tier text is returned and studied-tier hints stay hidden.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e00-content-pipeline"
+      ]
+    },
+    {
+      "key": "e39-intro-endings-text",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write opening, first-night and ending/epilogue text",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:s"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nThe first ten minutes must hook (a child sleepwalking toward a horned shadow) and the ending must reflect what the player actually did.\n\n## What\nAs a player, I want a strong opening and an ending that remembers my choices so that the adventure feels whole. Text for the arrival and bounty board, the first-night sequence (including failure variants), the title/intro card, and the 4 headline endings with epilogue slides assembled from world-state facts (Horn, abbot, Vane, breach, Clatter, goblins, Tansy, Hale), plus optional harbour slides (crate intercepted → name-stone home; Tern sailed → the far-city crate hook). Also the barge-ride travel narration between Briar Glen Quay and Wendmouth.\n\n## Scope\n- In: narrative/intro and narrative/endings data\n- In: epilogue slide conditions\n- In: first-night variants: followed, lost her, blocked by wolves\n- Out: class-specific arrival text (e39-class-variants)\n- Out: cutscene staging/camera (E01/E24)\n\n## Notes\nText-only in MVP; each slide ≤ 60 words. The Long Vespers ending must end \"on a doorway, not a grave\" (bible §4.4).",
+      "acceptance": "- AC-1 [unit] Given the endings data, when evaluated against every combination of the 7 ending facts, then each combination yields exactly one headline ending and ≥ 3 epilogue slides.\n- AC-2 [unit] Given each first-night variant, when triggered, then it ends with the horned-shadow beat.\n- AC-3 [unit] Given each slide, when measured, then it is ≤ 60 words.\n- AC-4 [unit] Edge: given a fact is unset (e.g. Clatter never met), when epilogue slides are selected, then a neutral slide is used and no slide references an unmet character.\n- AC-5 [manual] Given a playtest, when the opening completes, then ≥ 4 of 5 testers can state what they are trying to do next.",
+      "depends_on": [
+        "e39-main-quest-data"
+      ]
+    },
+    {
+      "key": "e39-class-variants",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write class-specific arrivals, routes and signature beats",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nClasses change possibilities; the story must acknowledge each class's fantasy at key beats, not just in combat.\n\n## What\nAs a knight, archer, sorcerer or thief, I want the story to notice who I am so that my class feels like a role, not a stat block. Content per bible §4.3: four arrival reasons (Oath for Hire, Silent Wolves, Letter from the Lamplit Stacks, Commission from the City), class-flavoured interaction prompts at signature beats (formal relief, signal mirror, reading Horn's axe, sneaking into the Fold, plus one Wendmouth hijinks beat per class per bible §4.3), and class-specific climax lines.\n\n## Scope\n- In: per-class arrival text and journal entries\n- In: class-variant prompt/bark text for ≥ 4 signature beats per class\n- In: audit sheet mapping each bible §4.3 beat to its content ID\n- Out: the mechanics behind class routes (Related: E16 class-specific solutions)\n- Out: NPC dialogue branches already owned by e39-dialogue-* items\n\n## Notes\nThe thief's commission comes from \"Mr. S—\", Vane's buyer (post-MVP hook; do not resolve).",
+      "acceptance": "- AC-1 [unit] Given each class, when a new game starts, then the matching arrival text and first journal entry are selected.\n- AC-2 [content] Given the audit sheet, when checked, then every class moment in bible §4.3 maps to an existing content ID.\n- AC-3 [unit] Given each class, when the class-variant lookup is run for every signature beat, then each class has ≥ 4 unique entries and no beat falls back to generic text unintentionally.\n- AC-4 [unit] Edge: given a class-variant entry is missing for a beat, when looked up, then the \"all\" fallback is returned and the lint reports a warning.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e39-main-quest-data"
+      ]
+    },
+    {
+      "key": "e39-failure-narratives",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write failure-state narratives: the Fold, jail, capture, sour bell",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:s"
+      ],
+      "estimate_minutes": 420,
+      "description": "## Why\n\"Failure creates stories.\" Death, capture and botched actions should land the player somewhere new and be remembered.\n\n## What\nAs a player, I want failures to move the story sideways so that I keep playing instead of reloading. Content and fact wiring per bible §4.5 and §9: waking in the Fold after dying in the Knot (pre- and post-reveal text; goblin camp or Forgotten variants if Horn is dead), waking at the Sleeping Ox after a forest death, jail with the drain escape, goblin capture, ringing the tongueless bell, misfired Lull dream, NPCs remembering embarrassments; Wendmouth: thrown off the pier (breakwater sea-door), losing the drinking contest (wake in the Gilded Tern's hold), books confiscated at customs (customs strongroom).\n\n## Scope\n- In: narrative/failure data: wake-up texts and conditions\n- In: facts: player.rescues.byHorn, player.jailed.count, player.captured.byGoblins, bell.rung.sour\n- In: NPC remark hooks for embarrassment facts\n- Out: respawn mechanics and save rules (Related: E01/E30)\n- Out: jail/escape level geometry (Related: E24)\n\n## Notes\nKettleback's \"carrying fee\" must never exceed what the player can pay (take a trinket if broke).",
+      "acceptance": "- AC-1 [unit] Given a death in the Knot with horn.fate = alive and quest before the reveal, when the wake-up is resolved, then the eerie Fold text plays and player.rescues.byHorn increments by 1.\n- AC-2 [unit] Given horn.fate = dead, when a death in the Knot occurs, then the goblin-camp variant plays if goblins.standing ≥ wary, else the Forgotten variant.\n- AC-3 [unit] Edge: given the player has 0 gold, when Kettleback charges the carrying fee, then a trinket is taken instead, or waived if none, and no negative gold results.\n- AC-4 [unit] Given the bell is rung without its tongue, when resolved, then bell.rung.sour is set and the Hushling/Horn-approach encounter flag is raised.\n- AC-5 [unit] Given the player is caught by dockhands in Wendmouth, when resolved, then the thrown-off-the-pier text plays, the player is placed at the breakwater and harbor.seadoor.discovered is set; given restricted books are confiscated, then they move to the customs strongroom container, never destroyed.\n- AC-6 [manual] Given a playtest, when a tester dies in the Knot twice, then they describe the Fold wake-up as intriguing rather than as a punishment.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e27-world-state-store",
+        "e23-quest-runtime"
+      ]
+    },
+    {
+      "key": "e39-dialogue-harbor-folk",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write dialogue for Mags Oakum, Nell Gannet, Big Oona and Old Reed",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nWendmouth is where \"shenanigans ensue\"; its river and dockside characters sell the tone shift from frightened Briar Glen to a loud, cheerful port on the make.\n\n## What\nAs a player, I want the bargewoman, the smuggler queen and the dockside regulars to be characters with their own angles so that the harbour feels rowdy and alive. Mags Oakum (barge rides, river lore, Weeping Adit route, her crate-carrying secret and pocketed horn-coin), Nell Gannet (Drowned Gull, Low Tide Company jobs, Undertow access, the thief-commission drop, relic-skimming secret), Big Oona (arm-wrestling champion, Tidefair barks), Old Reed (Kestrel Lock keeper, tolls in gossip). Voice per bible §5.13.\n\n## Scope\n- In: npc-mags, npc-nell, npc-oona, npc-reed dialogue data\n- In: class-variant greetings and ≥ 2 class-specific branches for Mags and Nell\n- In: barge-ride booking lines (morning only; refuses night runs)\n- In: thief commission drop branch (deliver / keep / fake coin)\n- Out: Undertow stock and prices (Related: E20 economy, E21 bookshops)\n- Out: quest objectives (e39-harbor-heist-quest, e39-side-quests-harbor)\n\n## Notes\nMags must never run the barge at night. Nell knows what is in bay nine but only reveals it at high disposition or to a thief. Related: Wendmouth level layout (world-content planners).\n\n**Integration note:** Owner wants the river and Wendmouth in the MVP (P1). It stays optional to the main quest.",
+      "acceptance": "- AC-1 [unit] Given the four dialogue files, when validated by the dialogue validator, then all pass with zero unreachable nodes.\n- AC-2 [unit] Given each class, when Mags and Nell greet the player for the first time, then a class-specific greeting is selected (4 distinct lines each).\n- AC-3 [unit] Given the in-game time is night, when the player asks Mags for a barge ride, then the refusal branch plays and no travel is started.\n- AC-4 [unit] Given the player class is thief and holds the commission horn-coin, when Nell is spoken to, then deliver, keep and fake-coin options are offered and each sets commission.outcome.\n- AC-5 [unit] Edge: given the player has never visited Wendmouth, when any Briar Glen NPC references Nell or Mags, then only hearsay lines are used (no line implies the player has met them).\n- AC-6 [manual] Given a read-through, when compared to bible §5.13 and the tone guide, then harbour voices read as rowdier and more cheerful than Briar Glen without modern slang.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e22-dialogue-runtime"
+      ]
+    },
+    {
+      "key": "e39-dialogue-harbor-trade",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write dialogue for Inspector Cray, Tereza Maelo, Quell and Hesketh",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nThe customs inspector, the import merchant and Vane's shipping agent tie the harbour to the main plot and give each class a foil (Cray for sorcerers, Tereza for knights, Quell for thieves).\n\n## What\nAs a player, I want the harbour's officials and traders to react to my class and to evidence I carry so that Wendmouth can change what happens to Vane. Inspector Prudence Cray (book confiscation, search-on-sight for sorcerers, romance-novel weakness, bay-nine suspicion, legal seizure route), Tereza Maelo (arms trade, knight duel challenge, foreign spellbook for a story, Tern access via debt of honour), Jasper Quell (nervous denials, collapse under evidence, honest manifest, head-start bargain), Captain Hesketh of the Gilded Tern (crew hiring, shanghai scene).\n\n## Scope\n- In: npc-cray, npc-tereza, npc-quell, npc-hesketh dialogue data\n- In: evidence-gated branches (foundry invoice, honest manifest, dead-clerk seal)\n- In: Tereza duel challenge/accept/decline/win/lose branches\n- In: Cray disposition states used by Contraband Pages and The Crate for Mr. S—\n- Out: duel combat rules (Related: E04 knight combat)\n- Out: Tidemarket stock (Related: E20/E21)\n\n## Notes\nCray is incorruptible: every bribe attempt fails and is recorded. Cray never confiscates plot-critical or forbidden-plot items. No human character's surname may begin with S (bible §11.1).\n\n**Integration note:** Owner wants the river and Wendmouth in the MVP (P1). It stays optional to the main quest.",
+      "acceptance": "- AC-1 [unit] Given the four dialogue files, when validated, then all pass with zero unreachable nodes.\n- AC-2 [unit] Given any bribe option to Cray, when chosen, then it fails, sets cray.bribe.attempted and lowers disposition; no branch lets a bribe succeed.\n- AC-3 [unit] Given the player holds the foundry invoice or honest manifest, when Quell is confronted, then the collapse branch is offered and can hand over crate access and the manifest.\n- AC-4 [unit] Given the player class is knight, when Tereza is first met, then the duel challenge is offered; given win or loss, the matching branch sets tereza.duel.result.\n- AC-5 [content] Given the four files, when searched, then no option lets Cray confiscate an item tagged plot-critical.\n- AC-6 [unit] Edge: given Quell was given a head start and has left Wendmouth, when his location is visited, then his absence is handled by a note/bark and no dialogue references him as present.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e22-dialogue-runtime"
+      ]
+    },
+    {
+      "key": "e39-harbor-heist-quest",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Script the heist side quest The Crate for Mr. S—",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 540,
+      "description": "## Why\nA perfectly executed infiltration should feel as satisfying as a hard fight (constitution §5). The bonded-warehouse heist is the harbour's showpiece and links Wendmouth to Vane, Horn and the Mr. S— hook.\n\n## What\nAs a thief (or any class willing to try), I want to intercept Vane's relic crate before the Gilded Tern sails so that I gain evidence against Vane and a gift for the minotaur. Resolutions per bible §6.1 quest 6: stealth heist with ballast swap and re-seal (thief-favoured), paper route via forged/swapped manifest and Cray's legal seizure, archer net-cut into the harbour, knight force (brawl with Low Tide Company and harbour watch), sorcerer freeze-the-pool or Gust-the-hoist, leverage on Quell. Outcomes: name-stone, honest manifest, Mr. S—'s sealed letter; or the Tern sails.\n\n## Scope\n- In: quest-crate-for-mr-s data\n- In: facts: crate.intercepted, crate.method, heist.undetected, manifest.honest.obtained, namestone.obtained, tern.sailed\n- In: undetected-heist variant where the Tern sails with ballast\n- Out: stealth/disguise mechanics (Related: E09 stealth, E10 thief toolkit)\n- Out: warehouse and ship level geometry (Related: world-content planners, E26-style level beads)\n\n## Notes\nHeist timing is stage-based, not real-time: the Tern sails when Act III begins (bible §11.3). The name-stone is a befriend-Horn trigger consumed by e39-dialogue-horn.\n\n**Integration note:** Owner wants the river and Wendmouth in the MVP (P1). It stays optional to the main quest.",
+      "acceptance": "- AC-1 [unit] Given the quest file, when validated by the quest validator, then it passes and exposes ≥ 5 resolutions, each setting crate.method.\n- AC-2 [unit] Given the heist completes with heist.undetected = true, when Act III begins, then tern.sailed is set, crate.intercepted is true and no alarm or Low Tide hostility fact is set.\n- AC-3 [unit] Given crate.method = force, when the quest completes, then lowtide.standing becomes hostile and Cray's arrival branch is flagged.\n- AC-4 [unit] Given namestone.obtained, when Horn's first-meeting node is evaluated, then the befriend branch is offered.\n- AC-5 [unit] Edge: given Act III begins before the crate is intercepted, when the quest updates, then it resolves as \"sailed\", the customs manifest copy remains obtainable and the main quest is unaffected.\n- AC-6 [manual] Given a playtest by a thief, when the undetected heist is completed, then the tester rates it at least as satisfying as the watchtower fight on a 5-point scale.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e23-quest-runtime",
+        "e27-world-state-store"
+      ]
+    },
+    {
+      "key": "e39-side-quests-harbor",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Script harbour side quests The Tidefair and Contraband Pages",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:m"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nNon-thief classes need harbour hijinks of their own, and the sorcerer needs a Lantern Court foil; both quests also unlock the harbour's better gear.\n\n## What\nAs a knight, archer, sorcerer or thief, I want a harbour contest that suits my class and a scrape with the customs house so that Wendmouth is fun for everyone, not only sneaks. The Tidefair: four events any class may enter — arm-wrestling/Gull brawl (knight flavour), the Gull Shoot (archer), the Regatta with unenforced \"no magic\" rule (sorcerer), the Pocket Race with Cray as a mark (thief); win, cheat, throw a match for Nell's book, or lose gracefully. Contraband Pages: recover impounded books (Mirela's order, the player's own) via failed bribe, romance-novel trade, writ (Vane or forged seal), strongroom theft, inspector impersonation, or bay-nine evidence.\n\n## Scope\n- In: quest-tidefair and quest-contraband-pages data\n- In: facts: tidefair.results.<event>, tidefair.cheated, cray.disposition, books.impounded, mirela.order.delivered\n- In: reward hooks: Tereza under-counter stock, foreign spellbook, discounts\n- Out: contest mechanics (Related: E04/E05/E06/E10 class systems)\n- Out: shop inventories (Related: E20/E21)\n\n## Notes\nLosing a Tidefair event must still give a warm outcome (Oona buys a drink) — failure creates stories. Cray's disposition from Contraband Pages gates her help in The Crate for Mr. S—.\n\n**Integration note:** Owner wants the river and Wendmouth in the MVP (P1). It stays optional to the main quest.",
+      "acceptance": "- AC-1 [unit] Given both quest files, when validated, then they pass; The Tidefair has 4 events each with win/cheat/throw/lose outcomes and Contraband Pages has ≥ 5 resolutions.\n- AC-2 [unit] Given each class, when the Tidefair is joined, then the class-flavoured event is highlighted and all 4 events remain enterable.\n- AC-3 [unit] Given a Regatta win using magic while Cray is present, when resolved, then the win is voided, tidefair.cheated is set and a fine branch plays.\n- AC-4 [unit] Given Contraband Pages completes with the bay-nine evidence route, when Cray is next spoken to, then cray.disposition is at least \"grateful\" and her seizure route in The Crate for Mr. S— is available.\n- AC-5 [unit] Edge: given the player loses every Tidefair event, when the quest completes, then a consolation outcome is granted and Wendmouth reputation does not decrease.\n- AC-6 [manual] Given playtests with a knight, archer and sorcerer, when each plays the Tidefair, then each tester names their class event as a highlight of the harbour.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e23-quest-runtime",
+        "e27-world-state-store"
+      ]
+    },
+    {
+      "key": "e39-harbor-rumors-texts",
+      "epic": "mw-e39",
+      "type": "feature",
+      "title": "Write harbour rumours and in-world texts (manifest, notice, tolls)",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "class:all",
+        "size:s"
+      ],
+      "estimate_minutes": 300,
+      "description": "## Why\nRumours and documents are how the harbour hands the player leads and evidence; a cargo manifest is a better clue than a quest marker.\n\n## What\nAs a player, I want Wendmouth gossip and paperwork that point at real secrets so that snooping in the harbour pays off. Harbour rumours 13–18 (bible §6.2) with sources (Mags, Nell, Old Reed, Tidemarket gossip), truth values and targets; texts: the Gilded Tern cargo manifest (customs copy and Quell's honest copy), the Lantern Court port notice, the Kestrel Lock toll board, the foundry invoice, the one readable line of Mr. S—'s sealed letter.\n\n## Scope\n- In: rumor-13..18 data entries\n- In: book-/note- entries for the harbour texts with placements\n- In: evidence tags on manifest, invoice and seal used by quest conditions\n- Out: town rumours 1–12 (e39-rumor-set)\n- Out: general books (e39-books-lore)\n\n## Notes\nCanon numbers must match bible §11.3 exactly (40 horn-coins, 3 carved stones, 1 name-stone; 40 brass trinkets; clerk E. Ardley dead a year). The sea-serpent rumour is false and needs a debunk path.\n\n**Integration note:** Owner wants the river and Wendmouth in the MVP (P1). It stays optional to the main quest.",
+      "acceptance": "- AC-1 [unit] Given the harbour rumour entries, when validated, then there are 6 rumours (13–18), each with source, truth value and a target resolving to an existing ID.\n- AC-2 [unit] Given the manifest and invoice texts, when checked by the narrative lint canon rules, then all quantities and names match bible §11.3.\n- AC-3 [unit] Given the honest manifest item, when a quest condition checks evidence tags, then it satisfies both Framed in Brass and The Crate for Mr. S— evidence requirements.\n- AC-4 [content] Given the sea-serpent rumour, when reviewed, then it is marked false and has a debunk path (diving to the figurehead or asking Mags).\n- AC-5 [unit] Edge: given the player never visits Wendmouth, when Dot's rumour pool is evaluated, then harbour rumours 13–18 may be heard only as second-hand lines and never mark a harbour target as visited.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e22-dialogue-runtime"
+      ]
+    },
+    {
+      "key": "e39-narrative-lint",
+      "epic": "mw-e39",
+      "type": "task",
+      "title": "Add narrative lint for names, canon facts and dangling IDs",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m3",
+        "area:tools",
+        "size:m"
+      ],
+      "estimate_minutes": 480,
+      "description": "## Why\nParallel writers drift: names misspelled, the Long Vespers happening 60 or 62 years ago, notes pointing at rooms that don't exist. An automated pass keeps canon trustworthy without re-reading everything.\n\n## What\nAs a designer, I want a CI lint that checks narrative content against the canon glossary so that contradictions fail the build. Checks: proper-noun spelling against glossary.json (with a near-miss detector), canon numbers from bible §11.3, all ID references resolve (NPCs, quests, facts, locations, items), class-variant coverage warnings, banned-tone list (modern slang, fourth-wall phrases), and British-leaning spelling in player-facing text. Followed by one manual consistency read of all content against the bible.\n\n## Scope\n- In: src/tools/narrative-lint (runs in CI)\n- In: glossary-driven checks\n- In: one manual full-content consistency pass with fixes\n- Out: schema validation itself (e00-content-pipeline)\n- Out: localisation (post-MVP)\n\n## Notes\nDepends only on the P1 content; P2 content (side quests, rumours, books, spellbook flavour, descriptions, all Wendmouth content) is linted automatically in CI as it lands, and its authors fix lint errors in their own PRs. Tooling code in src/tools needs ≥ 90% coverage per backlog contract §3. Near-miss detector example: \"Mirella\" or \"Kettlebach\" → error with suggestion.",
+      "acceptance": "- AC-1 [unit] Given a fixture containing \"Mirella\", when linted, then an error names the file, line and suggests \"Mirela\".\n- AC-2 [unit] Given a fixture stating the Long Vespers was \"sixty years ago\", when linted, then a canon-fact error is reported citing bible §11.3.\n- AC-3 [unit] Given a dialogue node referencing a non-existent fact or location ID, when linted, then a dangling-reference error is reported.\n- AC-4 [unit] Given a fixture with a banned-tone phrase, when linted, then a warning is reported with the matched phrase.\n- AC-5 [integration] Given the full src/content narrative set, when the lint runs in CI, then it completes in ≤ 10 s with zero errors.\n- AC-6 [manual] Given the manual consistency pass, when complete, then every discrepancy found is fixed in content or recorded in the bible change log.",
+      "depends_on": [
+        "e39-narrative-conventions",
+        "e39-main-quest-data",
+        "e39-dialogue-town-core",
+        "e39-dialogue-town-secondary",
+        "e39-dialogue-horn",
+        "e39-dialogue-labyrinth-folk",
+        "e39-dialogue-abbot",
+        "e39-intro-endings-text",
+        "e39-class-variants",
+        "e39-failure-narratives"
+      ]
+    },
+    {
+      "key": "e39-playtest-comprehension",
+      "epic": "mw-e39",
+      "type": "task",
+      "title": "Run a playtest narrative-comprehension check and fix gaps",
+      "priority": 1,
+      "labels": [
+        "epic:e39",
+        "area:narrative",
+        "milestone:m4",
+        "area:qa",
+        "needs-human",
+        "size:s"
+      ],
+      "estimate_minutes": 360,
+      "description": "## Why\nA twist no one notices is not a twist. The story must be understandable without a wiki, through play alone.\n\n## What\nAs the narrative designer, I want observed playtests with a short comprehension questionnaire so that I know which beats land and which need clearer delivery. 5+ testers (mix of classes) play through; afterwards they answer: who was taking people and why, what Horn is, who the \"friend below\" was, what the bell does, what their class did differently. Findings become fix beads or immediate text edits.\n\n## Scope\n- In: docs/narrative/playtest-comprehension.md (script, questionnaire, results)\n- In: text fixes for beats scoring < 60% comprehension\n- Out: fun/feel validation (Related: E35 MVP fun validation)\n- Out: telemetry dashboards (Related: E34)\n\n## Notes\nDo not prompt testers about the twist during play; observe only. Record at least one tester per class.",
+      "acceptance": "- AC-1 [manual] Given ≥ 5 testers covering all 4 classes, when the questionnaire is scored, then results per question are recorded in docs/narrative/playtest-comprehension.md.\n- AC-2 [manual] Given the results, when ≥ 4 of 5 testers explain the minotaur twist and the bell solution in their own words, then the check passes; otherwise fixes are made and the check repeated with new testers.\n- AC-3 [manual] Given the results, when any beat scores < 60% comprehension, then a text fix or a follow-up bead is created and linked in the results doc.\n- AC-4 [content] Edge: given a tester reaches an ending the designer did not expect, when analysed, then the fact trail is recorded and checked against the ending rules in e39-main-quest-data.",
+      "depends_on": [
+        "e39-narrative-lint",
+        "e39-main-quest-data",
+        "e39-intro-endings-text"
+      ]
+    }
+  ]
+}
