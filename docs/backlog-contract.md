@@ -4,7 +4,7 @@ This document is the single source of truth for **how** beads in this project ar
 Every epic, story, task, spike and asset-prompt bead MUST follow it so the backlog reads as one
 coherent plan. Read `CONSTITUTION.md` first — this document is subordinate to it.
 
-> Working title: **Merlin's Wrath** (open to change — see `mw-e39`).
+> Title: **The Vesper Bell** (decided in `mw-e39.2`, see `docs/adr/0002-game-title.md`). Codename: Merlin's Wrath.
 
 ---
 
@@ -19,7 +19,7 @@ coherent plan. Read `CONSTITUTION.md` first — this document is subordinate to 
 | Physics | Rapier (WASM) unless the engine ADR says otherwise. |
 | Tests | Vitest (unit/integration, v8 coverage), Playwright (browser smoke, e2e, perf budgets). |
 | Content data | Data-driven JSON/TS content validated by schemas (zod). Spells, items, creatures, puzzles, dialogue, quests, loot tables are **data**, not code. |
-| Repo / flow | https://github.com/davetashner/merlins-wrath — all work via PR from a git worktree, **squash merge only**, branch auto-deleted, CI must be green. |
+| Repo / flow | https://github.com/davetashner/thevesperbell — all work via PR from a git worktree, **squash merge only**, branch auto-deleted, CI must be green. |
 | Issue tracking | `bd` (beads), prefix `mw-`. Epics use explicit IDs `mw-e00`…`mw-e40`; children get hierarchical IDs `mw-e09.1`, `mw-e09.2`… |
 | Art tool | GPT image generation for concept art, textures, UI, icons, portraits — **Claude runs it** via Codex CLI (`codex exec`, owner's ChatGPT subscription; fallback `OPENAI_API_KEY`). |
 | 3D models | **Claude generates** via the Meshy or Tripo image-to-3D API from owner-approved flat images (provider chosen by bake-off spike `e37-3d-pipeline-decision`); CC0 low-poly kits for bulk props/environments. The owner never does 3D work. |

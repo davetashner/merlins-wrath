@@ -20,7 +20,7 @@
 
 ## 2. Brief
 
-<Location, time-of-day preset (style bible §3), distant landmarks visible (e.g. Mooring's Watch on the eastern spur, Bellhollow Priory's belfry on the hill beyond the Briarwood), mood.>
+<Location, time-of-day preset (style bible §3), distant landmarks visible (e.g. Mooring's Watch on the eastern spur, Bellwater Priory's belfry on the hill beyond the Briarwood), mood.>
 
 ## 3. Filled prompt
 
@@ -31,7 +31,7 @@
 Wide panoramic painted sky and distant landscape backdrop, seamless left-right wrap, horizon at vertical centre, no foreground objects, soft painterly clouds, atmospheric perspective.
 
 LOCATION: <…>. TIME OF DAY: <preset> — key <hex>, sky <hex>, fog <hex> (style bible §3).
-DISTANT SILHOUETTES: <ridge line, Mooring's Watch, Briarwood edge, Bellhollow Priory belfry> in <dusk/fog> values.
+DISTANT SILHOUETTES: <ridge line, Mooring's Watch, Briarwood edge, Bellwater Priory belfry> in <dusk/fog> values.
 CLOUDS: <big soft cumulus | streaks | overcast with a break of light>.
 SUN/MOON POSITION: <azimuth/elevation matching the scene's key light>.
 ```

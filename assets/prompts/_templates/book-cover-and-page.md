@@ -32,7 +32,7 @@
 
 In-world book asset, flat front-facing orthographic, aged leather or cloth binding with embossed motif, no readable text or letters (blank title plate or abstract ornament), even lighting.
 
-BOOK: <canon title from story bible §7.2–7.3, e.g. "Frostglass for the Careful" (frost primer) or "The Vesperine Hours" (Bellhollow Priory hymnal)>.
+BOOK: <canon title from story bible §7.2–7.3, e.g. "Frostglass for the Careful" (frost primer) or "The Vesperine Hours" (Bellwater Priory hymnal)>.
 COURT STATUS: <licensed: red-wax lantern seal | restricted: lantern seal + writ ribbon | forbidden: no seal, scraped/scorched patch> (style bible §5.3).
 FORMAT: <cover | single page | open spread>.
 BINDING / PAPER: <leather colour hex, metal corners, clasp; paper parchment #EFE2C4 with foxing>.

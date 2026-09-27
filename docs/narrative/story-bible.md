@@ -10,6 +10,9 @@
 
 ## 1. Title
 
+> **Decided 2026-09-27: _The Vesper Bell_** (ADR `docs/adr/0002-game-title.md`, bead `mw-e39.2`). The
+> evaluation below is kept as the record of how we got there. The Nightjar remains the creature's name.
+
 ### 1.1 Honest evaluation of "Merlin's Wrath"
 
 - **Merlin is not in this story**, and nothing in the MVP scenario wants him. Putting him in means
@@ -40,7 +43,7 @@
 | **Hornlight** | Evokes the minotaur and lanterns-in-the-dark; invented word, fully searchable. Meaning only lands after playing. |
 | **The Sleepwalkers of Briar Glen** | Honest mystery hook, pulp-novel charm. Long. |
 
-**Top pick: _Nightjar — The Labyrinth Beneath Briar Glen_.** Runner-up: *The Vesper Bell*.
+**Original top pick: _Nightjar — The Labyrinth Beneath Briar Glen_; runner-up _The Vesper Bell_.** The collision search chose *The Vesper Bell* (see the ADR).
 A trademark/name-collision search is required before the decision bead (`e39-title-decision`) closes.
 Everywhere below, "the game" is used; the working title stays until then.
 
@@ -116,7 +119,7 @@ highlands — and at the head of the **River Wend**, which rises from the hills 
 down the valley to the sea. Silver built the town and the river carried it away; silver is running out. Above the town: the Briarwood, a thick old forest of
 oak, holly and bramble. On a spur to the east, **Mooring's Watch**, a barony watchtower abandoned for
 forty years. North, into the hill: **the Deepworks**, Vane family silver mine. On the hill beyond the
-forest: **Bellhollow Priory**, the ruined Vesperine monastery. Under all of it: **the Knot**. A day
+forest: **Bellwater Priory**, the ruined Vesperine monastery. Under all of it: **the Knot**. A day
 downriver by ore barge, where the Wend meets the sea: **Wendmouth**, a small, rowdy harbour town that
 ships the valley's ore to faraway lands (§3.6).
 
@@ -141,7 +144,7 @@ humming low throat-songs that muffled the Nightjar's voice. Their statues all co
 
 **The Vesperine Order (about 300 years ago).** Human monks — scholars of sound and silence — followed
 old rumours of "the singing hill," found the last few Hornfolk wardens and made a pact. The monks built
-Bellhollow Priory directly over the Cradle, cut the **Sounding Shaft** straight down to it, and cast the
+Bellwater Priory directly over the Cradle, cut the **Sounding Shaft** straight down to it, and cast the
 **Vesper Bell**. Every dusk they rang vespers; the bell's note fell down the shaft and the Nightjar slept
 deeply. The Hornfolk kept watch below. The monks kept the books above. For three hundred years it
 worked. The Vesperines taught the valley to read, and Briar Glen was founded to feed and supply them.
@@ -251,7 +254,7 @@ signal mirror on the roof; a collapsed supply tunnel into the upper Deepworks.
 **The Deepworks (old mine)** — the boarded main gate with the Bell Line rule carved above it; the winch
 house; Vane's sealed lower gallery; the breach; the Rootcellar goblin camp in the old ore-sorting hall.
 
-**Bellhollow Priory (ruined monastery)** — the roofless nave; the choir with its singing-monk statues; the
+**Bellwater Priory (ruined monastery)** — the roofless nave; the choir with its singing-monk statues; the
 scriptorium (and its book mimics); the belfry with the silent, cracked Vesper Bell; the crypt (sealed
 from below); the cistern.
 
@@ -1057,7 +1060,7 @@ See 4.5 for main-quest specifics. General rules for all narrative content:
 - **Townsfolk:** rustic English/Celtic, plain surnames from trades and landscape (Pell, Hale, Fenn,
   Brand, Farrow, Lark, Tate). Nicknames welcome (Dot, Fitch).
 - **Vesperine (monastic):** Latinate or old-church first names (Corvin, Anselm, Ysolde); place names with
-  bell/vesper/hollow (Bellhollow).
+  bell/vesper/hollow (Bellwater).
 - **Hornfolk:** things are named by function in translation (the Knot, the Cradle, the Fold, the
   Standing Horn). Untranslated Hornfolk words are low and doubled ("thruum," "oorr"); use sparingly.
 - **Goblins:** short, kitchen- and garden-noun names (Kettleback, Snig, Nib, Mudge, Grubble).
@@ -1076,7 +1079,7 @@ See 4.5 for main-quest specifics. General rules for all narrative content:
 
 ### 11.2 Glossary
 - **Bell Line** — the depth below which the Vesperine rule forbade mining.
-- **Bellhollow Priory** — ruined Vesperine monastery over the Cradle.
+- **Bellwater Priory** — ruined Vesperine monastery over the Cradle.
 - **Brother Horn** — the minotaur; last Hornfolk warden.
 - **Clatter** — goblin name for the skeleton Brother Anselm Hobb.
 - **The Cradle** — heart of the Knot where the Nightjar sleeps.
