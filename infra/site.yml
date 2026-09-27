@@ -208,7 +208,10 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:ref:refs/heads/main"
+                # Jobs that declare an environment get an environment-scoped subject claim.
+                token.actions.githubusercontent.com:sub:
+                  - !Sub "repo:${GitHubRepo}:environment:production"
+                  - !Sub "repo:${GitHubRepo}:ref:refs/heads/main"
       Policies:
         - PolicyName: deploy-site
           PolicyDocument:
