@@ -43,4 +43,4 @@ jobs:
           aws s3 sync _site "s3://${{ vars.SITE_BUCKET }}" --delete \
             --cache-control "public, max-age=86400" --exclude "*.html"
       - name: Invalidate HTML
-        run: aws cloudfront create-invalidation --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/" "/*.html" --query Invalidation.Id --output text
+        run: aws cloudfront create-invalidation --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/*" --query Invalidation.Id --output text
