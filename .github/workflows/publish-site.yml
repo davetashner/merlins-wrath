@@ -1,0 +1,46 @@
+name: Publish site
+
+# Builds the site (currently the backlog) and publishes it to thevesperbell.com:
+# S3 origin behind CloudFront, deployed through a GitHub OIDC role (infra/site.yml).
+on:
+  push:
+    branches: [main]
+    paths: ['.beads/issues.jsonl', 'scripts/build-backlog-html.mjs', 'site/**', '.github/workflows/publish-site.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-site
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://thevesperbell.com/backlog.html
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build
+        run: |
+          mkdir -p _site
+          cp -R site/. _site/
+          node scripts/build-backlog-html.mjs .beads/issues.jsonl _site/backlog.html
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Upload
+        run: |
+          aws s3 sync _site "s3://${{ vars.SITE_BUCKET }}" --delete \
+            --cache-control "public, max-age=300" --exclude "*" --include "*.html"
+          aws s3 sync _site "s3://${{ vars.SITE_BUCKET }}" --delete \
+            --cache-control "public, max-age=86400" --exclude "*.html"
+      - name: Invalidate HTML
+        run: aws cloudfront create-invalidation --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/" "/*.html" --query Invalidation.Id --output text
