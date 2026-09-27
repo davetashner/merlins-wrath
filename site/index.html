@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Vesper Bell</title>
+<meta name="description" content="A browser fantasy RPG in development. Something beneath Briar Glen is singing the town's sleepers into the dark.">
+<meta property="og:title" content="The Vesper Bell">
+<meta property="og:description" content="A browser fantasy RPG in development. Something beneath Briar Glen is singing the town's sleepers into the dark.">
+<meta property="og:image" content="https://thevesperbell.com/img/title-1280.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Alegreya:ital,wght@0,400;0,500;1,400&display=swap">
+<link rel="preload" as="image" href="/img/title-1280.jpg" imagesrcset="/img/title-1280.jpg 1280w, /img/title-2560.jpg 2560w" imagesizes="100vw">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #1e1b2e;
+    --parchment: #efe2c4;
+    --cream: #fff4dc;
+    --muted: #c3b8cf;
+    --hearth: #e8a24a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--ink); color: var(--parchment); font: 1.1rem/1.65 "Alegreya", Georgia, serif; }
+  a { color: var(--hearth); }
+  a:focus-visible { outline: 2px solid var(--hearth); outline-offset: 3px; }
+
+  .hero { position: relative; min-height: min(88vh, 56.25vw + 12rem); display: grid; align-items: start;
+    background: var(--ink) image-set(url("/img/title-1280.jpg") 1x, url("/img/title-2560.jpg") 2x) center 40% / cover no-repeat; }
+  .hero::after { content: ""; position: absolute; inset: 0;
+    background: linear-gradient(100deg, rgba(21,19,31,.72) 0%, rgba(21,19,31,.35) 42%, rgba(21,19,31,0) 65%),
+                linear-gradient(to bottom, rgba(21,19,31,0) 60%, var(--ink) 100%); }
+  .hero-inner { position: relative; z-index: 1; padding: clamp(2.5rem, 8vw, 6rem) 16px 4rem clamp(16px, 6vw, 5rem); max-width: 44rem; }
+  h1 { margin: 0; font: 700 clamp(2.8rem, 9vw, 6.2rem)/.95 "Cinzel", "Trajan Pro", Georgia, serif; letter-spacing: .02em;
+    color: var(--cream); text-shadow: 0 2px 18px rgba(0,0,0,.6); text-wrap: balance; }
+  h1 .the { display: block; font-size: .38em; letter-spacing: .3em; font-weight: 500; color: var(--hearth); margin-bottom: .35em; }
+  .logline { margin: 1.4rem 0 0; font-size: clamp(1.1rem, 2.2vw, 1.35rem); color: var(--cream); max-width: 32rem; text-shadow: 0 1px 10px rgba(0,0,0,.7); }
+
+  main { padding: 0 16px 4rem; }
+  .col { max-width: 40rem; margin: 0 auto; }
+  .status { font: 500 1rem/1.4 "Cinzel", Georgia, serif; letter-spacing: .06em; color: var(--hearth); margin: 0 0 .6rem; }
+  p { margin: 0 0 1rem; }
+  .links { display: flex; flex-wrap: wrap; gap: .8rem 1.6rem; margin-top: 1.6rem; }
+  .links a { font-weight: 500; }
+  footer { padding: 2rem 16px 3rem; text-align: center; color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <h1><span class="the">The</span>Vesper Bell</h1>
+      <p class="logline">For three weeks, the people of Briar Glen have been walking out of their beds at night and not coming back. Something beneath the mine is singing.</p>
+    </div>
+  </header>
+  <main>
+    <div class="col">
+      <p class="status">In development</p>
+      <p>The Vesper Bell is a fantasy action RPG for the desktop browser. Play as a knight, archer, sorcerer or thief, and find that each one opens different doors: a wall to smash, a mechanism to shoot, a spell that freezes the river, a rooftop no one is watching.</p>
+      <p>Beneath the town lies a labyrinth, a minotaur the town calls a monster, and a bell that hasn't rung in sixty-one years.</p>
+      <div class="links">
+        <a href="/backlog.html">See what's being built</a>
+        <a href="https://github.com/davetashner/thevesperbell">Source on GitHub</a>
+      </div>
+    </div>
+  </main>
+  <footer>The Vesper Bell · a free game in progress</footer>
+</body>
+</html>

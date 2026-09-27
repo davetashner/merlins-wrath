@@ -56,6 +56,10 @@ loves the place.
 
 ---
 
+> **Key-art exception (owner, 2026-09-27):** marketing key art and the logo (`keyart-*`) may be richer and
+> more painterly than the in-game look, as long as they keep this palette and the world's canon. They are not
+> style anchors for in-game assets; `e37-asset-style-lock` uses in-game-style approvals only.
+
 ## 2. Palette
 
 All values are sRGB hex. The palette is enforced by a **palette LUT/ramp texture** (`tex-palette-master-01`)
