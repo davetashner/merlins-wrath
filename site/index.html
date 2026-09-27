@@ -34,6 +34,7 @@
   .hero::after { content: ""; position: absolute; inset: 0;
     background: linear-gradient(100deg, rgba(21,19,31,.72) 0%, rgba(21,19,31,.35) 42%, rgba(21,19,31,0) 65%),
                 linear-gradient(to bottom, rgba(21,19,31,0) 60%, var(--ink) 100%); }
+  @media (max-width: 720px) { .hero { background-position: 18% 40%; } }
   .hero-inner { position: relative; z-index: 1; padding: clamp(2.5rem, 8vw, 6rem) 16px 4rem clamp(16px, 6vw, 5rem); max-width: 44rem; }
   h1 { margin: 0; font: 700 clamp(2.8rem, 9vw, 6.2rem)/.95 "Cinzel", "Trajan Pro", Georgia, serif; letter-spacing: .02em;
     color: var(--cream); text-shadow: 0 2px 18px rgba(0,0,0,.6); text-wrap: balance; }
