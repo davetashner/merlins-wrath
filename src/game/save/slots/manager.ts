@@ -97,6 +97,9 @@ export type SaveSlotOutcome =
   /** Every manual slot is full: the player must pick one of `candidates` to overwrite. */
   | { readonly status: 'choose-overwrite'; readonly candidates: readonly SlotId[] };
 
+/** A save that was written. */
+export type SavedSlotOutcome = Extract<SaveSlotOutcome, { readonly status: 'saved' }>;
+
 /** Outcome of loading a slot into a world. */
 export type LoadSlotResult =
   | ({ readonly status: 'loaded'; readonly slot: SlotId } & Extract<LoadSaveResult, { ok: true }>)
@@ -140,13 +143,14 @@ export class SaveSlots {
   constructor(private readonly options: SaveSlotsOptions) {}
 
   /**
-   * Every slot in display order (manual, autosave, quicksave) with what it holds. Reads only the
-   * envelopes, never a world.
-   * @throws SaveStorageError when storage itself fails.
+   * Every slot in display order (manual, autosave, quicksave) — or just `slots`, in the order given —
+   * with what it holds. Reads only the envelopes, never a world.
+   * @throws RangeError for an unknown slot; SaveStorageError when storage itself fails.
    */
-  async list(): Promise<SlotSummary[]> {
+  async list(slots: readonly SlotId[] = ALL_SLOTS): Promise<SlotSummary[]> {
+    slots.forEach(assertSlot);
     const { store } = this.options;
-    return Promise.all(ALL_SLOTS.map(async (slot) => summarize(slot, await store.read(slot))));
+    return Promise.all(slots.map(async (slot) => summarize(slot, await store.read(slot))));
   }
 
   /**
@@ -180,6 +184,25 @@ export class SaveSlots {
     if (options.overwrite !== true && (await this.options.store.list()).includes(slot)) {
       return { status: 'confirm-overwrite', slot };
     }
+    return this.write(slot, label, world, input);
+  }
+
+  /**
+   * Saves `world` into `slot` whether or not it is occupied — for the autosave ring (mw-e30.5) and
+   * quicksave, which never ask. The replaced save becomes the slot's backup.
+   * @throws as `save`.
+   */
+  async overwrite(slot: SlotId, world: World, input: SaveSlotInput): Promise<SavedSlotOutcome> {
+    assertSlot(slot);
+    return this.write(slot, normalizeSlotLabel(input.label ?? ''), world, input);
+  }
+
+  private async write(
+    slot: SlotId,
+    label: string | undefined,
+    world: World,
+    input: SaveSlotInput,
+  ): Promise<SavedSlotOutcome> {
     const thumbnail = await captureThumbnail(input.captureThumbnail);
     const metadata: StoredSlotMetadata = {
       characterName: input.characterName,

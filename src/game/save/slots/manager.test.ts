@@ -293,10 +293,26 @@ describe('SaveSlots', () => {
     await expect(manager.load(bogus, world())).rejects.toThrow(RangeError);
     await expect(manager.delete(bogus, { confirmed: true })).rejects.toThrow(RangeError);
     await expect(manager.rename(bogus, 'x')).rejects.toThrow(RangeError);
+    await expect(manager.overwrite(bogus, world(), input)).rejects.toThrow(RangeError);
+    await expect(manager.list(['auto-1', bogus])).rejects.toThrow(RangeError);
     await expect(
       manager.save('manual-1', world(), { ...input, label: 'x'.repeat(41) }),
     ).rejects.toThrow(RangeError);
     await expect(manager.rename('manual-1', 'x'.repeat(41))).rejects.toThrow(RangeError);
+  });
+
+  it('overwrites an occupied slot without asking and lists just the slots asked for', async () => {
+    const store = new MemorySaveStore();
+    const manager = slots(store);
+    await manager.overwrite('auto-2', world(10), input);
+    const second = await manager.overwrite('auto-2', world(20), { ...input, label: ' Gate ' });
+    expect(second.slot).toBe('auto-2');
+    expect(second.summary.details?.label).toBe('Gate');
+    expect((await store.read('auto-2', 'backup')).status).toBe('ok');
+    expect(states(await manager.list(['auto-3', 'auto-2']))).toEqual([
+      'auto-3:empty',
+      'auto-2:ready',
+    ]);
   });
 
   it('passes storage failures through, leaving the slot as it was', async () => {
