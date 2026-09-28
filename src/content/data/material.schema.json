@@ -174,6 +174,20 @@
       },
       "additionalProperties": false,
       "description": "World-property defaults for objects of this material; omitted ones take the global default."
+    },
+    "burnt": {
+      "anyOf": [
+        {
+          "type": "string",
+          "const": "destroyed"
+        },
+        {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "x-contentRef": "material"
+        }
+      ],
+      "description": "Flammable materials only: what fire leaves when the fuel is spent: \"destroyed\" (it burns away) or the id of the material it becomes (e.g. \"charred\")."
     }
   },
   "required": [

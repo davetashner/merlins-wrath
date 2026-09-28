@@ -79,16 +79,34 @@ export interface FieldConfigInput {
   readonly gases?: Readonly<Record<string, Partial<ChannelSpec>>>;
 }
 
-/** The defaults: 0.5 m cells, 4,096 chunks (2 M cells), sleep after 60 calm ticks. */
+/**
+ * The defaults: 0.5 m cells, 4,096 chunks (2 M cells), sleep after 60 calm ticks. Heat, smoke and
+ * steam have an ambient loss (mw-e03.5: heat soaks into walls and radiates away, soot settles, steam
+ * condenses), so a fire in a sealed room still returns the room to ambient. Heat's loss keeps it
+ * local, about a metre around a fire, which is what fire spread and the field's cost both want; a
+ * temperature within 1 °C of ambient is calm. Each decay is large enough that the truncated per-tick
+ * loss keeps acting down to the channel's epsilon (loss stops below 1 / decay counts), so chunks
+ * settle and sleep.
+ */
 export const DEFAULT_FIELD_CONFIG: FieldConfig = Object.freeze({
   cellSize: 0.5,
   maxChunks: 4096,
   sleepTicks: 60,
-  temperature: { ambient: 20, min: -273.15, max: 10_000, diffusion: 0.1, decay: 0, epsilon: 0.05 },
+  temperature: {
+    ambient: 20,
+    min: -273.15,
+    max: 10_000,
+    diffusion: 0.1,
+    decay: 0.02,
+    epsilon: 1,
+  },
   moisture: { ambient: 0, min: 0, max: 1, diffusion: 0.02, decay: 0, epsilon: 0.001 },
   charge: { ambient: 0, min: 0, max: 10_000, diffusion: 0.15, decay: 0.05, epsilon: 0.01 },
   gas: { ambient: 0, min: 0, max: 1, diffusion: 0.08, decay: 0, epsilon: 0.0005 },
-  gases: {},
+  gases: {
+    smoke: { decay: 0.002, epsilon: 0.01 },
+    steam: { decay: 0.01, epsilon: 0.005 },
+  },
 });
 
 function fail(what: string, problem: string): never {
@@ -127,10 +145,13 @@ export function resolveFieldConfig(input: FieldConfigInput = {}): FieldConfig {
   if (!Number.isFinite(cellSize) || cellSize <= 0) fail('cellSize', 'must be a finite number > 0');
   const gas = checkChannel('gas', { ...d.gas, ...input.gas });
   const gases: Record<string, Partial<ChannelSpec>> = {};
-  for (const [id, override] of Object.entries(input.gases ?? {})) {
+  const overrides = input.gases ?? {};
+  for (const id of [...new Set([...Object.keys(d.gases), ...Object.keys(overrides)])].sort()) {
     if (!PROPERTY_ID_PATTERN.test(id)) fail(`gases["${id}"]`, 'must be a kebab-case gas id');
+    // Per id, the input's fields override the default override's (a gas id is merged, not replaced).
+    const override = { ...d.gases[id], ...overrides[id] };
     checkChannel(`gases["${id}"]`, { ...gas, ...override });
-    gases[id] = { ...override };
+    gases[id] = override;
   }
   return {
     cellSize,

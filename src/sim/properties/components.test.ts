@@ -4,6 +4,7 @@ import { Rng } from '../rng';
 import { hashWorld } from '../snapshot';
 import {
   addProperties,
+  assignProperty,
   entitiesWithProperty,
   forEachWithProperty,
   getProperty,
@@ -225,5 +226,43 @@ describe('world property components', () => {
     expectTypeOf<Extract<PropertyChange, { key: 'wetness' }>['new']>().toEqualTypeOf<number>();
     expectTypeOf<Extract<PropertyChange, { key: 'owner' }>['old']>().toEqualTypeOf<string>();
     expectTypeOf<PropertyChange['key']>().toEqualTypeOf<WorldPropertyKey>();
+  });
+});
+
+describe('assignProperty', () => {
+  it('sets an existing property at once, with one event and the source', () => {
+    const { w, id } = withEntity({ burning: false });
+    const seen = recordChanges(w);
+    expect(assignProperty(w, id, 'burning', true, { source: 9 })).toBe(true);
+    expect(readProperty(w, id, 'burning')).toBe(true);
+    expect(assignProperty(w, id, 'burning', true)).toBe(false);
+    w.events.flush();
+    expect(seen).toEqual([{ entity: id, key: 'burning', old: false, new: true, source: 9 }]);
+  });
+
+  it('adds a missing property (deferred during a step) and still reports the change', () => {
+    const w = world();
+    const id = w.spawn();
+    const seen = recordChanges(w);
+    w.addSystem({
+      name: 'ignite',
+      run: ({ world: self }) => {
+        assignProperty(self, id, 'burning', true);
+        expect(hasProperty(self, id, 'burning')).toBe(false); // lands at the end of the tick
+      },
+    });
+    w.step();
+    expect(readProperty(w, id, 'burning')).toBe(true);
+    expect(seen).toEqual([{ entity: id, key: 'burning', old: false, new: true, source: null }]);
+  });
+
+  it('adds a missing property equal to its default without an event', () => {
+    const w = world();
+    const id = w.spawn();
+    const seen = recordChanges(w);
+    expect(assignProperty(w, id, 'wetness', 0)).toBe(false);
+    expect(hasProperty(w, id, 'wetness')).toBe(true);
+    w.events.flush();
+    expect(seen).toEqual([]);
   });
 });

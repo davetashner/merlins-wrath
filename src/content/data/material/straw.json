@@ -2,7 +2,7 @@
   "$schema": "../material.schema.json",
   "id": "straw",
   "name": "Straw / hay",
-  "notes": "Straw, hay, thatch and bedding: hay carts, bales, stable floors, roofs. Very flammable (200 °C) and flares out fast (20 s). Density 100 kg/m³ (baled straw). Absorbs falls (0.8, bead note) and sound (0.7). A pile hides whoever is in it (opaque, hideable), as the Briar Glen hay carts need. Soft underfoot (−4 dB).",
+  "notes": "Straw, hay, thatch and bedding: hay carts, bales, stable floors, roofs. Very flammable (200 °C) and flares out fast (20 s). Density 100 kg/m³ (baled straw). Absorbs falls (0.8, bead note) and sound (0.7). A pile hides whoever is in it (opaque, hideable), as the Briar Glen hay carts need. Soft underfoot (−4 dB). Burns away completely (mw-e03.5).",
   "footstepLoudness": -4,
   "impactSound": "sfx-impact-straw",
   "properties": {
@@ -16,5 +16,6 @@
     "impactAbsorb": 0.8,
     "opaque": true,
     "hideable": true
-  }
+  },
+  "burnt": "destroyed"
 }

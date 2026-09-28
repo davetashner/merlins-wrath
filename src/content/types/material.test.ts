@@ -7,6 +7,8 @@ import { contentId, serializeContent } from '../schema.ts';
 import { describeContent } from '../testing.ts';
 import { worldPropertiesSchema } from '../world-properties.ts';
 import {
+  BURNT_DESTROYED,
+  burntMaterials,
   IMPACT_SOUND_PATTERN,
   materialPresets,
   materialSchema,
@@ -16,6 +18,7 @@ import {
 /** Every material the bead asks for, plus the default id and the canon glenstone. */
 const REQUIRED_MATERIALS = [
   'bone',
+  'charred',
   'cloth',
   'copper',
   'dry-wood',
@@ -46,8 +49,9 @@ const base = {
 } satisfies MaterialDefInput;
 
 /** Messages (with their paths) for a preset with `properties`, or [] when it is valid. */
-function problems(properties: Record<string, unknown>): string[] {
-  const result = materialSchema.safeParse({ ...base, properties });
+function problems(properties: Record<string, unknown>, burnt?: string): string[] {
+  const extra = burnt === undefined ? {} : { burnt };
+  const result = materialSchema.safeParse({ ...base, ...extra, properties });
   return result.success ? [] : result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
 }
 
@@ -59,8 +63,10 @@ describeContent('material', 'AC-1: passes the schema and consistency checks', (e
   expect(entry.notes.length).toBeGreaterThan(40); // a real explanation of the numbers
   const { flammable, ignitionPoint, fuel } = entry.properties;
   expect(
-    flammable === true ? [ignitionPoint !== undefined, (fuel ?? 0) > 0] : [true, true],
-  ).toEqual([true, true]);
+    flammable === true
+      ? [ignitionPoint !== undefined, (fuel ?? 0) > 0, entry.burnt !== undefined]
+      : [true, true, entry.burnt === undefined],
+  ).toEqual([true, true, true]);
 });
 
 describe('material presets', () => {
@@ -72,14 +78,66 @@ describe('material presets', () => {
   });
 
   it('AC-1: flammable without an ignitionPoint or fuel is rejected', () => {
-    expect(problems({ flammable: true })).toEqual([
+    expect(problems({ flammable: true }, 'destroyed')).toEqual([
       'properties.ignitionPoint: a flammable material needs an ignitionPoint',
       'properties.fuel: a flammable material needs fuel > 0',
     ]);
-    expect(problems({ flammable: true, ignitionPoint: 300, fuel: 0 })).toEqual([
+    expect(problems({ flammable: true, ignitionPoint: 300, fuel: 0 }, 'destroyed')).toEqual([
       'properties.fuel: a flammable material needs fuel > 0',
     ]);
-    expect(problems({ flammable: true, ignitionPoint: 300, fuel: 60 })).toEqual([]);
+    expect(problems({ flammable: true, ignitionPoint: 300, fuel: 60 }, 'destroyed')).toEqual([]);
+  });
+
+  it('mw-e03.5: a flammable material says what it burns to; nothing else may', () => {
+    const fuelled = { flammable: true, ignitionPoint: 300, fuel: 60 };
+    expect(problems(fuelled)).toEqual(['burnt: a flammable material needs a burnt state']);
+    expect(problems({}, 'destroyed')).toEqual([
+      'burnt: only a flammable material has a burnt state',
+    ]);
+    expect(problems(fuelled, 'Ash')).toEqual([expect.stringContaining('burnt')]);
+    expect(problems(fuelled, 'charred')).toEqual([]);
+  });
+
+  it('mw-e03.5: a burnt state naming a missing material fails with the file and pointer', () => {
+    const sources = [
+      {
+        path: 'data/material/wood.json',
+        text: JSON.stringify({
+          ...base,
+          id: 'wood',
+          burnt: 'ash',
+          properties: { flammable: true, ignitionPoint: 300, fuel: 60 },
+        }),
+      },
+    ];
+    let issues: readonly ContentIssue[] = [];
+    try {
+      loadContent(contentTypes, sources);
+    } catch (error) {
+      issues = (error as ContentLoadError).issues;
+    }
+    expect(issues).toEqual([
+      {
+        file: 'data/material/wood.json',
+        pointer: '/burnt',
+        message: 'material:wood references missing material:ash',
+      },
+    ]);
+  });
+
+  it('mw-e03.5: burntMaterials maps flammable materials to what they become (null = burns away)', () => {
+    const burnt = burntMaterials(loadGameContent().all('material'));
+    expect(Object.fromEntries(burnt)).toEqual({
+      cloth: null,
+      'dry-wood': 'charred',
+      ivy: null,
+      oil: null,
+      paper: null,
+      rope: null,
+      straw: null,
+      wood: 'charred',
+    });
+    expect(BURNT_DESTROYED).toBe('destroyed');
   });
 
   it('AC-1: ignitionPoint or fuel on a non-flammable material is rejected', () => {

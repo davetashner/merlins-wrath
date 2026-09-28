@@ -164,6 +164,29 @@ export function setProperty<K extends WorldPropertyKey>(
   return true;
 }
 
+/**
+ * Writes property `key` whether or not `entity` has it yet: an existing property is set at once (see
+ * `setProperty`); a missing one is added, which during a step takes effect at the end of the tick,
+ * and still queues one `propertyChanged` event (old = the value it read before, its default). Rules
+ * use it for live state a spawned object may lack (a crate from a preset has no `burning` until it
+ * first catches fire). Returns whether anything changed.
+ */
+export function assignProperty<K extends WorldPropertyKey>(
+  world: World<never>,
+  entity: EntityId,
+  key: K,
+  value: WorldPropertyValues[K],
+  options: PropertyWriteOptions = {},
+): boolean {
+  if (hasProperty(world, entity, key)) return setProperty(world, entity, key, value, options);
+  const old = readProperty(world, entity, key);
+  addProperties(world, entity, { [key]: value });
+  if (sameValue(old, value)) return false;
+  const change = { entity, key, old, new: detach(value), source: options.source ?? null };
+  world.events.emit(propertyChanged, change as PropertyChange); // key, old and new share one K
+  return true;
+}
+
 /** Entities that have property `key`, in ascending id order (valid until the next structural change). */
 export function entitiesWithProperty(
   world: World<never>,

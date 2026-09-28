@@ -13,17 +13,17 @@ type FlagKey = {
   [K in WorldPropertyKey]: WorldPropertyValues[K] extends boolean ? K : never;
 }[WorldPropertyKey];
 
-/** Wetness above this puts fire out and stops ignition. */
+/** Wetness at or above this puts fire out and stops ignition (mw-e03.5 AC-1, AC-5). */
 export const SOAKED_WETNESS = 0.5;
 
 /** Density of water, kg/m³: anything less dense floats. */
 export const WATER_DENSITY = 1000;
 
-/** Whether `entity` can catch fire right now: flammable, not soaked (wetness ≤ 0.5) and not frozen. */
+/** Whether `entity` can catch fire right now: flammable, not soaked (wetness < 0.5) and not frozen. */
 export function isFlammableNow(world: World<never>, entity: EntityId): boolean {
   return (
     readProperty(world, entity, 'flammable') &&
-    readProperty(world, entity, 'wetness') <= SOAKED_WETNESS &&
+    readProperty(world, entity, 'wetness') < SOAKED_WETNESS &&
     !readProperty(world, entity, 'frozen')
   );
 }

@@ -215,11 +215,20 @@ describe('renderMaterialsDoc', () => {
       material('lamp-glass', { lightEmitter: { intensity: 10, radius: 2 } }),
       material('plain', {}),
     ]);
-    expect(doc).toContain('| Material | Footsteps (dB) | Impact sound | `lightEmitter` |');
     expect(doc).toContain(
-      '| `lamp-glass` | -1 | `sfx-impact-glass` | `{"intensity":10,"radius":2}` |',
+      '| Material | Footsteps (dB) | Impact sound | Burns to | `lightEmitter` |',
     );
-    expect(doc).toContain('| `plain` | -1 | `sfx-impact-glass` | — |');
+    expect(doc).toContain(
+      '| `lamp-glass` | -1 | `sfx-impact-glass` | — | `{"intensity":10,"radius":2}` |',
+    );
+    expect(doc).toContain('| `plain` | -1 | `sfx-impact-glass` | — | — |');
     expect(doc).toContain('- **plain** (`plain`): plain notes');
+  });
+
+  it('shows what flammable materials burn to (mw-e03.5)', () => {
+    const doc = expectedDocs().get(MATERIALS_DOC) ?? '';
+    expect(doc).toContain('| `wood` | 2 | `sfx-impact-wood` | `charred` |');
+    expect(doc).toContain('| `straw` | -4 | `sfx-impact-straw` | `destroyed` |');
+    expect(doc).toContain('| `stone` | 0 | `sfx-impact-stone` | — |');
   });
 });
