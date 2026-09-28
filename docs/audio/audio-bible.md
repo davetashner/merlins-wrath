@@ -1,13 +1,14 @@
 # The Vesper Bell — Audio Bible
 
-> Status: **DRAFT v0.1 — awaiting owner sign-off** (bead `e38-audio-bible`).
+> Status: **SIGNED OFF v1.0 — 2026-09-27** (owner; bead `mw-e38.1`). Changes from here on need a change-log
+> entry (§10).
 > Subordinate to `CONSTITUTION.md`, `docs/backlog-contract.md` and aligned with `docs/art/style-bible.md`.
 > Music tool: **Suno** (human-in-the-loop: Claude writes the prompt, the owner generates and picks the take).
 > SFX tool: decided by `e38-sfx-tool-decision` — recommendation: **ElevenLabs Sound Effects API** (Claude-run), CC0 fallback (§9.4).
 > No voice acting in MVP.
 > Story names, locations, creatures and motifs are reconciled with `docs/narrative/story-bible.md` (**story
 > canon**); if they disagree, the story bible wins. The game's title is **The Vesper Bell**
-> (decided in `e39-title-decision`); "Merlin's Wrath" is only the original codename.
+> (decided in `mw-e39.2`, ADR-0002); "Merlin's Wrath" is only the original codename.
 
 ---
 
@@ -535,3 +536,20 @@ naming, so integration is a file swap.
    committed to the public repo — the raw files would be redistributed.
 4. Editing (trim, layer, pitch, normalise) is scripted in the import pipeline (ffmpeg); no manual DAW work
    is required of the owner.
+
+---
+
+## 10. Change log
+
+| Version | Date | Change | Approved by |
+|---|---|---|---|
+| v0.1 | 2026-09-27 | First draft: identity, adaptive design, location list, Suno notes, loudness and formats, naming, SFX palette and preambles, pipeline. | — |
+| **v1.0** | 2026-09-27 | Owner sign-off. Wendmouth cue notes follow story canon v1 (Stone Wharf, Stone Stair). | owner |
+
+**Open at sign-off (filed as beads, not blockers):**
+- Probe the SUNO STYLE PREAMBLE on Briar Glen and labyrinth explore tracks (`mw-e38.177`, owner). The approved
+  main theme (`music-title-main-theme`) is the first take made with the preamble.
+- Probe the SFX PREAMBLE on a footstep, a spell cast and a UI click (`mw-e38.178`, after the ElevenLabs
+  client `mw-e38.7`).
+- The §7.3 footstep surface ids must match the sim's acoustic material table exactly; enforced by a test in
+  `mw-e09.4` (AC-6).
