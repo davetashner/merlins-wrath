@@ -2,7 +2,7 @@
 // combat and the bestiary (constitution: enemies are creatures, not target dummies, and they are
 // data). Only id, family, stats, senses and locomotion are required; every other section has a
 // documented default filled at load, so later items (attacks e12.5, locomotion e12.6,
-// resistances e04.1/e12.7, factions e12.8, fears e12.10, personality e12.11, needs e12.12…) can
+// resistances and poise regen e04.1/e12.7, factions e12.8, fears e12.10, personality e12.11, needs e12.12…) can
 // extend their stub sub-schema here without touching existing creature files. The field reference
 // in docs/content/creature-schema.md is generated from this file (`pnpm content:docs`). Senses and
 // their reusable `sense` profiles live in sense.ts (e12.2); locomotion and its reusable `locomotion`
@@ -12,6 +12,7 @@
 
 import { z } from 'zod';
 import { contentId, ref } from '../schema.ts';
+import { poiseRegenSchema, resistancesSchema } from './damage.ts';
 import { creatureLocomotionSchema } from './locomotion.ts';
 import { creatureSensesSchema } from './sense.ts';
 
@@ -37,17 +38,7 @@ export const CREATURE_FAMILIES = [
 /** Size classes, smallest first (used for grabs, knockback, hiding spots and nav agent radius). */
 export const SIZE_CLASSES = ['tiny', 'small', 'medium', 'large', 'huge'] as const;
 
-/** Damage types of the damage model (e04.1). */
-export const DAMAGE_TYPES = [
-  'slash',
-  'pierce',
-  'blunt',
-  'fire',
-  'frost',
-  'shock',
-  'arcane',
-  'poison',
-] as const;
+export { DAMAGE_TYPES } from './damage.ts';
 
 /** Stances one creature takes toward another or toward the player (e12.8). */
 export const STANCES = [
@@ -78,7 +69,9 @@ const statsSchema = z
     poise: z
       .int()
       .nonnegative()
-      .describe('Maximum poise; poise damage beyond it staggers the creature (0 = any hit).'),
+      .describe(
+        'Maximum poise; poise damage that empties it staggers the creature (0 = any poise hit).',
+      ),
     mass: z.number().positive().describe('Mass in kilograms (knockback, grabs, pressure plates).'),
     size: z.enum(SIZE_CLASSES).describe('Size class.'),
   })
@@ -124,13 +117,8 @@ export const creatureSchema = z.strictObject({
     .array(contentId)
     .prefault([])
     .describe('World-property tags (e03), e.g. "flammable", "conductive".'),
-  resistances: z
-    .partialRecord(z.enum(DAMAGE_TYPES), z.number().min(0).max(3))
-    .prefault({})
-    .describe(
-      'Damage multiplier per damage type, 0–3: 0 = immune, below 1 resists, above 1 vulnerable. ' +
-        'Unlisted types take 1.',
-    ),
+  resistances: resistancesSchema,
+  poiseRegen: poiseRegenSchema,
   faction: contentId
     .default('unaligned')
     .describe('Faction id (e12.8); "unaligned" = belongs to no faction.'),

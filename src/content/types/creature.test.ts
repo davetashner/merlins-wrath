@@ -72,6 +72,7 @@ describe('creature schema', () => {
       attacks: [],
       properties: [],
       resistances: {},
+      poiseRegen: { delayTicks: 120, percentPerSecond: 25 },
       faction: 'unaligned',
       disposition: { towardPlayer: 'hostile' },
       fears: [],

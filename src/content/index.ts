@@ -22,7 +22,6 @@ export {
 export {
   CREATURE_FAMILIES,
   CREATURE_SCHEMA_VERSION,
-  DAMAGE_TYPES,
   PERSONALITY_TRAITS,
   SIZE_CLASSES,
   STANCES,
@@ -30,6 +29,13 @@ export {
   type CreatureDef,
   type CreatureDefInput,
 } from './types/creature.ts';
+export {
+  DAMAGE_TYPES,
+  MAX_RESISTANCE,
+  poiseRegenSchema,
+  resistancesSchema,
+  type DamageTypeName,
+} from './types/damage.ts';
 export {
   AREA_REQUIREMENTS,
   GAITS,

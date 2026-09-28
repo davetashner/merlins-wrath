@@ -57,7 +57,7 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 9007199254740991,
-          "description": "Maximum poise; poise damage beyond it staggers the creature (0 = any hit)."
+          "description": "Maximum poise; poise damage that empties it staggers the creature (0 = any poise hit)."
         },
         "mass": {
           "type": "number",
@@ -656,6 +656,28 @@
         "minimum": 0,
         "maximum": 3
       }
+    },
+    "poiseRegen": {
+      "description": "How poise recovers after poise damage.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "delayTicks": {
+          "default": 120,
+          "description": "Sim ticks (60 Hz) without poise damage before poise starts to regenerate.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "percentPerSecond": {
+          "default": 25,
+          "description": "Poise regained per second once regenerating, as a percentage of max poise.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": false
     },
     "faction": {
       "default": "unaligned",

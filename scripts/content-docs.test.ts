@@ -63,7 +63,7 @@ describe('content-docs', () => {
       expect(doc).toContain(row);
     }
     const documented = [...doc.matchAll(/^\| `([^`]+)`/gm)].map((m) => m[1]);
-    expect(documented).toHaveLength(109);
+    expect(documented).toHaveLength(112);
   });
 
   it('writes one doc per content type, creating docs/content, then --check passes', () => {

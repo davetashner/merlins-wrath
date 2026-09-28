@@ -13,7 +13,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `tags` | list of id | `[]` | Free-form tags read by AI and quests, e.g. "leader", "undead". |
 | `stats` | object | required | Core stats. |
 | `stats.health` | integer > 0 | required | Maximum health. |
-| `stats.poise` | integer ≥ 0 | required | Maximum poise; poise damage beyond it staggers the creature (0 = any hit). |
+| `stats.poise` | integer ≥ 0 | required | Maximum poise; poise damage that empties it staggers the creature (0 = any poise hit). |
 | `stats.mass` | number > 0 | required | Mass in kilograms (knockback, grabs, pressure plates). |
 | `stats.size` | `"tiny"` \| `"small"` \| `"medium"` \| `"large"` \| `"huge"` | required | Size class. |
 | `senses` | ref → sense or object | required | A `sense` profile id; or `{ base, …overrides }` (named fields replace the base’s, null removes a sense or channel); or a complete inline profile (no base). |
@@ -91,6 +91,9 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `attacks` | list of ref → attack | `[]` | Attack ids it can use (e12.5); none = it never attacks. |
 | `properties` | list of id | `[]` | World-property tags (e03), e.g. "flammable", "conductive". |
 | `resistances` | map of `"slash"` \| `"pierce"` \| `"blunt"` \| `"fire"` \| `"frost"` \| `"shock"` \| `"arcane"` \| `"poison"` → number 0–3 | `{}` | Damage multiplier per damage type, 0–3: 0 = immune, below 1 resists, above 1 vulnerable. Unlisted types take 1. |
+| `poiseRegen` | object | `{}` | How poise recovers after poise damage. |
+| `poiseRegen.delayTicks` | integer ≥ 0 | `120` | Sim ticks (60 Hz) without poise damage before poise starts to regenerate. |
+| `poiseRegen.percentPerSecond` | number 0–100 | `25` | Poise regained per second once regenerating, as a percentage of max poise. |
 | `faction` | id | `"unaligned"` | Faction id (e12.8); "unaligned" = belongs to no faction. |
 | `disposition` | object | `{}` | Default disposition; spawn points and runtime state can override it. |
 | `disposition.towardPlayer` | `"ally"` \| `"friendly"` \| `"neutral"` \| `"wary"` \| `"hostile"` \| `"prey"` \| `"predator"` | `"hostile"` | Starting stance toward the player. |
