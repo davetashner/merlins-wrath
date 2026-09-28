@@ -1,0 +1,32 @@
+name: PR lint
+
+# Checks the PR body's Closes lines (mw-e00.8). The job name `pr-lint` is referenced by branch
+# protection (mw-e00.10); keep it stable. `edited` re-runs it when the body changes, and
+# `labeled`/`unlabeled` when a maintainer adds or removes the `no-bead` label.
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-lint-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7 # the PR head's .beads/issues.jsonl
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      # The body comes from the event payload through env vars, never interpolated into the script.
+      # Dependabot PRs are exempt by author.
+      - run: node scripts/pr-body-lint-cli.ts
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
