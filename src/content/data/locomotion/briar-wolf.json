@@ -1,0 +1,19 @@
+{
+  "$schema": "../locomotion.schema.json",
+  "id": "briar-wolf",
+  "name": "Briar Wolf",
+  "notes": "Briar Wolves (story bible §8, style bible §5.2: low horizontal wedge). Quadruped agent 0.4 m radius, 0.9 m tall. Fast walkers: trot 1.8, stalk 1.2 and a 9 m/s run (real wolves sprint 13–18 m/s; capped so the player can reach a door or climb in time). Nimble on the ground: 0.4 m steps, 50° slopes, 1.2 m jumps, 2.5 m drops. They cannot climb at all and cannot open doors, so height and a closed door are the answer to a pack. They wade to 0.7 m and swim reluctantly (surface only, 1.5× cost in shallows, 4× in deep water).",
+  "agent": { "radius": 0.4, "height": 0.9 },
+  "modes": {
+    "walk": {
+      "speeds": { "sneak": 1.2, "walk": 1.8, "run": 9.0 },
+      "stepHeight": 0.4,
+      "maxSlope": 50,
+      "jumpHeight": 1.2,
+      "maxDrop": 2.5,
+      "wadeDepth": 0.7
+    },
+    "swim": { "speeds": { "sneak": 0.6, "walk": 0.9, "run": 1.3 }, "dives": false }
+  },
+  "areaCosts": { "water-shallow": 1.5, "water-deep": 4 }
+}

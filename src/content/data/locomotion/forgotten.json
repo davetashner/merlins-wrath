@@ -1,0 +1,18 @@
+{
+  "$schema": "../locomotion.schema.json",
+  "id": "forgotten",
+  "name": "Forgotten (shamble)",
+  "notes": "The Forgotten (story bible §8): monks and miners who walked into the song, repeating old habits. Human-sized agent (0.35 m, 1.8 m). They shamble: sneak 0.6, walk 0.9, and only a lurching 2.6 m/s run, so a player who is spotted can still walk briskly away. Stiff joints: 0.35 m steps, 35° slopes, they never jump and never climb, so a ladder or a vaulted wall is a real refuge. Bones do not care about falls (they crumble and reassemble, a behaviour, not locomotion), so they step off 6 m drops. They wade to 1.2 m but cannot swim: deep water stops them. They still open doors out of habit (monks walking their old rounds).",
+  "agent": { "radius": 0.35, "height": 1.8 },
+  "modes": {
+    "walk": {
+      "speeds": { "sneak": 0.6, "walk": 0.9, "run": 2.6 },
+      "stepHeight": 0.35,
+      "maxSlope": 35,
+      "jumpHeight": 0,
+      "maxDrop": 6,
+      "wadeDepth": 1.2
+    }
+  },
+  "opensDoors": true
+}

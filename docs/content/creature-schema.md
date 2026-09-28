@@ -38,9 +38,56 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `senses.special.<key>.minStrength` | number 0–1 | — | Weakest signal it registers, 0–1 (after range falloff). |
 | `senses.special.<key>.requiresLineOfSight` | boolean | — | Whether walls block it (false = senses through walls and floors). |
 | `senses.special.<key>.requiresMovement` | boolean | — | Whether it only senses targets that are moving. |
-| `locomotion` | list of object (at least 1) | required | Locomotion modes (stub; e12.6 adds gaits, step/jump heights and nav permissions). |
-| `locomotion[].mode` | `"walk"` \| `"climb"` \| `"fly"` \| `"swim"` \| `"burrow"` \| `"wallcrawl"` \| `"stationary"` | required | How it moves. |
-| `locomotion[].speed` | number ≥ 0 | required | Top speed in this mode, metres per second (0 when stationary). |
+| `locomotion` | ref → locomotion or object | required | A `locomotion` profile id; or `{ base, …overrides }` (named fields replace the base’s, null removes a mode or area cost); or a complete inline profile (no base). |
+| `locomotion.base` | ref → locomotion | — | Locomotion profile to start from; the other fields override it. Absent = the object is a complete inline profile. |
+| `locomotion.agent` | object | — | Agent size fields to override. |
+| `locomotion.agent.radius` | number > 0 | — | Nav agent radius, m (clearance from walls). |
+| `locomotion.agent.height` | number > 0 | — | Nav agent height, m (headroom it needs). |
+| `locomotion.modes` | object | — | Modes to override or add, field by field; a mode the base lacks is given in full. |
+| `locomotion.modes.walk` | object or null | — | Walking on the navmesh. Fields to override; null = cannot move this way. |
+| `locomotion.modes.walk.speeds` | object | — | Gait speeds to override, m/s. |
+| `locomotion.modes.walk.speeds.sneak` | number > 0 | — | Sneak speed, m/s (investigate, stalk). |
+| `locomotion.modes.walk.speeds.walk` | number > 0 | — | Walk speed, m/s (patrol, idle); at least sneak. |
+| `locomotion.modes.walk.speeds.run` | number > 0 | — | Run speed, m/s (chase, combat, flee); at least walk. |
+| `locomotion.modes.walk.stepHeight` | number ≥ 0 | — | Tallest step it walks up without a jump, m; at most agent.height. |
+| `locomotion.modes.walk.maxSlope` | number 0–90 | — | Steepest walkable slope, degrees. |
+| `locomotion.modes.walk.jumpHeight` | number ≥ 0 | — | Highest ledge it can jump up onto, m (jump links); 0 = never jumps. |
+| `locomotion.modes.walk.maxDrop` | number ≥ 0 | — | Highest drop it takes deliberately, m (drop links). |
+| `locomotion.modes.walk.wadeDepth` | number ≥ 0 | — | Deepest water it wades through, m; 0 = keeps out of water. |
+| `locomotion.modes.climb` | object or null | — | Climbing surfaces marked `climbable` (climb links). Fields to override; null = cannot move this way. |
+| `locomotion.modes.climb.speeds` | object | — | Gait speeds to override, m/s. |
+| `locomotion.modes.climb.speeds.sneak` | number > 0 | — | Sneak speed, m/s (investigate, stalk). |
+| `locomotion.modes.climb.speeds.walk` | number > 0 | — | Walk speed, m/s (patrol, idle); at least sneak. |
+| `locomotion.modes.climb.speeds.run` | number > 0 | — | Run speed, m/s (chase, combat, flee); at least walk. |
+| `locomotion.modes.climb.maxGrade` | integer 1–3 | — | Hardest `climbable` grade it climbs: 1 ladders and ivy, 2 rough walls, 3 sheer. |
+| `locomotion.modes.fly` | object or null | — | Kinematic flight at a height offset; also crosses gaps and water. Fields to override; null = cannot move this way. |
+| `locomotion.modes.fly.speeds` | object | — | Gait speeds to override, m/s. |
+| `locomotion.modes.fly.speeds.sneak` | number > 0 | — | Sneak speed, m/s (investigate, stalk). |
+| `locomotion.modes.fly.speeds.walk` | number > 0 | — | Walk speed, m/s (patrol, idle); at least sneak. |
+| `locomotion.modes.fly.speeds.run` | number > 0 | — | Run speed, m/s (chase, combat, flee); at least walk. |
+| `locomotion.modes.fly.maxAltitude` | number > 0 | — | Highest it flies above the ground below, m (height-offset flight, e11.4). |
+| `locomotion.modes.swim` | object or null | — | Swimming in water too deep to wade. Fields to override; null = cannot move this way. |
+| `locomotion.modes.swim.speeds` | object | — | Gait speeds to override, m/s. |
+| `locomotion.modes.swim.speeds.sneak` | number > 0 | — | Sneak speed, m/s (investigate, stalk). |
+| `locomotion.modes.swim.speeds.walk` | number > 0 | — | Walk speed, m/s (patrol, idle); at least sneak. |
+| `locomotion.modes.swim.speeds.run` | number > 0 | — | Run speed, m/s (chase, combat, flee); at least walk. |
+| `locomotion.modes.swim.dives` | boolean | — | Whether it swims underwater (false = surface only). |
+| `locomotion.modes.burrow` | object or null | — | Digging through diggable materials (burrow links). Fields to override; null = cannot move this way. |
+| `locomotion.modes.burrow.speeds` | object | — | Gait speeds to override, m/s. |
+| `locomotion.modes.burrow.speeds.sneak` | number > 0 | — | Sneak speed, m/s (investigate, stalk). |
+| `locomotion.modes.burrow.speeds.walk` | number > 0 | — | Walk speed, m/s (patrol, idle); at least sneak. |
+| `locomotion.modes.burrow.speeds.run` | number > 0 | — | Run speed, m/s (chase, combat, flee); at least walk. |
+| `locomotion.modes.burrow.materials` | list of ref → material (at least 1) | — | Material presets it digs through (burrow links), e.g. "earth". |
+| `locomotion.modes.wallcrawl` | object or null | — | Crawling on any solid wall, whatever its climbing grade. Fields to override; null = cannot move this way. |
+| `locomotion.modes.wallcrawl.speeds` | object | — | Gait speeds to override, m/s. |
+| `locomotion.modes.wallcrawl.speeds.sneak` | number > 0 | — | Sneak speed, m/s (investigate, stalk). |
+| `locomotion.modes.wallcrawl.speeds.walk` | number > 0 | — | Walk speed, m/s (patrol, idle); at least sneak. |
+| `locomotion.modes.wallcrawl.speeds.run` | number > 0 | — | Run speed, m/s (chase, combat, flee); at least walk. |
+| `locomotion.modes.wallcrawl.ceilings` | boolean | — | Whether it also crawls upside down across ceilings. |
+| `locomotion.modes.stationary` | object or null | — | Never moves; must be its only mode. null removes it. |
+| `locomotion.squeezes` | boolean | — | Overrides whether it fits through crawlspaces. |
+| `locomotion.opensDoors` | boolean | — | Overrides whether it opens unlocked doors. |
+| `locomotion.areaCosts` | map of `"ground"` \| `"water-shallow"` \| `"water-deep"` \| `"crawlspace"` → number 0.1–100 or null | — | Area costs to override (ground, water-shallow, water-deep, crawlspace); null resets one to 1. |
 | `attacks` | list of ref → attack | `[]` | Attack ids it can use (e12.5); none = it never attacks. |
 | `properties` | list of id | `[]` | World-property tags (e03), e.g. "flammable", "conductive". |
 | `resistances` | map of `"slash"` \| `"pierce"` \| `"blunt"` \| `"fire"` \| `"frost"` \| `"shock"` \| `"arcane"` \| `"poison"` → number 0–3 | `{}` | Damage multiplier per damage type, 0–3: 0 = immune, below 1 resists, above 1 vulnerable. Unlisted types take 1. |

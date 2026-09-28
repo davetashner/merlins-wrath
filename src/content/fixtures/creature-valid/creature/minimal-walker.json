@@ -15,5 +15,17 @@
     },
     "hearing": { "thresholdDb": 30, "range": 25 }
   },
-  "locomotion": [{ "mode": "walk", "speed": 1.5 }]
+  "locomotion": {
+    "agent": { "radius": 0.35, "height": 1.8 },
+    "modes": {
+      "walk": {
+        "speeds": { "sneak": 1, "walk": 1.5, "run": 5 },
+        "stepHeight": 0.4,
+        "maxSlope": 45,
+        "jumpHeight": 0.6,
+        "maxDrop": 2.5,
+        "wadeDepth": 1.2
+      }
+    }
+  }
 }

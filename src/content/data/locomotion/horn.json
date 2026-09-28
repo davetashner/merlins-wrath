@@ -1,0 +1,18 @@
+{
+  "$schema": "../locomotion.schema.json",
+  "id": "horn",
+  "name": "Brother Horn (minotaur)",
+  "notes": "Brother Horn (story bible §8): the last Hornfolk warden, huge and heavy. Agent 0.9 m radius and 2.9 m tall: he needs wide, high passages, never fits a crawlspace and cannot climb, so the goblins' tunnels and the thief's rooftops are where he cannot follow. Unhurried walk 1.7 m/s and a heavy stalk of 1.2, but his charge runs at 7.5 m/s (faster than a player sprint, over a short distance; charge tuning is e13.13). Long legs: 0.6 m steps, but too heavy to jump more than 0.5 m, and he avoids drops over 3 m and slopes over 35°. Wades to 1.6 m (chest height on him); does not swim. Opens doors (he is the warden).",
+  "agent": { "radius": 0.9, "height": 2.9 },
+  "modes": {
+    "walk": {
+      "speeds": { "sneak": 1.2, "walk": 1.7, "run": 7.5 },
+      "stepHeight": 0.6,
+      "maxSlope": 35,
+      "jumpHeight": 0.5,
+      "maxDrop": 3,
+      "wadeDepth": 1.6
+    }
+  },
+  "opensDoors": true
+}

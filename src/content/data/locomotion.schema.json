@@ -1,0 +1,384 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Profile id creatures refer to, e.g. \"goblin\"."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (editor and docs)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why these values (canon, real-world reference, intended users), for owner review."
+    },
+    "agent": {
+      "type": "object",
+      "properties": {
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Nav agent radius, m (clearance from walls)."
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Nav agent height, m (headroom it needs)."
+        }
+      },
+      "required": [
+        "radius",
+        "height"
+      ],
+      "additionalProperties": false,
+      "description": "Nav-mesh agent size."
+    },
+    "modes": {
+      "type": "object",
+      "properties": {
+        "walk": {
+          "description": "Walking on the navmesh.",
+          "type": "object",
+          "properties": {
+            "speeds": {
+              "type": "object",
+              "properties": {
+                "sneak": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Sneak speed, m/s (investigate, stalk)."
+                },
+                "walk": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                },
+                "run": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                }
+              },
+              "required": [
+                "sneak",
+                "walk",
+                "run"
+              ],
+              "additionalProperties": false,
+              "description": "Speed per gait, m/s."
+            },
+            "stepHeight": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Tallest step it walks up without a jump, m; at most agent.height."
+            },
+            "maxSlope": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 90,
+              "description": "Steepest walkable slope, degrees."
+            },
+            "jumpHeight": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Highest ledge it can jump up onto, m (jump links); 0 = never jumps."
+            },
+            "maxDrop": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Highest drop it takes deliberately, m (drop links)."
+            },
+            "wadeDepth": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Deepest water it wades through, m; 0 = keeps out of water."
+            }
+          },
+          "required": [
+            "speeds",
+            "stepHeight",
+            "maxSlope",
+            "jumpHeight",
+            "maxDrop",
+            "wadeDepth"
+          ],
+          "additionalProperties": false
+        },
+        "climb": {
+          "description": "Climbing surfaces marked `climbable` (climb links).",
+          "type": "object",
+          "properties": {
+            "speeds": {
+              "type": "object",
+              "properties": {
+                "sneak": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Sneak speed, m/s (investigate, stalk)."
+                },
+                "walk": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                },
+                "run": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                }
+              },
+              "required": [
+                "sneak",
+                "walk",
+                "run"
+              ],
+              "additionalProperties": false,
+              "description": "Speed per gait, m/s."
+            },
+            "maxGrade": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3,
+              "description": "Hardest `climbable` grade it climbs: 1 ladders and ivy, 2 rough walls, 3 sheer."
+            }
+          },
+          "required": [
+            "speeds",
+            "maxGrade"
+          ],
+          "additionalProperties": false
+        },
+        "fly": {
+          "description": "Kinematic flight at a height offset; also crosses gaps and water.",
+          "type": "object",
+          "properties": {
+            "speeds": {
+              "type": "object",
+              "properties": {
+                "sneak": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Sneak speed, m/s (investigate, stalk)."
+                },
+                "walk": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                },
+                "run": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                }
+              },
+              "required": [
+                "sneak",
+                "walk",
+                "run"
+              ],
+              "additionalProperties": false,
+              "description": "Speed per gait, m/s."
+            },
+            "maxAltitude": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Highest it flies above the ground below, m (height-offset flight, e11.4)."
+            }
+          },
+          "required": [
+            "speeds",
+            "maxAltitude"
+          ],
+          "additionalProperties": false
+        },
+        "swim": {
+          "description": "Swimming in water too deep to wade.",
+          "type": "object",
+          "properties": {
+            "speeds": {
+              "type": "object",
+              "properties": {
+                "sneak": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Sneak speed, m/s (investigate, stalk)."
+                },
+                "walk": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                },
+                "run": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                }
+              },
+              "required": [
+                "sneak",
+                "walk",
+                "run"
+              ],
+              "additionalProperties": false,
+              "description": "Speed per gait, m/s."
+            },
+            "dives": {
+              "type": "boolean",
+              "description": "Whether it swims underwater (false = surface only)."
+            }
+          },
+          "required": [
+            "speeds",
+            "dives"
+          ],
+          "additionalProperties": false
+        },
+        "burrow": {
+          "description": "Digging through diggable materials (burrow links).",
+          "type": "object",
+          "properties": {
+            "speeds": {
+              "type": "object",
+              "properties": {
+                "sneak": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Sneak speed, m/s (investigate, stalk)."
+                },
+                "walk": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                },
+                "run": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                }
+              },
+              "required": [
+                "sneak",
+                "walk",
+                "run"
+              ],
+              "additionalProperties": false,
+              "description": "Speed per gait, m/s."
+            },
+            "materials": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "material"
+              },
+              "description": "Material presets it digs through (burrow links), e.g. \"earth\"."
+            }
+          },
+          "required": [
+            "speeds",
+            "materials"
+          ],
+          "additionalProperties": false
+        },
+        "wallcrawl": {
+          "description": "Crawling on any solid wall, whatever its climbing grade.",
+          "type": "object",
+          "properties": {
+            "speeds": {
+              "type": "object",
+              "properties": {
+                "sneak": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Sneak speed, m/s (investigate, stalk)."
+                },
+                "walk": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                },
+                "run": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                }
+              },
+              "required": [
+                "sneak",
+                "walk",
+                "run"
+              ],
+              "additionalProperties": false,
+              "description": "Speed per gait, m/s."
+            },
+            "ceilings": {
+              "type": "boolean",
+              "description": "Whether it also crawls upside down across ceilings."
+            }
+          },
+          "required": [
+            "speeds",
+            "ceilings"
+          ],
+          "additionalProperties": false
+        },
+        "stationary": {
+          "description": "Never moves; must be its only mode.",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false,
+      "description": "Locomotion modes by name, at least one; absent = it cannot move that way."
+    },
+    "squeezes": {
+      "default": false,
+      "description": "Whether it fits through crawlspaces (nav area `crawlspace`).",
+      "type": "boolean"
+    },
+    "opensDoors": {
+      "default": false,
+      "description": "Whether it opens unlocked doors (door links).",
+      "type": "boolean"
+    },
+    "areaCosts": {
+      "description": "Path-cost multiplier per nav area (ground, water-shallow, water-deep, crawlspace); unlisted areas cost 1.",
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "enum": [
+          "ground",
+          "water-shallow",
+          "water-deep",
+          "crawlspace"
+        ]
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0.1,
+        "maximum": 100,
+        "description": "Path-cost multiplier, 0.1–100: below 1 prefers the area, above 1 avoids it."
+      }
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "agent",
+    "modes"
+  ],
+  "additionalProperties": false
+}

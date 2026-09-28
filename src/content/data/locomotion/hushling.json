@@ -1,0 +1,11 @@
+{
+  "$schema": "../locomotion.schema.json",
+  "id": "hushling",
+  "name": "Hushling (drift)",
+  "notes": "Hushlings (story bible §8): child-sized figures of grey fog. Agent 0.3 m radius, 1.2 m tall. They do not walk: they drift a hand above the floor, modelled as flight capped at 1.5 m altitude, so they cross water, rubble and gaps silently but never rise to the rafters (a high ledge is still safe). Slow and eerie: 0.6 sneak, 1.0 drift, 2.5 m/s when they rush a sound, well below a running player; silence, not speed, is how you escape them. Fog seeps through crawlspaces and under gaps (squeezes) but cannot work a door handle.",
+  "agent": { "radius": 0.3, "height": 1.2 },
+  "modes": {
+    "fly": { "speeds": { "sneak": 0.6, "walk": 1.0, "run": 2.5 }, "maxAltitude": 1.5 }
+  },
+  "squeezes": true
+}

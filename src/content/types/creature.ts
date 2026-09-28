@@ -5,12 +5,14 @@
 // resistances e04.1/e12.7, factions e12.8, fears e12.10, personality e12.11, needs e12.12…) can
 // extend their stub sub-schema here without touching existing creature files. The field reference
 // in docs/content/creature-schema.md is generated from this file (`pnpm content:docs`). Senses and
-// their reusable `sense` profiles live in sense.ts (e12.2).
+// their reusable `sense` profiles live in sense.ts (e12.2); locomotion and its reusable `locomotion`
+// profiles in locomotion.ts (e12.6).
 //
 // Units: metres, kilograms, degrees, metres per second. Anything timed in ticks says so in its name.
 
 import { z } from 'zod';
 import { contentId, ref } from '../schema.ts';
+import { creatureLocomotionSchema } from './locomotion.ts';
 import { creatureSensesSchema } from './sense.ts';
 
 /** Current CreatureDef schema version; bump it (and add a migration) on breaking changes. */
@@ -47,17 +49,6 @@ export const DAMAGE_TYPES = [
   'poison',
 ] as const;
 
-/** Locomotion modes (e12.6). `stationary` is how a creature that never moves declares it. */
-export const LOCOMOTION_MODES = [
-  'walk',
-  'climb',
-  'fly',
-  'swim',
-  'burrow',
-  'wallcrawl',
-  'stationary',
-] as const;
-
 /** Stances one creature takes toward another or toward the player (e12.8). */
 export const STANCES = [
   'ally',
@@ -79,7 +70,6 @@ export const PERSONALITY_TRAITS = [
   'greed',
 ] as const;
 
-const metres = z.number().nonnegative();
 const unit = z.number().min(0).max(1);
 
 const statsSchema = z
@@ -93,19 +83,6 @@ const statsSchema = z
     size: z.enum(SIZE_CLASSES).describe('Size class.'),
   })
   .describe('Core stats.');
-
-const locomotionSchema = z
-  .array(
-    z.strictObject({
-      mode: z.enum(LOCOMOTION_MODES).describe('How it moves.'),
-      speed: metres.describe('Top speed in this mode, metres per second (0 when stationary).'),
-    }),
-  )
-  .min(1)
-  .refine((modes) => new Set(modes.map((m) => m.mode)).size === modes.length, {
-    message: 'each locomotion mode may appear only once',
-  })
-  .describe('Locomotion modes (stub; e12.6 adds gaits, step/jump heights and nav permissions).');
 
 const fearSchema = z.strictObject({
   kind: z.enum(['property', 'faction', 'event']).describe('What kind of stimulus it fears.'),
@@ -138,7 +115,7 @@ export const creatureSchema = z.strictObject({
     .describe('Free-form tags read by AI and quests, e.g. "leader", "undead".'),
   stats: statsSchema,
   senses: creatureSensesSchema,
-  locomotion: locomotionSchema,
+  locomotion: creatureLocomotionSchema,
   attacks: z
     .array(ref('attack'))
     .prefault([])

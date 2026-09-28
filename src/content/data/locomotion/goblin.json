@@ -1,0 +1,21 @@
+{
+  "$schema": "../locomotion.schema.json",
+  "id": "goblin",
+  "name": "Rootcellar goblin",
+  "notes": "Rootcellar Goblins (story bible §8, style bible §5.2): small, clever scavengers, head a third of their height. Agent 0.3 m radius and 1.1 m tall, so they fit crawlspaces (squeezes) that the player and Horn cannot, and they prefer them (0.8×: their own tunnels). Quick: sneak 1.0, walk 1.6, run 4.5 m/s, a little slower than a human sprint but they know the shortcuts. Good climbers up to grade 2 (rough walls, crates, rafters) at 0.5–1.4 m/s. Short legs: 0.3 m steps, 0.8 m jumps, 3 m drops. Wade only to 0.5 m (waist-deep for them) and do not swim. Open doors (they are people with a camp).",
+  "agent": { "radius": 0.3, "height": 1.1 },
+  "modes": {
+    "walk": {
+      "speeds": { "sneak": 1.0, "walk": 1.6, "run": 4.5 },
+      "stepHeight": 0.3,
+      "maxSlope": 45,
+      "jumpHeight": 0.8,
+      "maxDrop": 3,
+      "wadeDepth": 0.5
+    },
+    "climb": { "speeds": { "sneak": 0.5, "walk": 0.8, "run": 1.4 }, "maxGrade": 2 }
+  },
+  "squeezes": true,
+  "opensDoors": true,
+  "areaCosts": { "crawlspace": 0.8 }
+}

@@ -252,37 +252,368 @@
       "description": "A `sense` profile id; or `{ base, …overrides }` (named fields replace the base’s, null removes a sense or channel); or a complete inline profile (no base)."
     },
     "locomotion": {
-      "minItems": 1,
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "mode": {
-            "type": "string",
-            "enum": [
-              "walk",
-              "climb",
-              "fly",
-              "swim",
-              "burrow",
-              "wallcrawl",
-              "stationary"
-            ],
-            "description": "How it moves."
-          },
-          "speed": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Top speed in this mode, metres per second (0 when stationary)."
-          }
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "x-contentRef": "locomotion"
         },
-        "required": [
-          "mode",
-          "speed"
-        ],
-        "additionalProperties": false
-      },
-      "description": "Locomotion modes (stub; e12.6 adds gaits, step/jump heights and nav permissions)."
+        {
+          "type": "object",
+          "properties": {
+            "base": {
+              "description": "Locomotion profile to start from; the other fields override it. Absent = the object is a complete inline profile.",
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "x-contentRef": "locomotion"
+            },
+            "agent": {
+              "description": "Agent size fields to override.",
+              "type": "object",
+              "properties": {
+                "radius": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Nav agent radius, m (clearance from walls)."
+                },
+                "height": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Nav agent height, m (headroom it needs)."
+                }
+              },
+              "additionalProperties": false
+            },
+            "modes": {
+              "description": "Modes to override or add, field by field; a mode the base lacks is given in full.",
+              "type": "object",
+              "properties": {
+                "walk": {
+                  "description": "Walking on the navmesh. Fields to override; null = cannot move this way.",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "speeds": {
+                          "type": "object",
+                          "properties": {
+                            "sneak": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Sneak speed, m/s (investigate, stalk)."
+                            },
+                            "walk": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                            },
+                            "run": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "Gait speeds to override, m/s."
+                        },
+                        "stepHeight": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Tallest step it walks up without a jump, m; at most agent.height."
+                        },
+                        "maxSlope": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 90,
+                          "description": "Steepest walkable slope, degrees."
+                        },
+                        "jumpHeight": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Highest ledge it can jump up onto, m (jump links); 0 = never jumps."
+                        },
+                        "maxDrop": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Highest drop it takes deliberately, m (drop links)."
+                        },
+                        "wadeDepth": {
+                          "type": "number",
+                          "minimum": 0,
+                          "description": "Deepest water it wades through, m; 0 = keeps out of water."
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "climb": {
+                  "description": "Climbing surfaces marked `climbable` (climb links). Fields to override; null = cannot move this way.",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "speeds": {
+                          "type": "object",
+                          "properties": {
+                            "sneak": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Sneak speed, m/s (investigate, stalk)."
+                            },
+                            "walk": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                            },
+                            "run": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "Gait speeds to override, m/s."
+                        },
+                        "maxGrade": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 3,
+                          "description": "Hardest `climbable` grade it climbs: 1 ladders and ivy, 2 rough walls, 3 sheer."
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "fly": {
+                  "description": "Kinematic flight at a height offset; also crosses gaps and water. Fields to override; null = cannot move this way.",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "speeds": {
+                          "type": "object",
+                          "properties": {
+                            "sneak": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Sneak speed, m/s (investigate, stalk)."
+                            },
+                            "walk": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                            },
+                            "run": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "Gait speeds to override, m/s."
+                        },
+                        "maxAltitude": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "description": "Highest it flies above the ground below, m (height-offset flight, e11.4)."
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "swim": {
+                  "description": "Swimming in water too deep to wade. Fields to override; null = cannot move this way.",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "speeds": {
+                          "type": "object",
+                          "properties": {
+                            "sneak": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Sneak speed, m/s (investigate, stalk)."
+                            },
+                            "walk": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                            },
+                            "run": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "Gait speeds to override, m/s."
+                        },
+                        "dives": {
+                          "type": "boolean",
+                          "description": "Whether it swims underwater (false = surface only)."
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "burrow": {
+                  "description": "Digging through diggable materials (burrow links). Fields to override; null = cannot move this way.",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "speeds": {
+                          "type": "object",
+                          "properties": {
+                            "sneak": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Sneak speed, m/s (investigate, stalk)."
+                            },
+                            "walk": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                            },
+                            "run": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "Gait speeds to override, m/s."
+                        },
+                        "materials": {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                            "x-contentRef": "material"
+                          },
+                          "description": "Material presets it digs through (burrow links), e.g. \"earth\"."
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "wallcrawl": {
+                  "description": "Crawling on any solid wall, whatever its climbing grade. Fields to override; null = cannot move this way.",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "speeds": {
+                          "type": "object",
+                          "properties": {
+                            "sneak": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Sneak speed, m/s (investigate, stalk)."
+                            },
+                            "walk": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Walk speed, m/s (patrol, idle); at least sneak."
+                            },
+                            "run": {
+                              "type": "number",
+                              "exclusiveMinimum": 0,
+                              "description": "Run speed, m/s (chase, combat, flee); at least walk."
+                            }
+                          },
+                          "additionalProperties": false,
+                          "description": "Gait speeds to override, m/s."
+                        },
+                        "ceilings": {
+                          "type": "boolean",
+                          "description": "Whether it also crawls upside down across ceilings."
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "stationary": {
+                  "description": "Never moves; must be its only mode. null removes it.",
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {},
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            },
+            "squeezes": {
+              "description": "Overrides whether it fits through crawlspaces.",
+              "type": "boolean"
+            },
+            "opensDoors": {
+              "description": "Overrides whether it opens unlocked doors.",
+              "type": "boolean"
+            },
+            "areaCosts": {
+              "description": "Area costs to override (ground, water-shallow, water-deep, crawlspace); null resets one to 1.",
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "enum": [
+                  "ground",
+                  "water-shallow",
+                  "water-deep",
+                  "crawlspace"
+                ]
+              },
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 100,
+                    "description": "Path-cost multiplier, 0.1–100: below 1 prefers the area, above 1 avoids it."
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ],
+      "description": "A `locomotion` profile id; or `{ base, …overrides }` (named fields replace the base’s, null removes a mode or area cost); or a complete inline profile (no base)."
     },
     "attacks": {
       "description": "Attack ids it can use (e12.5); none = it never attacks.",
