@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../data/attack.schema.json",
+  "id": "fixture-guard-strike",
+  "notes": "Frozen test fixture (mw-e12.5), not bestiary content: fixture-guard's melee strike for attack-executor and damage-model integration tests. Two packets per hit (the move's 18 slash, then a 4 blunt crossguard knock) so packet-per-definition behaviour is visible.",
+  "kind": "melee",
+  "move": "fixture-guard-strike",
+  "telegraph": "fixture-guard-strike-windup",
+  "range": { "min": 0, "max": 1.8 },
+  "extraPackets": [
+    {
+      "amounts": { "blunt": 4 },
+      "poiseDamage": 0,
+      "staminaDamage": 0,
+      "impulse": { "x": 0, "y": 0, "z": 0 },
+      "impactForce": 0,
+      "tags": []
+    }
+  ],
+  "cooldown": 2,
+  "weight": 1,
+  "preconditions": { "health": { "min": 0, "max": 1 } }
+}

@@ -6,6 +6,7 @@
   "stats": { "health": 100, "poise": 40, "mass": 80, "size": "medium" },
   "senses": "humanoid",
   "locomotion": "humanoid",
+  "attacks": ["fixture-guard-strike"],
   "resistances": {},
   "personality": {
     "bravery": 0.5,

@@ -112,7 +112,7 @@ export const creatureSchema = z.strictObject({
   attacks: z
     .array(ref('attack'))
     .prefault([])
-    .describe('Attack ids it can use (e12.5); none = it never attacks.'),
+    .describe('Attack ids it can use (attack content, e12.5); none = it never attacks.'),
   properties: z
     .array(contentId)
     .prefault([])

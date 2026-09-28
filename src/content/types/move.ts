@@ -86,7 +86,11 @@ const cancelWindowSchema = z.strictObject({
   ...tickRangeShape,
 });
 
-const damageSchema = z
+/**
+ * A damage packet template: the DamagePacketInput fields known before a hit lands. Shared by moves and
+ * creature attacks' extra packets (attack.ts), so every hit is described in one vocabulary.
+ */
+export const damageTemplateSchema = z
   .strictObject({
     amounts: z
       .partialRecord(z.enum(DAMAGE_TYPES), points)
@@ -239,7 +243,7 @@ export const moveSchema = z
       .array(cancelWindowSchema)
       .prefault([])
       .describe('Tick ranges in which the move may be cancelled into another action.'),
-    damage: damageSchema.optional(),
+    damage: damageTemplateSchema.optional(),
     hitbox: hitboxSchema.optional(),
     flags: flagsSchema,
     telegraphTick: ticks
@@ -321,6 +325,9 @@ export type MoveDef = z.output<typeof moveSchema>;
 /** A loaded (deeply frozen) MoveDef. */
 export type MoveEntry = Frozen<MoveDef>;
 
+/** A loaded damage packet template (see `damageTemplateSchema`). */
+export type DamageTemplate = NonNullable<MoveEntry['damage']>;
+
 /** A legal but unusual move, reported by `moveWarnings`. */
 export interface MoveWarning {
   /** The move's id. */
@@ -400,7 +407,7 @@ export interface RuntimeMove {
   readonly staminaCost: number;
   readonly cancelWindows: readonly (TickRange & { readonly into: CancelTarget })[];
   /** Damage packet template (DamagePacketInput fields; impulse in the attacker's frame). */
-  readonly damage: NonNullable<MoveEntry['damage']> | null;
+  readonly damage: DamageTemplate | null;
   readonly hitbox: NonNullable<MoveEntry['hitbox']> | null;
   /** Can be parried (only moves that can hit). */
   readonly parryable: boolean;

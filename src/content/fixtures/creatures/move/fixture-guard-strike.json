@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../data/move.schema.json",
+  "id": "fixture-guard-strike",
+  "notes": "Frozen test fixture (mw-e12.5), not bestiary content: fixture-guard's only swing. 18-tick windup (the creature readability minimum, e04.20) telegraphed from tick 0, 4 active, 14 recovery; 18 slash and 15 poise. A straight thrust-like capsule from the chest to 1.6 m ahead so hit tests are easy to reason about.",
+  "verb": "attack",
+  "frames": { "startup": 18, "active": 4, "recovery": 14 },
+  "staminaCost": 0,
+  "cancelWindows": [],
+  "damage": {
+    "amounts": { "slash": 18 },
+    "poiseDamage": 15,
+    "staminaDamage": 10,
+    "impulse": { "x": 0, "y": 0, "z": 0 },
+    "impactForce": 0,
+    "tags": []
+  },
+  "hitbox": {
+    "track": "fixture-guard-strike",
+    "shape": {
+      "kind": "capsule",
+      "from": { "x": 0, "y": 1.2, "z": 0.3 },
+      "to": { "x": 0, "y": 1.2, "z": 1.6 },
+      "radius": 0.3
+    },
+    "reach": "short",
+    "swing": "thrust"
+  },
+  "flags": { "parryable": true, "unblockable": false, "interruptible": false },
+  "telegraphTick": 0,
+  "presentation": { "anim": "anim-fixture-guard-strike" }
+}

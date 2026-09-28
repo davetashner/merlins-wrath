@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { z } from 'zod';
 import { readContentSources } from '../fs-sources.ts';
 import { ContentLoadError, loadContent, type ContentSource } from '../loader.ts';
 import { contentTypes } from '../registry.ts';
-import { ContentRef, contentId, serializeContent } from '../schema.ts';
+import { ContentRef, serializeContent } from '../schema.ts';
+import type { AttackDefInput } from './attack.ts';
 import { creatureSchema, type CreatureDefInput } from './creature.ts';
+import type { MoveDefInput } from './move.ts';
 
 const sight = {
   nearRange: 8,
@@ -38,6 +39,30 @@ const minimal = {
   locomotion: walker,
 } satisfies CreatureDefInput;
 
+const chopMove = {
+  id: 'chop',
+  notes: 'Test move.',
+  verb: 'attack',
+  frames: { startup: 18, active: 4, recovery: 10 },
+  damage: { amounts: { slash: 10 } },
+  hitbox: {
+    track: 'chop',
+    shape: { kind: 'sphere', center: { x: 0, y: 1, z: 1 }, radius: 0.5 },
+    reach: 'short',
+    swing: 'vertical',
+  },
+  presentation: { anim: 'anim-chop' },
+} satisfies MoveDefInput;
+
+const chopAttack = {
+  id: 'overhead-chop',
+  notes: 'Test attack.',
+  kind: 'melee',
+  move: 'chop',
+  telegraph: 'chop-windup',
+  range: { min: 0, max: 2 },
+} satisfies AttackDefInput;
+
 const source = (path: string, json: unknown): ContentSource => ({
   path,
   text: JSON.stringify(json),
@@ -51,9 +76,6 @@ const loadIssues = (sources: readonly ContentSource[], schemas = contentTypes) =
   }
   throw new Error('expected loading to fail');
 };
-
-/** The game registry plus a stub `attack` type, until e12.5 registers it. */
-const withTargets = { ...contentTypes, attack: z.strictObject({ id: contentId }) };
 
 describe('creature schema', () => {
   it('AC-1: a file with only id, family, stats, senses and locomotion passes with every default filled', () => {
@@ -131,8 +153,9 @@ describe('creature schema', () => {
   });
 
   it('AC-3: refs to existing attacks and sense profiles resolve to their entries', () => {
-    const content = loadContent(withTargets, [
-      source('data/attack/overhead-chop.json', { id: 'overhead-chop' }),
+    const content = loadContent(contentTypes, [
+      source('data/move/chop.json', chopMove),
+      source('data/attack/overhead-chop.json', chopAttack),
       source('data/sense/undead.json', { id: 'undead', name: 'Undead', notes: 'Test.', sight }),
       source('data/creature/a.json', {
         ...minimal,
@@ -143,9 +166,7 @@ describe('creature schema', () => {
     ]);
     const creature = content.get('creature', 'a');
     expect(creature.senses).toEqual(new ContentRef('sense', 'undead'));
-    expect(creature.attacks.map((attack) => content.resolve(attack))).toEqual([
-      { id: 'overhead-chop' },
-    ]);
+    expect(creature.attacks.map((attack) => content.resolve(attack).move.id)).toEqual(['chop']);
   });
 
   it('AC-4: two files with the same id fail with a duplicate-id error naming both files', () => {
