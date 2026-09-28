@@ -459,7 +459,7 @@ murmur.
 | Group | Sounds |
 |---|---|
 | **Rigging and ships** | Rigging creaks, block-and-tackle squeal, halyards slapping masts, sail luff flap and snap-fill, hull groan, anchor chain, the Tern's ship's bell (time bells), deck planks (`wood-hollow`) |
-| **Cargo** | Crane winch ratchet and pawl clicks, cargo net strain and creak under load, **net cut** (fibrous snap and a whoosh of the falling load), crate thud on planking, ore rattling into bins, barrels rolling |
+| **Cargo** | Crane winch ratchet and pawl clicks, cargo net strain and creak under load, **net cut** (fibrous snap and a whoosh of the falling load), crate thud on planking and flagstones, dressed blocks grinding down onto timber cradles, barrels rolling |
 | **River** | Barge pole plunge, tiller creak, tow-rope creak, horse hooves and harness jingle on the towpath, Stone Stair block-slide rumble, lock windlass clank, lock gates groaning, sluice rush |
 | **Bells and buoys** | **Bell buoy** (irregular, wave-driven dull clang), harbour bell, fog bell on the breakwater. These are low, tolling and a little sad, and must never be confused with the Vesper Bell (§7.8): thinner, shorter, no minor-third bloom. |
 | **Gulls and rats** | Gulls: screech, laughing call, squabbles, wingbeat flurry, and a triumphant "ha-ha" call when one snatches a shiny. Wharf rats: squeaks and a scurry-scatter when startled. A startled rat is a noise event and must match `e09-sound-propagation`. |
