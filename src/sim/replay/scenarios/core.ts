@@ -1,14 +1,17 @@
 // The "core" replay scenario (mw-e00.17): a small world that leans on every core sim mechanism a
 // replay has to reproduce — input commands, several systems in order, named RNG streams, events
-// with handlers that spawn and destroy, deferred structural changes and simMath — so its golden
-// replay (tests/replays/core.json) catches nondeterminism in the sim core itself. It is test
+// with handlers that spawn and destroy, deferred structural changes and float arithmetic — so its
+// golden replay (tests/replays/core.json) catches nondeterminism in the sim core itself. It is test
 // scaffolding, not game rules: game features bring their own scenarios.
+//
+// It deliberately avoids simMath transcendentals: Node 24's Math.sin/cos differ in the last bit
+// between macOS arm64 and Linux x64, so a trig-driven golden recorded on a laptop fails in CI
+// (mw-e00.28 makes simMath bit-identical across platforms). + - * / are exact everywhere.
 
 import { z } from 'zod';
 import { defineComponent, type EntityId } from '../../core/component';
 import { defineEvent } from '../../core/events';
 import { World } from '../../core/world';
-import * as simMath from '../../math';
 import type { DriveContext, ReplayScenario } from '../scenario';
 
 /** Arena half-width: bodies bounce off ±ARENA on both axes. */
@@ -109,11 +112,12 @@ function createCoreWorld({ seed, hz }: { seed: number; hz: number }): World<Core
       run({ tick }) {
         const rng = world.random('wander');
         bodies.forEach((id, _position, velocity) => {
-          const heading = rng.float() * 2 * Math.PI;
-          const speed = 0.2 * simMath.sin(tick / 40 + id);
+          // A triangle-wave gust per body plus a random nudge on each axis.
+          const phase = ((tick + id * 17) % 80) / 40; // 0..2
+          const gust = 0.2 * (phase < 1 ? phase : 2 - phase);
           world.set(id, Velocity, {
-            x: velocity.x * 0.95 + speed * simMath.cos(heading),
-            y: velocity.y * 0.95 + speed * simMath.sin(heading),
+            x: velocity.x * 0.95 + gust * (rng.float() * 2 - 1),
+            y: velocity.y * 0.95 + gust * (rng.float() * 2 - 1),
           });
         });
       },
