@@ -45,6 +45,7 @@ export {
   type WorldOptions,
   type WorldSnapshot,
 } from './core/world';
+export * from './factions';
 export * from './field';
 export * as simMath from './math';
 export * from './properties';

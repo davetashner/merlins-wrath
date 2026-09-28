@@ -46,6 +46,13 @@ export {
   type CreatureDefInput,
 } from './types/creature.ts';
 export {
+  PLAYER_FACTION_ID,
+  UNALIGNED_FACTION,
+  factionSchema,
+  type FactionDef,
+  type FactionDefInput,
+} from './types/faction.ts';
+export {
   DAMAGE_TYPES,
   MAX_RESISTANCE,
   poiseRegenSchema,

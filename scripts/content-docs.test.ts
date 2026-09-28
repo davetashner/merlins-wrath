@@ -54,7 +54,7 @@ describe('content-docs', () => {
       '| `locomotion` | ref → locomotion or object | required |',
       '| `locomotion.modes.climb.maxGrade` | integer 1–3 | — |',
       '| `attacks` | list of ref → attack | `[]` |',
-      '| `faction` | id | `"unaligned"` |',
+      '| `faction` | ref → faction | — |',
       '| `personality.greed` | number 0–1 | `0.5` |',
       '| `needs.<key>.threshold` | number 0–100 | required |',
       '| `loot` | id | — |',

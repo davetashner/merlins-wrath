@@ -1,0 +1,9 @@
+{
+  "$schema": "../faction.schema.json",
+  "id": "unaligned",
+  "name": "Unaligned",
+  "notes": "Every creature whose definition names no faction (the frozen test fixtures, ambient animals until E13 gives them one). Unaligned creatures are not a team: they are neutral to each other and to every faction, so they neither help nor fight anyone by faction alone. Toward the player they start hostile, which keeps the pre-faction creature default (mw-e12.1) so nothing changed behaviour when factions arrived. The story factions (Rootcellar Goblins, the Forgotten, the Warden and the rest of story bible §3.4 and §8) are authored by mw-e13.17 and mw-e40.18.",
+  "towardPlayer": "hostile",
+  "towardMembers": "neutral",
+  "towardOthers": "neutral"
+}

@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique faction id, e.g. \"rootcellar\". Stable once shipped (saves)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (editor, docs and debug tools)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Who belongs and why these stances (canon), for owner review."
+    },
+    "towardPlayer": {
+      "default": "neutral",
+      "description": "Starting stance of members toward the player; play can change it.",
+      "type": "string",
+      "enum": [
+        "ally",
+        "friendly",
+        "neutral",
+        "wary",
+        "hostile",
+        "prey",
+        "predator"
+      ]
+    },
+    "towardMembers": {
+      "default": "ally",
+      "description": "Stance of members toward each other.",
+      "type": "string",
+      "enum": [
+        "ally",
+        "friendly",
+        "neutral",
+        "wary",
+        "hostile",
+        "prey",
+        "predator"
+      ]
+    },
+    "towardOthers": {
+      "default": "neutral",
+      "description": "Stance toward any faction not listed in `relations`.",
+      "type": "string",
+      "enum": [
+        "ally",
+        "friendly",
+        "neutral",
+        "wary",
+        "hostile",
+        "prey",
+        "predator"
+      ]
+    },
+    "relations": {
+      "description": "Stances toward specific factions that differ from `towardOthers`.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "faction": {
+            "description": "The other faction.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "x-contentRef": "faction"
+          },
+          "stance": {
+            "type": "string",
+            "enum": [
+              "ally",
+              "friendly",
+              "neutral",
+              "wary",
+              "hostile",
+              "prey",
+              "predator"
+            ],
+            "description": "This faction’s stance toward the other one."
+          },
+          "mutual": {
+            "default": false,
+            "description": "Also give the other faction the mirrored stance toward this one (prey ↔ predator, others unchanged) unless it declares its own.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "faction",
+          "stance"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes"
+  ],
+  "additionalProperties": false
+}
