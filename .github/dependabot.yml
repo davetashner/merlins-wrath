@@ -11,6 +11,14 @@ updates:
         update-types: [minor, patch]
     commit-message:
       prefix: deps
+    ignore:
+      # The repo pins Node 24 (.node-version, engine-strict); its types move with it, not ahead of it.
+      # Lift when .node-version moves to the next LTS.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
+      # typescript-eslint supports TypeScript < 6.1 only. Lift when it supports TypeScript 7.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directories: [/, /.github/actions/*]
     schedule:
