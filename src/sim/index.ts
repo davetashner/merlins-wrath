@@ -26,6 +26,7 @@ export {
   type WorldSnapshot,
 } from './core/world';
 export * as simMath from './math';
+export * from './properties';
 export { EmptyChoiceError, Rng, type RngState, type Weighted } from './rng';
 export {
   CanonicalEncodingError,
