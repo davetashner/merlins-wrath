@@ -24,8 +24,14 @@ permissions:
   pull-requests: read
   id-token: write
 
+# Deploys supersede each other (each builds the latest main). Events whose job is skipped (PRs by
+# authors without write access, see `if:` below) get a group of their own: a skipped run in the shared
+# group would still cancel an in-progress deploy.
 concurrency:
-  group: publish-site
+  group: >-
+    ${{ (github.event_name != 'pull_request_target' ||
+    contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association))
+    && 'publish-site' || format('publish-site-skipped-{0}', github.run_id) }}
   cancel-in-progress: true
 
 jobs:
