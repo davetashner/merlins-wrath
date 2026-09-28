@@ -37,6 +37,7 @@ const jsonl = [
 const html = renderPage({
   issues: parseIssues(jsonl),
   prStatus: [],
+  github: 'off',
   now: new Date('2026-09-27T00:00:00Z'),
   sha: 'abcdef1234567',
 });

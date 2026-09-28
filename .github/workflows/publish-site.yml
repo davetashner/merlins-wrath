@@ -3,14 +3,25 @@ name: Publish site
 # Builds the site (the landing page in site/ plus backlog.html from scripts/backlog, mw-e00.11) and
 # publishes it to thevesperbell.com: S3 origin behind CloudFront, deployed through a GitHub OIDC
 # role (infra/site.yml).
+#
+# pull_request_target (mw-e00.12) republishes when a PR opens, closes or its body changes, so the
+# page's GitHub overlay shows beads as in progress / completed before issues.jsonl catches up.
+# SECURITY: pull_request_target runs in the base repository's context with secrets and the deploy
+# role. This workflow never checks out, installs or runs PR code: it checks out the default branch
+# only, runs no package install, and reads PR bodies through the REST API as data (only regex-
+# extracted bead ids reach the page). scripts/backlog/publish-workflow.test.ts enforces this.
 on:
   push:
     branches: [main]
     paths: ['.beads/issues.jsonl', 'scripts/backlog/**', 'site/**', '.github/workflows/publish-site.yml']
+  pull_request_target:
+    types: [opened, reopened, edited, closed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: read
   id-token: write
 
 concurrency:
@@ -19,16 +30,26 @@ concurrency:
 
 jobs:
   publish:
+    # PRs from people without write access never change the overlay (github.ts), so they don't
+    # trigger a deploy either.
+    if: >-
+      github.event_name != 'pull_request_target' ||
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
     runs-on: ubuntu-latest
     environment:
       name: production
       url: https://thevesperbell.com/backlog.html
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version # the generator is TypeScript run by Node 24 type stripping
       - name: Build
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # read-only: lists PRs for the overlay
         run: |
           mkdir -p _site
           cp -R site/. _site/

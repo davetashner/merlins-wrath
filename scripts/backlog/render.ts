@@ -1,5 +1,5 @@
 // Renders backlog.html (mw-e00.11): one self-contained page with inline CSS/JS and no external requests.
-// Pure and deterministic: the output depends only on (issues, prStatus, now, sha).
+// Pure and deterministic: the output depends only on (issues, prStatus, github, now, sha).
 import { CLIENT, STYLES, THEME_BOOT } from './assets.ts';
 import { escapeHtml as esc, renderMarkdown } from './markdown.ts';
 import {
@@ -10,13 +10,18 @@ import {
   type MilestoneGroup,
   type PrRef,
   type TabView,
+  type UnknownRef,
 } from './model.ts';
 import type { Issue } from './parse.ts';
+
+/** The GitHub overlay's outcome: read, failed (banner shown), or switched off with --no-github. */
+export type GithubStatus = 'ok' | 'unavailable' | 'off';
 
 export interface RenderInput {
   issues: readonly Issue[];
   /** PR overlay from mw-e00.12; empty renders from issues.jsonl alone. */
   prStatus: readonly PrRef[];
+  github: GithubStatus;
   now: Date;
   /** Source commit SHA; any placeholder when unknown. */
   sha: string;
@@ -49,13 +54,48 @@ function dep(d: DepView): string {
   return `<li><a href="#${esc(d.id)}">${esc(d.id)}</a> ${esc(d.title)} ${statusPill(d.status)}</li>`;
 }
 
-function prLink(item: ItemView): string {
-  if (item.pr === null) return '';
-  const text = `PR #${String(item.pr.number)} ${item.pr.state === 'merged' ? 'merged' : 'open'}`;
-  return item.pr.url.startsWith('https://')
-    ? `<a class="pill" href="${esc(item.pr.url)}">${text}</a>`
-    : `<span class="pill">${text}</span>`;
+/** "PR #N" (plus `suffix`) as a link, or plain text when the URL is not https. */
+function prAnchor(pr: { number: number; url: string }, suffix = '', cls = ''): string {
+  const text = `PR #${String(pr.number)}${suffix}`;
+  const attr = cls === '' ? '' : ` class="${cls}"`;
+  return pr.url.startsWith('https://')
+    ? `<a${attr} href="${esc(pr.url)}">${text}</a>`
+    : `<span${attr}>${text}</span>`;
 }
+
+const mergeDate = (pr: PrRef): string =>
+  pr.mergedAt === null ? '' : `, ${esc(pr.mergedAt.slice(0, 10))}`;
+
+/**
+ * The status pill. When a PR set the status (source "pr") the pill names it, e.g. "in progress
+ * (PR #60)" or "done (PR #57, 2026-09-20)"; a jsonl status with a PR gets a separate PR pill.
+ */
+function status(item: ItemView): string {
+  const { pr } = item;
+  if (pr === null) return statusPill(item.status, item.blocked);
+  if (item.source === 'jsonl') {
+    return statusPill(item.status, item.blocked) + prAnchor(pr, ` ${pr.state}`, 'pill');
+  }
+  const done = item.status === 'closed';
+  return (
+    `<span class="pill st-${item.status}" title="Status from GitHub pull request #${String(pr.number)}; issues.jsonl not yet updated">` +
+    `${done ? 'done' : 'in progress'} (${prAnchor(pr)}${mergeDate(pr)})</span>`
+  );
+}
+
+function unknownRefs(refs: readonly UnknownRef[]): string {
+  if (refs.length === 0) return '';
+  const items = refs.map((r) => `<li><span class="rid">${esc(r.id)}</span> in ${prAnchor(r)}</li>`);
+  return (
+    `<section class="unknown"><h2>Unknown references</h2>` +
+    `<p>Pull requests close these ids, which are not in <code>.beads/issues.jsonl</code>.</p>` +
+    `<ul>${items.join('')}</ul></section>`
+  );
+}
+
+const BANNER =
+  '<p class="banner" role="status"><b>GitHub status unavailable.</b> Statuses come from ' +
+  '<code>.beads/issues.jsonl</code> alone, so recently merged or in-review work may look open.</p>';
 
 function section(title: string, body: string): string {
   return body === '' ? '' : `<h4>${title}</h4>${body}`;
@@ -72,10 +112,9 @@ function row(item: ItemView): string {
       ? ''
       : `<p class="md">${esc(issue.closeReason)}${issue.closedAt === null ? '' : ` <span class="rid">(${esc(issue.closedAt.slice(0, 10))})</span>`}</p>`;
   return (
-    `<li class="row" id="${esc(issue.id)}" data-ms="${msAttr(ms)}" data-class="${esc(item.className ?? '')}" data-p="${String(issue.priority)}">` +
+    `<li class="row" id="${esc(issue.id)}" data-ms="${msAttr(ms)}" data-class="${esc(item.className ?? '')}" data-p="${String(issue.priority)}" data-source="${item.source}">` +
     `<details><summary><span class="rid">${esc(issue.id)}</span><span class="rtitle">${esc(issue.title)}</span><span class="meta">` +
-    statusPill(item.status, item.blocked) +
-    prLink(item) +
+    status(item) +
     `<span class="pill p${String(issue.priority)}">P${String(issue.priority)}</span>` +
     (ms === null
       ? ''
@@ -150,13 +189,14 @@ export function formatUtc(date: Date): string {
   return `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 }
 
-export function renderPage({ issues, prStatus, now, sha }: RenderInput): string {
+export function renderPage({ issues, prStatus, github, now, sha }: RenderInput): string {
   const model = buildModel(issues, prStatus);
   const t = model.tally;
   const shortSha = esc(sha.slice(0, 7));
   const stamp =
     `Generated <time datetime="${now.toISOString()}">${formatUtc(now)}</time> from ` +
-    `<code>.beads/issues.jsonl</code> at commit <code title="${esc(sha)}">${shortSha}</code>.`;
+    `<code>.beads/issues.jsonl</code> at commit <code title="${esc(sha)}">${shortSha}</code>` +
+    `${github === 'ok' ? ' and open and merged pull requests on GitHub' : ''}.`;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -178,7 +218,7 @@ export function renderPage({ issues, prStatus, now, sha }: RenderInput): string 
 <header>
 <h1>The Vesper Bell backlog</h1>
 <p class="sub">What's being built, what's next, and what's done. Every item links back to a bead in the repository's tracker.</p>
-<p class="stamp">${stamp}</p>
+<p class="stamp">${stamp}</p>${github === 'unavailable' ? BANNER : ''}
 <ul class="tally"><li><b>${String(t.epics)}</b> epics</li><li><b>${String(t.items)}</b> work items</li><li><b>${String(t.inProgress)}</b> in progress</li><li><b>${String(t.completed)}</b> completed</li><li><b>${String(t.ready)}</b> ready to start</li></ul>
 <div class="tabs" role="tablist" aria-label="Backlog">${tab('upcoming', 'Upcoming and in progress', model.upcoming.count, true)}${tab('completed', 'Completed', model.completed.count, false)}</div>
 <div class="filters">
@@ -193,7 +233,7 @@ export function renderPage({ issues, prStatus, now, sha }: RenderInput): string 
 ${panel('upcoming', model.upcoming, true)}
 ${panel('completed', model.completed, false)}
 </main>
-<footer>${stamp}</footer>
+<footer>${unknownRefs(model.unknownRefs)}${stamp}</footer>
 </div>
 <script>${CLIENT}</script>
 </body>
