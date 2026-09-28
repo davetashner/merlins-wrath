@@ -1,0 +1,4 @@
+dist-havok/
+dist-rapier/
+# Smoke runs; official results are committed deliberately (git add -f) when the ADR records them.
+bench/results/

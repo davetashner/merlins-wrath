@@ -1,0 +1,23 @@
+{
+  "name": "determinism",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "generate": "node src/generate-script.ts",
+    "node": "node src/node-run.ts"
+  },
+  "dependencies": {
+    "@babylonjs/core": "9.28.0",
+    "@babylonjs/havok": "1.3.14",
+    "@dimforge/rapier3d-compat": "0.21.0",
+    "@dimforge/rapier3d-deterministic-compat": "0.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.0",
+    "typescript": "6.0.3",
+    "vite": "8.3.1"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "vesper-spikes",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Throwaway engine/physics spike for mw-e00.13 (ADR-0001). Not part of the game build, lint, typecheck or coverage.",
+  "engines": {
+    "node": ">=24.11.0 <25"
+  },
+  "packageManager": "pnpm@12.6.0+sha512.3ef68f951cb111ac204b4a5a16f0b2ddf0da56a96e0413e81d855d9f0b55ef926714709028e1cd00c405c2c5fb7b9e8ec4dc46777c805d0373c2f2ff00fd20ec",
+  "scripts": {
+    "setup": "pnpm install --frozen-lockfile && pnpm --filter bench exec playwright install webkit firefox",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "bench:quick": "node bench/run.ts --preset quick",
+    "bench:official": "pnpm install --frozen-lockfile && node bench/run.ts --preset official",
+    "determinism": "pnpm install --frozen-lockfile && node bench/determinism.ts",
+    "determinism:script": "pnpm --filter determinism generate"
+  }
+}

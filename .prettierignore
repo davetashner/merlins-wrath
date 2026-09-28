@@ -24,3 +24,5 @@ scripts/*.mjs
 .cursor/
 .github/
 infra/
+# Throwaway engine spike (mw-e00.13), its own workspace and lockfile.
+spikes/
