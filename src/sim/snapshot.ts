@@ -24,6 +24,7 @@
 
 import type { EntityId } from './core/component';
 import type { World, WorldSnapshot } from './core/world';
+import { DEFAULT_DIFFICULTY } from './difficulty';
 
 /** Bumped whenever the canonical byte layout changes (it invalidates every stored hash). */
 export const SNAPSHOT_ENCODING_VERSION = 1;
@@ -186,7 +187,9 @@ class Encoder {
    */
   snapshot(snapshot: WorldSnapshot): void {
     const out = this.out;
-    out.header(TAG_OBJECT, 6); // clock, components, entities, nextEntity, rng, seed — in code-unit order
+    // clock, components, [difficulty], entities, nextEntity, rng, seed — in code-unit order
+    const { difficulty } = snapshot;
+    out.header(TAG_OBJECT, difficulty === undefined ? 6 : 7);
     this.field('clock', snapshot.clock);
     out.string('components');
     const components = Object.entries(snapshot.components).sort(byKey);
@@ -205,6 +208,7 @@ class Encoder {
         }
       });
     }
+    if (difficulty !== undefined) this.field('difficulty', difficulty);
     this.field('entities', snapshot.entities);
     this.field('nextEntity', snapshot.nextEntity);
     this.field('rng', snapshot.rng);
@@ -354,7 +358,8 @@ export function hashWorld(world: Pick<World, 'snapshot'>): string {
 
 /** The first place two snapshots disagree; `a`/`b` are the differing values (undefined = absent). */
 export interface SnapshotDifference {
-  readonly section: 'seed' | 'clock' | 'nextEntity' | 'entities' | 'components' | 'rng';
+  readonly section:
+    'seed' | 'clock' | 'difficulty' | 'nextEntity' | 'entities' | 'components' | 'rng';
   /** Human-readable location, e.g. `components.Position[7].x` or `entities[12]`. */
   readonly path: string;
   /** The entity involved, for `entities` and `components` differences. */
@@ -364,7 +369,8 @@ export interface SnapshotDifference {
   /** The RNG stream involved, for `rng` differences. */
   readonly stream?: string;
   /**
-   * Field path inside the component value or clock/RNG state (`x`, `pos.y`, `[2]`); `''` when the
+   * Field path inside the component value, clock/RNG state or difficulty (`x`, `pos.y`, `[2]`,
+   * `damageTaken`); `''` when the
    * whole value differs (e.g. present in one snapshot only). Absent for `seed`, `nextEntity` and
    * `entities`.
    */
@@ -450,7 +456,8 @@ function firstRowDifference(name: string, a: Rows, b: Rows): SnapshotDifference 
 }
 
 /**
- * The first difference between two snapshots, checked in a fixed order — seed, clock, nextEntity,
+ * The first difference between two snapshots, checked in a fixed order — seed, clock, difficulty
+ * (effective values, so an absent multiplier reads as its neutral 1), nextEntity,
  * entities, components (by name, then entity id, then field), RNG streams — or undefined when they
  * would hash identically. Built for desync debugging and replay failure reports.
  */
@@ -458,6 +465,13 @@ export function diffSnapshots(a: WorldSnapshot, b: WorldSnapshot): SnapshotDiffe
   if (!Object.is(a.seed, b.seed)) return { section: 'seed', path: 'seed', a: a.seed, b: b.seed };
   const clock = firstValueDifference(a.clock, b.clock);
   if (clock) return { section: 'clock', path: `clock${fieldSuffix(clock.field)}`, ...clock };
+  const difficulty = firstValueDifference(
+    { ...DEFAULT_DIFFICULTY, ...a.difficulty },
+    { ...DEFAULT_DIFFICULTY, ...b.difficulty },
+  );
+  if (difficulty) {
+    return { section: 'difficulty', path: `difficulty.${difficulty.field}`, ...difficulty };
+  }
   if (!Object.is(a.nextEntity, b.nextEntity)) {
     return { section: 'nextEntity', path: 'nextEntity', a: a.nextEntity, b: b.nextEntity };
   }

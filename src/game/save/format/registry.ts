@@ -6,7 +6,7 @@
 // rolled back to exactly its prior state. Sections from a newer build that this build does not know
 // are kept verbatim so re-saving never destroys them.
 
-import type { World, WorldSnapshot } from '@sim/index';
+import { DIFFICULTY_KEYS, type World, type WorldSnapshot } from '@sim/index';
 import { z } from 'zod';
 import { decodeSave, encodeSave, type BuildInfo, type SaveEnvelope } from './envelope';
 import { SaveApplyError, SaveCorruptError, type SaveLoadError } from './errors';
@@ -27,6 +27,7 @@ export const WORLD_SECTION_VERSION = 1;
 const worldSnapshotSchema = z.strictObject({
   seed: z.number(),
   clock: z.strictObject({ tick: z.number(), hz: z.number() }),
+  difficulty: z.partialRecord(z.enum(DIFFICULTY_KEYS), z.number()).exactOptional(),
   nextEntity: z.number(),
   entities: z.array(z.number()),
   components: z.record(z.string(), z.array(z.tuple([z.number(), z.unknown()]))),
