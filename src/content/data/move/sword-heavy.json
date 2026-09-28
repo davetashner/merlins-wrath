@@ -1,0 +1,58 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "sword-heavy",
+  "notes": "Knight heavy attack (mw-e04.13): 24/5/26 ticks, 25 stamina, 1.6x light 1's damage (32 slash) and 2.2x its poise (33), hyperarmor ticks 10-29 absorbing up to 40 poise. impactForce 1500 N and staminaDamage 30 are placeholders until e04.13/e04.19 tune them.",
+  "verb": "attack",
+  "frames": {
+    "startup": 24,
+    "active": 5,
+    "recovery": 26
+  },
+  "staminaCost": 25,
+  "cancelWindows": [
+    {
+      "into": "dodge",
+      "from": 39,
+      "to": 54
+    }
+  ],
+  "damage": {
+    "amounts": {
+      "slash": 32
+    },
+    "poiseDamage": 33,
+    "staminaDamage": 30,
+    "impactForce": 1500
+  },
+  "hitbox": {
+    "track": "knight-sword-arc-heavy",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0.35,
+        "y": 1.2,
+        "z": 0.35
+      },
+      "to": {
+        "x": 0.35,
+        "y": 1.2,
+        "z": 1.45
+      },
+      "radius": 0.08
+    },
+    "reach": "medium",
+    "swing": "vertical"
+  },
+  "flags": {
+    "hyperarmor": {
+      "from": 10,
+      "to": 29,
+      "poiseCap": 40
+    }
+  },
+  "presentation": {
+    "anim": "anim-knight-sword-heavy",
+    "audioCue": "sfx-knight-swing-heavy",
+    "vfxCue": "vfx-sword-trail-heavy"
+  }
+}

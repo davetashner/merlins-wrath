@@ -1,0 +1,561 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique move id, e.g. \"sword-light-1\". Stable once shipped (saves)."
+    },
+    "schemaVersion": {
+      "default": 1,
+      "description": "MoveDef schema version, for future migrations.",
+      "type": "number",
+      "const": 1
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the numbers come from (bead, design intent), for owner review."
+    },
+    "verb": {
+      "type": "string",
+      "enum": [
+        "attack",
+        "dodge",
+        "parry"
+      ],
+      "description": "Combat verb: the stamina action and cancel-into category."
+    },
+    "frames": {
+      "type": "object",
+      "properties": {
+        "startup": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Windup ticks before the hit can land."
+        },
+        "active": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Ticks the hitbox (or the dodge’s motion) is live."
+        },
+        "recovery": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Ticks after active before the move ends."
+        }
+      },
+      "required": [
+        "startup",
+        "active",
+        "recovery"
+      ],
+      "additionalProperties": false,
+      "description": "Frame data in sim ticks (60 Hz); the move lasts startup + active + recovery ticks."
+    },
+    "staminaCost": {
+      "default": 0,
+      "description": "Stamina points spent on the first startup tick.",
+      "type": "number",
+      "minimum": 0
+    },
+    "cancelWindows": {
+      "description": "Tick ranges in which the move may be cancelled into another action.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "into": {
+            "type": "string",
+            "enum": [
+              "attack",
+              "dodge",
+              "block"
+            ],
+            "description": "What the move may be cancelled into."
+          },
+          "from": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "First tick (inclusive), counted from the move’s first startup tick."
+          },
+          "to": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Last tick (inclusive); at least from, and inside the move."
+          }
+        },
+        "required": [
+          "into",
+          "from",
+          "to"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "damage": {
+      "type": "object",
+      "properties": {
+        "amounts": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "enum": [
+              "slash",
+              "pierce",
+              "blunt",
+              "fire",
+              "frost",
+              "shock",
+              "arcane",
+              "poison"
+            ]
+          },
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "Damage points per damage type (before resistances); unlisted types deal 0."
+        },
+        "poiseDamage": {
+          "default": 0,
+          "description": "Poise damage in points.",
+          "type": "number",
+          "minimum": 0
+        },
+        "staminaDamage": {
+          "default": 0,
+          "description": "Stamina drained from a blocker, in points (before shield stability).",
+          "type": "number",
+          "minimum": 0
+        },
+        "impulse": {
+          "description": "Knockback impulse, N·s, in the attacker’s frame (+z forward, +y up).",
+          "default": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "type": "object",
+          "properties": {
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "z": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "x",
+            "y",
+            "z"
+          ],
+          "additionalProperties": false
+        },
+        "impactForce": {
+          "default": 0,
+          "description": "Peak impact force, N (breakables, knockdown).",
+          "type": "number",
+          "minimum": 0
+        },
+        "tags": {
+          "description": "Damage-packet tags every hit carries, e.g. \"critical\" (damage model tags).",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          }
+        }
+      },
+      "required": [
+        "amounts"
+      ],
+      "additionalProperties": false,
+      "description": "Damage packet template: what each hit applies through the damage model. Required with a hitbox."
+    },
+    "hitbox": {
+      "type": "object",
+      "properties": {
+        "track": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Socket track id (e04.2) that animates the volume across the active ticks, e.g. \"knight-sword-arc-light-1\"."
+        },
+        "shape": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "sphere"
+                },
+                "center": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y",
+                    "z"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Centre, metres, attacker frame."
+                },
+                "radius": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Radius, metres."
+                }
+              },
+              "required": [
+                "kind",
+                "center",
+                "radius"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "capsule"
+                },
+                "from": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y",
+                    "z"
+                  ],
+                  "additionalProperties": false,
+                  "description": "One end of the axis (e.g. the hilt), metres, attacker frame."
+                },
+                "to": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y",
+                    "z"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Other end of the axis (e.g. the tip), metres, attacker frame."
+                },
+                "radius": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Radius around the axis, metres."
+                }
+              },
+              "required": [
+                "kind",
+                "from",
+                "to",
+                "radius"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "const": "box"
+                },
+                "center": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y",
+                    "z"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Centre, metres, attacker frame."
+                },
+                "halfExtents": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "y": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "z": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y",
+                    "z"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Half the size on each axis, metres."
+                }
+              },
+              "required": [
+                "kind",
+                "center",
+                "halfExtents"
+              ],
+              "additionalProperties": false
+            }
+          ],
+          "description": "Hit volume in the attacker’s frame at the track’s rest pose, metres, using the stimulus shape vocabulary: { kind: \"sphere\", center, radius }, { kind: \"capsule\", from, to, radius } or { kind: \"box\", center, halfExtents }."
+        },
+        "reach": {
+          "type": "string",
+          "enum": [
+            "close",
+            "short",
+            "medium",
+            "long"
+          ],
+          "description": "Reach class for AI spacing."
+        },
+        "swing": {
+          "type": "string",
+          "enum": [
+            "horizontal",
+            "vertical",
+            "thrust"
+          ],
+          "description": "Swing motion: horizontal, vertical or thrust."
+        }
+      },
+      "required": [
+        "track",
+        "shape",
+        "reach",
+        "swing"
+      ],
+      "additionalProperties": false,
+      "description": "Hit volume of a move that can hit; absent = it never hits (dodges, parries)."
+    },
+    "flags": {
+      "description": "Defence-related flags and tick windows.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "parryable": {
+          "default": true,
+          "description": "A parry in its window deflects it (e04.12). Only meaningful with a hitbox.",
+          "type": "boolean"
+        },
+        "unblockable": {
+          "default": false,
+          "description": "Passes through shields (grabs, some slams); otherwise a hitting move is blockable.",
+          "type": "boolean"
+        },
+        "parryNote": {
+          "description": "Why a move is both parryable and unblockable (silences that warning).",
+          "type": "string",
+          "minLength": 1
+        },
+        "interruptible": {
+          "default": false,
+          "description": "A shield bash (e04.14) can interrupt it, e.g. spell windups.",
+          "type": "boolean"
+        },
+        "hyperarmor": {
+          "description": "Ticks during which hits do not interrupt the move, up to poiseCap poise damage.",
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "First tick (inclusive), counted from the move’s first startup tick."
+            },
+            "to": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Last tick (inclusive); at least from, and inside the move."
+            },
+            "poiseCap": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Poise damage it absorbs before it breaks, in points."
+            }
+          },
+          "required": [
+            "from",
+            "to",
+            "poiseCap"
+          ],
+          "additionalProperties": false
+        },
+        "iframes": {
+          "description": "Invulnerable ticks: hits apply no damage, poise or reaction (e04.8).",
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "First tick (inclusive), counted from the move’s first startup tick."
+            },
+            "to": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Last tick (inclusive); at least from, and inside the move."
+            }
+          },
+          "required": [
+            "from",
+            "to"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "telegraphTick": {
+      "default": 0,
+      "description": "Tick the telegraph (TelegraphStarted, e04.20) fires; before the first active tick.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "chainNext": {
+      "description": "Move the next attack press chains into (e.g. light 1 → light 2); absent = none.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "x-contentRef": "move"
+    },
+    "charge": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "description": "The uncharged move this is the full charge of (e.g. the heavy).",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "x-contentRef": "move"
+        },
+        "minHoldTicks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Hold ticks below which the uncharged move is used instead."
+        },
+        "fullHoldTicks": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Hold ticks at which the charge is full; values lerp from the uncharged move."
+        },
+        "autoReleaseTicks": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Hold ticks at which it releases on its own."
+        }
+      },
+      "required": [
+        "from",
+        "minHoldTicks",
+        "fullHoldTicks",
+        "autoReleaseTicks"
+      ],
+      "additionalProperties": false,
+      "description": "A charged move: its damage and stamina cost are the full-charge values, lerped from `from` by hold time (e04.13)."
+    },
+    "presentation": {
+      "type": "object",
+      "properties": {
+        "anim": {
+          "type": "string",
+          "pattern": "^anim-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Animation clip id (style bible §15.1), e.g. \"anim-knight-sword-light-1\"."
+        },
+        "audioCue": {
+          "description": "Audio cue id (audio bible §6) of the move’s sound, e.g. \"sfx-knight-swing-light\".",
+          "type": "string",
+          "pattern": "^sfx-[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "vfxCue": {
+          "description": "VFX cue id (style bible §15.1), e.g. \"vfx-sword-trail-light\".",
+          "type": "string",
+          "pattern": "^vfx-[a-z0-9]+(?:-[a-z0-9]+)*$"
+        }
+      },
+      "required": [
+        "anim"
+      ],
+      "additionalProperties": false,
+      "description": "Presentation ids: unknown ids warn (assets may lag) but never fail validation."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "verb",
+    "frames",
+    "presentation"
+  ],
+  "additionalProperties": false
+}

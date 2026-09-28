@@ -1,0 +1,55 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "shield-bash",
+  "notes": "Knight shield bash (mw-e04.14): attack while blocking, 14/4/20 ticks, 18 stamina, 5 blunt, 45 poise, forward impulse. The 150 N·s impulse, 1200 N impactForce and staminaDamage 30 are placeholders until e04.14 tunes shoving and barricades.",
+  "verb": "attack",
+  "frames": {
+    "startup": 14,
+    "active": 4,
+    "recovery": 20
+  },
+  "staminaCost": 18,
+  "cancelWindows": [
+    {
+      "into": "dodge",
+      "from": 24,
+      "to": 37
+    }
+  ],
+  "damage": {
+    "amounts": {
+      "blunt": 5
+    },
+    "poiseDamage": 45,
+    "staminaDamage": 30,
+    "impulse": {
+      "x": 0,
+      "y": 0,
+      "z": 150
+    },
+    "impactForce": 1200
+  },
+  "hitbox": {
+    "track": "knight-shield-bash",
+    "shape": {
+      "kind": "box",
+      "center": {
+        "x": -0.2,
+        "y": 1.1,
+        "z": 0.6
+      },
+      "halfExtents": {
+        "x": 0.35,
+        "y": 0.45,
+        "z": 0.2
+      }
+    },
+    "reach": "close",
+    "swing": "thrust"
+  },
+  "presentation": {
+    "anim": "anim-knight-shield-bash",
+    "audioCue": "sfx-knight-bash-wood",
+    "vfxCue": "vfx-impact-dust"
+  }
+}

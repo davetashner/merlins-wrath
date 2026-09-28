@@ -1,0 +1,51 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "kick",
+  "notes": "Knight kick (mw-e04.18): 10/3/16 ticks, 8 stamina, 3 blunt, 20 poise; shoves physics objects up to 40 kg and knocks back small creatures. The 80 N·s impulse, 600 N impactForce and staminaDamage 10 are placeholders until e04.18.",
+  "verb": "attack",
+  "frames": {
+    "startup": 10,
+    "active": 3,
+    "recovery": 16
+  },
+  "staminaCost": 8,
+  "cancelWindows": [
+    {
+      "into": "dodge",
+      "from": 19,
+      "to": 28
+    }
+  ],
+  "damage": {
+    "amounts": {
+      "blunt": 3
+    },
+    "poiseDamage": 20,
+    "staminaDamage": 10,
+    "impulse": {
+      "x": 0,
+      "y": 0,
+      "z": 80
+    },
+    "impactForce": 600
+  },
+  "hitbox": {
+    "track": "knight-kick",
+    "shape": {
+      "kind": "sphere",
+      "center": {
+        "x": 0,
+        "y": 0.5,
+        "z": 0.8
+      },
+      "radius": 0.25
+    },
+    "reach": "close",
+    "swing": "thrust"
+  },
+  "presentation": {
+    "anim": "anim-knight-kick",
+    "audioCue": "sfx-knight-kick",
+    "vfxCue": "vfx-impact-dust"
+  }
+}

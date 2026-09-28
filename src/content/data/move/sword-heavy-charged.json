@@ -1,0 +1,64 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "sword-heavy-charged",
+  "notes": "Knight charged heavy at full charge (mw-e04.13): the heavy's frames and hyperarmor; damage 1.8x the heavy (57.6 slash), poise 3.5x light 1's (52.5), stamina 25 + 10. Holding under 12 ticks releases a normal heavy, the charge is full at 60 ticks and releases itself at 90; values lerp from sword-heavy by hold time. impactForce 2500 N and staminaDamage 45 are placeholders.",
+  "verb": "attack",
+  "frames": {
+    "startup": 24,
+    "active": 5,
+    "recovery": 26
+  },
+  "staminaCost": 35,
+  "cancelWindows": [
+    {
+      "into": "dodge",
+      "from": 39,
+      "to": 54
+    }
+  ],
+  "damage": {
+    "amounts": {
+      "slash": 57.6
+    },
+    "poiseDamage": 52.5,
+    "staminaDamage": 45,
+    "impactForce": 2500
+  },
+  "hitbox": {
+    "track": "knight-sword-arc-heavy",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0.35,
+        "y": 1.2,
+        "z": 0.35
+      },
+      "to": {
+        "x": 0.35,
+        "y": 1.2,
+        "z": 1.45
+      },
+      "radius": 0.08
+    },
+    "reach": "medium",
+    "swing": "vertical"
+  },
+  "flags": {
+    "hyperarmor": {
+      "from": 10,
+      "to": 29,
+      "poiseCap": 40
+    }
+  },
+  "charge": {
+    "from": "sword-heavy",
+    "minHoldTicks": 12,
+    "fullHoldTicks": 60,
+    "autoReleaseTicks": 90
+  },
+  "presentation": {
+    "anim": "anim-knight-sword-heavy-charged",
+    "audioCue": "sfx-knight-swing-charged",
+    "vfxCue": "vfx-sword-trail-charged"
+  }
+}

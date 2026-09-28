@@ -1,0 +1,22 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "backstep",
+  "notes": "Backstep, the dodge with no direction held (mw-e04.8): 24 ticks, 12 stamina, i-frames ticks 2-7. Frames split as 2 startup, 6 active (the i-frames), 16 recovery.",
+  "verb": "dodge",
+  "frames": {
+    "startup": 2,
+    "active": 6,
+    "recovery": 16
+  },
+  "staminaCost": 12,
+  "flags": {
+    "iframes": {
+      "from": 2,
+      "to": 7
+    }
+  },
+  "presentation": {
+    "anim": "anim-knight-backstep",
+    "audioCue": "sfx-knight-backstep"
+  }
+}

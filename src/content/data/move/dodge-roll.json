@@ -1,0 +1,29 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "dodge-roll",
+  "notes": "Dodge roll (mw-e04.8): 36 ticks, 20 stamina, i-frames ticks 2-14 (13 ticks, about 217 ms), 3.0 m travel; recovery cancels into the roll attack from tick 28. Frames split as 2 startup, 13 active (the i-frame motion), 21 recovery.",
+  "verb": "dodge",
+  "frames": {
+    "startup": 2,
+    "active": 13,
+    "recovery": 21
+  },
+  "staminaCost": 20,
+  "cancelWindows": [
+    {
+      "into": "attack",
+      "from": 28,
+      "to": 35
+    }
+  ],
+  "flags": {
+    "iframes": {
+      "from": 2,
+      "to": 14
+    }
+  },
+  "presentation": {
+    "anim": "anim-knight-dodge-roll",
+    "audioCue": "sfx-knight-roll"
+  }
+}
