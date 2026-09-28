@@ -6,9 +6,10 @@
 /** Layer marker, checked by the alias smoke test. */
 export const layer = 'content' as const;
 
-export { CONTENT_ID_PATTERN, ContentRef, contentId, ref } from './schema.ts';
+export { CONTENT_ID_PATTERN, ContentRef, contentId, ref, serializeContent } from './schema.ts';
 export {
   ContentLoadError,
+  dottedPath,
   jsonPointer,
   loadContent,
   type Catalogue,
@@ -18,6 +19,19 @@ export {
   type EntryOf,
   type Frozen,
 } from './loader.ts';
+export {
+  CREATURE_FAMILIES,
+  CREATURE_SCHEMA_VERSION,
+  DAMAGE_TYPES,
+  LOCOMOTION_MODES,
+  PERSONALITY_TRAITS,
+  SIZE_CLASSES,
+  STANCES,
+  creatureSchema,
+  senseProfileSchema,
+  type CreatureDef,
+  type CreatureDefInput,
+} from './types/creature.ts';
 export { canonicalJson, fnv1a64 } from './hash.ts';
 export {
   contentTypes,

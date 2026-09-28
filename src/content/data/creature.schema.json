@@ -1,0 +1,449 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique creature id, e.g. \"forgotten-miner\". Stable once shipped (saves)."
+    },
+    "schemaVersion": {
+      "default": 1,
+      "description": "CreatureDef schema version, for future migrations.",
+      "type": "number",
+      "const": 1
+    },
+    "family": {
+      "type": "string",
+      "enum": [
+        "forgotten",
+        "rootcellar-goblin",
+        "hornfolk",
+        "loom-spider",
+        "briar-wolf",
+        "hushling",
+        "tallow-ooze",
+        "mimic",
+        "hollow-sentinel",
+        "wraith",
+        "human",
+        "animal"
+      ],
+      "description": "Creature family (story bible §8)."
+    },
+    "tags": {
+      "description": "Free-form tags read by AI and quests, e.g. \"leader\", \"undead\".",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "health": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Maximum health."
+        },
+        "poise": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Maximum poise; poise damage beyond it staggers the creature (0 = any hit)."
+        },
+        "mass": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Mass in kilograms (knockback, grabs, pressure plates)."
+        },
+        "size": {
+          "type": "string",
+          "enum": [
+            "tiny",
+            "small",
+            "medium",
+            "large",
+            "huge"
+          ],
+          "description": "Size class."
+        }
+      },
+      "required": [
+        "health",
+        "poise",
+        "mass",
+        "size"
+      ],
+      "additionalProperties": false,
+      "description": "Core stats."
+    },
+    "senses": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "x-contentRef": "sense"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "sight": {
+              "description": "Absent = blind.",
+              "type": "object",
+              "properties": {
+                "range": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Far sight range in metres."
+                },
+                "halfAngle": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 180,
+                  "description": "Sight cone half-angle in degrees."
+                }
+              },
+              "required": [
+                "range",
+                "halfAngle"
+              ],
+              "additionalProperties": false
+            },
+            "hearing": {
+              "description": "Absent = deaf.",
+              "type": "object",
+              "properties": {
+                "thresholdDb": {
+                  "type": "number",
+                  "description": "Quietest sound it hears, in dB at the listener."
+                },
+                "range": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Hearing range cap in metres."
+                }
+              },
+              "required": [
+                "thresholdDb",
+                "range"
+              ],
+              "additionalProperties": false
+            },
+            "smell": {
+              "description": "Absent = no sense of smell.",
+              "type": "object",
+              "properties": {
+                "range": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Smell range in metres."
+                }
+              },
+              "required": [
+                "range"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ],
+      "description": "A `sense` profile id, or an inline sense profile."
+    },
+    "locomotion": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "walk",
+              "climb",
+              "fly",
+              "swim",
+              "burrow",
+              "wallcrawl",
+              "stationary"
+            ],
+            "description": "How it moves."
+          },
+          "speed": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Top speed in this mode, metres per second (0 when stationary)."
+          }
+        },
+        "required": [
+          "mode",
+          "speed"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Locomotion modes (stub; e12.6 adds gaits, step/jump heights and nav permissions)."
+    },
+    "attacks": {
+      "description": "Attack ids it can use (e12.5); none = it never attacks.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+        "x-contentRef": "attack"
+      }
+    },
+    "properties": {
+      "description": "World-property tags (e03), e.g. \"flammable\", \"conductive\".",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
+    },
+    "resistances": {
+      "description": "Damage multiplier per damage type, 0–3: 0 = immune, below 1 resists, above 1 vulnerable. Unlisted types take 1.",
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "enum": [
+          "slash",
+          "pierce",
+          "blunt",
+          "fire",
+          "frost",
+          "shock",
+          "arcane",
+          "poison"
+        ]
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 3
+      }
+    },
+    "faction": {
+      "default": "unaligned",
+      "description": "Faction id (e12.8); \"unaligned\" = belongs to no faction.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "disposition": {
+      "description": "Default disposition; spawn points and runtime state can override it.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "towardPlayer": {
+          "default": "hostile",
+          "description": "Starting stance toward the player.",
+          "type": "string",
+          "enum": [
+            "ally",
+            "friendly",
+            "neutral",
+            "wary",
+            "hostile",
+            "prey",
+            "predator"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "fears": {
+      "description": "Stimuli that lower its morale (e12.10).",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "property",
+              "faction",
+              "event"
+            ],
+            "description": "What kind of stimulus it fears."
+          },
+          "stimulus": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "The world property, faction id or event name, e.g. \"burning\"."
+          },
+          "intensity": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Morale lost per perceived stimulus, 0–100."
+          }
+        },
+        "required": [
+          "kind",
+          "stimulus",
+          "intensity"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "personality": {
+      "description": "Personality trait defaults (e12.11).",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "bravery": {
+          "default": 0.5,
+          "description": "bravery, 0–1.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "curiosity": {
+          "default": 0.5,
+          "description": "curiosity, 0–1.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "aggression": {
+          "default": 0.5,
+          "description": "aggression, 0–1.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "diligence": {
+          "default": 0.5,
+          "description": "diligence, 0–1.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sociability": {
+          "default": 0.5,
+          "description": "sociability, 0–1.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "greed": {
+          "default": 0.5,
+          "description": "greed, 0–1.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "needs": {
+      "description": "Needs by id, e.g. \"hunger\", \"sleep\", \"fatigue\" (e12.12); none = no needs.",
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "ratePerMinute": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Need gained per sim minute, 0–100 scale."
+          },
+          "threshold": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Need level that emits the need intent."
+          }
+        },
+        "required": [
+          "ratePerMinute",
+          "threshold"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "behaviour": {
+      "description": "Behaviour profile and tuning overrides.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "profile": {
+          "default": "default",
+          "description": "Behaviour profile id (E11).",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "tuning": {
+          "description": "Numeric overrides of the profile’s tuning values.",
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1
+          },
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "interactions": {
+      "description": "Non-hostile affordances offered to the player, e.g. \"feed\", \"talk\", \"pet\".",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
+    },
+    "loot": {
+      "description": "Loot table id (E18); absent = drops only what it carries.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "presentation": {
+      "description": "Render and audio bindings.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "mesh": {
+          "default": "placeholder-capsule",
+          "description": "Mesh id; grey-box capsule default.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "sfx": {
+          "default": "placeholder",
+          "description": "SFX set id.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "id",
+    "family",
+    "stats",
+    "senses",
+    "locomotion"
+  ],
+  "additionalProperties": false
+}

@@ -26,6 +26,11 @@ export class ContentRef<T extends string = string> {
     Object.freeze(this);
   }
 
+  /** The plain id, so `JSON.stringify` writes a loaded entry back in its content-file form. */
+  toJSON(): string {
+    return this.id;
+  }
+
   /** `type:id`, the form used in error messages and test names. */
   toString(): string {
     return `${this.type}:${this.id}`;
@@ -34,8 +39,14 @@ export class ContentRef<T extends string = string> {
 
 /**
  * Schema for a reference to an entry of `type`. The JSON holds the target id; the parsed value is a
- * `ContentRef<type>`. Targets are checked after every file has loaded (`loadContent`).
+ * `ContentRef<type>`. Targets are checked after every file has loaded (`loadContent`). The generated
+ * JSON Schema marks the field with `x-contentRef: type` (read by the content docs generator).
  */
 export function ref<T extends string>(type: T) {
-  return contentId.transform((id) => new ContentRef(type, id));
+  return contentId.meta({ 'x-contentRef': type }).transform((id) => new ContentRef(type, id));
+}
+
+/** A loaded entry as content-file JSON (refs back to plain ids); parsing it gives an equal entry. */
+export function serializeContent(entry: unknown): string {
+  return `${JSON.stringify(entry, null, 2)}\n`;
 }

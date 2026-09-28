@@ -32,6 +32,7 @@ pnpm dev                 # Vite dev server
 | `pnpm bench`         | Vitest benchmarks (`*.bench.ts`) that assert sim perf budgets    |
 | `pnpm content:coverage` | After `pnpm test`: fails listing content entries no passing test exercised |
 | `pnpm content:schemas`  | Regenerates `src/content/data/<type>.schema.json` for editor autocompletion |
+| `pnpm content:docs`     | Regenerates the field reference `docs/content/<type>-schema.md` for each content type |
 
 First e2e run: `pnpm exec playwright install chromium`.
 
