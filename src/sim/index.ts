@@ -46,6 +46,7 @@ export {
 } from './core/world';
 export * as simMath from './math';
 export * from './properties';
+export * from './stimulus';
 export { EmptyChoiceError, Rng, type RngState, type Weighted } from './rng';
 export {
   CanonicalEncodingError,
