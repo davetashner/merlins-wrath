@@ -29,7 +29,7 @@ need a `gh` login with admin rights.
 ### Required checks
 
 `lint`, `typecheck`, `unit`, `coverage-gate`, `coverage-ratchet`, `e2e-smoke`, `build`, `beads-validate`
-(ci.yml), `secrets`, `audit`, `dependency-review` (security.yml) and `pr-lint` (pr-lint.yml).
+(ci.yml), `secrets`, `audit`, `dependency-review` (security.yml), and `pr-lint` and `changelog` (pr-lint.yml).
 
 Only jobs that run on **every** pull request may be required. A path-filtered job, such as plan-check's
 `validate`, would never report on unrelated PRs and would block them forever, so it runs but is not
