@@ -1,6 +1,7 @@
 # Story Bible — The Vesper Bell
 
-> Status: **DRAFT for owner review** (bead key `e39-story-bible`). Nothing here is canon until signed off.
+> Status: **CANON v1**, signed off by the owner on 2026-09-27 (`mw-e39.1`). Changes from here on need a
+> change-log entry (§12) and a narrative-lint update (`e39-narrative-lint`).
 > Subordinate to `CONSTITUTION.md`. Scope target: the MVP boundary (one town, one wilderness, one major
 > dungeon, a handful of NPCs/quests, ~8–10 creature types, one excellent bookshop, ~6 meaningful puzzles).
 > **Owner extension (v0.2):** the River Wend and the optional harbour town of **Wendmouth** (§3.6) were
@@ -1166,4 +1167,36 @@ holds **40 horn-coins, 3 carved stones, 1 name-stone**. Brass trinkets ordered: 
 sails **when Act III begins** (no real-time clock). Wendmouth is **optional**; the main quest is
 completable without visiting it. Mags has carried stone for **30 years** and Vane's crates for **2 months**.
 Bay nine's seal clerk **E. Ardley** has been **dead a year**. Wendmouth adds **no new creature types**
-(roster stays at **10**).
+(roster stays at **10**). Rootcellar clan: **~20** goblins. Oswin's father cast the replacement clapper
+**~80 years ago**.
+
+**Ages and sizes.** Tansy **12**; Mirela **fifties**; Hale **sixty**; Vane **forty**; Juniper **thirties**;
+Oswin **seventy**; Horn **nine feet** (≈ 2.75 m), old; Mags **fifties**; Nell **sixty**; Cray **forties**;
+Tereza **forties**; Quell **thirties**.
+
+**Counts (what downstream e39 items reference).**
+- **12 principal characters** (§5.1–5.12): Mirela Thorne, Brannoc Hale, Harrow Vane, Dot Farrow, Hollis Pell
+  (with Tansy), Juniper Fenn, Oswin Brand, Brother Horn, Clatter, Mother Kettleback, Snig, the Sleepless
+  Abbot. Plus **5 harbour principals** (§5.13): Mags Oakum, Nell Gannet, Prudence Cray, Tereza Maelo,
+  Jasper Quell.
+- **10 creature types** (§8): the Forgotten, Rootcellar Goblins, Brother Horn, Loom Spiders, Briar Wolves,
+  Hushlings, Tallow Ooze, Mimics, Hollow Sentinels, the Sleepless Abbot.
+- **8 side quests** (§6.1): 5 in the valley (The Bookshop Burglar, The Captain's Boots, The Watch Still
+  Stands, Framed in Brass, The Name on the Bones) and 3 in Wendmouth (The Crate for Mr. S—, The Tidefair,
+  Contraband Pages).
+- **4 headline endings** (§4.4): Vespers Rung, The Last Warden, The Hireling's Silence, The Long Vespers.
+- **18 rumours** (§6.2): 12 in the valley, 6 on the river and harbour.
+
+**Deliberately open (not placeholders).** The empire's name; the identity of Mr. S—; what the Nightjar
+is beyond "a dream that hungers". All three are post-MVP hooks (§10).
+
+---
+
+## 12. Change log
+
+| Version | Date | Change | Approved by |
+|---|---|---|---|
+| v0.1 | 2026-09-27 | First draft: premise, world, beat sheet, cast, quests, rumours, lore, creatures, glossary. | — |
+| v0.2 | 2026-09-27 | Owner extension: the River Wend, Kestrel Lock and the optional harbour town of Wendmouth, with harbour cast, quests and rumours. | owner |
+| v0.3 | 2026-09-27 | Retitled *The Vesper Bell* (ADR-0002). Stone-first economy: glenstone barged down the Wend for export built the valley and Wendmouth's monumental stone harbour; silver, struck ~35 years ago, is the empire's cash cow and drives Vane below the Bell Line (PR #13). | owner |
+| **CANON v1** | 2026-09-27 | Owner sign-off. Canon counts, ages and deliberately open questions added to §11.3. | owner |
