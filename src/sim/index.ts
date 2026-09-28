@@ -18,6 +18,25 @@ export {
 } from './core/events';
 export { Query, type ComponentList, type ComponentValues } from './core/query';
 export {
+  applyDifficultyCommands,
+  DEFAULT_DIFFICULTY,
+  DIFFICULTY_COMMAND,
+  DIFFICULTY_KEYS,
+  DIFFICULTY_RANGES,
+  DifficultyChanged,
+  difficultyCommand,
+  DifficultyConfigError,
+  difficultyOverrides,
+  isDifficultyCommand,
+  resolveDifficulty,
+  type DifficultyChange,
+  type DifficultyCommand,
+  type DifficultyConfig,
+  type DifficultyKey,
+  type DifficultyOverrides,
+  type DifficultyRange,
+} from './difficulty';
+export {
   World,
   type SnapshotOptions,
   type System,

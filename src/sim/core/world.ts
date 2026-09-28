@@ -9,6 +9,14 @@
 // here reads the wall clock or Math.random; randomness comes from named, snapshotted RNG streams.
 
 import { SimClock, type ClockState, type ReadonlyClock } from '../clock';
+import {
+  applyDifficultyCommands,
+  DifficultyChanged,
+  difficultyOverrides,
+  resolveDifficulty,
+  type DifficultyConfig,
+  type DifficultyOverrides,
+} from '../difficulty';
 import { Rng, type RngState } from '../rng';
 import {
   ComponentStore,
@@ -26,6 +34,8 @@ export interface WorldOptions {
   readonly hz?: number;
   /** Event cycle guard; defaults to 10,000 events per flush. */
   readonly maxEventsPerFlush?: number;
+  /** Difficulty multipliers that differ from neutral (1.0); validated, see `resolveDifficulty`. */
+  readonly difficulty?: DifficultyOverrides;
 }
 
 /** What a system receives each tick. */
@@ -36,6 +46,8 @@ export interface TickContext<TInput> {
   /** The tick being simulated (the clock advances after the last system). */
   readonly tick: number;
   readonly clock: ReadonlyClock;
+  /** This tick's difficulty multipliers (frozen; changed only by a `difficultyCommand` input). */
+  readonly difficulty: DifficultyConfig;
 }
 
 /** A unit of game rules, run once per tick in registration order. */
@@ -52,6 +64,8 @@ export interface System<TInput> {
 export interface WorldSnapshot {
   readonly seed: number;
   readonly clock: ClockState;
+  /** Non-neutral difficulty multipliers; absent when every multiplier is 1 (see difficulty.ts). */
+  readonly difficulty?: DifficultyOverrides;
   /** The next id `spawn` will hand out; ids below it are never reused. */
   readonly nextEntity: EntityId;
   readonly entities: readonly EntityId[];
@@ -90,6 +104,7 @@ export class World<TInput = unknown> {
   private seedValue: number;
   private root: Rng;
   private simClock: SimClock;
+  private config: DifficultyConfig;
   private readonly streams = new Map<string, Rng>();
   private readonly stores = new Map<string, ComponentStore<unknown>>();
   private readonly systems: System<TInput>[] = [];
@@ -105,6 +120,7 @@ export class World<TInput = unknown> {
     this.root = Rng.create(options.seed);
     this.seedValue = options.seed;
     this.simClock = new SimClock(options.hz);
+    this.config = resolveDifficulty(options.difficulty);
     this.events = new EventBus(options.maxEventsPerFlush ?? DEFAULT_MAX_EVENTS_PER_FLUSH);
   }
 
@@ -119,6 +135,11 @@ export class World<TInput = unknown> {
 
   get tick(): number {
     return this.simClock.tick;
+  }
+
+  /** The current difficulty multipliers (frozen). */
+  get difficulty(): DifficultyConfig {
+    return this.config;
   }
 
   /** Live entities (spawns queued in the current tick are not counted until it ends). */
@@ -219,7 +240,9 @@ export class World<TInput = unknown> {
   }
 
   /**
-   * Simulates one fixed tick: runs every system in order with this tick's inputs, flushing events at
+   * Simulates one fixed tick. First applies any `difficultyCommand` among the inputs (so the whole
+   * tick, and every later one, sees the new multipliers). Then runs every system in order with this
+   * tick's inputs, flushing events at
    * each phase boundary, then applies queued structural changes and advances the clock. If a system
    * or handler throws, the tick's queued changes are dropped and the world should be restored from a
    * snapshot.
@@ -227,13 +250,19 @@ export class World<TInput = unknown> {
   step(inputs: readonly TInput[] = []): void {
     if (this.stepping) throw new Error('step() cannot be called during a step');
     this.stepping = true;
-    const ctx: TickContext<TInput> = {
-      world: this,
-      inputs,
-      tick: this.simClock.tick,
-      clock: this.simClock,
-    };
     try {
+      // Difficulty commands apply before the first system, so the whole tick sees the new values.
+      const tick = this.simClock.tick;
+      const { config, changes } = applyDifficultyCommands(this.config, inputs, tick);
+      this.config = config;
+      for (const change of changes) this.events.emit(DifficultyChanged, change);
+      const ctx: TickContext<TInput> = {
+        world: this,
+        inputs,
+        tick,
+        clock: this.simClock,
+        difficulty: config,
+      };
       this.events.flush();
       for (const system of this.systems) {
         system.run(ctx);
@@ -267,9 +296,11 @@ export class World<TInput = unknown> {
     for (const [name, stream] of [...this.streams].sort(byKey)) {
       rng[name] = stream.serialize();
     }
+    const difficulty = difficultyOverrides(this.config);
     return {
       seed: this.seedValue,
       clock: this.simClock.serialize(),
+      ...(Object.keys(difficulty).length > 0 && { difficulty }),
       nextEntity: this.nextEntity,
       entities: [...this.alive].sort((a, b) => a - b),
       components,
@@ -285,6 +316,7 @@ export class World<TInput = unknown> {
     this.requireIdle('restore');
     const root = Rng.create(snapshot.seed);
     const clock = SimClock.restore(snapshot.clock);
+    const config = resolveDifficulty(snapshot.difficulty);
     const { nextEntity, entities } = snapshot;
     if (!Number.isSafeInteger(nextEntity) || nextEntity < 1) {
       throw new RangeError(`invalid snapshot: nextEntity ${String(nextEntity)}`);
@@ -314,6 +346,7 @@ export class World<TInput = unknown> {
     this.seedValue = snapshot.seed;
     this.root = root;
     this.simClock = clock;
+    this.config = config;
     this.nextEntity = nextEntity;
     this.alive = alive;
     this.streams.clear();
