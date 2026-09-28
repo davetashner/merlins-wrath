@@ -33,6 +33,7 @@ export {
   type CreatureDefInput,
 } from './types/creature.ts';
 export { canonicalJson, fnv1a64 } from './hash.ts';
+export { worldPropertiesSchema, type WorldPropertiesData } from './world-properties.ts';
 export {
   contentTypes,
   type ContentType,
