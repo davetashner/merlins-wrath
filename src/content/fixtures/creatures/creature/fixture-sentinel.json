@@ -1,0 +1,34 @@
+{
+  "$schema": "../../../data/creature.schema.json",
+  "id": "fixture-sentinel",
+  "family": "hollow-sentinel",
+  "tags": ["test-fixture", "undead", "never-sleeps"],
+  "stats": { "health": 150, "poise": 80, "mass": 120, "size": "medium" },
+  "senses": "undead",
+  "locomotion": {
+    "agent": { "radius": 0.35, "height": 1.8 },
+    "modes": {
+      "walk": {
+        "speeds": { "sneak": 0.8, "walk": 1, "run": 3 },
+        "stepHeight": 0.4,
+        "maxSlope": 40,
+        "jumpHeight": 0,
+        "maxDrop": 2.5,
+        "wadeDepth": 1.2
+      }
+    },
+    "opensDoors": true
+  },
+  "resistances": {},
+  "personality": {
+    "bravery": 0.5,
+    "curiosity": 0.5,
+    "aggression": 0.5,
+    "diligence": 0.5,
+    "sociability": 0.5,
+    "greed": 0.5
+  },
+  "needs": {},
+  "behaviour": { "profile": "fixture-sentinel" },
+  "presentation": { "mesh": "placeholder-capsule", "sfx": "placeholder" }
+}

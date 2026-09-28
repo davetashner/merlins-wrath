@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../data/creature.schema.json",
+  "id": "fixture-guard",
+  "family": "human",
+  "tags": ["test-fixture", "humanoid", "patrols", "communicates"],
+  "stats": { "health": 100, "poise": 40, "mass": 80, "size": "medium" },
+  "senses": "humanoid",
+  "locomotion": "humanoid",
+  "resistances": {},
+  "personality": {
+    "bravery": 0.5,
+    "curiosity": 0.5,
+    "aggression": 0.5,
+    "diligence": 0.5,
+    "sociability": 0.5,
+    "greed": 0.5
+  },
+  "needs": { "sleep": { "ratePerMinute": 1, "threshold": 80 } },
+  "behaviour": { "profile": "fixture-guard" },
+  "presentation": { "mesh": "placeholder-capsule", "sfx": "placeholder" }
+}
