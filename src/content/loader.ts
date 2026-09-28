@@ -69,11 +69,20 @@ export interface Catalogue<R extends ContentSchemas> {
   resolve<K extends keyof R & string>(target: ContentRef<K>): EntryOf<R, K>;
 }
 
-interface Loaded {
+/** A parsed entry, as whole-content checks see it. */
+export interface LoadedEntry {
   readonly type: string;
+  /** The file it came from. */
   readonly file: string;
   readonly value: { readonly id: string };
 }
+
+/**
+ * A check across entries that no single schema can make (e.g. every fact a signal graph names is
+ * declared in the fact registry, src/content/fact-checks.ts). It sees every entry in path order and
+ * returns its problems.
+ */
+export type ContentCheck = (entries: readonly LoadedEntry[]) => readonly ContentIssue[];
 
 /** Escapes one JSON pointer segment (RFC 6901). */
 const segment = (key: PropertyKey): string =>
@@ -150,11 +159,14 @@ function loadFile(schemas: ContentSchemas, source: ContentSource, issues: Conten
 
 /**
  * Loads and validates content. Throws a `ContentLoadError` listing every problem: schema errors,
- * unknown type folders, invalid JSON, ids used twice within a type, and references to missing entries.
+ * unknown type folders, invalid JSON, ids used twice within a type, references to missing entries
+ * and, once all of those pass (so a broken file never shows up as a missing target), the problems
+ * `checks` find.
  */
 export function loadContent<R extends ContentSchemas>(
   schemas: R,
   sources: readonly ContentSource[],
+  checks: readonly ContentCheck[] = [],
 ): Catalogue<R> {
   const issues: ContentIssue[] = [];
   const sorted = [...sources].sort((a, b) => (a.path < b.path ? -1 : 1));
@@ -188,11 +200,12 @@ export function loadContent<R extends ContentSchemas>(
     });
   }
 
+  if (issues.length === 0) issues.push(...checks.flatMap((check) => check(loaded)));
   if (issues.length > 0) throw new ContentLoadError(issues);
   return buildCatalogue(schemas, loaded);
 }
 
-function buildCatalogue<R extends ContentSchemas>(schemas: R, loaded: readonly Loaded[]) {
+function buildCatalogue<R extends ContentSchemas>(schemas: R, loaded: readonly LoadedEntry[]) {
   const index = new Map<string, unknown>();
   const lists = new Map<string, readonly unknown[]>();
   const hashed: string[] = [];

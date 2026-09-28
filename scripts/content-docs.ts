@@ -11,7 +11,7 @@ import { dirname, resolve } from 'node:path';
 import { readContentSources } from '../src/content/fs-sources.ts';
 import { contentJsonSchema } from '../src/content/json-schema.ts';
 import { loadContent } from '../src/content/loader.ts';
-import { contentTypes, type GameEntry } from '../src/content/registry.ts';
+import { contentChecks, contentTypes, type GameEntry } from '../src/content/registry.ts';
 import { CONTENT_ID_PATTERN } from '../src/content/schema.ts';
 import { materialPropertiesSchema } from '../src/content/types/material.ts';
 
@@ -195,7 +195,8 @@ export function renderMaterialsDoc(materials: readonly GameEntry<'material'>[]):
 /** The game's material presets, read from src/content/data. */
 function gameMaterials(): readonly GameEntry<'material'>[] {
   const root = resolve(import.meta.dirname, '../src/content/data');
-  return loadContent(contentTypes, readContentSources(root, 'src/content/data')).all('material');
+  const sources = readContentSources(root, 'src/content/data');
+  return loadContent(contentTypes, sources, contentChecks).all('material');
 }
 
 /** Repo-relative path of each generated doc → its expected contents. */

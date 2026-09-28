@@ -1,0 +1,22 @@
+{
+  "$schema": "../fact.schema.json",
+  "id": "mechanisms",
+  "name": "Mechanism facts",
+  "notes": "Facts written by signal graph fact receivers (src/content/data/signal-graph), so quests, dialogue and level variants can read what a mechanism did. A fact receiver's key must be declared here.",
+  "facts": [
+    {
+      "key": "chapel-of-echoes.portcullis-dropped",
+      "type": "bool",
+      "default": false,
+      "description": "The Chapel of Echoes portcullis has dropped (its rope cut or burnt: signal graph chapel-portcullis). One way to trap Brother Horn (story bible §4.2, Trick).",
+      "owner": "signals"
+    },
+    {
+      "key": "kestrel-lock.gate-open",
+      "type": "bool",
+      "default": false,
+      "description": "The Kestrel Lock gate is open (both paddles up: signal graph kestrel-lock-gates).",
+      "owner": "signals"
+    }
+  ]
+}

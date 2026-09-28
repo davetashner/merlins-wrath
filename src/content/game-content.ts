@@ -3,7 +3,7 @@
 // exactly the same files through the same validation. Node tools use fs-sources.ts instead.
 
 import { loadContent, type ContentSource } from './loader.ts';
-import { contentTypes, type GameContent } from './registry.ts';
+import { contentChecks, contentTypes, type GameContent } from './registry.ts';
 
 const files = import.meta.glob<string>('./data/*/*.json', {
   eager: true,
@@ -24,5 +24,5 @@ export function gameContentSources(): ContentSource[] {
 
 /** Loads and validates the game's content; throws a ContentLoadError listing every problem. */
 export function loadGameContent(): GameContent {
-  return loadContent(contentTypes, gameContentSources());
+  return loadContent(contentTypes, gameContentSources(), contentChecks);
 }

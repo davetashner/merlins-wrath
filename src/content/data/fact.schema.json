@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Group id, e.g. \"endings\". Facts are keyed by `key`, not by this."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (docs and debug tools)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What these facts cover and where they come from (canon section), for review."
+    },
+    "facts": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Fact key, or an `entity:*.<fact>` template for a fact every entity can hold."
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "description": "What the fact records, when it changes and what reads it (designers, owner review)."
+              },
+              "owner": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "System that writes the fact, e.g. \"signals\", \"quest\", \"interaction\"."
+              },
+              "persistence": {
+                "default": "permanent",
+                "description": "How long a written value lasts; `permanent` keeps it in saves forever.",
+                "type": "string",
+                "enum": [
+                  "permanent"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "const": "bool",
+                "description": "A true/false flag."
+              },
+              "default": {
+                "type": "boolean",
+                "description": "Value read before the fact is first written."
+              }
+            },
+            "required": [
+              "key",
+              "description",
+              "owner",
+              "type",
+              "default"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Fact key, or an `entity:*.<fact>` template for a fact every entity can hold."
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "description": "What the fact records, when it changes and what reads it (designers, owner review)."
+              },
+              "owner": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "System that writes the fact, e.g. \"signals\", \"quest\", \"interaction\"."
+              },
+              "persistence": {
+                "default": "permanent",
+                "description": "How long a written value lasts; `permanent` keeps it in saves forever.",
+                "type": "string",
+                "enum": [
+                  "permanent"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "const": "int",
+                "description": "A whole number (a count, a stage)."
+              },
+              "default": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991,
+                "description": "Value read before the fact is first written."
+              }
+            },
+            "required": [
+              "key",
+              "description",
+              "owner",
+              "type",
+              "default"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Fact key, or an `entity:*.<fact>` template for a fact every entity can hold."
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "description": "What the fact records, when it changes and what reads it (designers, owner review)."
+              },
+              "owner": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "System that writes the fact, e.g. \"signals\", \"quest\", \"interaction\"."
+              },
+              "persistence": {
+                "default": "permanent",
+                "description": "How long a written value lasts; `permanent` keeps it in saves forever.",
+                "type": "string",
+                "enum": [
+                  "permanent"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "const": "enum",
+                "description": "One of a fixed list of `values`."
+              },
+              "values": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                },
+                "description": "The allowed values, unique."
+              },
+              "default": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "Value read before the fact is first written; one of `values`."
+              }
+            },
+            "required": [
+              "key",
+              "description",
+              "owner",
+              "type",
+              "values",
+              "default"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Fact key, or an `entity:*.<fact>` template for a fact every entity can hold."
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "description": "What the fact records, when it changes and what reads it (designers, owner review)."
+              },
+              "owner": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "System that writes the fact, e.g. \"signals\", \"quest\", \"interaction\"."
+              },
+              "persistence": {
+                "default": "permanent",
+                "description": "How long a written value lasts; `permanent` keeps it in saves forever.",
+                "type": "string",
+                "enum": [
+                  "permanent"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "const": "id",
+                "description": "A content id (who rang the bell, which item)."
+              },
+              "default": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Content id read before the first write, or null."
+              }
+            },
+            "required": [
+              "key",
+              "description",
+              "owner",
+              "type",
+              "default"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "Fact key, or an `entity:*.<fact>` template for a fact every entity can hold."
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "description": "What the fact records, when it changes and what reads it (designers, owner review)."
+              },
+              "owner": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "System that writes the fact, e.g. \"signals\", \"quest\", \"interaction\"."
+              },
+              "persistence": {
+                "default": "permanent",
+                "description": "How long a written value lasts; `permanent` keeps it in saves forever.",
+                "type": "string",
+                "enum": [
+                  "permanent"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "const": "tick",
+                "description": "A sim tick (when something happened), never wall time."
+              },
+              "default": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Sim tick read before the first write, or null."
+              }
+            },
+            "required": [
+              "key",
+              "description",
+              "owner",
+              "type",
+              "default"
+            ],
+            "additionalProperties": false
+          }
+        ],
+        "description": "One fact: bool, int, enum (with `values`), id (a content id) or tick (a sim tick)."
+      },
+      "description": "The facts this group declares."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "facts"
+  ],
+  "additionalProperties": false
+}
