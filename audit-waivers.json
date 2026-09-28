@@ -1,0 +1,4 @@
+{
+  "$comment": "Temporary waivers for dependency advisories (mw-e00.6). Each needs the GHSA id, why it is safe for now, the bead that removes it, and an expiry date (YYYY-MM-DD); an expired or incomplete waiver fails CI.",
+  "waivers": []
+}

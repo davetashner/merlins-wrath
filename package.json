@@ -22,7 +22,8 @@
     "coverage:baseline": "node scripts/coverage-ratchet-cli.ts --write-baseline",
     "coverage:exclusions": "node scripts/check-coverage-exclusions-cli.ts",
     "secrets:lint": "node scripts/check-gitleaks-config-cli.ts",
-    "hooks:install": "git config core.hooksPath .beads/hooks"
+    "hooks:install": "git config core.hooksPath .beads/hooks",
+    "deps:audit": "pnpm audit --json > audit.json; node scripts/dependency-audit-cli.ts --audit audit.json"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",

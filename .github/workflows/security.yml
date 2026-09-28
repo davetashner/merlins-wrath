@@ -1,11 +1,14 @@
 name: Security
 
-# Secret scanning (mw-e00.5). Job name `secrets` is referenced by branch protection (mw-e00.10).
-# GitHub secret scanning and push protection are enabled in the repository settings as well.
+# Secret scanning (mw-e00.5) and dependency audit (mw-e00.6). Job names `secrets`, `audit` and
+# `dependency-review` are referenced by branch protection (mw-e00.10). GitHub secret scanning, push
+# protection and Dependabot alerts are enabled in the repository settings as well.
 on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    - cron: '17 6 * * *' # nightly: new advisories can land on an unchanged main
 
 permissions:
   contents: read
@@ -61,3 +64,50 @@ jobs:
           fi
           jq -r '.[] | "::error file=\(.File),line=\(.StartLine),title=Secret detected (\(.RuleID))::Commit \(.Commit[0:7]) adds a secret. Rotate it, then remove it from the branch history."' gitleaks.json
           exit 1
+
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write # nightly runs open or update an issue per critical advisory
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # Any CRITICAL advisory fails (runtime or dev); HIGH is a job-summary warning; waivers are validated.
+      - name: Audit dependencies
+        id: audit
+        run: |
+          pnpm audit --json > audit.json || true
+          node scripts/dependency-audit-cli.ts --audit audit.json
+      - name: Open or update an issue per critical advisory (nightly)
+        if: failure() && github.event_name == 'schedule' && steps.audit.outputs.critical != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CRITICAL: ${{ steps.audit.outputs.critical }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create security --color B60205 --description "Security advisories and secrets" 2>/dev/null || true
+          for id in $CRITICAL; do
+            title="Critical dependency advisory $id"
+            body="The nightly dependency audit on main found critical advisory [$id](https://github.com/advisories/$id). Details: $RUN_URL"
+            number=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+            if [ -n "$number" ]; then
+              gh issue comment "$number" --body "$body"
+            else
+              gh issue create --title "$title" --body "$body" --label security
+            fi
+          done
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      # Blocks PRs that add a dependency with a critical advisory or a copyleft licence the public,
+      # freely distributed game can't carry.
+      - uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: critical
+          deny-licenses: GPL-2.0-only, GPL-2.0-or-later, GPL-3.0-only, GPL-3.0-or-later, AGPL-3.0-only, AGPL-3.0-or-later
