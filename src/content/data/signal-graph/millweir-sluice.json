@@ -1,0 +1,33 @@
+{
+  "$schema": "../signal-graph.schema.json",
+  "id": "millweir-sluice",
+  "name": "Millweir sluice",
+  "notes": "The Vesperine sluice on the Millweir walk. Weight on the flagstone plate (40 kg: an adult, or a heavy crate pushed onto it) or the sluice wheel opens the gate; it stays open 8 s after the plate is released or the wheel let go, long enough to cross. Any weight counts, never a type of object, so a companion, a crate or a levitated statue all work.",
+  "nodes": [
+    {
+      "id": "flagstone",
+      "kind": "volume",
+      "shape": {
+        "kind": "box",
+        "center": { "x": 0, "y": 0.1, "z": 0 },
+        "halfExtents": { "x": 0.5, "y": 0.2, "z": 0.5 }
+      },
+      "minWeight": 40
+    },
+    { "id": "sluice-wheel", "kind": "lever", "entity": "sluice-wheel" },
+    { "id": "held", "kind": "or" },
+    { "id": "released", "kind": "pulse", "edge": "falling" },
+    { "id": "grace", "kind": "timer", "seconds": 8 },
+    { "id": "open", "kind": "or" },
+    { "id": "sluice-gate", "kind": "receiver", "receiver": "mechanism", "entity": "sluice-gate" }
+  ],
+  "wires": [
+    { "from": "flagstone.active", "to": "held" },
+    { "from": "sluice-wheel", "to": "held" },
+    { "from": "held", "to": "released" },
+    { "from": "released", "to": "grace" },
+    { "from": "held", "to": "open" },
+    { "from": "grace", "to": "open" },
+    { "from": "open", "to": "sluice-gate" }
+  ]
+}

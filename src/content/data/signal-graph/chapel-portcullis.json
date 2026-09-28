@@ -1,0 +1,38 @@
+{
+  "$schema": "../signal-graph.schema.json",
+  "id": "chapel-portcullis",
+  "name": "Chapel of Echoes portcullis",
+  "notes": "The portcullis hangs on a counterweight rope. Cutting it (an arrow through the rope, hp 0) or burning it drops the portcullis for good: the latch keeps it down even after the fire goes out. This is how the player can trap Horn behind it. The drop is recorded as a world fact.",
+  "nodes": [
+    {
+      "id": "rope-cut",
+      "kind": "sensor",
+      "entity": "counterweight-rope",
+      "filter": [{ "test": "property", "property": "hp", "op": "lte", "value": 0 }]
+    },
+    {
+      "id": "rope-burning",
+      "kind": "sensor",
+      "entity": "counterweight-rope",
+      "filter": [{ "test": "element", "element": "fire" }]
+    },
+    { "id": "rope-fails", "kind": "or" },
+    { "id": "dropped", "kind": "latch" },
+    { "id": "raised", "kind": "not" },
+    { "id": "portcullis", "kind": "receiver", "receiver": "door", "entity": "chapel-portcullis" },
+    {
+      "id": "dropped-fact",
+      "kind": "receiver",
+      "receiver": "fact",
+      "key": "chapel-of-echoes.portcullis-dropped"
+    }
+  ],
+  "wires": [
+    { "from": "rope-cut", "to": "rope-fails" },
+    { "from": "rope-burning", "to": "rope-fails" },
+    { "from": "rope-fails", "to": "dropped.set" },
+    { "from": "dropped", "to": "raised" },
+    { "from": "raised", "to": "portcullis" },
+    { "from": "dropped", "to": "dropped-fact" }
+  ]
+}

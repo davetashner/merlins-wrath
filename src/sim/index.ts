@@ -49,6 +49,7 @@ export * from './field';
 export * as simMath from './math';
 export * from './properties';
 export * from './stimulus';
+export * from './signals';
 export { EmptyChoiceError, Rng, type RngState, type Weighted } from './rng';
 export {
   CanonicalEncodingError,
