@@ -86,7 +86,7 @@ Every story/task/spike implicitly includes this DoD; beads only list **additions
 5. Content/data schema validation green.
 6. PR opened from a worktree branch, body contains one `Closes mw-…` line per completed bead, squash-merged.
 7. Bead closed after merge with `--reason "Completed in PR #N"`; `backlog.html` reflects it.
-8. User-facing changes: short note in `CHANGELOG.md`.
+8. User-facing changes: short note in `CHANGELOG.md` under `## [Unreleased]`. CI's `changelog` check (`scripts/changelog-check.ts`) requires it when a PR touches `src/{game,ui,render,audio,sim,content}/` (tests excluded), `src/main.ts`, `index.html` or `site/`; changes nothing visible to players get the `no-changelog` label instead.
 
 ---
 
