@@ -1,6 +1,7 @@
 // Tests for the injected DifficultyConfig (mw-e31.14): defaults, validation, hashing, snapshot/save
-// round trips and replay-safe runtime changes.
+// round trips and runtime changes replayed through the mw-e00.17 recorder and player.
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import {
   applyDifficultyCommands,
   DEFAULT_DIFFICULTY,
@@ -16,14 +17,21 @@ import {
   hashSnapshot,
   hashWorld,
   isDifficultyCommand,
+  parseReplay,
+  playReplay,
+  recordScenario,
   resolveDifficulty,
+  serializeReplay,
   World,
   type DifficultyChange,
+  type DifficultyCommand,
   type DifficultyOverrides,
+  type Replay,
+  type ReplayScenario,
   type WorldSnapshot,
 } from '@sim/index';
 
-type Input = string | ReturnType<typeof difficultyCommand>;
+type Input = string | DifficultyCommand;
 
 /** A world whose one system logs the damageTaken multiplier it sees each tick. */
 function probed(difficulty?: DifficultyOverrides): { world: World<Input>; seen: number[] } {
@@ -224,33 +232,46 @@ describe('DifficultyConfig runtime changes', () => {
     ]);
   });
 
-  it('AC-5: the change is recorded with the tick inputs, so a replay of the log is identical', () => {
-    const log: Input[][] = [
-      ['move'],
-      ['move', difficultyCommand({ damageTaken: 0.5, detectionSpeed: 2 })],
-      [],
-      [difficultyCommand({ damageTaken: 1 })],
-      ['move'],
-    ];
-    // Replay logs are JSON (mw-e00.17); commands must survive that unchanged.
-    const recorded = JSON.parse(JSON.stringify(log)) as Input[][];
-    expect(recorded).toEqual(log);
-
-    const run = (inputs: Input[][]): { hashes: string[]; seen: number[] } => {
-      const { world, seen } = probed();
-      const hashes = inputs.map((tick) => {
-        world.step(tick);
-        return hashWorld(world);
-      });
-      return { hashes, seen };
+  it('AC-5: the change is recorded in the replay log, so replays stay identical', () => {
+    const scenario: ReplayScenario<Input> = {
+      name: 'difficulty-probe',
+      usesContent: false,
+      command: z.union([z.string(), z.custom<DifficultyCommand>(isDifficultyCommand)]),
+      create: () => probed().world,
+      drive: () => [],
     };
-    const live = run(log);
-    const replayed = run(recorded);
-    expect(replayed).toEqual(live);
-    expect(live.seen).toEqual([1, 0.5, 0.5, 1, 1]);
-    expect(new Set(live.hashes).size).toBe(log.length);
-    const withoutChange = run(log.map((tick) => tick.filter((input) => input === 'move')));
-    expect(withoutChange.hashes[1]).not.toBe(live.hashes[1]);
+    const script = (tick: number): Input[] => {
+      if (tick === 30) return ['move', difficultyCommand({ damageTaken: 0.5, detectionSpeed: 2 })];
+      if (tick === 90) return [difficultyCommand({ damageTaken: 1 })];
+      return ['move'];
+    };
+    const record = (inputs: (tick: number) => Input[]): Replay =>
+      recordScenario(scenario, {
+        seed: 9,
+        ticks: 120,
+        buildSha: 'test',
+        contentHash: 'none',
+        checkpointInterval: 10,
+        inputs,
+      });
+    // Replay files are JSON: the change must survive the file round trip and replay identically.
+    const live = record(script);
+    const replay = parseReplay(JSON.parse(serializeReplay(live)));
+    expect(replay.inputs).toContainEqual([
+      1,
+      ['move', { kind: 'sim.difficulty', set: { damageTaken: 0.5, detectionSpeed: 2 } }],
+    ]);
+    expect(playReplay(replay, scenario)).toMatchObject({ status: 'passed', checkpoints: 13 });
+
+    // The same session without the change diverges at the first checkpoint after tick 30.
+    const without = record((tick) => (tick === 30 || tick === 90 ? ['move'] : script(tick)));
+    expect(playReplay({ ...without, checkpoints: live.checkpoints }, scenario)).toMatchObject({
+      status: 'diverged',
+      divergence: {
+        tick: 40,
+        difference: { section: 'difficulty', path: 'difficulty.damageTaken', a: 0.5, b: 1 },
+      },
+    });
   });
 
   it('applies several commands in one tick in input order and skips no-op changes', () => {
