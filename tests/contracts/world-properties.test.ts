@@ -1,5 +1,5 @@
 // Contract between layers (mw-e03.1): the sim's world-property spec and the content data schema must
-// agree on every key, range and default. Content may import the sim only as types, so this runtime
+// agree on every key, range and default (v2 added enum values and partial records, mw-e03.31). Content may import the sim only as types, so this runtime
 // comparison lives outside src/: it probes both validators with values at and around every bound
 // and requires the same verdict.
 
@@ -35,11 +35,15 @@ function probes(key: WorldPropertyKey): unknown[] {
       return [true, false, 0, 'true', null];
     case 'id':
       return ['dry-wood', 'a', 'Dry Wood', 'dry_wood', '', 7];
+    case 'enum':
+      return [...spec.values, 'SOFT', 'firm', '', 1, null];
     case 'record': {
       const fields = Object.entries(spec.fields);
       const base = Object.fromEntries(fields.map(([name, range]) => [name, range.min]));
       return [
         base,
+        {},
+        ...fields.map(([name, range]) => ({ [name]: range.max })),
         { ...base, extra: 1 },
         null,
         [],

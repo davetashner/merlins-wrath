@@ -379,6 +379,9 @@ function isId(value: unknown): value is string {
   return typeof value === 'string' && PROPERTY_ID_PATTERN.test(value);
 }
 
+/** How an ordering-comparison error names a non-number property kind. */
+const KIND_NOUN = { boolean: 'a boolean', id: 'an id', enum: 'an enum' } as const;
+
 function checkPredicate(p: SignalPredicate, path: (string | number)[], problems: Problems): void {
   const fail = (message: string) => problems.push({ path, message });
   switch (p.test) {
@@ -398,14 +401,22 @@ function checkPredicate(p: SignalPredicate, path: (string | number)[], problems:
       const spec = WORLD_PROPERTY_SPECS[p.property];
       if (!(PREDICATE_OPS as readonly string[]).includes(p.op)) {
         fail(`unknown operator "${p.op}"`);
-      } else if (spec.type === 'record') {
+        return;
+      }
+      if (spec.type === 'record') {
         fail(`"${p.property}" is a record and cannot be compared`);
-      } else if (p.op !== 'eq' && p.op !== 'ne' && spec.type !== 'number') {
+        return;
+      }
+      // Ids and enum values (surfaceHardness, mw-e03.31) are both compared as strings.
+      const kind = spec.type === 'id' || spec.type === 'enum' ? 'string' : spec.type;
+      if (p.op !== 'eq' && p.op !== 'ne' && spec.type !== 'number') {
+        fail(`"${p.op}" needs a number property; "${p.property}" is ${KIND_NOUN[spec.type]}`);
+      } else if (typeof p.value !== kind) {
+        fail(`"${p.property}" compares with a ${kind} value`);
+      } else if (spec.type === 'enum' && !(spec.values as readonly unknown[]).includes(p.value)) {
         fail(
-          `"${p.op}" needs a number property; "${p.property}" is ${spec.type === 'id' ? 'an id' : 'a boolean'}`,
+          `"${p.property}" is one of ${spec.values.join(', ')}, never ${JSON.stringify(p.value)}`,
         );
-      } else if (typeof p.value !== (spec.type === 'id' ? 'string' : spec.type)) {
-        fail(`"${p.property}" compares with a ${spec.type === 'id' ? 'string' : spec.type} value`);
       }
       return;
     }

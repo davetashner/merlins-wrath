@@ -7,7 +7,8 @@
 // override can't be (a flammable material with no ignition point, a frozen one above its freezing
 // point). Every value is explained in the entry's `notes` so the owner can review the numbers;
 // docs/design/materials.md is generated from the data (`pnpm content:docs`). A flammable material
-// also says what fire leaves of it (mw-e03.5): another material (wood → charred) or nothing.
+// also says what fire leaves of it (mw-e03.5): another material (wood → charred) or nothing. Every
+// preset declares its surfaceHardness and softAnchor (mw-e03.31).
 
 import { z } from 'zod';
 import { contentId, ref, type ContentRef } from '../schema.ts';
@@ -19,13 +20,39 @@ export const FOOTSTEP_LOUDNESS_RANGE = { min: -20, max: 20 } as const;
 /** Impact sound set ids: `sfx-impact-<material>` (audio bible §6, §7.2); variants picked at runtime. */
 export const IMPACT_SOUND_PATTERN = /^sfx-impact-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** World properties a preset may set: everything except the id itself, ownership and live state. */
-const presetFields = worldPropertiesSchema.omit({
-  material: true,
-  owner: true,
-  burning: true,
-  charge: true,
-});
+/**
+ * World properties a preset may set: everything except the id itself, live state, and facts about one
+ * object rather than its material — ownership, placement (hidden, trapped, hanging, a pool's surface),
+ * what it is used as (container, remains, a mechanism input, a light source) and how it is built
+ * (bashable, unstable). Every preset must say how hard its surface is and whether rope arrows embed
+ * in it (mw-e03.31), since archery and footsteps read both on every surface.
+ */
+const presetFields = worldPropertiesSchema
+  .omit({
+    material: true,
+    owner: true,
+    burning: true,
+    charge: true,
+    hidden: true,
+    trapped: true,
+    trap: true,
+    suspended: true,
+    support: true,
+    waterSurface: true,
+    container: true,
+    remains: true,
+    chargeActivated: true,
+    lightActivated: true,
+    shootable: true,
+    extinguishable: true,
+    bashable: true,
+    unstable: true,
+    noiseMultiplier: true,
+  })
+  .extend({
+    surfaceHardness: worldPropertiesSchema.shape.surfaceHardness.unwrap(),
+    softAnchor: worldPropertiesSchema.shape.softAnchor.unwrap(),
+  });
 
 type PresetFields = z.output<typeof presetFields>;
 

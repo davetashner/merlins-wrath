@@ -11,33 +11,55 @@ import {
 describe('world property spec', () => {
   it('is a closed, versioned set: changing the keys means bumping the version', () => {
     // Update both together; a save migration (e30) keys off WORLD_PROPERTIES_VERSION.
-    expect(WORLD_PROPERTIES_VERSION).toBe(1);
+    expect(WORLD_PROPERTIES_VERSION).toBe(2);
     expect(WORLD_PROPERTY_KEYS).toEqual([
+      'bashable',
+      'breakable',
       'burning',
       'charge',
+      'chargeActivated',
       'climbable',
       'conductive',
+      'container',
+      'cuttable',
       'density',
+      'extinguishable',
       'flammable',
+      'flammableGas',
       'fragile',
       'freezePoint',
       'friction',
       'frozen',
       'fuel',
+      'hidden',
       'hideable',
       'hp',
       'ignitionPoint',
       'impactAbsorb',
       'liftable',
+      'lightActivated',
       'lightEmitter',
+      'liquid',
       'material',
+      'noiseMultiplier',
       'opaque',
       'owner',
       'pushable',
       'reflective',
+      'remains',
+      'shootable',
+      'softAnchor',
       'soundDamping',
+      'support',
+      'surfaceHardness',
+      'suspended',
       'temperature',
+      'toughness',
       'transparent',
+      'trap',
+      'trapped',
+      'unstable',
+      'waterSurface',
       'weight',
       'wetness',
     ]);
@@ -105,6 +127,44 @@ describe('world property spec', () => {
     );
     expect(validateProperty('lightEmitter', { intensity: 1, radius: 101 })).toBe(
       'lightEmitter .radius must be ≤ 100, got 101',
+    );
+  });
+
+  it('mw-e03.31: checks enum values', () => {
+    expect(validateProperty('surfaceHardness', 'hard')).toBeUndefined();
+    expect(validateProperty('surfaceHardness', 'firm')).toBe(
+      'surfaceHardness must be one of soft, medium, hard',
+    );
+    expect(validateProperty('surfaceHardness', 2)).toBe(
+      'surfaceHardness must be one of soft, medium, hard',
+    );
+  });
+
+  it('mw-e03.31: a partial record (toughness) may leave fields out but checks the ones it has', () => {
+    expect(validateProperty('toughness', {})).toBeUndefined();
+    expect(validateProperty('toughness', { blunt: 200, slash: 800 })).toBeUndefined();
+    expect(validateProperty('toughness', { blunt: -1 })).toBe(
+      'toughness .blunt must be ≥ 0, got -1',
+    );
+    expect(validateProperty('toughness', { fire: 5 })).toBe('toughness has unknown field "fire"');
+  });
+
+  it('mw-e03.31: threshold properties default to their maximum (never triggers)', () => {
+    for (const key of [
+      'fragile',
+      'unstable',
+      'shootable',
+      'chargeActivated',
+      'lightActivated',
+    ] as const) {
+      const spec = WORLD_PROPERTY_SPECS[key];
+      expect([key, spec.default]).toEqual([key, spec.max]);
+    }
+    expect(WORLD_PROPERTY_SPECS.chargeActivated.default).toBeGreaterThan(
+      WORLD_PROPERTY_SPECS.charge.max,
+    );
+    expect(WORLD_PROPERTY_SPECS.lightActivated.default).toBeGreaterThan(
+      WORLD_PROPERTY_SPECS.lightEmitter.fields.intensity.max,
     );
   });
 

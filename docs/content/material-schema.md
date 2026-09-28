@@ -38,4 +38,15 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `properties.soundDamping` | number 0–1 | — | Fraction of sound it absorbs, 0 … 1. |
 | `properties.friction` | number 0–2 | — | Surface friction coefficient. |
 | `properties.impactAbsorb` | number 0–1 | — | Fraction of impact energy it absorbs, 0 … 1. |
+| `properties.liquid` | boolean | — | A liquid: it pours, puddles and can have a water surface. |
+| `properties.flammableGas` | boolean | — | A gas that ignites (flares or explodes) when fire reaches it. |
+| `properties.breakable` | boolean | — | A single hit at or above its toughness for that kind of hit breaks it. |
+| `properties.toughness` | object | — | Per kind of hit, the single-hit energy that breaks a breakable object; a kind left out never does. |
+| `properties.toughness.blunt` | number 0–1000000000 | — | Blunt hit energy that breaks it, J. |
+| `properties.toughness.slash` | number 0–1000000000 | — | Slash hit energy that breaks it, J. |
+| `properties.toughness.pierce` | number 0–1000000000 | — | Pierce hit energy that breaks it, J. |
+| `properties.toughness.force` | number 0–1000000000 | — | Force (blast, quake, boulder) energy that breaks it, J. |
+| `properties.cuttable` | boolean | — | Slash or pierce damage severs it. |
+| `properties.softAnchor` | boolean | required | Rope arrows and hooks embed in it. |
+| `properties.surfaceHardness` | `"soft"` \| `"medium"` \| `"hard"` | required | Footstep loudness and whether arrows stick (soft, medium) or ricochet (hard). |
 | `burnt` | `"destroyed"` or ref → material | — | Flammable materials only: what fire leaves when the fuel is spent: "destroyed" (it burns away) or the id of the material it becomes (e.g. "charred"). |

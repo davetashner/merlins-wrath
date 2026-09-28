@@ -7,6 +7,7 @@ import { contentJsonSchema } from '../src/content/json-schema.ts';
 import { contentId, ref } from '../src/content/schema.ts';
 import { loadGameContent } from '../src/content/game-content.ts';
 import { materialSchema } from '../src/content/types/material.ts';
+import { WORLD_PROPERTY_KEYS, WORLD_PROPERTY_SPECS } from '../src/sim/properties/spec.ts';
 import {
   expectedDocs,
   fieldRows,
@@ -14,7 +15,9 @@ import {
   MATERIALS_DOC,
   renderDoc,
   renderMaterialsDoc,
+  renderWorldPropertiesDoc,
   typeOf,
+  WORLD_PROPERTIES_DOC,
   type JsonSchemaNode,
 } from './content-docs.ts';
 
@@ -193,7 +196,11 @@ describe('renderMaterialsDoc', () => {
       const cells = row.replace(/ \|$/, '').split(' | ');
       return [
         ...Object.entries(m.properties)
-          .filter(([key, value]) => cells[columns.indexOf(key)] !== JSON.stringify(value))
+          .filter(
+            ([key, value]) =>
+              cells[columns.indexOf(key)] !==
+              (typeof value === 'string' ? value : JSON.stringify(value)),
+          )
           .map(([key]) => `${m.id}.${key}`),
         ...(doc.includes(m.notes) ? [] : [`${m.id}: notes`]),
       ];
@@ -209,19 +216,19 @@ describe('renderMaterialsDoc', () => {
         notes: `${id} notes`,
         footstepLoudness: -1,
         impactSound: 'sfx-impact-glass',
-        properties,
+        properties: { surfaceHardness: 'hard', softAnchor: false, ...properties },
       });
     const doc = renderMaterialsDoc([
       material('lamp-glass', { lightEmitter: { intensity: 10, radius: 2 } }),
       material('plain', {}),
     ]);
     expect(doc).toContain(
-      '| Material | Footsteps (dB) | Impact sound | Burns to | `lightEmitter` |',
+      '| Material | Footsteps (dB) | Impact sound | Burns to | `lightEmitter` | `softAnchor` | `surfaceHardness` |',
     );
     expect(doc).toContain(
-      '| `lamp-glass` | -1 | `sfx-impact-glass` | — | `{"intensity":10,"radius":2}` |',
+      '| `lamp-glass` | -1 | `sfx-impact-glass` | — | `{"intensity":10,"radius":2}` | false | hard |',
     );
-    expect(doc).toContain('| `plain` | -1 | `sfx-impact-glass` | — | — |');
+    expect(doc).toContain('| `plain` | -1 | `sfx-impact-glass` | — | — | false | hard |');
     expect(doc).toContain('- **plain** (`plain`): plain notes');
   });
 
@@ -230,5 +237,66 @@ describe('renderMaterialsDoc', () => {
     expect(doc).toContain('| `wood` | 2 | `sfx-impact-wood` | `charred` |');
     expect(doc).toContain('| `straw` | -4 | `sfx-impact-straw` | `destroyed` |');
     expect(doc).toContain('| `stone` | 0 | `sfx-impact-stone` | — |');
+  });
+});
+
+describe('renderWorldPropertiesDoc (mw-e03.31)', () => {
+  /** Every property the bead asks for, besides the v1 set. */
+  const BEAD_PROPERTIES = [
+    'flammable',
+    'flammableGas',
+    'extinguishable',
+    'reflective',
+    'waterSurface',
+    'unstable',
+    'suspended',
+    'breakable',
+    'toughness',
+    'fragile',
+    'bashable',
+    'cuttable',
+    'shootable',
+    'softAnchor',
+    'surfaceHardness',
+    'chargeActivated',
+    'lightActivated',
+    'hidden',
+    'trapped',
+    'container',
+    'remains',
+    'noiseMultiplier',
+  ];
+
+  it('AC-1: every bead property exists with a type, values, default and doc, and the table lists each one', () => {
+    const doc = expectedDocs().get(WORLD_PROPERTIES_DOC) ?? '';
+    expect(BEAD_PROPERTIES.filter((key) => !WORLD_PROPERTY_KEYS.includes(key as never))).toEqual(
+      [],
+    );
+    const rows = WORLD_PROPERTY_KEYS.map(
+      (key) =>
+        doc.split('\n').find((line) => line.startsWith(`| \`${key}\` |`)) ?? `${key}: no row`,
+    );
+    const incomplete = rows.filter((row) => {
+      const cells = row.split(' | ');
+      return cells.length !== 5 || cells.some((cell) => cell.trim() === '');
+    });
+    expect(incomplete).toEqual([]);
+    expect(
+      rows.every((row, i) =>
+        row.includes(WORLD_PROPERTY_SPECS[WORLD_PROPERTY_KEYS[i] ?? 'hp'].doc),
+      ),
+    ).toBe(true);
+    expect(doc).toContain('| `surfaceHardness` | one of | `soft`, `medium`, `hard` | medium | ');
+    expect(doc).toContain('| `toughness` | record (any fields) | `blunt` 0–1,000,000,000 J;');
+    expect(doc).toContain(
+      '| `lightEmitter` | record | `intensity` 0–100,000 light; `radius` 0–100 m |',
+    );
+    expect(doc).toContain('| `climbable` | number | whole 1–3 grade | 1 |');
+    expect(doc).toContain('| `wetness` | number | 0–1 | 0 |');
+    expect(doc).toContain('| `material` | id | kebab-case id | generic |');
+    expect(doc).toContain('| `hidden` | flag | true, false | false |');
+    expect(doc).toContain('| `wet` | `wetness` |');
+    expect(doc).toContain('| buoyant, floats |');
+    expect(renderWorldPropertiesDoc()).toBe(doc);
   });
 });

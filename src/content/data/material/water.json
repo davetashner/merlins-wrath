@@ -2,7 +2,7 @@
   "$schema": "../material.schema.json",
   "id": "water",
   "name": "Water",
-  "notes": "Standing water: puddles, troughs, pools, streams. Saturated (wetness 1), freezes at 0 °C and conducts charge (valley water is never pure). Density exactly 1000 kg/m³, the float threshold. See-through. A deep pool absorbs most of a fall (0.6); shallow water splashes loudly (+6 dB, audio bible §7.3: water-shallow is loud).",
+  "notes": "Standing water: puddles, troughs, pools, streams. Saturated (wetness 1), freezes at 0 °C and conducts charge (valley water is never pure). Density exactly 1000 kg/m³, the float threshold. See-through. A deep pool absorbs most of a fall (0.6); shallow water splashes loudly (+6 dB, audio bible §7.3: water-shallow is loud). A liquid (a pool's top is a waterSurface that cold freezes into walkable ice); soft surface. (mw-e03.31)",
   "footstepLoudness": 6,
   "impactSound": "sfx-impact-water",
   "properties": {
@@ -13,6 +13,9 @@
     "friction": 0.3,
     "soundDamping": 0.1,
     "impactAbsorb": 0.6,
-    "transparent": true
+    "transparent": true,
+    "liquid": true,
+    "surfaceHardness": "soft",
+    "softAnchor": false
   }
 }

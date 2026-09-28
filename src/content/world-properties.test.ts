@@ -4,7 +4,9 @@ import type { WorldPropertyValues } from '../sim/properties/spec.ts';
 import { ContentLoadError, loadContent, type ContentIssue } from './loader.ts';
 import { ContentRef, contentId } from './schema.ts';
 import {
+  canonicalPropertyKey,
   toPropertyInit,
+  WORLD_PROPERTY_SYNONYMS,
   worldPropertiesSchema,
   type WorldPropertiesData,
   type WorldPropertiesInit,
@@ -56,6 +58,75 @@ describe('world properties data schema', () => {
         message: expect.stringMatching(/"hue"/) as string,
       },
     ]);
+  });
+
+  it('AC-4 (mw-e03.31): a non-canonical alias fails with a message naming the canonical key', () => {
+    const at = (message: string) => [
+      {
+        file: 'data/thing/crate.json',
+        pointer: '/properties',
+        message: expect.stringContaining(message) as string,
+      },
+    ];
+    expect(issuesOf({ soft_anchor: true })).toEqual(
+      at('"soft_anchor" is not a world property; use the canonical key "softAnchor"'),
+    );
+    expect(issuesOf({ 'water-surface': true })).toEqual(
+      at('"water-surface" is not a world property; use the canonical key "waterSurface"'),
+    );
+    expect(issuesOf({ wet: 0.5, sparkly: true })).toEqual(
+      at(
+        '"wet" is not a world property; use the canonical key "wetness"; unknown world property "sparkly"',
+      ),
+    );
+  });
+
+  it('AC-4: canonicalPropertyKey maps synonyms and other spellings, and nothing else', () => {
+    const keys = Object.keys(worldPropertiesSchema.shape);
+    expect(canonicalPropertyKey('Flammable-Gas', keys)).toBe('flammableGas');
+    expect(canonicalPropertyKey('charge_activated', keys)).toBe('chargeActivated');
+    expect(canonicalPropertyKey('light activated', keys)).toBe('lightActivated');
+    expect(canonicalPropertyKey('brittle', keys)).toBe('fragile');
+    expect(canonicalPropertyKey('softAnchor', keys)).toBeUndefined();
+    expect(canonicalPropertyKey('toString', keys)).toBeUndefined();
+    expect(canonicalPropertyKey('sparkly', keys)).toBeUndefined();
+    // Every synonym points at a real key and is not itself one.
+    expect(
+      Object.entries(WORLD_PROPERTY_SYNONYMS).filter(
+        ([word, key]) => !keys.includes(key) || keys.includes(word),
+      ),
+    ).toEqual([]);
+  });
+
+  it('AC-1 (mw-e03.31): the new properties validate their values', () => {
+    const properties = {
+      liquid: true,
+      waterSurface: true,
+      toughness: { blunt: 200, slash: 800 },
+      surfaceHardness: 'soft',
+      support: 3,
+      trap: 'dart-trap',
+      noiseMultiplier: 1.6,
+    };
+    expect(issuesOf(properties)).toEqual([]);
+    expect(issuesOf({ surfaceHardness: 'firm' }).map((i) => i.pointer)).toEqual([
+      '/properties/surfaceHardness',
+    ]);
+    expect(issuesOf({ toughness: { fire: 3 } }).map((i) => i.pointer)).toEqual([
+      '/properties/toughness',
+    ]);
+    expect(issuesOf({ support: 1.5 }).map((i) => i.pointer)).toEqual(['/properties/support']);
+  });
+
+  it('properties that are not an object keep the standard message', () => {
+    expect(worldPropertiesSchema.safeParse(5).error?.issues[0]?.message).toMatch(/expected object/);
+  });
+
+  it('a canonical key a narrower schema leaves out says it is not allowed there', () => {
+    const narrow = worldPropertiesSchema.omit({ owner: true });
+    expect(narrow.safeParse({ owner: 'crown' }).error?.issues[0]?.message).toBe(
+      'world property "owner" is not allowed here',
+    );
   });
 
   it('accepts any valid subset, including none', () => {

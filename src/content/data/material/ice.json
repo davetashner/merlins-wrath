@@ -2,7 +2,7 @@
   "$schema": "../material.schema.json",
   "id": "ice",
   "name": "Ice",
-  "notes": "Frozen water: frozen ponds, icicles, Frost spell walls. Frozen at −5 °C, below its 0 °C freezing point, so it melts when warmed. Density 917 kg/m³: ice floats. Friction 0.05 is the spec's ice reference. Brittle: a single 40 J impact (a hard thrown rock or a heavy blow) shatters it. Transparent and a skill climb (grade 3). Sounds like glass on impact (tink, shatter); snow-ice footsteps are close to stone (+1 dB).",
+  "notes": "Frozen water: frozen ponds, icicles, Frost spell walls. Frozen at −5 °C, below its 0 °C freezing point, so it melts when warmed. Density 917 kg/m³: ice floats. Friction 0.05 is the spec's ice reference. Brittle: a single 40 J impact (a hard thrown rock or a heavy blow) shatters it. Transparent and a skill climb (grade 3). Sounds like glass on impact (tink, shatter); snow-ice footsteps are close to stone (+1 dB). Hard surface: arrows ricochet. (mw-e03.31)",
   "footstepLoudness": 1,
   "impactSound": "sfx-impact-glass",
   "properties": {
@@ -15,6 +15,8 @@
     "friction": 0.05,
     "soundDamping": 0.05,
     "transparent": true,
-    "climbable": 3
+    "climbable": 3,
+    "surfaceHardness": "hard",
+    "softAnchor": false
   }
 }

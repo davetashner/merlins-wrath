@@ -190,6 +190,10 @@ describe('signal graph compilation', () => {
             { test: 'shape' },
             { test: 'property', property: 'owner', op: 'eq', value: 'crown' },
             { test: 'element', element: 'fire' },
+            { test: 'property', property: 'toughness', op: 'eq', value: 1 },
+            { test: 'property', property: 'surfaceHardness', op: 'gt', value: 'hard' },
+            { test: 'property', property: 'surfaceHardness', op: 'eq', value: 'firm' },
+            { test: 'property', property: 'surfaceHardness', op: 'eq', value: 'hard' },
           ],
         }),
       ),
@@ -204,6 +208,9 @@ describe('signal graph compilation', () => {
       'nodes.0.filter.7: "weight" compares with a number value',
       'nodes.0.filter.8: "owner" compares with a string value',
       'nodes.0.filter.9: unknown predicate test "shape"',
+      'nodes.0.filter.12: "toughness" is a record and cannot be compared',
+      'nodes.0.filter.13: "gt" needs a number property; "surfaceHardness" is an enum',
+      'nodes.0.filter.14: "surfaceHardness" is one of soft, medium, hard, never "firm"',
     ]);
   });
 

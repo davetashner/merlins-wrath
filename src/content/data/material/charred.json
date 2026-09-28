@@ -2,7 +2,7 @@
   "$schema": "../material.schema.json",
   "id": "charred",
   "name": "Charred remains",
-  "notes": "What wood becomes when its fire burns out (mw-e03.5): blackened, brittle charcoal. No longer flammable, so a burnt crate never reignites (its fuel is spent). Crumbles from a solid blow (fragile 150 J, a hard kick or a mace) and has lost most of its mass (density 300 kg/m³, lump charcoal about 250–600). Crunchy underfoot (+3 dB) with a hollow wooden knock. It sets no hp: fire has already worn the object's own hp down, and a preset must not restore it.",
+  "notes": "What wood becomes when its fire burns out (mw-e03.5): blackened, brittle charcoal. No longer flammable, so a burnt crate never reignites (its fuel is spent). Crumbles from a solid blow (fragile 150 J, a hard kick or a mace) and has lost most of its mass (density 300 kg/m³, lump charcoal about 250–600). Crunchy underfoot (+3 dB) with a hollow wooden knock. It sets no hp: fire has already worn the object's own hp down, and a preset must not restore it. Soft, crumbling surface; too brittle to hold a rope arrow. (mw-e03.31)",
   "footstepLoudness": 3,
   "impactSound": "sfx-impact-wood",
   "properties": {
@@ -11,6 +11,8 @@
     "fragile": 150,
     "friction": 0.6,
     "soundDamping": 0.1,
-    "impactAbsorb": 0.05
+    "impactAbsorb": 0.05,
+    "surfaceHardness": "soft",
+    "softAnchor": false
   }
 }

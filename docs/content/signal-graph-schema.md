@@ -37,7 +37,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `nodes[].shape.to.z` | number | required | Metres. |
 | `nodes[].filter` | list of object | — | Conditions an entity must all pass. |
 | `nodes[].filter[].test` | `"property"` | required |  |
-| `nodes[].filter[].property` | `"material"` \| `"temperature"` \| `"flammable"` \| `"ignitionPoint"` \| `"fuel"` \| `"burning"` \| `"wetness"` \| `"frozen"` \| `"freezePoint"` \| `"conductive"` \| `"charge"` \| `"weight"` \| `"fragile"` \| `"hp"` \| `"density"` \| `"climbable"` \| `"liftable"` \| `"pushable"` \| `"hideable"` \| `"reflective"` \| `"transparent"` \| `"opaque"` \| `"soundDamping"` \| `"friction"` \| `"impactAbsorb"` \| `"owner"` | required | World property to compare (absent = its default). |
+| `nodes[].filter[].property` | `"material"` \| `"temperature"` \| `"flammable"` \| `"ignitionPoint"` \| `"fuel"` \| `"burning"` \| `"wetness"` \| `"frozen"` \| `"freezePoint"` \| `"conductive"` \| `"charge"` \| `"weight"` \| `"fragile"` \| `"hp"` \| `"density"` \| `"climbable"` \| `"liftable"` \| `"pushable"` \| `"hideable"` \| `"reflective"` \| `"transparent"` \| `"opaque"` \| `"soundDamping"` \| `"friction"` \| `"impactAbsorb"` \| `"owner"` \| `"liquid"` \| `"flammableGas"` \| `"extinguishable"` \| `"waterSurface"` \| `"unstable"` \| `"suspended"` \| `"support"` \| `"breakable"` \| `"bashable"` \| `"cuttable"` \| `"shootable"` \| `"softAnchor"` \| `"surfaceHardness"` \| `"chargeActivated"` \| `"lightActivated"` \| `"hidden"` \| `"trapped"` \| `"trap"` \| `"container"` \| `"remains"` \| `"noiseMultiplier"` | required | World property to compare (absent = its default). |
 | `nodes[].filter[].op` | `"eq"` \| `"ne"` \| `"lt"` \| `"lte"` \| `"gt"` \| `"gte"` | required | Comparison; lt/lte/gt/gte need a number property. |
 | `nodes[].filter[].value` | number or boolean or string | required | Value to compare with. |
 | `nodes[].filter[].test` | `"tag"` | required |  |
@@ -102,6 +102,32 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `nodes[].on.friction` | number 0–2 | — | Surface friction coefficient. |
 | `nodes[].on.impactAbsorb` | number 0–1 | — | Fraction of impact energy it absorbs, 0 … 1. |
 | `nodes[].on.owner` | id | — | Ownership tag (faction or owner id). |
+| `nodes[].on.liquid` | boolean | — | A liquid: it pours, puddles and can have a water surface. |
+| `nodes[].on.flammableGas` | boolean | — | A gas that ignites (flares or explodes) when fire reaches it. |
+| `nodes[].on.extinguishable` | boolean | — | A fire or light source that water, force or an interaction puts out. |
+| `nodes[].on.waterSurface` | boolean | — | Top surface of a body of liquid: cold freezes it into walkable ice (needs a liquid material). |
+| `nodes[].on.unstable` | number 0–1000000000 | — | Force of one push, blast or quake that topples it, J. |
+| `nodes[].on.suspended` | boolean | — | Hangs from its support; falls when the support breaks, burns or is cut. |
+| `nodes[].on.support` | integer ≥ 0 | — | Entity a suspended object hangs from (0 = none); set when the level spawns. |
+| `nodes[].on.breakable` | boolean | — | A single hit at or above its toughness for that kind of hit breaks it. |
+| `nodes[].on.toughness` | object | — | Per kind of hit, the single-hit energy that breaks a breakable object; a kind left out never does. |
+| `nodes[].on.toughness.blunt` | number 0–1000000000 | — | Blunt hit energy that breaks it, J. |
+| `nodes[].on.toughness.slash` | number 0–1000000000 | — | Slash hit energy that breaks it, J. |
+| `nodes[].on.toughness.pierce` | number 0–1000000000 | — | Pierce hit energy that breaks it, J. |
+| `nodes[].on.toughness.force` | number 0–1000000000 | — | Force (blast, quake, boulder) energy that breaks it, J. |
+| `nodes[].on.bashable` | boolean | — | A shield bash or kick shoves it (or breaks it when breakable). |
+| `nodes[].on.cuttable` | boolean | — | Slash or pierce damage severs it. |
+| `nodes[].on.shootable` | number 0–1000000 | — | Projectile impulse that fires its signal, N·s. |
+| `nodes[].on.softAnchor` | boolean | — | Rope arrows and hooks embed in it. |
+| `nodes[].on.surfaceHardness` | `"soft"` \| `"medium"` \| `"hard"` | — | Footstep loudness and whether arrows stick (soft, medium) or ricochet (hard). |
+| `nodes[].on.chargeActivated` | number 0–1000000000 | — | Stored charge at which the mechanism fires. |
+| `nodes[].on.lightActivated` | number 0–1000000000 | — | Light level on it at which the mechanism fires. |
+| `nodes[].on.hidden` | boolean | — | Not perceivable or targetable until revealed. |
+| `nodes[].on.trapped` | boolean | — | Interacting with it triggers its trap unless disarmed first (needs a trap). |
+| `nodes[].on.trap` | id | — | Trap definition id a trapped object triggers. |
+| `nodes[].on.container` | boolean | — | Holds items (contents live in the e18 container component). |
+| `nodes[].on.remains` | boolean | — | Inert skeletal or corpse remains that summoning can raise. |
+| `nodes[].on.noiseMultiplier` | number 0.2–3 | — | Multiplier on its wearer's noise; an actor's is the product of its equipment's. |
 | `nodes[].off` | object | — | Written when the input falls; default none. |
 | `nodes[].off.temperature` | number -273.15–10000 | — | Current temperature, °C. |
 | `nodes[].off.flammable` | boolean | — | Fire can ignite it. |
@@ -131,6 +157,32 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `nodes[].off.friction` | number 0–2 | — | Surface friction coefficient. |
 | `nodes[].off.impactAbsorb` | number 0–1 | — | Fraction of impact energy it absorbs, 0 … 1. |
 | `nodes[].off.owner` | id | — | Ownership tag (faction or owner id). |
+| `nodes[].off.liquid` | boolean | — | A liquid: it pours, puddles and can have a water surface. |
+| `nodes[].off.flammableGas` | boolean | — | A gas that ignites (flares or explodes) when fire reaches it. |
+| `nodes[].off.extinguishable` | boolean | — | A fire or light source that water, force or an interaction puts out. |
+| `nodes[].off.waterSurface` | boolean | — | Top surface of a body of liquid: cold freezes it into walkable ice (needs a liquid material). |
+| `nodes[].off.unstable` | number 0–1000000000 | — | Force of one push, blast or quake that topples it, J. |
+| `nodes[].off.suspended` | boolean | — | Hangs from its support; falls when the support breaks, burns or is cut. |
+| `nodes[].off.support` | integer ≥ 0 | — | Entity a suspended object hangs from (0 = none); set when the level spawns. |
+| `nodes[].off.breakable` | boolean | — | A single hit at or above its toughness for that kind of hit breaks it. |
+| `nodes[].off.toughness` | object | — | Per kind of hit, the single-hit energy that breaks a breakable object; a kind left out never does. |
+| `nodes[].off.toughness.blunt` | number 0–1000000000 | — | Blunt hit energy that breaks it, J. |
+| `nodes[].off.toughness.slash` | number 0–1000000000 | — | Slash hit energy that breaks it, J. |
+| `nodes[].off.toughness.pierce` | number 0–1000000000 | — | Pierce hit energy that breaks it, J. |
+| `nodes[].off.toughness.force` | number 0–1000000000 | — | Force (blast, quake, boulder) energy that breaks it, J. |
+| `nodes[].off.bashable` | boolean | — | A shield bash or kick shoves it (or breaks it when breakable). |
+| `nodes[].off.cuttable` | boolean | — | Slash or pierce damage severs it. |
+| `nodes[].off.shootable` | number 0–1000000 | — | Projectile impulse that fires its signal, N·s. |
+| `nodes[].off.softAnchor` | boolean | — | Rope arrows and hooks embed in it. |
+| `nodes[].off.surfaceHardness` | `"soft"` \| `"medium"` \| `"hard"` | — | Footstep loudness and whether arrows stick (soft, medium) or ricochet (hard). |
+| `nodes[].off.chargeActivated` | number 0–1000000000 | — | Stored charge at which the mechanism fires. |
+| `nodes[].off.lightActivated` | number 0–1000000000 | — | Light level on it at which the mechanism fires. |
+| `nodes[].off.hidden` | boolean | — | Not perceivable or targetable until revealed. |
+| `nodes[].off.trapped` | boolean | — | Interacting with it triggers its trap unless disarmed first (needs a trap). |
+| `nodes[].off.trap` | id | — | Trap definition id a trapped object triggers. |
+| `nodes[].off.container` | boolean | — | Holds items (contents live in the e18 container component). |
+| `nodes[].off.remains` | boolean | — | Inert skeletal or corpse remains that summoning can raise. |
+| `nodes[].off.noiseMultiplier` | number 0.2–3 | — | Multiplier on its wearer's noise; an actor's is the product of its equipment's. |
 | `wires` | list of object | required | Connections from outputs to inputs. |
 | `wires[].from` | string | required | Output: "node" (its first output) or "node.port". |
 | `wires[].to` | string | required | Input: "node" (its first input) or "node.port". |
