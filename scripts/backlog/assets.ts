@@ -82,6 +82,10 @@ h1 { font: 400 clamp(2.2rem, 6vw, 3.6rem)/1.05 ${SERIF}; margin: 0 0 8px; letter
 .deps li { margin: 3px 0; }
 .empty { color: var(--muted); padding: 40px 0; }
 footer { color: var(--muted); font-size: .85rem; margin-top: 40px; }
+.pill a { color: inherit; }
+.banner { margin: 12px 0 0; padding: 8px 12px; border-radius: 6px; background: var(--gold-soft); color: var(--ink); font-size: .9rem; }
+.unknown h2 { font: 400 1.1rem ${SERIF}; color: var(--ink); margin: 0 0 4px; }
+.unknown ul { margin: 4px 0 16px; padding-left: 1.2rem; }
 @media (max-width: 720px) {
   .epic > summary { grid-template-columns: 2.8rem 1fr; }
   .eprog { grid-column: 2; text-align: left; }

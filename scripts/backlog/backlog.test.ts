@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { gitHead, main, sourceSha } from './generate.ts';
 import { buildModel, labelValue, type PrRef } from './model.ts';
 import { ParseError, parseIssues, type Issue } from './parse.ts';
-import { formatUtc, renderPage } from './render.ts';
+import { formatUtc, renderPage, type GithubStatus } from './render.ts';
 
 interface Line {
   id: string;
@@ -46,8 +46,11 @@ const issues = (...lines: Line[]): Issue[] => parseIssues(jsonl(...lines));
 
 const NOW = new Date('2026-09-27T12:34:56Z');
 const SHA = '0123456789abcdef0123456789abcdef01234567';
-const page = (list: readonly Issue[], prStatus: readonly PrRef[] = []): string =>
-  renderPage({ issues: list, prStatus, now: NOW, sha: SHA });
+const page = (
+  list: readonly Issue[],
+  prStatus: readonly PrRef[] = [],
+  github: GithubStatus = 'off',
+): string => renderPage({ issues: list, prStatus, github, now: NOW, sha: SHA });
 /** The HTML of one tab panel. */
 const panel = (html: string, key: string): string => {
   const start = html.indexOf(`<section class="panel" role="tabpanel" id="panel-${key}"`);
@@ -234,6 +237,7 @@ describe('buildModel', () => {
       number: n,
       state,
       url: `https://github.com/o/r/pull/${String(n)}`,
+      mergedAt: state === 'merged' ? '2026-09-20T10:00:00Z' : null,
     });
     const model = buildModel(
       issues({ id: 'mw-1' }, { id: 'mw-2' }, { id: 'mw-3', status: 'closed' }, { id: 'mw-4' }),
@@ -324,7 +328,7 @@ describe('renderPage', () => {
     const start = html.indexOf('<li class="row" id="mw-2"');
     const row = html.slice(start, html.indexOf('</details></li>', start));
     expect(row).toMatch(
-      /^<li class="row" id="mw-2" data-ms="m0" data-class="thief" data-p="0"><details><summary>/,
+      /^<li class="row" id="mw-2" data-ms="m0" data-class="thief" data-p="0" data-source="jsonl"><details><summary>/,
     );
     expect(row).not.toContain('<details open');
     expect(row).toContain('<span class="rid">mw-2</span><span class="rtitle">Title of mw-2</span>');
@@ -339,7 +343,9 @@ describe('renderPage', () => {
       '<h4>Waits on</h4><ul class="deps"><li><a href="#mw-1">mw-1</a> Title of mw-1 <span class="pill st-deferred">deferred</span></li></ul>',
     );
     expect(row).toContain('<span class="pill">area:tools</span>');
-    expect(html).toContain('<li class="row" id="mw-1" data-ms="none" data-class="" data-p="1">');
+    expect(html).toContain(
+      '<li class="row" id="mw-1" data-ms="none" data-class="" data-p="1" data-source="jsonl">',
+    );
     expect(html).toContain('<option value="none">Unscheduled</option>');
   });
 
@@ -384,8 +390,34 @@ describe('renderPage', () => {
         { id: 'mw-6' },
       ),
       [
-        { id: 'mw-5', number: 70, state: 'open', url: 'https://github.com/o/r/pull/70' },
-        { id: 'mw-6', number: 71, state: 'merged', url: 'javascript:alert(1)' },
+        {
+          id: 'mw-5',
+          number: 70,
+          state: 'open',
+          url: 'https://github.com/o/r/pull/70',
+          mergedAt: null,
+        },
+        {
+          id: 'mw-6',
+          number: 71,
+          state: 'merged',
+          url: 'javascript:alert(1)',
+          mergedAt: '2026-09-21T00:00:00Z',
+        },
+        {
+          id: 'mw-3',
+          number: 72,
+          state: 'merged',
+          url: 'https://github.com/o/r/pull/72',
+          mergedAt: '2026-09-19T00:00:00Z',
+        },
+        {
+          id: 'mw-4',
+          number: 73,
+          state: 'merged',
+          url: 'javascript:x',
+          mergedAt: '2026-09-19T00:00:00Z',
+        },
       ],
     );
     expect(html).toContain('<span class="pill st-in_progress">in progress</span>');
@@ -395,10 +427,21 @@ describe('renderPage', () => {
     expect(html).toContain(
       '<h4>Closed</h4><p class="md"> <span class="rid">(2026-09-20)</span></p>',
     );
+    expect(html).toContain('data-source="pr"><details><summary><span class="rid">mw-5</span>');
     expect(html).toContain(
-      '<a class="pill" href="https://github.com/o/r/pull/70">PR #70 open</a><span class="pill p1">P1</span><span class="pill">post-MVP</span>',
+      '(<a href="https://github.com/o/r/pull/70">PR #70</a>)</span><span class="pill p1">P1</span><span class="pill">post-MVP</span>',
     );
-    expect(html).toContain('<span class="pill">PR #71 merged</span>');
+    // An unsafe URL renders as text, never as a link.
+    expect(html).toContain('>done (<span>PR #71</span>, 2026-09-21)</span>');
+    expect(html).not.toContain('javascript:');
+    // Closed in jsonl: the jsonl status stands and the PR gets its own pill.
+    expect(html).toContain(
+      '<span class="pill st-closed">done</span><a class="pill" href="https://github.com/o/r/pull/72">PR #72 merged</a>',
+    );
+    expect(html).toContain(
+      '<span class="pill st-closed">done</span><span class="pill">PR #73 merged</span>',
+    );
+    expect(html).toContain('data-source="jsonl"><details><summary><span class="rid">mw-3</span>');
     expect(html).toContain('<span class="eno"></span><span><span class="etitle">Other work</span>');
   });
 });
@@ -415,12 +458,12 @@ describe('main', () => {
     for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
   });
 
-  it('AC-5: an empty issues.jsonl writes a page with both empty states and exits 0', () => {
+  it('AC-5: an empty issues.jsonl writes a page with both empty states and exits 0', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const dir = tmp();
     writeFileSync(join(dir, 'issues.jsonl'), '');
     const out = join(dir, 'nested', 'backlog.html');
-    expect(main([join(dir, 'issues.jsonl'), out], { GITHUB_SHA: SHA }, NOW, dir)).toBe(0);
+    expect(await main([join(dir, 'issues.jsonl'), out], { GITHUB_SHA: SHA }, NOW, dir)).toBe(0);
     const html = readFileSync(out, 'utf8');
     expect(count(html, '<p class="empty">')).toBe(2);
     expect(html).toContain('0123456');
@@ -429,15 +472,15 @@ describe('main', () => {
     );
   });
 
-  it('defaults to .beads/issues.jsonl and backlog.html in the working directory', () => {
+  it('defaults to .beads/issues.jsonl and backlog.html in the working directory', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const dir = tmp();
     const cwd = process.cwd();
     process.chdir(dir);
     try {
-      expect(main([], {}, NOW, dir)).toBe(2);
+      expect(await main([], {}, NOW, dir)).toBe(2);
       writeFileSync(join(dir, 'issues.jsonl'), jsonl({ id: 'mw-1' }));
-      expect(main(['issues.jsonl'], {}, NOW, dir)).toBe(0);
+      expect(await main(['issues.jsonl'], {}, NOW, dir)).toBe(0);
       expect(existsSync(join(dir, 'backlog.html'))).toBe(true);
       expect(readFileSync(join(dir, 'backlog.html'), 'utf8')).toContain(
         'commit <code title="unknown">unknown</code>',
@@ -447,30 +490,33 @@ describe('main', () => {
     }
   });
 
-  it('fails with an annotation naming the line when the export is malformed', () => {
+  it('fails with an annotation naming the line when the export is malformed', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const dir = tmp();
     const src = join(dir, 'issues.jsonl');
     writeFileSync(src, `${line({ id: 'mw-1' })}\n{"id":`);
-    expect(main([src, join(dir, 'out.html')], {}, NOW, dir)).toBe(1);
+    expect(await main([src, join(dir, 'out.html')], {}, NOW, dir)).toBe(1);
     expect(log).toHaveBeenCalledWith(
       `::error file=${src},line=2,title=Backlog page::line 2: not valid JSON`,
     );
     expect(existsSync(join(dir, 'out.html'))).toBe(false);
   });
 
-  it('fails when the output cannot be written', () => {
+  it('fails when the output cannot be written', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const dir = tmp();
     writeFileSync(join(dir, 'issues.jsonl'), '');
     const out = join(dir, 'issues.jsonl', 'backlog.html');
-    expect(main([join(dir, 'issues.jsonl'), out], {}, NOW, dir)).toBe(2);
+    expect(await main([join(dir, 'issues.jsonl'), out], {}, NOW, dir)).toBe(2);
     expect(log).toHaveBeenCalledWith(`::error title=Backlog page::Cannot write ${out}.`);
   });
 
-  it('takes the commit from GITHUB_SHA, else git HEAD, else "unknown"', () => {
+  it('takes the commit from git HEAD, else GITHUB_SHA, else "unknown"', () => {
+    const head = gitHead(process.cwd());
+    expect(head).toMatch(/^[0-9a-f]{40}$/);
+    expect(sourceSha({ GITHUB_SHA: SHA }, process.cwd())).toBe(head);
     expect(sourceSha({ GITHUB_SHA: SHA }, tmp())).toBe(SHA);
-    expect(sourceSha({ GITHUB_SHA: '' }, process.cwd())).toMatch(/^[0-9a-f]{40}$/);
+    expect(sourceSha({ GITHUB_SHA: '' }, tmp())).toBe('unknown');
     expect(gitHead(tmp())).toBeNull();
     expect(sourceSha({}, tmp())).toBe('unknown');
   });
@@ -480,7 +526,13 @@ describe('main', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const dir = tmp();
     writeFileSync(join(dir, 'issues.jsonl'), jsonl(...E09));
-    process.argv = ['node', 'generate-cli.ts', join(dir, 'issues.jsonl'), join(dir, 'out.html')];
+    process.argv = [
+      'node',
+      'generate-cli.ts',
+      '--no-github',
+      join(dir, 'issues.jsonl'),
+      join(dir, 'out.html'),
+    ];
     try {
       await import('./generate-cli.ts');
       expect(process.exitCode).toBe(0);
