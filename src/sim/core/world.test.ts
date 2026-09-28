@@ -610,3 +610,23 @@ describe('World snapshots', () => {
     expect(w.isAlive(keep)).toBe(true);
   });
 });
+
+describe('shared snapshots', () => {
+  it('reference live values for default-hook components but still run custom hooks', () => {
+    const Plain = defineComponent<{ v: number }>('Plain');
+    const Custom = defineComponent<{ v: number }>('Custom', {
+      serialize: (value) => ({ doubled: value.v * 2 }),
+    });
+    const w = new World({ seed: 1 }).register(Plain, Custom);
+    const e = w.spawn();
+    const live = { v: 1 };
+    w.add(e, Plain, live);
+    w.add(e, Custom, { v: 3 });
+
+    const shared = w.snapshot({ shared: true });
+    expect(shared.components['Plain']?.[0]?.[1]).toBe(live);
+    expect(shared.components['Custom']?.[0]?.[1]).toEqual({ doubled: 6 });
+    expect(shared).toEqual(w.snapshot());
+    expect(w.snapshot({ shared: false }).components['Plain']?.[0]?.[1]).not.toBe(live);
+  });
+});

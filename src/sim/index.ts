@@ -19,6 +19,7 @@ export {
 export { Query, type ComponentList, type ComponentValues } from './core/query';
 export {
   World,
+  type SnapshotOptions,
   type System,
   type TickContext,
   type WorldOptions,
@@ -26,3 +27,14 @@ export {
 } from './core/world';
 export * as simMath from './math';
 export { EmptyChoiceError, Rng, type RngState, type Weighted } from './rng';
+export {
+  CanonicalEncodingError,
+  diffSnapshots,
+  encodeCanonical,
+  encodeSnapshot,
+  hashSnapshot,
+  hashWorld,
+  SNAPSHOT_ENCODING_VERSION,
+  xxHash32,
+  type SnapshotDifference,
+} from './snapshot';

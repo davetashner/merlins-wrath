@@ -10,7 +10,12 @@
 
 import { SimClock, type ClockState, type ReadonlyClock } from '../clock';
 import { Rng, type RngState } from '../rng';
-import { ComponentStore, type ComponentType, type EntityId } from './component';
+import {
+  ComponentStore,
+  usesDefaultSerialize,
+  type ComponentType,
+  type EntityId,
+} from './component';
 import { DEFAULT_MAX_EVENTS_PER_FLUSH, EventBus } from './events';
 import { Query, type ComponentList, type StructureVersion } from './query';
 
@@ -66,6 +71,15 @@ type Command =
       readonly value: unknown;
     }
   | { readonly kind: 'remove'; readonly id: EntityId; readonly store: ComponentStore<unknown> };
+
+export interface SnapshotOptions {
+  /**
+   * When true, rows of components using the default (clone) hook reference the live values instead
+   * of copies. Much cheaper, so state hashing uses it; the result is only valid until the world next
+   * changes and must never be mutated or kept. Custom `serialize` hooks still run. Default false.
+   */
+  readonly shared?: boolean;
+}
 
 /** Code-unit order for map entries (keys are unique, so never equal); locale-independent. */
 const byKey = ([a]: readonly [string, unknown], [b]: readonly [string, unknown]): number =>
@@ -237,14 +251,16 @@ export class World<TInput = unknown> {
     }
   }
 
-  /** Plain-data state for hashing and saves (see WorldSnapshot). */
-  snapshot(): WorldSnapshot {
+  /** Plain-data state for hashing and saves (see WorldSnapshot); detached unless `shared`. */
+  snapshot(options: SnapshotOptions = {}): WorldSnapshot {
     this.requireIdle('snapshot');
     const components: Record<string, (readonly [EntityId, unknown])[]> = {};
     for (const [name, store] of [...this.stores].sort(byKey)) {
+      const { type, values } = store;
+      const alias = options.shared === true && usesDefaultSerialize(type);
       components[name] = store.ids.map((id, slot) => [
         id,
-        store.type.serialize(store.values[slot]),
+        alias ? values[slot] : type.serialize(values[slot]),
       ]);
     }
     const rng: Record<string, RngState> = {};
