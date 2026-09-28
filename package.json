@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "bench": "vitest bench --run",
     "e2e": "playwright test",
     "coverage:ratchet": "node scripts/coverage-ratchet-cli.ts",
     "coverage:baseline": "node scripts/coverage-ratchet-cli.ts --write-baseline",
