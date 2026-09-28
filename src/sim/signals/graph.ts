@@ -16,6 +16,7 @@
 // a cycle that does not pass through one would oscillate within a tick, so compilation rejects it
 // and names the nodes.
 
+import { FactKeyError, isFactKey } from '../facts/store';
 import type { WorldPropertyInit } from '../properties/components';
 import {
   assertProperty,
@@ -502,6 +503,8 @@ function checkNode(node: SignalNodeDef, path: (string | number)[], problems: Pro
           fail('entity', `a ${node.receiver} receiver needs an entity`);
       } else if (node.key === undefined || node.key === '') {
         fail('key', `a ${node.receiver} receiver needs a key`);
+      } else if (node.receiver === 'fact' && !isFactKey(node.key)) {
+        fail('key', new FactKeyError(node.key).message);
       }
       return;
     case 'set-property':

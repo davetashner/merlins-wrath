@@ -7,7 +7,8 @@
 // (graph.ts): trigger volumes collect the placed entities that overlap them and pass their filter,
 // sensors test their bound entity, logic nodes combine the results, and receivers report changes of
 // their input through `signalReceived` in that same order — the emitted signal order is a pure
-// function of the graph and the world. Levers and buttons are set from outside (`setLever`,
+// function of the graph and the world. Fact receivers also write their world fact (mw-e27.1): the
+// bool fact named by `key` follows the receiver's input, set on the tick the input changes. Levers and buttons are set from outside (`setLever`,
 // `pressButton`): the mechanism components (mw-e03.18) call them when a lever is pulled, and the
 // graph sees the new state on its next evaluation. Place the system after the rules that move
 // entities and change their properties (stimuli, elements), so volumes and sensors see this tick's
@@ -553,6 +554,8 @@ function evaluate(world: World<never>, graph: EntityId, instance: SignalGraphIns
       case 'receiver': {
         const input = read(i, 'in');
         if (input === (state as ReceiverState).value) break;
+        // A fact setter mirrors its input into a bool fact on this tick (latch it to keep it).
+        if (node.receiver === 'fact') world.facts.set(known(node.key), input, { source: graph });
         receive(node, input, bound(node.entity), node.key ?? null);
         states[node.id] = { value: input };
         break;
