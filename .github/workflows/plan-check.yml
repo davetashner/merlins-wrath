@@ -14,8 +14,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .node-version
       - name: Validate plan files against the backlog contract
         run: node scripts/load-plan.mjs --check
       - name: Validate issues.jsonl parses and renders
-        run: node scripts/build-backlog-html.mjs .beads/issues.jsonl /tmp/backlog.html
+        run: node scripts/backlog/generate-cli.ts .beads/issues.jsonl "$RUNNER_TEMP/backlog.html"
