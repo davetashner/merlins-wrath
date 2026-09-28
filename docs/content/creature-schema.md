@@ -16,15 +16,28 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `stats.poise` | integer ≥ 0 | required | Maximum poise; poise damage beyond it staggers the creature (0 = any hit). |
 | `stats.mass` | number > 0 | required | Mass in kilograms (knockback, grabs, pressure plates). |
 | `stats.size` | `"tiny"` \| `"small"` \| `"medium"` \| `"large"` \| `"huge"` | required | Size class. |
-| `senses` | ref → sense or object | required | A `sense` profile id, or an inline sense profile. |
-| `senses.sight` | object | — | Absent = blind. |
-| `senses.sight.range` | number ≥ 0 | required | Far sight range in metres. |
-| `senses.sight.halfAngle` | number 0–180 | required | Sight cone half-angle in degrees. |
-| `senses.hearing` | object | — | Absent = deaf. |
-| `senses.hearing.thresholdDb` | number | required | Quietest sound it hears, in dB at the listener. |
-| `senses.hearing.range` | number ≥ 0 | required | Hearing range cap in metres. |
-| `senses.smell` | object | — | Absent = no sense of smell. |
-| `senses.smell.range` | number ≥ 0 | required | Smell range in metres. |
+| `senses` | ref → sense or object | required | A `sense` profile id; or `{ base, …overrides }` (named fields replace the base’s, null removes a sense or channel); or a complete inline profile (no base). |
+| `senses.base` | ref → sense | — | Sense profile to start from; the other fields override it. Absent = the object is a complete inline profile. |
+| `senses.sight` | object or null | — | Sight fields to override; null = blind. |
+| `senses.sight.nearRange` | number ≥ 0 | — | Metres within which a visible target is noticed at the full detection rate. |
+| `senses.sight.farRange` | number ≥ 0 | — | Metres beyond which it sees nothing; detection falls off from near. |
+| `senses.sight.primaryHalfAngle` | number 0–180 | — | Half-angle of the focused (primary) cone, degrees from the facing direction. |
+| `senses.sight.peripheralHalfAngle` | number 0–180 | — | Half-angle of the peripheral cone, degrees; at least primaryHalfAngle. |
+| `senses.sight.verticalHalfAngle` | number 0–90 | — | Vertical half-angle above and below eye level, degrees. |
+| `senses.sight.darkVision` | number 0–1 | — | How well it sees in darkness, 0–1: 0 = needs light, 1 = unaffected. |
+| `senses.sight.detectionSpeed` | number > 0 | — | Multiplier on how quickly sightings build awareness; 1 = baseline. |
+| `senses.hearing` | object or null | — | Hearing fields to override; null = deaf. |
+| `senses.hearing.thresholdDb` | number 0–140 | — | Quietest sound it hears, dB at the listener after propagation. |
+| `senses.hearing.range` | number ≥ 0 | — | Metres beyond which it hears nothing, however loud. |
+| `senses.smell` | object or null | — | Smell fields to override; null = no sense of smell. |
+| `senses.smell.range` | number ≥ 0 | — | Metres it can smell a scent source in still air. |
+| `senses.smell.windSensitive` | boolean | — | Whether wind carries scent to it (downwind smells farther). |
+| `senses.smell.tracksScentTrails` | boolean | — | Whether it follows scent trails left by moving targets (hook; post-MVP simulation). |
+| `senses.special` | map of string → object or null | — | Special senses to override or add by channel (tremor, life-sense, magic-sense); null removes one. |
+| `senses.special.<key>.range` | number ≥ 0 | — | Metres the sense reaches. |
+| `senses.special.<key>.minStrength` | number 0–1 | — | Weakest signal it registers, 0–1 (after range falloff). |
+| `senses.special.<key>.requiresLineOfSight` | boolean | — | Whether walls block it (false = senses through walls and floors). |
+| `senses.special.<key>.requiresMovement` | boolean | — | Whether it only senses targets that are moving. |
 | `locomotion` | list of object (at least 1) | required | Locomotion modes (stub; e12.6 adds gaits, step/jump heights and nav permissions). |
 | `locomotion[].mode` | `"walk"` \| `"climb"` \| `"fly"` \| `"swim"` \| `"burrow"` \| `"wallcrawl"` \| `"stationary"` | required | How it moves. |
 | `locomotion[].speed` | number ≥ 0 | required | Top speed in this mode, metres per second (0 when stationary). |

@@ -1,0 +1,24 @@
+{
+  "$schema": "../sense.schema.json",
+  "id": "undead",
+  "name": "Undead (baseline)",
+  "notes": "Baseline for things that no longer sleep or breathe: Hollow Sentinels, the fixture sentinel, and (with overrides) the Forgotten. Darkness means nothing to them (dark vision 1.0), but their gaze is narrow (25° focus, 60° periphery, 15 m) and slow to register what it sees (detection speed 0.6), so a patient player can slip past. Hearing threshold 45 dB: they ignore quiet players and wake to clatter, shouting and breaking things (story bible §8). Life-sense feels the warmth of the living through walls, but only within 3 m and above half strength: brushing past one is dangerous, passing it at a distance is not. Forgotten who should ignore quiet players entirely override the life-sense channel with null.",
+  "sight": {
+    "nearRange": 5,
+    "farRange": 15,
+    "primaryHalfAngle": 25,
+    "peripheralHalfAngle": 60,
+    "verticalHalfAngle": 30,
+    "darkVision": 1,
+    "detectionSpeed": 0.6
+  },
+  "hearing": { "thresholdDb": 45, "range": 20 },
+  "special": {
+    "life-sense": {
+      "range": 3,
+      "minStrength": 0.5,
+      "requiresLineOfSight": false,
+      "requiresMovement": false
+    }
+  }
+}

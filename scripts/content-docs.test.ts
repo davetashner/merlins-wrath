@@ -49,7 +49,8 @@ describe('content-docs', () => {
       '| `id` | id | required |',
       '| `stats.health` | integer > 0 | required |',
       '| `senses` | ref → sense or object | required |',
-      '| `senses.sight.halfAngle` | number 0–180 | required |',
+      '| `senses.base` | ref → sense | — |',
+      '| `senses.sight.farRange` | number ≥ 0 | — |',
       '| `locomotion[].mode` | `"walk"` \\| `"climb"`',
       '| `attacks` | list of ref → attack | `[]` |',
       '| `faction` | id | `"unaligned"` |',
@@ -61,7 +62,7 @@ describe('content-docs', () => {
       expect(doc).toContain(row);
     }
     const documented = [...doc.matchAll(/^\| `([^`]+)`/gm)].map((m) => m[1]);
-    expect(documented).toHaveLength(49);
+    expect(documented).toHaveLength(62);
   });
 
   it('writes one doc per content type, creating docs/content, then --check passes', () => {
