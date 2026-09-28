@@ -1,11 +1,12 @@
 # The Vesper Bell — Visual Style Bible
 
-> Status: **DRAFT v0.1 — awaiting owner sign-off** (bead `e37-style-bible`).
+> Status: **SIGNED OFF v1.0 — 2026-09-27** (owner; bead `mw-e37.1`). Changes from here on need a change-log
+> entry (§18).
 > Subordinate to `CONSTITUTION.md` and `docs/backlog-contract.md`. When this document and a prompt
 > disagree, this document wins; when this document and the constitution disagree, the constitution wins.
 > Story/lore names, locations, creatures and motifs are reconciled with `docs/narrative/story-bible.md`
 > (**story canon**). If they disagree, the story bible wins: change it there first, then update this file.
-> The game's title is **The Vesper Bell** (decided in `e39-title-decision`, see `docs/adr/0002-game-title.md`).
+> The game's title is **The Vesper Bell** (decided in `mw-e39.2`, see `docs/adr/0002-game-title.md`).
 > "Merlin's Wrath" survives only as the original codename.
 
 ---
@@ -561,9 +562,11 @@ Numeric budgets are reconciled into a single `perf-budgets.json` owned by `e32-p
 
 ### 13.3 Download & audio-adjacent budgets
 
-- **Initial download ≤ 50 MB total:** JS/WASM ≤ 8 MB, first playable area (Briar Glen) geometry + textures
+- **Initial download ≤ 50 MB total:** JS/WASM ≤ 8 MB, of which initial JS ≤ 1.5 MB gzipped (the rest is
+  WASM, e.g. physics), first playable area (Briar Glen) geometry + textures
   ≤ 28 MB, UI/fonts ≤ 4 MB, audio needed at start ≤ 8 MB (music streams), headroom 2 MB.
 - Other locations stream on demand; each location package target ≤ 25 MB.
+- **Per-asset caps** (enforced per PR by `mw-e32.3`): a single texture ≤ 4 MB, a single audio loop ≤ 3 MB.
 - Skybox/backdrop: equirect 4096×2048 KTX2 (High), 2048×1024 (Low), or cubemap 1024²/face (High), 512²/face (Low).
 - Model format: **glTF 2.0 binary (.glb)** with meshopt compression + KTX2 textures; Draco only if the engine
   ADR prefers it.
@@ -711,3 +714,17 @@ Effects API (recommended) with an owner listening gate.
 API keys (`OPENAI_API_KEY`, `MESHY_API_KEY`, `TRIPO_API_KEY`, `ELEVENLABS_API_KEY`) come **only** from
 environment variables — never committed, never logged, never written to prompt files, iteration logs or
 sidecar JSON.
+
+---
+
+## 18. Change log
+
+| Version | Date | Change | Approved by |
+|---|---|---|---|
+| v0.1 | 2026-09-27 | First draft: look, palette and location colour keys, lighting, shape language, creatures, legibility language, materials, budgets, GPT STYLE PREAMBLE, naming, provenance, workflow. | — |
+| v0.2 | 2026-09-27 | Story canon v0.3: Deepworks as a glenstone and silver mine; the Stone Stair; Wendmouth as a monumental glenstone harbour; stone barges (PR #13). | owner |
+| **v1.0** | 2026-09-27 | Owner sign-off. §13.3 cites the same initial-JS and per-asset caps as the perf budget beads (`mw-e32.1`, `mw-e32.3`). | owner |
+
+**Open at sign-off (filed as beads, not blockers):**
+- Probe the GPT STYLE PREAMBLE on four samples (concept, icon, tileable, portrait) with CREDITS rows
+  (`mw-e37.431`). Any preamble revision it forces is logged here.
