@@ -172,7 +172,7 @@ The town of Briar Glen → surrounding forest → abandoned watchtower → old m
 
 The River Wend → the harbour town of Wendmouth
 
-The river carries the mine's ore down to the sea for shipping to faraway lands. Wendmouth is a dock and harbour level where shenanigans ensue: sneakiness is richly rewarded, the other classes get up to hijinks, and every class can equip itself better than in the valley. It is optional to the main quest but part of the MVP.
+The river carries the valley's stone, and now the empire's silver, down to the sea for shipping to faraway lands. Wendmouth is a dock and harbour level where shenanigans ensue: sneakiness is richly rewarded, the other classes get up to hijinks, and every class can equip itself better than in the valley. It is optional to the main quest but part of the MVP.
 
 Paths loop together and reveal shortcuts as players acquire abilities.
 
