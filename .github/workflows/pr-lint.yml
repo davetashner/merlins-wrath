@@ -1,8 +1,9 @@
 name: PR lint
 
-# Checks the PR body's Closes lines (mw-e00.8). The job name `pr-lint` is referenced by branch
-# protection (mw-e00.10); keep it stable. `edited` re-runs it when the body changes, and
-# `labeled`/`unlabeled` when a maintainer adds or removes the `no-bead` label.
+# Checks the PR body's Closes lines (mw-e00.8) and that user-facing changes carry a CHANGELOG.md note
+# (mw-e00.9). The job names `pr-lint` and `changelog` are referenced by branch protection (mw-e00.10);
+# keep them stable. `edited` re-runs them when the body changes, and `labeled`/`unlabeled` when a
+# maintainer adds or removes the `no-bead` or `no-changelog` label.
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened, labeled, unlabeled]
@@ -28,5 +29,24 @@ jobs:
       - run: node scripts/pr-body-lint-cli.ts
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+
+  changelog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # The PR's merge commit and its first parent (the base tip), so HEAD^1..HEAD is the PR's change.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      # --no-renames lists both sides of a move. Dependabot PRs are exempt by author.
+      - run: |
+          git diff --name-only --no-renames HEAD^1 HEAD > "$RUNNER_TEMP/changed-files.txt"
+          node scripts/changelog-check-cli.ts "$RUNNER_TEMP/changed-files.txt"
+        env:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}

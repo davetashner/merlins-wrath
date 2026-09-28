@@ -21,7 +21,7 @@
 - [ ] Coverage exclusions touched: none <!-- or list the coverage-exclusions.md entries added or changed, with the reason -->
 - [ ] Lint, typecheck, unit and e2e smoke green in CI
 - [ ] Content/data schema validation green
-- [ ] CHANGELOG.md: n/a <!-- or the one-line note for user-facing changes -->
+- [ ] CHANGELOG.md: n/a <!-- or the one-line note under Unreleased for user-facing changes. CI's changelog check requires one when src/{game,ui,render,audio,sim,content}, src/main.ts, index.html or site/ change, unless a maintainer adds the "no-changelog" label -->
 - [ ] Opened from a worktree branch; will be squash-merged and the beads closed with --reason "Completed in PR #N"
 
 <!--
