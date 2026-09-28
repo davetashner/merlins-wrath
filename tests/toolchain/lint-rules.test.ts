@@ -105,3 +105,70 @@ describe('determinism and layer lint rules', () => {
     },
   );
 });
+
+// Math functions that are not correctly rounded by IEEE-754 and so go through simMath in src/sim.
+const SIM_MATH_BANNED = [
+  'sin',
+  'cos',
+  'tan',
+  'asin',
+  'acos',
+  'atan',
+  'atan2',
+  'sinh',
+  'cosh',
+  'tanh',
+  'asinh',
+  'acosh',
+  'atanh',
+  'exp',
+  'expm1',
+  'log',
+  'log1p',
+  'log2',
+  'log10',
+  'pow',
+  'hypot',
+  'cbrt',
+];
+
+describe('simMath is the only door to Math transcendentals in src/sim (mw-e00.27)', () => {
+  it.each(['sim-math-transcendental.ts', 'sim-math-transcendental-destructured.ts'])(
+    'AC-1: %s is an error naming simMath',
+    async (name) => {
+      const messages = await lint(byName(name));
+      expect(messages.length).toBeGreaterThan(0);
+      for (const m of messages) {
+        expect(m.severity).toBe(2);
+        expect(m.ruleId).toBe('no-restricted-properties');
+        expect(m.message).toMatch(/simMath/);
+      }
+    },
+  );
+
+  it('AC-1: every banned function is reported in src/sim', async () => {
+    const code = SIM_MATH_BANNED.map((fn, i) => `export const f${String(i)} = Math.${fn};`).join(
+      '\n',
+    );
+    const [result] = await eslint.lintText(code, { filePath: join(root, 'src/sim/fixture.ts') });
+    const reported = (result?.messages ?? []).map((m) => m.message);
+    expect(reported).toHaveLength(SIM_MATH_BANNED.length);
+    expect(SIM_MATH_BANNED).toEqual(
+      expect.arrayContaining(['sin', 'cos', 'atan2', 'pow', 'hypot']),
+    );
+  });
+
+  it('AC-2: src/sim/math.ts may call Math.sin, but Math.random stays banned there', async () => {
+    expect(await lint(byName('sim-math-module-transcendental.ts'))).toEqual([]);
+    const random = await lint(byName('sim-math-module-random.ts'));
+    expect(random.map((m) => m.message).join()).toMatch(/seeded RNG/);
+  });
+
+  it('AC-3: src/game may call Math.sin (the rule is scoped to src/sim)', async () => {
+    expect(await lint(byName('game-math-transcendental.ts'))).toEqual([]);
+  });
+
+  it('keeps correctly rounded Math functions (sqrt, abs, trunc, …) allowed in src/sim', async () => {
+    expect(await lint(byName('sim-math-allowed.ts'))).toEqual([]);
+  });
+});
