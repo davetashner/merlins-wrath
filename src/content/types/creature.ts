@@ -1,15 +1,17 @@
 // The creature content type (mw-e12.1): one validated CreatureDef envelope shared by AI, stealth,
 // combat and the bestiary (constitution: enemies are creatures, not target dummies, and they are
 // data). Only id, family, stats, senses and locomotion are required; every other section has a
-// documented default filled at load, so later items (senses e12.2, attacks e12.5, locomotion e12.6,
+// documented default filled at load, so later items (attacks e12.5, locomotion e12.6,
 // resistances e04.1/e12.7, factions e12.8, fears e12.10, personality e12.11, needs e12.12…) can
 // extend their stub sub-schema here without touching existing creature files. The field reference
-// in docs/content/creature-schema.md is generated from this file (`pnpm content:docs`).
+// in docs/content/creature-schema.md is generated from this file (`pnpm content:docs`). Senses and
+// their reusable `sense` profiles live in sense.ts (e12.2).
 //
 // Units: metres, kilograms, degrees, metres per second. Anything timed in ticks says so in its name.
 
 import { z } from 'zod';
 import { contentId, ref } from '../schema.ts';
+import { creatureSensesSchema } from './sense.ts';
 
 /** Current CreatureDef schema version; bump it (and add a migration) on breaking changes. */
 export const CREATURE_SCHEMA_VERSION = 1;
@@ -92,28 +94,6 @@ const statsSchema = z
   })
   .describe('Core stats.');
 
-/** Inline sense profile (stub; e12.2 owns the full sub-schema and the reusable `sense` profiles). */
-export const senseProfileSchema = z.strictObject({
-  sight: z
-    .strictObject({
-      range: metres.describe('Far sight range in metres.'),
-      halfAngle: z.number().min(0).max(180).describe('Sight cone half-angle in degrees.'),
-    })
-    .optional()
-    .describe('Absent = blind.'),
-  hearing: z
-    .strictObject({
-      thresholdDb: z.number().describe('Quietest sound it hears, in dB at the listener.'),
-      range: metres.describe('Hearing range cap in metres.'),
-    })
-    .optional()
-    .describe('Absent = deaf.'),
-  smell: z
-    .strictObject({ range: metres.describe('Smell range in metres.') })
-    .optional()
-    .describe('Absent = no sense of smell.'),
-});
-
 const locomotionSchema = z
   .array(
     z.strictObject({
@@ -157,9 +137,7 @@ export const creatureSchema = z.strictObject({
     .prefault([])
     .describe('Free-form tags read by AI and quests, e.g. "leader", "undead".'),
   stats: statsSchema,
-  senses: z
-    .union([ref('sense'), senseProfileSchema])
-    .describe('A `sense` profile id, or an inline sense profile.'),
+  senses: creatureSensesSchema,
   locomotion: locomotionSchema,
   attacks: z
     .array(ref('attack'))
