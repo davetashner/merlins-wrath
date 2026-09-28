@@ -48,6 +48,8 @@ jobs:
       - uses: ./.github/actions/setup
       # Per-layer thresholds from coverage-layers.json; fails naming the file and metric.
       - run: pnpm test:coverage
+      # coverage-exclusions.md is the only source of exclusions and glue-layer gaps.
+      - run: pnpm coverage:exclusions
       # On main this is the baseline that PR ratchets download.
       - uses: actions/upload-artifact@v7
         if: always()

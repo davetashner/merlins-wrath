@@ -19,7 +19,8 @@
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
     "coverage:ratchet": "node scripts/coverage-ratchet-cli.ts",
-    "coverage:baseline": "node scripts/coverage-ratchet-cli.ts --write-baseline"
+    "coverage:baseline": "node scripts/coverage-ratchet-cli.ts --write-baseline",
+    "coverage:exclusions": "node scripts/check-coverage-exclusions-cli.ts"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
