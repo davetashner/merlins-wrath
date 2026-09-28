@@ -177,7 +177,7 @@ describe('DifficultyConfig in the state hash', () => {
 });
 
 describe('DifficultyConfig across saves', () => {
-  it('AC-4: a save made with detectionSpeed 0.5 restores a sim that reads 0.5', () => {
+  it('a snapshot with detectionSpeed 0.5 restores (through JSON) a sim that reads 0.5', () => {
     const saved = new World({ seed: 3, difficulty: { detectionSpeed: 0.5 } });
     saved.step();
     // A save stores the snapshot as plain data; a JSON round trip is the strictest such medium.
