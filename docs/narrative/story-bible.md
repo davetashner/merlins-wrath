@@ -1,51 +1,31 @@
-# Story Bible — "The Labyrinth Beneath Briar Glen"
+# Story Bible — The Vesper Bell
 
 > Status: **DRAFT for owner review** (bead key `e39-story-bible`). Nothing here is canon until signed off.
 > Subordinate to `CONSTITUTION.md`. Scope target: the MVP boundary (one town, one wilderness, one major
 > dungeon, a handful of NPCs/quests, ~8–10 creature types, one excellent bookshop, ~6 meaningful puzzles).
 > **Owner extension (v0.2):** the River Wend and the optional harbour town of **Wendmouth** (§3.6) were
 > added at the owner's direction. Wendmouth is optional-but-rewarding; the main quest never requires it.
+> **Owner revision (v0.3):** retitled *The Vesper Bell* (§1). The valley's wealth is now **stone first**:
+> glenstone, cut from the hill and carried down the Wend to the sea for export abroad, built the region and
+> Wendmouth's great stone harbour. **Silver**, struck 35 years ago at the heart of the mine, is the empire's
+> new cash cow and the root of its dominance over its neighbours (§3.1, §3.2, §3.6).
 
 ---
 
 ## 1. Title
 
-> **Decided 2026-09-27: _The Vesper Bell_** (ADR `docs/adr/0002-game-title.md`, bead `mw-e39.2`). The
-> evaluation below is kept as the record of how we got there. The Nightjar remains the creature's name.
+**_The Vesper Bell_** (decided 2026-09-27; ADR `docs/adr/0002-game-title.md`, bead `mw-e39.2`).
 
-### 1.1 Honest evaluation of "Merlin's Wrath"
+- **It names the solution, not the threat.** For three centuries the bell's evening note kept the Nightjar
+  asleep, and the game ends when someone finally rings it again. The title promises wonder and warmth with
+  dread underneath, which is the tone (§2.4).
+- **It is an instrument you must restore.** The missing tongue, the crack, the climb up the Sounding Shaft:
+  the title object is the quest.
+- **Vespers is dusk.** The valley's golden-hour light, the hour the sleepwalkers begin to stir, and the
+  lamp that is always still lit at the end.
+- **The Nightjar** remains the name of the dreaming creature in the Cradle.
 
-- **Merlin is not in this story**, and nothing in the MVP scenario wants him. Putting him in means
-  importing Arthurian furniture (Camelot, Excalibur, the Lady of the Lake) or inventing a "Merlin" who
-  is Merlin in name only — which disappoints anyone who came for Arthur and confuses everyone else.
-- **"Wrath" promises the wrong tone.** Our tone is wonder, warmth and wit coexisting with dread. "Wrath"
-  reads as grimdark revenge fantasy. The MVP's core emotional turn is the opposite of wrath: the monster
-  is a guardian, the villain is curiosity gone sour, and the solution is a lullaby.
-- **Discoverability:** "Merlin" is buried under decades of games, shows and apps. A browser game that
-  lives on word-of-mouth needs a name people can search for and find.
-- **If the owner loves it anyway**, there is one non-cliché way in: a *merlin* is a small falcon. The
-  abandoned watchtower could have been garrisoned by "the Merlin Watch" (falcon sigil), and "Merlin's
-  Wrath" could be the name of the last sergeant's signal horn. It works, but it is a retrofit — the
-  title would be about a side location, not the heart of the game.
-
-**Recommendation: retire "Merlin's Wrath" as the shipping title.** Keep it as the repo/codename.
-
-### 1.2 Alternatives
-
-| Title | Rationale |
-|---|---|
-| **Nightjar** (sub: *The Labyrinth Beneath Briar Glen*) | The folk name of the thing that sings sleepers down into the dark. A real bird with real "soul-stealing" folklore; one word, eerie but soft, series-friendly (the Nightjar is one of several Sleepers). |
-| **The Vesper Bell** | Names the solution rather than the threat; warm, melancholy, quietly mysterious. Very Zelda-shaped (an instrument you must restore). |
-| **Beneath Briar Glen** | Plain and inviting; tells you exactly the shape of the game (a town, and what is under it). Sequels write themselves ("Beyond Briar Glen"). |
-| **The Warden of the Knot** | Centres the minotaur twist without spoiling it; "Knot" is our labyrinth's true name. |
-| **Briar & Bone** | Captures the tone split: hedgerow warmth and skeleton dread. Memorable, but a little generic. |
-| **Lullaby for a Labyrinth** | Whimsical, a touch QfG; accurately describes the ending. Risks reading as a puzzle-only game. |
-| **Hornlight** | Evokes the minotaur and lanterns-in-the-dark; invented word, fully searchable. Meaning only lands after playing. |
-| **The Sleepwalkers of Briar Glen** | Honest mystery hook, pulp-novel charm. Long. |
-
-**Original top pick: _Nightjar — The Labyrinth Beneath Briar Glen_; runner-up _The Vesper Bell_.** The collision search chose *The Vesper Bell* (see the ADR).
-A trademark/name-collision search is required before the decision bead (`e39-title-decision`) closes.
-Everywhere below, "the game" is used; the working title stays until then.
+The collision search and the candidates that were considered are recorded in the ADR.
 
 ---
 
@@ -67,7 +47,7 @@ Under the mine lies **the Knot**: a labyrinth written in stone by the vanished H
 **the Nightjar**, a dreaming thing whose song pulls sleepers toward it and unravels who they were. For
 three centuries a monastic order rang the **Vesper Bell** each dusk to keep it asleep. Sixty-one years
 ago their abbot silenced the bell to hear the song for himself, and the monastery walked into the maze.
-Three months ago the mine broke through the Knot's outer wall. Now the song reaches the surface.
+Three months ago the mine, chasing the empire's silver, broke through the Knot's outer wall. Now the song reaches the surface.
 
 The minotaur, **Brother Horn**, has been catching the sleepwalkers before they reach the heart and
 hiding them, alive, in a sealed vault called the Fold. The kindly voice guiding you through the dark
@@ -116,12 +96,27 @@ that makes you smile, and every warm room one thing that makes you uneasy.
 
 Briar Glen sits in a steep green valley at the end of a mountain road — the last town before the
 highlands — and at the head of the **River Wend**, which rises from the hills by the Deepworks and runs
-down the valley to the sea. Silver built the town and the river carried it away; silver is running out. Above the town: the Briarwood, a thick old forest of
-oak, holly and bramble. On a spur to the east, **Mooring's Watch**, a barony watchtower abandoned for
-forty years. North, into the hill: **the Deepworks**, Vane family silver mine. On the hill beyond the
-forest: **Bellwater Priory**, the ruined Vesperine monastery. Under all of it: **the Knot**. A day
-downriver by ore barge, where the Wend meets the sea: **Wendmouth**, a small, rowdy harbour town that
-ships the valley's ore to faraway lands (§3.6).
+down the valley to the sea. The hill is made of **glenstone**, a pale, honey-grey freestone that cuts
+clean, carves fine and hardens in sea air. For two and a half centuries the Wend has carried it down to the
+sea in barges, and ships have carried it on to palaces, harbours and temples in lands that have never heard
+of Briar Glen. Stone made the valley rich. Then, thirty-five years ago, the Vanes struck **silver** at the
+heart of the mine, and the silver made the empire rich.
+
+Above the town: the Briarwood, a thick old forest of oak, holly and bramble. On a spur to the east,
+**Mooring's Watch**, a barony watchtower abandoned for forty years. North, into the hill: **the Deepworks**,
+the Vane family's stone mine, whose oldest galleries follow the best bed of glenstone deep into the hill and
+whose newest follow the silver. On the hill beyond the forest: **Bellwater Priory**, the ruined Vesperine
+monastery, built of the first glenstone ever cut. Under all of it: **the Knot**. A day downriver by stone
+barge, where the Wend meets the sea: **Wendmouth**, a rowdy harbour town built like a city out of the
+valley's stone, which ships that stone, and now the empire's silver, to faraway lands (§3.6).
+
+**The empire.** Briar Glen lies in a barony on the far edge of **the empire**, whose capital ("the city" in
+valley speech) is weeks away by sea. For most of its history the empire noticed the valley only as the stone
+in its own palace walls. Glen silver changed that. The empire mints it into the **crowns** that pay its
+armies and buy its neighbours' loyalty, and within a generation it has bent the neighbouring states to its
+will. The Saltmarch Isles, who once bought glenstone for their sea-walls, now pay their harbour dues in
+imperial silver. The silver goes downriver under imperial seal and leaves Wendmouth in escorted ships, and
+every year the empire wants more of it. (The empire is not named in the MVP.)
 
 Paths loop: the forest joins the watchtower and priory; the watchtower's old supply tunnel joins the
 upper mine; the priory crypt and the Sounding Shaft join the labyrinth; the town well joins a cistern
@@ -144,24 +139,25 @@ humming low throat-songs that muffled the Nightjar's voice. Their statues all co
 
 **The Vesperine Order (about 300 years ago).** Human monks — scholars of sound and silence — followed
 old rumours of "the singing hill," found the last few Hornfolk wardens and made a pact. The monks built
-Bellwater Priory directly over the Cradle, cut the **Sounding Shaft** straight down to it, and cast the
+Bellwater Priory directly over the Cradle out of the hill's own pale stone, cut the **Sounding Shaft** straight down to it, and cast the
 **Vesper Bell**. Every dusk they rang vespers; the bell's note fell down the shaft and the Nightjar slept
 deeply. The Hornfolk kept watch below. The monks kept the books above. For three hundred years it
 worked. The Vesperines taught the valley to read, and Briar Glen was founded to feed and supply them.
 
-**Briar Glen and the silver (about 150 years ago).** Miners found silver in the hill. The Deepworks were
-dug under the priory's blessing — with a monastic rule, carved over the mine gate, that no shaft go
-below the "Bell Line." The barony built Mooring's Watch on the spur to guard the silver road.
-
-**The river trade (about 140 years ago).** Hauling ore down the mountain road by cart was ruinous, so the
-barony dredged the Wend, built **Kestrel Lock** halfway down the valley to tame the rapids, and granted
-Wendmouth a charter as the valley's port. Flat-bottomed ore barges now carry crushed ore and silver
-downstream in a day and are towed back up by horses on the towpath in two, loaded with everything the
-valley can't make: salt, cloth, tea, lamp oil, foreign steel, and books. Briar Glen's quay at the foot of
-the **Ore Stair** (a stepped chute from the Deepworks' sorting hall) is the town's second heart. Every
-family has someone on the barges, at the lock, or owed money by a Wendmouth merchant. When the mine
-sneezes, the river goes quiet, and then Briar Glen goes hungry. (The Vesperines had built the Millweir
-long before, for their grain mill; the bargemen still touch its keystone bell-mark for luck.)
+**The stone and the river (about 250 years ago).** The priory's masons had found that the hill's stone was
+finer than any they knew, and word travelled. With the Vesperines' blessing, the townsfolk opened a stone
+mine into the hill, underground and following the best bed, under a monastic rule carved over the mine
+gate: no shaft below the "Bell Line." Hauling blocks down the mountain road by cart was ruinous, so the
+stone went to the river. The Vesperines had already built the Millweir for their grain mill (the bargemen
+still touch its keystone bell-mark for luck). The barony dredged the Wend, built **Kestrel Lock** halfway
+down the valley to tame the rapids, built Mooring's Watch on the spur to guard the valley and its stone
+road, and granted Wendmouth a charter as the valley's port. Flat-bottomed stone barges carry dressed blocks
+downstream in a day and are towed back up by horses on the towpath in two, loaded with everything the valley
+can't make: salt, cloth, tea, lamp oil, foreign steel, and books. Briar Glen's quay at the foot of the
+**Stone Stair** (a stepped slipway from the Deepworks' cutting hall) is the town's second heart. Every family
+has someone in the galleries, on the barges, at the lock, or owed money by a Wendmouth merchant. When the
+mine sneezes, the river goes quiet, and then Briar Glen goes hungry. The Vane family has run the Deepworks
+for five generations. Wendmouth grew rich on the trade and built itself out of it (§3.6).
 
 **The Long Vespers (61 years ago).** Abbot **Corvin Ashgrove** was the finest mind the order ever had
 and the first to study the Nightjar's song as text rather than threat. He came to believe the song was a
@@ -180,13 +176,24 @@ alone, and died at his post. The Deepworks were closed below
 the Bell Line. Briar Glen shrank and forgot, the way towns do. Children still sing a skipping rhyme
 about "the ox beneath the hill."
 
-**The Breach (3 months ago).** The silver is failing. **Harrow Vane**, grandson of the mine's founder,
-has been dreaming of a deeper vein — dreams the abbot has been gently sending. He dug below the Bell
+**The silver (about 35 years ago).** Cutting a new gallery toward the heart of the hill, Harrow Vane's
+grandfather broke into a vein of silver running through the glenstone like a seam of frost: above the Bell
+Line, but pointing down. The strike turned a stone town into an imperial concern. The empire granted the
+Vanes a silver warrant with a yearly **Measure** owed to the imperial mint, sent assayers upriver and a
+Lantern Court inspector to Wendmouth, and began striking crowns from Glen silver. The silver outspent and
+outlasted the empire's rivals; in thirty years it has made the empire the power of its world. For Briar Glen
+it has been a mixed blessing. The Vanes grew rich. The best cutters were moved from the stone galleries to
+the silver, fewer stone barges run each year, and the valley's old trade is slowly being hollowed out for
+the empire's new one.
+
+**The Breach (3 months ago).** The empire's Measure rises every year; the vein above the Bell Line does not.
+**Harrow Vane**, grandson of the man who struck the silver, has been dreaming of the vein running rich below
+the Line — dreams the abbot has been gently sending. He dug below the Bell
 Line and broke into the Knot's outer ring. He found Hornfolk horn-coins and carvings, sold them quietly
-to a buyer in the city, and sealed the lower mine "for safety." The relics go downriver hidden in ordinary
-ore barges, sit in Vane's bay of the **bonded warehouse** in Wendmouth under a customs seal that no one
+to a buyer in the city, and sealed the lower mine "for safety." The relics go downriver packed among the dressed blocks of
+ordinary stone barges, sit in Vane's bay of the **bonded warehouse** in Wendmouth under a customs seal that no one
 opens, and sail on the merchantman **Gilded Tern** to "Mr. S—." Vane is also deeply in debt to Wendmouth's
-merchant factors, who have fronted him credit against silver that no longer exists. The breach cut the Knot's sentence. The
+merchant factors, who have fronted him credit against silver he has promised the mint and cannot reach. The breach cut the Knot's sentence. The
 song leaks out through the gap and, on still nights, reaches the town.
 
 **Now (the last 3 weeks).** Six people have walked into the dark: Moss Greaves the tanner, Ettie Lark
@@ -209,12 +216,13 @@ Consequences for the world:
 - **Bookshops are the armouries of sorcerers.** A good bookseller is part scholar, part smuggler, part
   gatekeeper. Books are expensive, loaned, stolen, copied badly, and fought over.
 - **Literacy is uneven.** The Vesperines taught Briar Glen to read, so the town is unusually bookish for
-  a mining village: a lending shelf at the inn, a schoolhouse, a bookshop far too good for the town.
+  a stone-cutters' town: a lending shelf at the inn, a schoolhouse, a bookshop far too good for the town.
 - **Goblins cannot read** (their language is gesture and smell) — which is why Snig wants to learn so
   badly, and why the Knot has never lost a goblin: they don't read the sentence, so they don't get caught
   in it. They also do not dream, making them immune to the song.
 
-**Schools and the law.** The Lantern Court, a distant royal-and-scholarly authority, licenses magic.
+**Schools and the law.** The Lantern Court, the empire's royal-and-scholarly authority in the capital,
+licenses magic.
 Licensed books carry a pressed lantern seal.
 - *Licensed:* Fire, Frost, Storm, Light, Nature, Alteration, Arcane.
 - *Restricted* (sale requires a Court writ): Illusion, Conjuration, Gravity, Shadow.
@@ -228,7 +236,8 @@ books under the counter and keeps one forbidden book she will not sell to anyone
 | Faction | What they want | Texture |
 |---|---|---|
 | **The townsfolk of Briar Glen** | Their people back; the mine to keep the town alive. | Frightened, stubborn, kind to strangers who help. They will believe the minotaur is a monster until shown otherwise — and some never will. |
-| **Vane Deepworks** | Silver, or anything worth what silver was. | Vane is not a cartoon: without the mine, Briar Glen dies. He lied to protect the town and himself, and can't tell which mattered more. |
+| **Vane Deepworks** | Silver enough to meet the empire's Measure, or anything worth as much. | Vane is not a cartoon: without the mine, Briar Glen dies, and if he fails the Measure the warrant goes to someone who will care about the valley even less. He lied to protect the town and himself, and can't tell which mattered more. |
+| **The empire** | Silver, more every year. | Offstage and everywhere: the imperial seal on silver barges, the Measure, crowns in every purse, and the Lantern Court as its hand on knowledge. The MVP shows it only through objects, notices, escorted silver ships and Inspector Cray. |
 | **The Rootcellar Goblins** | Shiny things, safe tunnels, to be left alone. | A clan of ~20 displaced from their warrens by the breach. Immune to the song; scavenge the Knot; have a quiet deal with Horn (food for the sleepers in exchange for salvage rights). Blamed for the disappearances. |
 | **The Warden (Brother Horn)** | The Nightjar asleep; the sleepers safe; to be allowed, finally, to rest. | Last of the Hornfolk. Bound by oath never to leave the Knot. |
 | **The Forgotten** (the lost Vesperines) | Nothing, now. Habit. | Skeletons of monks and miners who walked in and forgot themselves. Still sweeping, praying, carrying buckets. Hostile only when disturbed or when the song swells. |
@@ -251,8 +260,10 @@ empty hut; the millpond and the drowned lane; the priory road.
 **Mooring's Watch (watchtower)** — goblin lookout below, Hollow Sentinels above; the keeper's log; the
 signal mirror on the roof; a collapsed supply tunnel into the upper Deepworks.
 
-**The Deepworks (old mine)** — the boarded main gate with the Bell Line rule carved above it; the winch
-house; Vane's sealed lower gallery; the breach; the Rootcellar goblin camp in the old ore-sorting hall.
+**The Deepworks (stone and silver mine)** — the boarded main gate with the Bell Line rule carved above it;
+the winch house; the old glenstone galleries (square pillared halls, half-cut blocks still in the walls);
+the silver galleries; Vane's sealed lower gallery; the breach; the Rootcellar goblin camp in the old cutting
+hall.
 
 **Bellwater Priory (ruined monastery)** — the roofless nave; the choir with its singing-monk statues; the
 scriptorium (and its book mimics); the belfry with the silent, cracked Vesper Bell; the crypt (sealed
@@ -262,7 +273,7 @@ from below); the cistern.
 Forgotten); the Chapel of Echoes (where sound misbehaves); the Fold (sealed sleepers' vault); Horn's Hall;
 the Sounding Shaft's foot; **the Cradle** (the heart).
 
-**The River Wend (connective route)** — Briar Glen Quay and the Ore Stair; the Millweir and its sluice walk;
+**The River Wend (connective route)** — Briar Glen Quay and the Stone Stair; the Millweir and its sluice walk;
 the Weeping Adit (the river's source, a flooded drainage tunnel into the lower Deepworks); the towpath;
 Kestrel Lock and the lock-keeper's cottage. Travel between Briar Glen Quay and Wendmouth is by barge ride
 (a narrated journey / fast travel) or on foot along the towpath; the river itself is not a flowing-water
@@ -272,10 +283,18 @@ simulation.
 
 ### 3.6 Wendmouth — the harbour at the river mouth
 
-**What it is.** A crooked, salt-bleached port of a few hundred souls where the Wend's brown water meets the
-grey sea: tarred warehouses on stilts, net lofts, a stone breakwater, gulls with criminal records. Ore barges
-tie up at the Ore Wharf; seagoing ships anchor in the pool and send lighters in. Everything the valley buys
-comes through here, and much of what it sells leaves without troubling the tax clerk. Where Briar Glen is
+**What it is.** A harbour town of a few hundred souls where the Wend's brown water meets the grey sea,
+built, improbably, like a city. Two and a half centuries of glenstone have passed through Wendmouth, and a
+good deal of it stayed: blocks cracked in loading, offcuts, rejects, and whole shiploads left on the quay
+when a foreign buyer went bust. The quays are colossal stepped blocks worn smooth by barge hulls. The
+**breakwater** is a great curving wall of rejected blocks, each still carrying its mason's mark. The
+warehouses are vaulted stone halls, the Customs House has columns a palace would envy, treadwheel cranes
+stand on stone piers, and yards of cut blocks wait in rows for their ships, like a city waiting to be built
+somewhere else. Everyday life is timber on stone bones: net lofts, tarred sheds, bright shopfronts and
+laundry lines perch on and lean against the stonework, and the gulls have criminal records. Stone barges tie
+up at the Stone Wharf; seagoing ships moor at the deep-water quay or anchor in the pool and send lighters
+in. Everything the valley buys comes through here. The stone and the empire's silver leave through here,
+the silver under imperial guard, and much of everything else leaves without troubling the tax clerk. Where Briar Glen is
 quiet, frightened and bookish, Wendmouth is loud, cheerful and on the make. **This is where shenanigans
 ensue.**
 
@@ -298,18 +317,21 @@ towpath is always open. The Gilded Tern stays in harbour, loading slowly, until 
 sails, with or without Vane's crate. There is no real-time clock.
 
 **Places.**
-- **The Ore Wharf** — barges unload into ore bins; cranes, cargo nets, stacked crates; the Tidefair
-  contests are held here on the open planking.
-- **The Customs House** — Lantern Court flag, a scale for weighing cargo, a strongroom of confiscated goods
+- **The Stone Wharf** — barges unload dressed blocks onto the great stepped quay; treadwheel cranes, cargo
+  nets, block yards and stacked crates; the Tidefair contests are held here on the open flagstones. At its
+  far end, behind an iron gate and imperial guards, the Silver Quay where the Measure is loaded (seen, not
+  entered, in the MVP).
+- **The Customs House** — a columned glenstone hall; Lantern Court flag, a scale for weighing cargo, a strongroom of confiscated goods
   (including books), Inspector Cray's office with its suspiciously well-read shelf.
-- **The Bonded Warehouse** — sealed bays for goods awaiting export; **bay nine** is Vane Deepworks'. Skylights,
+- **The Bonded Warehouse** — a vaulted stone hall of sealed bays for goods awaiting export; **bay nine** is Vane Deepworks'. Skylights,
   hoist beams, a night watchman, and a manifest desk.
 - **The Drowned Gull** — tavern on the breakwater end, run by Nell Gannet; arm-wrestling table, dice, a
   trapdoor to the Undertow.
 - **The Tidemarket** — covered import market: Tereza Maelo's arms stall, a foreign bookseller's cart,
   spice, silk, oddities.
-- **The Undertow** — the black market in the old smugglers' cellars beneath the fish market; tunnels to the
-  Drowned Gull and the harbour wall.
+- **The Undertow** — the black market in the old block-vaults beneath the fish market, where stone once
+  waited out the winter storms and smugglers now wait out the Inspector; tunnels to the Drowned Gull and the
+  harbour wall.
 - **The Net Lofts and rooftops** — a continuous roof route across the waterfront for climbers.
 - **The Gilded Tern** — a three-masted merchantman in the pool: rigging, hold, captain's cabin, the
   locked passenger berth of "Mr. S—'s agent."
@@ -320,7 +342,7 @@ Saltmarch sabres, harpoon-spears, lacquered round shields), sharkskin brigandine
 exotic arrows (whistling, netting, tar, glass-headed, grapple), rare foreign spellbooks (Storm, Illusion and
 Gravity texts from over the sea — restricted ones must be smuggled past Cray), and in the Undertow: smuggler
 thief tools (tide-silk rope, glue-soled boots, smoke pearls, a skeleton-key ring, a customs-seal stamp).
-Mirela is not pleased that a foreign book cart exists, and will pay well for anything it won't sell. — "The Labyrinth Beneath Briar Glen"
+Mirela is not pleased that a foreign book cart exists, and will pay well for anything it won't sell.
 
 ### 4.1 Beat sheet
 
@@ -353,7 +375,7 @@ Mirela is not pleased that a foreign book cart exists, and will pay well for any
    inner bar or Ember the rope latch (sorcerer); pick the padlock or climb the ventilation chimney (thief);
    or go the long way through the Briarwood, Mooring's Watch and its supply tunnel (any class); or go *up*
    the river through the flooded Weeping Adit (swim, raft, Frostglass the current's edge, or ride in on an
-   empty ore barge being winched back up — any class, found via Mags or rumour 16).
+   empty stone barge being winched back up — any class, found via Mags or rumour 16).
 
 **Act II — The Deep and the Dead**
 
@@ -495,7 +517,7 @@ far city prising open a crate and finding a tiny ox asleep on every coin (post-M
    the halls humming; or no one does, and the last slide is a lantern at the mine gate, and a child's
    footprints in the dust, going in. (Hook, not doom.)
 3. **"The Hireling's Silence"** (sided with Vane: bounty claimed, ledger buried, breach left open). The
-   mine prospers on Hornfolk gold; the town is grateful; the bell is rung — mostly. On still nights,
+   mine prospers on silver from below the Line and on Hornfolk gold; the town is grateful; the bell is rung — mostly. On still nights,
    someone always sits up in bed. You were well paid.
 4. **"The Long Vespers"** (joined the abbot, or failed to ring the bell). The whole valley sleeps. The
    final text is the player waking — years later? moments? — in the Cradle, the abbot gone, a goblin
@@ -571,7 +593,7 @@ Sixty, big, grey, the entire Watch of Briar Glen plus two teenagers with spears.
 ### 5.3 Harrow Vane — the mine owner
 Forty, handsome, tailored, generous in public. Chairs the town council because he pays for it.
 - **Want:** to save the Deepworks, and with it the town and his name.
-- **Fear:** being the Vane who lost it all.
+- **Fear:** being the Vane who lost the warrant, and five generations with it.
 - **Secret:** he dug below the Bell Line after months of vivid dreams (sent by the abbot), broke into the
   Knot, sold Hornfolk horn-coins in the city, and posted the bounty to have the "beast" removed from his
   new treasure. His foreman is planting goblin trinkets at vanish sites.
@@ -693,16 +715,16 @@ as the "friend below" (notes, chalk arrows), only speaking aloud in Act III.
 
 ### 5.13 Harbour cast (Wendmouth and the river)
 
-**Mags Oakum — bargewoman.** Skipper of the ore barge *Patient Ann*; fifties, pipe, forearms like hawsers,
-has carried Deepworks ore for thirty years and knows every eddy of the Wend. The player's ferry and guide
+**Mags Oakum — bargewoman.** Skipper of the stone barge *Patient Ann*; fifties, pipe, forearms like hawsers,
+has carried Deepworks stone for thirty years and knows every eddy of the Wend. The player's ferry and guide
 to the river.
 - **Want:** a full hold again; her son home from the Deepworks crew's layoff.
 - **Fear:** the river going quiet for good — and the humming she's started hearing at the Weeping Adit.
 - **Secret:** she's been carrying Vane's "special crates" downriver for two months, for triple pay, and
-  has a fair idea they aren't ore. She kept one horn-coin that slipped through a split plank.
+  has a fair idea they aren't stone. She kept one horn-coin that slipped through a split plank.
 - **Voice:** "River doesn't care who you are, love. Sit in the middle and don't touch the ropes."
 - **Class reactions:** Knight — puts you on the tow-rope ("Useful for once"). Archer — asks you to shoot the
-  herons off her ore. Sorcerer — wants a Gust for the sail, pays in passage. Thief — hides you under a
+  herons off her blocks. Sorcerer — wants a Gust for the sail, pays in passage. Thief — hides you under a
   tarpaulin for customs, for a fee.
 
 **Nell Gannet — keeper of the Drowned Gull, queen of the Low Tide Company.** Sixty, tiny, gold-toothed,
@@ -747,7 +769,7 @@ manifests for bay nine and the correspondence with Mr. S—'s agent. The harbour
 - **Fear:** the factors; Cray; being the one who hangs.
 - **Secret:** he ordered the brass "goblin trinkets" from a Wendmouth foundry on Vane's instruction (the
   foundry invoice is in his desk — see *Framed in Brass*). He keeps a second, honest manifest as insurance.
-- **Voice:** "Ore. It's ore. It's all ore. Heavy ore. Ore with — look, is there a problem?"
+- **Voice:** "Stone. It's stone. It's all stone. Heavy stone. Stone with — look, is there a problem?"
 - **Class reactions:** Knight — folds instantly under a stern look. Archer — tries to hire you as a crate
   guard. Sorcerer — asks nervously whether you can "tell if something's cursed." Thief — you'll meet his desk
   long before you meet him.
@@ -818,7 +840,7 @@ and a Hornfolk **name-stone** carved with Horn's mother's name.
   - **Heist (thief-favoured, any class can try):** case the warehouse; roof and skylight entry, or a
     dockhand disguise from the Undertow; dodge the night watchman; open bay nine, swap the crate's
     contents for ballast, and re-seal it with the Undertow's customs-seal stamp. Perfect execution: no one
-    ever knows, the Tern sails with rocks, and Vane gets paid in angry letters.
+    ever knows, the Tern sails with rocks from a town made of them, and Vane gets paid in angry letters.
   - **Paper (any):** forge or swap the manifest so Cray inspects bay nine legally and seizes the crate
     (needs Quell's honest manifest or the dead clerk's seal as evidence).
   - **Net (archer):** cut the cargo net mid-hoist; the crate drops into the harbour; fish it out at low
@@ -833,7 +855,7 @@ and a Hornfolk **name-stone** carved with Horn's mother's name.
   unreadable in the MVP beyond one line). If the Tern sails first, the crate is gone (epilogue hook); the
   customs copy of the manifest remains.
 
-**7. The Tidefair** (Wendmouth; shared hijinks with class flavours). Every market day the Ore Wharf holds
+**7. The Tidefair** (Wendmouth; shared hijinks with class flavours). Every market day the Stone Wharf holds
 contests for coin, prizes and bragging rights. Any class can enter any event; each class is best at one.
 - *Events:* **Arm-wrestling and the Gull brawl** (knight flavour; beat Big Oona, or survive the free-for-all
   that follows when someone loses badly — often you); **the Gull Shoot** (archer flavour; hit wooden gulls
@@ -916,7 +938,7 @@ Harbour and river rumours (Mags, Nell, Old Reed, Tidemarket gossip):
 you who fell. The day is rung. The door is kept."* Margin note in a child's hand: *"Brother A. sings
 this flat."*
 
-**A Traveller's Account of the Glen** (common). *"The inhabitants are uncommonly literate for miners and
+**A Traveller's Account of the Glen** (common). *"The inhabitants are uncommonly literate for stone-cutters and
 uncommonly nervous about sunset. Asked why the priory bell rings so loud, the innkeeper told me, 'So
 nobody has to hear anything else.'"*
 
@@ -943,17 +965,18 @@ the Line, gallery 9: carvings. Men uneasy. Double wages."*
 **Rules of the Mine** (carved over the gate). *"No shaft below the Bell Line. The hill is kept."*
 
 **Cargo Manifest — Gilded Tern, Bay Nine** (Wendmouth customs house copy / Quell's desk). *"Consignor: Vane
-Deepworks. Contents: ORE SAMPLES, 1 crate (heavy). Customs seal: No. 114, clerk E. Ardley. Consignee: to be
+Deepworks. Contents: GLENSTONE SAMPLES, dressed, 1 crate (heavy). Customs seal: No. 114, clerk E. Ardley. Consignee: to be
 collected at destination by bearer of the S— token."* Quell's honest copy, hidden in his desk, lists instead:
 *"Horn-coin, 40 pcs. Carved stone (ox-headed), 3. Name-stone, 1 — do NOT let the men see this one."*
 
-**Notice of the Lantern Court — Port of Wendmouth** (posted at the Ore Wharf and the customs house).
+**Notice of the Lantern Court — Port of Wendmouth** (posted at the Stone Wharf and the customs house).
 *"All books of the Restricted Schools (Illusion, Conjuration, Gravity, Shadow) entering this port without
 writ shall be held. Books of the Forbidden Schools shall be burned. Enquiries to the Inspector, who is not
 to be approached before ten, or after four, or at lunch. — By order, P. Cray."*
 
-**Kestrel Lock Toll Board** (painted, flaking). *"Ore barge, laden: 2 pennies. Ore barge, empty: 1 penny.
-Pleasure craft: 5 pennies. Gossip accepted in lieu at keeper's discretion."*
+**Kestrel Lock Toll Board** (painted, flaking). *"Stone barge, laden: 2 pennies. Stone barge, empty: 1 penny.
+Silver barge: by imperial warrant. Pleasure craft: 5 pennies. Gossip accepted in lieu at keeper's
+discretion."*
 
 **Foundry invoice** (Quell's desk). *"40 brass trinkets, goblin style, stamp as sample. Rush. Do not ask."*
 
@@ -985,6 +1008,8 @@ Each spellbook: a title with an author, a one-paragraph practical voice, and one
   silent. Held near the minotaur, it is not."
 - *Saltmarch sabre.* "Curved like a gull's wing and just as rude. Balanced for a duellist who expected to
   live."
+- *Crown.* "Imperial silver, struck in the city from silver cut out of the hill behind the Sleeping Ox. Most of
+  Briar Glen has never held one this new."
 - *Customs-seal stamp.* "Official. Stolen. Official again, as long as nobody looks closely."
 
 ### 7.5 Notes and marks
@@ -1041,8 +1066,8 @@ See 4.5 for main-quest specifics. General rules for all narrative content:
 - **The buyer in the city** ("Mr. S—"), who bought Vane's horn-coins and hired the thief: a collector of
   Hornfolk relics who knows there are other Knots. His veiled agent aboard the Gilded Tern is the thread;
   the Tern's next voyage is the natural next adventure.
-- **Over the sea.** The Saltmarch Isles (Tereza's home) and the foreign book trade that supplies the
-  Tidemarket.
+- **Over the sea.** The Saltmarch Isles (Tereza's home), paying their dues in imperial silver, and the foreign
+  book trade that supplies the Tidemarket.
 - **Other Sleepers.** The Hornfolk built more than one prison. The Nightjar is one of several; carvings
   in the Cradle map others.
 - **The Lantern Court arrives.** An inquisitor comes to investigate reports of Somnomancy, Mirela's shelf,
@@ -1050,7 +1075,10 @@ See 4.5 for main-quest specifics. General rules for all narrative content:
 - **The Warden's succession.** Who keeps the Knot when Horn is gone — goblins, Clatter, the player, Tansy?
 - **Snig learns to read.** A long-running comic thread; the first goblin author.
 - **Ysolde's journey.** Mirela's grandmother left the valley with one book the Court never found.
-- **Merlin, if wanted:** the Merlin Watch (falcon order of the old barony) as a future knightly faction.
+- **The empire's appetite.** Imperial assayers come upriver to learn why the Measure is short, and find what
+  lies below the Bell Line.
+- **The stone abroad.** Glenstone stands in harbours and temples across the sea; somewhere, a Hornfolk
+  carving went out with it.
 
 ---
 
@@ -1083,8 +1111,11 @@ See 4.5 for main-quest specifics. General rules for all narrative content:
 - **Brother Horn** — the minotaur; last Hornfolk warden.
 - **Clatter** — goblin name for the skeleton Brother Anselm Hobb.
 - **The Cradle** — heart of the Knot where the Nightjar sleeps.
-- **The Deepworks** — the Vane family silver mine.
+- **Crowns** — the empire's silver coin, struck from Glen silver.
+- **The Deepworks** — the Vane family's glenstone mine, where silver was struck 35 years ago.
+- **The empire** — the realm Briar Glen belongs to; unnamed in the MVP; its capital is "the city".
 - **The Drowned Gull** — Nell Gannet's tavern in Wendmouth; trapdoor to the Undertow.
+- **Glenstone** — the valley's pale, honey-grey freestone; its export built the region and Wendmouth.
 - **The Fold** — sealed Hornfolk vault where Horn keeps the sleepers safe.
 - **The Forgotten** — skeletons of those who walked into the song.
 - **A friend below** — the signature on the abbot's notes.
@@ -1092,6 +1123,7 @@ See 4.5 for main-quest specifics. General rules for all narrative content:
 - **Hornfolk** — the ancient bull-headed people who wrote the Knot.
 - **Hushlings** — blind fog-children shed by the Nightjar's dream.
 - **Kestrel Lock** — the barony lock halfway down the Wend; keeper Old Reed.
+- **The Measure** — the yearly quota of silver the Vanes owe the imperial mint under their warrant.
 - **The Knot** — the labyrinth; a prison-spell carved as corridors.
 - **The Lamplit Stacks** — Mirela's bookshop.
 - **The Lantern Court** — the authority that licenses and forbids magic.
@@ -1101,7 +1133,8 @@ See 4.5 for main-quest specifics. General rules for all narrative content:
 - **Mooring's Watch** — the abandoned watchtower.
 - **Mr. S—** — the unnamed buyer "of the city" of Vane's relics; the thief's anonymous client.
 - **The Nightjar** — the dreaming thing in the Cradle; its song draws sleepers and unwrites names.
-- **The Ore Stair** — stepped chute from the Deepworks down to Briar Glen Quay.
+- **The Stone Stair** — stepped slipway from the Deepworks' cutting hall down to Briar Glen Quay.
+- **The Stone Wharf** — Wendmouth's great stepped quay where the stone barges unload.
 - **The River Wend** — the river from the Deepworks hills through Briar Glen to the sea at Wendmouth.
 - **Rootcellar clan** — the goblins in the Deepworks.
 - **The Sleeping Ox** — Briar Glen's inn.
@@ -1111,7 +1144,7 @@ See 4.5 for main-quest specifics. General rules for all narrative content:
 - **The Vesper Bell** — the priory bell whose evening note keeps the Nightjar asleep; its bronze tongue
   was removed by the abbot.
 - **Vesperines** — the monastic Order of the Vesper Bell.
-- **The Tidefair** — Wendmouth's market-day contests on the Ore Wharf.
+- **The Tidefair** — Wendmouth's market-day contests on the Stone Wharf.
 - **The Tidemarket** — Wendmouth's covered import market.
 - **The Undertow** — black market in the smugglers' cellars under Wendmouth's fish market.
 - **Bay nine** — Vane Deepworks' bay in the Wendmouth bonded warehouse.
@@ -1123,11 +1156,14 @@ Long Vespers: **61 years ago**. Priory founded: **~300 years ago**. Breach: **3 
 Disappearances: **3 weeks**, **6 missing before the game, Tansy the 7th**. Bounty: **500 crowns, raised to
 800**. Mooring's Watch abandoned **~40 years** ago (Mooring died at his post after the garrison left).
 Tansy Pell is **12**. Horn is **the last** Hornfolk. Goblins **cannot read and do not dream**.
-River trade and Kestrel Lock: **~140 years ago** (after the silver strike ~150 years ago). Barge journey:
+Priory built of the first glenstone cut **~300 years ago**. Stone mine, river trade, Kestrel Lock and the
+Wendmouth charter: **~250 years ago** (the Millweir is older). The Vanes have run the Deepworks for **five
+generations**. Silver struck **~35 years ago**, above the Bell Line, by Harrow Vane's **grandfather**. The empire
+is **unnamed** in the MVP; its coin is the **crown**. Barge journey:
 **1 day downriver, 2 days up** (towed). Relic shipments: began **~2 months ago** (after the breach);
 the crate in bay nine is the **fourth**; the ledger's "12 pcs" was the first shipment; the bay-nine crate
 holds **40 horn-coins, 3 carved stones, 1 name-stone**. Brass trinkets ordered: **40**. The Gilded Tern
 sails **when Act III begins** (no real-time clock). Wendmouth is **optional**; the main quest is
-completable without visiting it. Mags has carried ore for **30 years** and Vane's crates for **2 months**.
+completable without visiting it. Mags has carried stone for **30 years** and Vane's crates for **2 months**.
 Bay nine's seal clerk **E. Ardley** has been **dead a year**. Wendmouth adds **no new creature types**
 (roster stays at **10**).

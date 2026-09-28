@@ -197,7 +197,7 @@ key-neutral (percussive/atonal) otherwise.
 | `music-wendmouth-day` | Wendmouth by day: loud, cheerful, crooked, with "The Tide" | A Mixolydian | 112 (6/8) | explore, tension, combat |
 | `music-wendmouth-night` | Wendmouth by night; includes the **heist/stealth layer** (bonded warehouse, customs strongroom, the Gilded Tern) | A Dorian | 90 | explore, stealth (heist variant of "The Tide"), tension, combat |
 | `music-drowned-gull` | The Drowned Gull tavern (rowdier than the Sleeping Ox) | D Mixolydian | 120 | explore (diegetic, "played" in the room) |
-| `music-tidefair` | The Tidefair: market-day contests on the Ore Wharf (festive cue) | A Mixolydian | 120 (6/8) | explore (festive loop), plus the Tidefair stingers |
+| `music-tidefair` | The Tidefair: market-day contests on the Stone Wharf (festive cue) | A Mixolydian | 120 (6/8) | explore (festive loop), plus the Tidefair stingers |
 | `music-undertow` | The Undertow black market | D Phrygian | 70 | explore, stealth, tension |
 | `music-credits` | Credits | D Dorian → D Lydian | 84 | linear |
 
@@ -459,7 +459,7 @@ murmur.
 |---|---|
 | **Rigging and ships** | Rigging creaks, block-and-tackle squeal, halyards slapping masts, sail luff flap and snap-fill, hull groan, anchor chain, the Tern's ship's bell (time bells), deck planks (`wood-hollow`) |
 | **Cargo** | Crane winch ratchet and pawl clicks, cargo net strain and creak under load, **net cut** (fibrous snap and a whoosh of the falling load), crate thud on planking, ore rattling into bins, barrels rolling |
-| **River** | Barge pole plunge, tiller creak, tow-rope creak, horse hooves and harness jingle on the towpath, Ore Stair chute rumble, lock windlass clank, lock gates groaning, sluice rush |
+| **River** | Barge pole plunge, tiller creak, tow-rope creak, horse hooves and harness jingle on the towpath, Stone Stair block-slide rumble, lock windlass clank, lock gates groaning, sluice rush |
 | **Bells and buoys** | **Bell buoy** (irregular, wave-driven dull clang), harbour bell, fog bell on the breakwater. These are low, tolling and a little sad, and must never be confused with the Vesper Bell (§7.8): thinner, shorter, no minor-third bloom. |
 | **Gulls and rats** | Gulls: screech, laughing call, squabbles, wingbeat flurry, and a triumphant "ha-ha" call when one snatches a shiny. Wharf rats: squeaks and a scurry-scatter when startled. A startled rat is a noise event and must match `e09-sound-propagation`. |
 | **Tidefair** | Wordless crowd cheers and groans, the wooden gull target clack on the swinging boom, regatta oars and a wooden starting clapper, the arm-wrestling table slam, dice cups |
