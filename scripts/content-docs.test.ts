@@ -5,11 +5,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { contentJsonSchema } from '../src/content/json-schema.ts';
 import { contentId, ref } from '../src/content/schema.ts';
+import { loadGameContent } from '../src/content/game-content.ts';
+import { materialSchema } from '../src/content/types/material.ts';
 import {
   expectedDocs,
   fieldRows,
   main,
+  MATERIALS_DOC,
   renderDoc,
+  renderMaterialsDoc,
   typeOf,
   type JsonSchemaNode,
 } from './content-docs.ts';
@@ -137,5 +141,50 @@ describe('fieldRows / renderDoc', () => {
     expect(doc).toMatch(/^# `thing` content schema\n/);
     expect(doc).toContain('| `list[].a` | number | required | multi line |');
     expect(doc.endsWith('|\n')).toBe(true);
+  });
+});
+
+describe('renderMaterialsDoc', () => {
+  it('AC-4: docs/design/materials.md lists every material and every property value', () => {
+    const doc = expectedDocs().get(MATERIALS_DOC) ?? '';
+    const materials = loadGameContent().all('material');
+    expect(materials.length).toBeGreaterThan(0);
+    const lines = doc.split('\n');
+    const header = lines.find((line) => line.startsWith('| Material |')) ?? '';
+    const columns = header.split(' | ').map((c) => c.replace(/^\| |`| \|$/g, ''));
+    const missing = materials.flatMap((m) => {
+      const row = lines.find((line) => line.startsWith(`| \`${m.id}\` |`));
+      if (row === undefined) return [`${m.id}: no row`];
+      const cells = row.replace(/ \|$/, '').split(' | ');
+      return [
+        ...Object.entries(m.properties)
+          .filter(([key, value]) => cells[columns.indexOf(key)] !== JSON.stringify(value))
+          .map(([key]) => `${m.id}.${key}`),
+        ...(doc.includes(m.notes) ? [] : [`${m.id}: notes`]),
+      ];
+    });
+    expect(missing).toEqual([]);
+  });
+
+  it('shows record values as JSON and unset ones as —', () => {
+    const material = (id: string, properties: object) =>
+      materialSchema.parse({
+        id,
+        name: id,
+        notes: `${id} notes`,
+        footstepLoudness: -1,
+        impactSound: 'sfx-impact-glass',
+        properties,
+      });
+    const doc = renderMaterialsDoc([
+      material('lamp-glass', { lightEmitter: { intensity: 10, radius: 2 } }),
+      material('plain', {}),
+    ]);
+    expect(doc).toContain('| Material | Footsteps (dB) | Impact sound | `lightEmitter` |');
+    expect(doc).toContain(
+      '| `lamp-glass` | -1 | `sfx-impact-glass` | `{"intensity":10,"radius":2}` |',
+    );
+    expect(doc).toContain('| `plain` | -1 | `sfx-impact-glass` | — |');
+    expect(doc).toContain('- **plain** (`plain`): plain notes');
   });
 });

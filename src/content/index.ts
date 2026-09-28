@@ -32,8 +32,24 @@ export {
   type CreatureDef,
   type CreatureDefInput,
 } from './types/creature.ts';
+export {
+  FOOTSTEP_LOUDNESS_RANGE,
+  IMPACT_SOUND_PATTERN,
+  materialPresets,
+  materialPropertiesSchema,
+  materialSchema,
+  type MaterialDef,
+  type MaterialDefInput,
+  type MaterialProperties,
+} from './types/material.ts';
 export { canonicalJson, fnv1a64 } from './hash.ts';
-export { worldPropertiesSchema, type WorldPropertiesData } from './world-properties.ts';
+export {
+  toPropertyInit,
+  worldPropertiesSchema,
+  type Present,
+  type WorldPropertiesData,
+  type WorldPropertiesInit,
+} from './world-properties.ts';
 export {
   contentTypes,
   type ContentType,

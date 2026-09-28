@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (editor and docs)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why these values (sources, units, design intent), for owner review."
+    },
+    "footstepLoudness": {
+      "type": "number",
+      "minimum": -20,
+      "maximum": 20,
+      "description": "Footstep loudness offset relative to stone, dB."
+    },
+    "impactSound": {
+      "type": "string",
+      "pattern": "^sfx-impact-[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Impact sound set id (audio bible §7.2), e.g. \"sfx-impact-wood\"."
+    },
+    "properties": {
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "minimum": -273.15,
+          "maximum": 10000,
+          "description": "Current temperature, °C."
+        },
+        "flammable": {
+          "type": "boolean",
+          "description": "Fire can ignite it."
+        },
+        "ignitionPoint": {
+          "type": "number",
+          "minimum": -273.15,
+          "maximum": 10000,
+          "description": "Temperature at which it ignites, °C."
+        },
+        "fuel": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 86400,
+          "description": "Seconds of burning left."
+        },
+        "wetness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How soaked it is (dry … saturated), 0 … 1."
+        },
+        "frozen": {
+          "type": "boolean",
+          "description": "Frozen solid."
+        },
+        "freezePoint": {
+          "type": "number",
+          "minimum": -273.15,
+          "maximum": 10000,
+          "description": "Temperature at or below which it freezes, °C."
+        },
+        "conductive": {
+          "type": "boolean",
+          "description": "Conducts electric charge."
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Mass, kg."
+        },
+        "fragile": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000,
+          "description": "Impact energy that breaks it, J."
+        },
+        "hp": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Structural hit points."
+        },
+        "density": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 100000,
+          "description": "Density, kg/m³; below 1000 it floats in water."
+        },
+        "climbable": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3,
+          "description": "Climbing grade: 1 easy, 2 needs stamina, 3 needs skill or a tool."
+        },
+        "liftable": {
+          "type": "boolean",
+          "description": "Can be picked up and carried."
+        },
+        "pushable": {
+          "type": "boolean",
+          "description": "Can be pushed or dragged."
+        },
+        "hideable": {
+          "type": "boolean",
+          "description": "An actor can hide in or behind it."
+        },
+        "reflective": {
+          "type": "boolean",
+          "description": "Reflects light beams and bolts."
+        },
+        "transparent": {
+          "type": "boolean",
+          "description": "Light and sight pass through it."
+        },
+        "opaque": {
+          "type": "boolean",
+          "description": "Fully blocks light and sight."
+        },
+        "lightEmitter": {
+          "type": "object",
+          "properties": {
+            "intensity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000,
+              "description": "Light output (a torch is about 100)."
+            },
+            "radius": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Reach, m."
+            }
+          },
+          "required": [
+            "intensity",
+            "radius"
+          ],
+          "additionalProperties": false,
+          "description": "Emits light."
+        },
+        "soundDamping": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of sound it absorbs, 0 … 1."
+        },
+        "friction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Surface friction coefficient."
+        },
+        "impactAbsorb": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of impact energy it absorbs, 0 … 1."
+        }
+      },
+      "additionalProperties": false,
+      "description": "World-property defaults for objects of this material; omitted ones take the global default."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "footstepLoudness",
+    "impactSound",
+    "properties"
+  ],
+  "additionalProperties": false
+}

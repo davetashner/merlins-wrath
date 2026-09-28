@@ -3,11 +3,13 @@
 
 import type { Catalogue, EntryOf } from './loader.ts';
 import { creatureSchema } from './types/creature.ts';
+import { materialSchema } from './types/material.ts';
 import { testPropSchema } from './types/testprop.ts';
 
 /** Content type name → schema of one entry. */
 export const contentTypes = {
   creature: creatureSchema,
+  material: materialSchema,
   testprop: testPropSchema,
 };
 

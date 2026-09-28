@@ -4,10 +4,11 @@
 // mirrors the sim's spec (src/sim/properties/spec.ts), which content may only import as types: the
 // key set and value types are checked at compile time (world-properties.test.ts) and every range and
 // default at run time (tests/contracts/world-properties.test.ts). Omitted properties take the sim
-// defaults, so data stays sparse.
+// defaults, so data stays sparse. `material` is a reference to a material preset (mw-e03.2), so the
+// loader rejects an unknown material id with the file and JSON pointer.
 
 import { z } from 'zod';
-import { contentId } from './schema.ts';
+import { contentId, ref } from './schema.ts';
 
 const ABSOLUTE_ZERO = -273.15;
 const MAX_TEMPERATURE = 10_000;
@@ -20,7 +21,7 @@ const flag = (doc: string) => z.boolean().describe(doc);
 /** Every world property as a data-file field; see the sim spec for defaults and meaning. */
 export const worldPropertiesSchema = z
   .strictObject({
-    material: contentId.describe('Material preset id.'),
+    material: ref('material').describe('Material preset id (a material content entry).'),
     temperature: celsius('Current temperature,'),
     flammable: flag('Fire can ignite it.'),
     ignitionPoint: celsius('Temperature at which it ignites,'),
@@ -67,3 +68,20 @@ export const worldPropertiesSchema = z
 
 /** World properties as written in a data file (any subset). */
 export type WorldPropertiesData = z.output<typeof worldPropertiesSchema>;
+
+/**
+ * `T` with optional keys that are absent rather than `undefined`: what parsed JSON holds (JSON has no
+ * undefined), in the form the sim's `exactOptionalPropertyTypes` inputs require.
+ */
+export type Present<T> = { [K in keyof T]?: Exclude<T[K], undefined> };
+
+/** World properties as the sim takes them (`WorldPropertyInit`): the material ref as its plain id. */
+export type WorldPropertiesInit = Present<Omit<WorldPropertiesData, 'material'>> & {
+  material?: string;
+};
+
+/** Converts data-file world properties to the sim's form (the material ref becomes its id). */
+export function toPropertyInit(data: WorldPropertiesData): WorldPropertiesInit {
+  const { material, ...rest } = data as Present<WorldPropertiesData>; // parsed JSON: no undefined
+  return material === undefined ? rest : { ...rest, material: material.id };
+}

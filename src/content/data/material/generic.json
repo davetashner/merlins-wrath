@@ -1,0 +1,9 @@
+{
+  "$schema": "../material.schema.json",
+  "id": "generic",
+  "name": "Generic",
+  "notes": "The fallback material every object has until it names one (the property spec's default material id). It sets nothing, so every property takes its global default; footsteps and impacts sound like stone, the neutral reference surface.",
+  "footstepLoudness": 0,
+  "impactSound": "sfx-impact-stone",
+  "properties": {}
+}
