@@ -1,0 +1,16 @@
+{
+  "$schema": "../sense.schema.json",
+  "id": "humanoid",
+  "name": "Humanoid (baseline)",
+  "notes": "Baseline for people and people-shaped creatures: human guards, smugglers and the harbour watch, goblins, Brother Horn. Tuning band: sight far range 15–30 m and hearing threshold 20–40 dB (a creature needing values outside it should override, not edit this file). Far 20 m and primary half-angle 35° match the e11.5 perception tests; the 80° periphery is a human's useful side vision, and 40° vertical keeps a thief on a high beam unseen until the guard looks up. Dark vision 0.2: people need light, which is what makes the thief's shadows work. Hearing 30 dB (quiet-room level) catches a careless step at a few metres but not a crouched one. No smell or special senses. Goblins, who see in the dark, override darkVision.",
+  "sight": {
+    "nearRange": 8,
+    "farRange": 20,
+    "primaryHalfAngle": 35,
+    "peripheralHalfAngle": 80,
+    "verticalHalfAngle": 40,
+    "darkVision": 0.2,
+    "detectionSpeed": 1
+  },
+  "hearing": { "thresholdDb": 30, "range": 25 }
+}

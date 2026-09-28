@@ -28,7 +28,6 @@ export {
   SIZE_CLASSES,
   STANCES,
   creatureSchema,
-  senseProfileSchema,
   type CreatureDef,
   type CreatureDefInput,
 } from './types/creature.ts';
@@ -42,6 +41,20 @@ export {
   type MaterialDefInput,
   type MaterialProperties,
 } from './types/material.ts';
+export {
+  SPECIAL_SENSE_CHANNELS,
+  SenseResolutionError,
+  creatureSensesSchema,
+  resolveSenses,
+  senseProfileSchema,
+  senseSchema,
+  type CreatureSenses,
+  type SenseDef,
+  type SenseDefInput,
+  type SenseProfile,
+  type SenseProfileLookup,
+  type SpecialSenseChannel,
+} from './types/sense.ts';
 export { canonicalJson, fnv1a64 } from './hash.ts';
 export {
   toPropertyInit,

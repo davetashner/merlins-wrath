@@ -6,11 +6,21 @@ import { contentTypes } from '../registry.ts';
 import { ContentRef, contentId, serializeContent } from '../schema.ts';
 import { creatureSchema, type CreatureDefInput } from './creature.ts';
 
+const sight = {
+  nearRange: 8,
+  farRange: 20,
+  primaryHalfAngle: 35,
+  peripheralHalfAngle: 60,
+  verticalHalfAngle: 40,
+  darkVision: 0.2,
+  detectionSpeed: 1,
+};
+
 const minimal = {
   id: 'fixture-walker',
   family: 'human',
   stats: { health: 100, poise: 40, mass: 80, size: 'medium' },
-  senses: { sight: { range: 20, halfAngle: 60 } },
+  senses: { sight },
   locomotion: [{ mode: 'walk', speed: 1.5 }],
 } satisfies CreatureDefInput;
 
@@ -28,12 +38,8 @@ const loadIssues = (sources: readonly ContentSource[], schemas = contentTypes) =
   throw new Error('expected loading to fail');
 };
 
-/** The game registry plus stub `attack` and `sense` types, until e12.5 and e12.2 register theirs. */
-const withTargets = {
-  ...contentTypes,
-  attack: z.strictObject({ id: contentId }),
-  sense: z.strictObject({ id: contentId }),
-};
+/** The game registry plus a stub `attack` type, until e12.5 registers it. */
+const withTargets = { ...contentTypes, attack: z.strictObject({ id: contentId }) };
 
 describe('creature schema', () => {
   it('AC-1: a file with only id, family, stats, senses and locomotion passes with every default filled', () => {
@@ -47,10 +53,7 @@ describe('creature schema', () => {
       family: 'human',
       tags: [],
       stats: { health: 100, poise: 40, mass: 80, size: 'medium' },
-      senses: {
-        sight: { range: 20, halfAngle: 60 },
-        hearing: { thresholdDb: 30, range: 25 },
-      },
+      senses: { sight, hearing: { thresholdDb: 30, range: 25 } },
       locomotion: [{ mode: 'walk', speed: 1.5 }],
       attacks: [],
       properties: [],
@@ -115,7 +118,7 @@ describe('creature schema', () => {
   it('AC-3: refs to existing attacks and sense profiles resolve to their entries', () => {
     const content = loadContent(withTargets, [
       source('data/attack/overhead-chop.json', { id: 'overhead-chop' }),
-      source('data/sense/undead.json', { id: 'undead' }),
+      source('data/sense/undead.json', { id: 'undead', name: 'Undead', notes: 'Test.', sight }),
       source('data/creature/a.json', {
         ...minimal,
         id: 'a',

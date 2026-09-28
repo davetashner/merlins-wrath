@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Profile id creatures refer to, e.g. \"humanoid\"."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (editor and docs)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why these values (tuning band, canon, intended users), for owner review."
+    },
+    "sight": {
+      "description": "Sight; absent = blind.",
+      "type": "object",
+      "properties": {
+        "nearRange": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Metres within which a visible target is noticed at the full detection rate."
+        },
+        "farRange": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Metres beyond which it sees nothing; detection falls off from near."
+        },
+        "primaryHalfAngle": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 180,
+          "description": "Half-angle of the focused (primary) cone, degrees from the facing direction."
+        },
+        "peripheralHalfAngle": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 180,
+          "description": "Half-angle of the peripheral cone, degrees; at least primaryHalfAngle."
+        },
+        "verticalHalfAngle": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 90,
+          "description": "Vertical half-angle above and below eye level, degrees."
+        },
+        "darkVision": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How well it sees in darkness, 0–1: 0 = needs light, 1 = unaffected."
+        },
+        "detectionSpeed": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Multiplier on how quickly sightings build awareness; 1 = baseline."
+        }
+      },
+      "required": [
+        "nearRange",
+        "farRange",
+        "primaryHalfAngle",
+        "peripheralHalfAngle",
+        "verticalHalfAngle",
+        "darkVision",
+        "detectionSpeed"
+      ],
+      "additionalProperties": false
+    },
+    "hearing": {
+      "description": "Hearing; absent = deaf.",
+      "type": "object",
+      "properties": {
+        "thresholdDb": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 140,
+          "description": "Quietest sound it hears, dB at the listener after propagation."
+        },
+        "range": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Metres beyond which it hears nothing, however loud."
+        }
+      },
+      "required": [
+        "thresholdDb",
+        "range"
+      ],
+      "additionalProperties": false
+    },
+    "smell": {
+      "description": "Smell; absent = no sense of smell.",
+      "type": "object",
+      "properties": {
+        "range": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Metres it can smell a scent source in still air."
+        },
+        "windSensitive": {
+          "type": "boolean",
+          "description": "Whether wind carries scent to it (downwind smells farther)."
+        },
+        "tracksScentTrails": {
+          "type": "boolean",
+          "description": "Whether it follows scent trails left by moving targets (hook; post-MVP simulation)."
+        }
+      },
+      "required": [
+        "range",
+        "windSensitive",
+        "tracksScentTrails"
+      ],
+      "additionalProperties": false
+    },
+    "special": {
+      "description": "Special senses by channel (tremor, life-sense, magic-sense); absent = none.",
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "range": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Metres the sense reaches."
+          },
+          "minStrength": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Weakest signal it registers, 0–1 (after range falloff)."
+          },
+          "requiresLineOfSight": {
+            "type": "boolean",
+            "description": "Whether walls block it (false = senses through walls and floors)."
+          },
+          "requiresMovement": {
+            "type": "boolean",
+            "description": "Whether it only senses targets that are moving."
+          }
+        },
+        "required": [
+          "range",
+          "minStrength",
+          "requiresLineOfSight",
+          "requiresMovement"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes"
+  ],
+  "additionalProperties": false
+}

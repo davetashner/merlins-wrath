@@ -4,7 +4,15 @@
   "family": "human",
   "stats": { "health": 100, "poise": 40, "mass": 80, "size": "medium" },
   "senses": {
-    "sight": { "range": 20, "halfAngle": 60 },
+    "sight": {
+      "nearRange": 8,
+      "farRange": 20,
+      "primaryHalfAngle": 35,
+      "peripheralHalfAngle": 60,
+      "verticalHalfAngle": 40,
+      "darkVision": 0.2,
+      "detectionSpeed": 1
+    },
     "hearing": { "thresholdDb": 30, "range": 25 }
   },
   "locomotion": [{ "mode": "walk", "speed": 1.5 }]

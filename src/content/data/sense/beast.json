@@ -1,0 +1,17 @@
+{
+  "$schema": "../sense.schema.json",
+  "id": "beast",
+  "name": "Beast (baseline)",
+  "notes": "Baseline for four-legged hunters: Briar Wolves, the fixture hound, wharf rats (scaled down). Hearing and smell dominant: a 20 dB threshold hears a crouched step that a guard misses, out to 40 m, and scent reaches 15 m in still air, farther downwind, following trails. Eyes are set to the side, so a narrow 30° focus but a wide 110° periphery that catches movement; they fall off sooner (18 m) than a guard's. Dark vision 0.6: night hunters see in dim light but not in pitch black, so torches and fire still matter (canon: wolves are scared by fire). Detection speed 1.25: quick to react to what they do notice.",
+  "sight": {
+    "nearRange": 6,
+    "farRange": 18,
+    "primaryHalfAngle": 30,
+    "peripheralHalfAngle": 110,
+    "verticalHalfAngle": 35,
+    "darkVision": 0.6,
+    "detectionSpeed": 1.25
+  },
+  "hearing": { "thresholdDb": 20, "range": 40 },
+  "smell": { "range": 15, "windSensitive": true, "tracksScentTrails": true }
+}
