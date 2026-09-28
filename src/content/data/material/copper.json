@@ -1,0 +1,17 @@
+{
+  "$schema": "../material.schema.json",
+  "id": "copper",
+  "name": "Copper",
+  "notes": "Copper and bronze fittings: pipes, pans, lightning rods, roof sheeting, ore veins. A better conductor than iron in reality (the sim only has on/off conductivity). Density 8960 kg/m³. Softer than iron (500 hp). Otherwise sounds and feels like iron.",
+  "footstepLoudness": 6,
+  "impactSound": "sfx-impact-metal",
+  "properties": {
+    "conductive": true,
+    "density": 8960,
+    "hp": 500,
+    "friction": 0.4,
+    "soundDamping": 0.02,
+    "opaque": true,
+    "climbable": 3
+  }
+}

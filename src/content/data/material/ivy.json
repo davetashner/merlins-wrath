@@ -1,0 +1,20 @@
+{
+  "$schema": "../material.schema.json",
+  "id": "ivy",
+  "name": "Ivy (living plants)",
+  "notes": "Living climbing plants and foliage: ivy on walls, hedges, bushes, briars. Green plants hold water (wetness 0.2), so they need more heat to catch (350 °C) than dead straw, then burn for 45 s. An easy climb (grade 1, the spec's ivy example). Partial cover: neither transparent nor opaque. Leafy rustle underfoot (+2 dB).",
+  "footstepLoudness": 2,
+  "impactSound": "sfx-impact-straw",
+  "properties": {
+    "flammable": true,
+    "ignitionPoint": 350,
+    "fuel": 45,
+    "wetness": 0.2,
+    "density": 400,
+    "hp": 20,
+    "friction": 0.6,
+    "soundDamping": 0.4,
+    "impactAbsorb": 0.3,
+    "climbable": 1
+  }
+}

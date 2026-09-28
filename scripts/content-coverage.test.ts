@@ -2,7 +2,17 @@ import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { loadGameContent } from '../src/content/game-content.ts';
+import { contentTypes, type ContentType } from '../src/content/registry.ts';
 import { main, unexercised } from './content-coverage.ts';
+
+/** `type:id` of every game content entry. */
+const everyEntry = (): string[] => {
+  const content = loadGameContent();
+  return (Object.keys(contentTypes) as ContentType[]).flatMap((type) =>
+    content.all(type).map((entry) => `${type}:${entry.id}`),
+  );
+};
 
 describe('unexercised', () => {
   it('lists entries missing from the exercised set, in order', () => {
@@ -44,9 +54,12 @@ describe('content-coverage main', () => {
   });
 
   it('passes when every entry is exercised', () => {
-    report('testprop:crate', 'testprop:plank');
+    const entries = everyEntry();
+    report(...entries);
     expect(run()).toBe(0);
-    expect(console.log).toHaveBeenCalledWith('Every content entry (2) is exercised by a test.');
+    expect(console.log).toHaveBeenCalledWith(
+      `Every content entry (${String(entries.length)}) is exercised by a test.`,
+    );
   });
 
   it('needs the report from a test run (a flag with no value falls back to the default)', () => {

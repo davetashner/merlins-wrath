@@ -1,0 +1,17 @@
+{
+  "$schema": "../material.schema.json",
+  "id": "bone",
+  "name": "Bone",
+  "notes": "Skeletons, bone piles and the Knot's ossuary litter. Non-flammable. Density 1900 kg/m³ (cortical bone). Brittle: a 120 J blow (a mace swing) snaps it. Bone litter is a loud surface (+6 dB, audio bible §7.3: bone-litter is loud).",
+  "footstepLoudness": 6,
+  "impactSound": "sfx-impact-bone",
+  "properties": {
+    "density": 1900,
+    "hp": 80,
+    "fragile": 120,
+    "friction": 0.4,
+    "soundDamping": 0.1,
+    "impactAbsorb": 0.05,
+    "opaque": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "../material.schema.json",
+  "id": "earth",
+  "name": "Earth",
+  "notes": "Soil, dirt, mud banks, dug graves and earthworks. Non-flammable and smothers fire. Density 1500 kg/m³ (loose soil). Absorbs sound and falls (0.4). Quieter than stone underfoot (−3 dB, audio bible §7.3: dirt below stone).",
+  "footstepLoudness": -3,
+  "impactSound": "sfx-impact-earth",
+  "properties": {
+    "density": 1500,
+    "hp": 200,
+    "friction": 0.7,
+    "soundDamping": 0.4,
+    "impactAbsorb": 0.4,
+    "opaque": true
+  }
+}
