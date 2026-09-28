@@ -1,0 +1,60 @@
+{
+  "$schema": "../signal-graph.schema.json",
+  "id": "greybox-rune-plates",
+  "name": "Greybox rune plates",
+  "notes": "Grey-box sample: step on three rune plates in order (west, middle, east) to open the vault door; a wrong plate resets the order and sets off the trap spawner. Only the player counts (tag filter). A brazier volume beside the door lights its lamp when anything burning is carried in, showing a fire-filtered volume driving a property.",
+  "nodes": [
+    {
+      "id": "west-plate",
+      "kind": "volume",
+      "shape": {
+        "kind": "box",
+        "center": { "x": -2, "y": 0, "z": 0 },
+        "halfExtents": { "x": 0.5, "y": 0.5, "z": 0.5 }
+      },
+      "filter": [{ "test": "tag", "tag": "player" }]
+    },
+    {
+      "id": "middle-plate",
+      "kind": "volume",
+      "shape": { "kind": "sphere", "center": { "x": 0, "y": 0, "z": 0 }, "radius": 0.5 },
+      "filter": [{ "test": "tag", "tag": "player" }]
+    },
+    {
+      "id": "east-plate",
+      "kind": "volume",
+      "shape": {
+        "kind": "capsule",
+        "from": { "x": 2, "y": 0, "z": -0.5 },
+        "to": { "x": 2, "y": 0, "z": 0.5 },
+        "radius": 0.4
+      },
+      "filter": [{ "test": "tag", "tag": "player" }]
+    },
+    { "id": "order", "kind": "sequence", "steps": ["west", "middle", "east"] },
+    { "id": "opened", "kind": "latch" },
+    { "id": "vault-door", "kind": "receiver", "receiver": "door", "entity": "vault-door" },
+    { "id": "trap", "kind": "receiver", "receiver": "spawner", "entity": "dart-trap" },
+    {
+      "id": "brazier",
+      "kind": "volume",
+      "shape": { "kind": "sphere", "center": { "x": 0, "y": 1, "z": 3 }, "radius": 0.6 },
+      "filter": [{ "test": "element", "element": "fire" }]
+    },
+    {
+      "id": "lamp",
+      "kind": "set-property",
+      "entity": "vault-lamp",
+      "on": { "lightEmitter": { "intensity": 100, "radius": 8 } }
+    }
+  ],
+  "wires": [
+    { "from": "west-plate.enter", "to": "order.west" },
+    { "from": "middle-plate.enter", "to": "order.middle" },
+    { "from": "east-plate.enter", "to": "order.east" },
+    { "from": "order.success", "to": "opened.set" },
+    { "from": "opened", "to": "vault-door" },
+    { "from": "order.failed", "to": "trap" },
+    { "from": "brazier.enter", "to": "lamp" }
+  ]
+}

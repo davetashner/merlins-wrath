@@ -1,0 +1,26 @@
+{
+  "$schema": "../signal-graph.schema.json",
+  "id": "kestrel-lock-gates",
+  "name": "Kestrel Lock gates",
+  "notes": "Old Reed's lock on the Wend. The lower lock gate only swings once both paddle levers are raised, and then only after the water levels settle (3 s), so a player who pulls one lever and waits learns the lock needs both. Opening it records a world fact the toll and barge quests read.",
+  "nodes": [
+    { "id": "upper-paddle", "kind": "lever", "entity": "upper-paddle-lever" },
+    { "id": "lower-paddle", "kind": "lever", "entity": "lower-paddle-lever" },
+    { "id": "paddles-up", "kind": "and" },
+    { "id": "levels-settle", "kind": "delay", "seconds": 3 },
+    { "id": "lock-gate", "kind": "receiver", "receiver": "door", "entity": "lower-lock-gate" },
+    {
+      "id": "gate-open-fact",
+      "kind": "receiver",
+      "receiver": "fact",
+      "key": "kestrel-lock.gate-open"
+    }
+  ],
+  "wires": [
+    { "from": "upper-paddle", "to": "paddles-up" },
+    { "from": "lower-paddle", "to": "paddles-up" },
+    { "from": "paddles-up", "to": "levels-settle" },
+    { "from": "levels-settle", "to": "lock-gate" },
+    { "from": "levels-settle", "to": "gate-open-fact" }
+  ]
+}

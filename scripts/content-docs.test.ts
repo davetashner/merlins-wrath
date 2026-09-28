@@ -111,6 +111,16 @@ describe('typeOf', () => {
     expect(t(z.object({}))).toBe('object');
     expect(t(z.any())).toBe('any');
   });
+
+  it('names a discriminated union (oneOf) like a union, listing each option type once', () => {
+    const t = (schema: z.ZodType) => typeOf(jsonSchema(schema));
+    const tagged = z.discriminatedUnion('kind', [
+      z.strictObject({ kind: z.literal('a') }),
+      z.strictObject({ kind: z.literal('b') }),
+    ]);
+    expect(t(tagged)).toBe('object');
+    expect(t(z.union([z.string(), z.string().min(2), z.boolean()]))).toBe('string or boolean');
+  });
 });
 
 describe('fieldRows / renderDoc', () => {
@@ -132,6 +142,29 @@ describe('fieldRows / renderDoc', () => {
       ['either', 'required'],
       ['either.b', 'required'],
     ]);
+  });
+
+  it('recurses into discriminated union options, rendering shared fields once', () => {
+    const tagged = jsonSchema(
+      z.strictObject({
+        node: z.discriminatedUnion('kind', [
+          z.strictObject({ id: contentId, kind: z.literal('a'), x: z.number() }),
+          z.strictObject({ id: contentId, kind: z.literal('b') }),
+        ]),
+      }),
+    );
+    expect(fieldRows(tagged).map((r) => r.field)).toEqual([
+      'node',
+      'node.id',
+      'node.kind',
+      'node.x',
+      'node.id',
+      'node.kind',
+    ]);
+    const lines = renderDoc('thing', tagged)
+      .split('\n')
+      .filter((l) => l.startsWith('| `node.id`'));
+    expect(lines).toEqual(['| `node.id` | id | required |  |']);
   });
 
   it('has no rows for a schema without properties', () => {

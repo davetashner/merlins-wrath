@@ -28,6 +28,8 @@ export interface JsonSchemaNode {
   readonly exclusiveMinimum?: number;
   readonly minItems?: number;
   readonly anyOf?: readonly JsonSchemaNode[];
+  /** Emitted for discriminated unions; documented like anyOf. */
+  readonly oneOf?: readonly JsonSchemaNode[];
   readonly items?: JsonSchemaNode;
   readonly properties?: Readonly<Record<string, JsonSchemaNode>>;
   readonly required?: readonly string[];
@@ -63,7 +65,8 @@ function numberType(node: JsonSchemaNode): string {
 /** Human-readable type of a JSON Schema node, e.g. `ref → attack`, `number 0–3`, `list of id`. */
 export function typeOf(node: JsonSchemaNode): string {
   if (node['x-contentRef'] !== undefined) return `ref → ${node['x-contentRef']}`;
-  if (node.anyOf !== undefined) return node.anyOf.map(typeOf).join(' or ');
+  const options = node.anyOf ?? node.oneOf;
+  if (options !== undefined) return [...new Set(options.map(typeOf))].join(' or ');
   if (node.enum !== undefined) return node.enum.map(code).join(' \\| ');
   if (node.const !== undefined) return code(node.const);
   if (typeof node.type !== 'string') return node.type?.join(' or ') ?? 'any';
@@ -103,16 +106,21 @@ function nestedRows(node: JsonSchemaNode, field: string): Row[] {
   if (typeof node.additionalProperties === 'object') {
     return nestedRows(node.additionalProperties, `${field}.<key>`);
   }
-  return (node.anyOf ?? []).flatMap((option) => nestedRows(option, field));
+  return (node.anyOf ?? node.oneOf ?? []).flatMap((option) => nestedRows(option, field));
 }
 
 const cell = (text: string): string => text.replaceAll('\n', ' ');
 
 /** The Markdown field reference for content type `type`. */
 export function renderDoc(type: string, schema: JsonSchemaNode): string {
-  const rows = fieldRows(schema).map(
-    (r) => `| \`${r.field}\` | ${r.type} | ${r.default} | ${cell(r.description)} |`,
-  );
+  // Union options repeat their shared fields (every node has an `id`): list each row once.
+  const rows = [
+    ...new Set(
+      fieldRows(schema).map(
+        (r) => `| \`${r.field}\` | ${r.type} | ${r.default} | ${cell(r.description)} |`,
+      ),
+    ),
+  ];
   return [
     `# \`${type}\` content schema`,
     '',

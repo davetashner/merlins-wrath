@@ -92,6 +92,18 @@ export {
   type SenseProfileLookup,
   type SpecialSenseChannel,
 } from './types/sense.ts';
+export {
+  PREDICATE_OPS,
+  REGISTERED_KINDS,
+  SIGNAL_ELEMENTS,
+  SIGNAL_NODE_KINDS,
+  SIGNAL_RECEIVERS,
+  signalGraphSchema,
+  signalPorts,
+  type SignalGraphEntry,
+  type SignalGraphEntryInput,
+  type SignalGraphNode,
+} from './types/signal-graph.ts';
 export { canonicalJson, fnv1a64 } from './hash.ts';
 export {
   toPropertyInit,

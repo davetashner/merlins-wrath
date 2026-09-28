@@ -6,6 +6,7 @@ import { creatureSchema } from './types/creature.ts';
 import { locomotionSchema } from './types/locomotion.ts';
 import { materialSchema } from './types/material.ts';
 import { senseSchema } from './types/sense.ts';
+import { signalGraphSchema } from './types/signal-graph.ts';
 import { testPropSchema } from './types/testprop.ts';
 
 /** Content type name → schema of one entry. */
@@ -14,6 +15,7 @@ export const contentTypes = {
   locomotion: locomotionSchema,
   material: materialSchema,
   sense: senseSchema,
+  'signal-graph': signalGraphSchema,
   testprop: testPropSchema,
 };
 
