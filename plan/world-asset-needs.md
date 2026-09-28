@@ -51,7 +51,7 @@ Canon notes the prompts must respect (story bible):
 | `env-moorings-watch-armour-hall-01` | Armour stands with names chalked on them (Hollow Sentinels) | e25-mooring-watch-encounters |
 | `env-deepworks-gate-01` | Boarded mine gate, Bell Line rule carved above, winch pulley, vent chimney | e25-mine-gate-approach |
 | `env-deepworks-winch-house-01` | Winch house and cage lift | e26-deepworks-greybox |
-| `env-deepworks-goblin-hall-01` | Ore-sorting hall turned goblin camp: kettle throne, hammocks, Duggan's crate | e26-deepworks-encounters |
+| `env-deepworks-goblin-hall-01` | Old glenstone cutting hall turned goblin camp: square pillars, half-cut blocks in the walls, kettle throne, hammocks, Duggan's crate | e26-deepworks-encounters |
 | `env-deepworks-sealed-gallery-01` | Vane's gallery 9: pried Hornfolk carvings, the breach | e26-vane-gallery-breach |
 | `env-bellwater-nave-01` | Roofless nave, god-rays, ivy | e26-priory-greybox |
 | `env-bellwater-choir-01` | Choir of singing-monk statues, hidden choir door | e26-priory-choir |
@@ -256,34 +256,39 @@ optional in the story but in the MVP scope (core P1, extras P2). Water is standi
 river sim); barge travel is a narrated ride. **No new creature types** (roster stays at 10); gulls and rats are
 ambient life. Suggested palette additions for the style bible: River (tarred timber, brown water, heron grey,
 lock-gate green) and Harbour (salt-bleached planks, tar black, sail canvas, gull white, Saltmarch lacquer red).
+Story canon v1 (§3.1, §3.2, §3.6) makes the valley's trade stone first: stone barges carry dressed glenstone
+down the Wend, Briar Glen Quay sits at the foot of the **Stone Stair**, and Wendmouth is a monumental glenstone
+harbour (colossal stepped quays, a breakwater of mason-marked reject blocks, vaulted stone warehouses, a
+columned Customs House, treadwheel cranes on stone piers, block yards) with timber lofts and sheds perched on
+the stone. The style bible §2.2 River Wend and Wendmouth rows are the palette and wording reference.
 
 ### R1. Environment concepts (`env-`)
 
 | Asset ID | Subject | Consumers |
 |---|---|---|
-| `env-briar-glen-quay-01` | Briar Glen Quay with the barge *Patient Ann*, ore bins, crane, the Ore Stair chute descending from the hill | e25-quay-ore-stair, e25-river-art-audio |
+| `env-briar-glen-quay-01` | Briar Glen Quay with the stone barge *Patient Ann*, dressed blocks on timber cradles, crane, the Stone Stair slipway descending from the hill | e25-quay-stone-stair, e25-river-art-audio |
 | `env-millweir-sluice-walk-01` | Vesperine-built weir with narrow sluice walk, gates, two water levels | e25-millweir-sluice-walk |
-| `env-weeping-adit-mouth-01` | Adit mouth where the Wend springs from the hill; flooded tunnel with air pockets, winched ore barge | e25-weeping-adit |
+| `env-weeping-adit-mouth-01` | Adit mouth where the Wend springs from the hill; flooded tunnel with air pockets, empty stone barge winched back up | e25-weeping-adit |
 | `env-towpath-valley-01` | Towpath along the Wend down the valley | e25-towpath-kestrel-lock |
 | `env-kestrel-lock-01` | Kestrel Lock gates, chamber, beam walk, toll board, Old Reed's cottage | e25-towpath-kestrel-lock |
 | `env-barge-ride-card-01` | Narrated ride card art: *Patient Ann* on the river at morning (down) and towed (up) | e25-barge-travel |
-| `env-wendmouth-harbour-01` | Establishing view: stilted tarred warehouses, net lofts, breakwater, pool with the Gilded Tern | e40-harbor-greybox, e40-harbor-art-dress |
-| `env-wendmouth-night-01` | Harbour at night: dock lanterns, ship lamps, lighthouse sweep | e40-harbor-lighting-audio |
-| `env-wendmouth-ore-wharf-tidefair-01` | Ore Wharf on market day: cranes, cargo nets, Tidefair planking, crowds | e40-ore-wharf, e40-tidefair-strength |
-| `env-wendmouth-customs-house-01` | Customs House: Lantern Court flag, cargo scale, Cray's office with the well-read shelf, strongroom | e40-customs-house |
-| `env-wendmouth-bonded-warehouse-01` | Bonded Warehouse interior: sealed bays, bay nine, skylights, hoist beams, manifest desk | e40-bonded-warehouse |
+| `env-wendmouth-harbour-01` | Establishing view: monumental glenstone harbour (stepped quays, mason-marked block breakwater, vaulted warehouses, columned Customs House, treadwheel cranes), timber net lofts perched on the stone, pool with the Gilded Tern | e40-harbor-greybox, e40-harbor-art-dress |
+| `env-wendmouth-night-01` | Harbour at night: dock lanterns pooling on wet flagstones, ship lamps, lighthouse sweep | e40-harbor-lighting-audio |
+| `env-wendmouth-stone-wharf-tidefair-01` | Stone Wharf on market day: great stepped quay, treadwheel cranes, cargo nets, block yards, Tidefair flagstones, crowds, the gated Silver Quay at the far end | e40-stone-wharf, e40-tidefair-strength |
+| `env-wendmouth-customs-house-01` | Columned glenstone Customs House: Lantern Court flag, cargo scale, Cray's office with the well-read shelf, strongroom | e40-customs-house |
+| `env-wendmouth-bonded-warehouse-01` | Vaulted stone Bonded Warehouse interior: sealed bays, bay nine, skylights, hoist beams, manifest desk | e40-bonded-warehouse |
 | `env-drowned-gull-interior-01` | The Drowned Gull: arm-wrestling table, dice, trapdoor | e40-drowned-gull |
 | `env-wendmouth-tidemarket-01` | Covered import market: Tereza's arms stall, foreign book cart, spice/silk/oddities | e40-tidemarket |
-| `env-wendmouth-undertow-01` | Smugglers' cellars under the fish market, tunnels, black-market stalls | e40-undertow |
+| `env-wendmouth-undertow-01` | Smugglers' block-vaults under the fish market, tunnels, black-market stalls | e40-undertow |
 | `env-wendmouth-rooftops-net-lofts-01` | Continuous roof and net-loft route above the waterfront | e40-rooftops-net-lofts |
 | `env-gilded-tern-deck-01` | The Tern's deck and rigging | e40-gilded-tern |
 | `env-gilded-tern-hold-cabin-01` | Hold with crates (shanghai wake), Hesketh's cabin, the locked berth | e40-gilded-tern |
-| `env-wendmouth-breakwater-01` | Breakwater, sunken figurehead underwater, smugglers' sea-door, low/high tide | e40-breakwater-sea-door |
+| `env-wendmouth-breakwater-01` | Breakwater of mason-marked reject blocks, sunken figurehead underwater, smugglers' sea-door, low/high tide | e40-breakwater-sea-door |
 
 ### R2. Textures (`tex-`)
 
 `tex-timber-tarred-01`, `tex-planks-salt-bleached-01`, `tex-rope-hawser-trim-01`, `tex-net-cargo-alpha-01`
-(climbable/flammable legibility), `tex-sailcloth-01`, `tex-stone-breakwater-01`, `tex-water-river-brown-01`,
+(climbable/flammable legibility), `tex-sailcloth-01`, `tex-stone-breakwater-01` (salt-weathered glenstone blocks with mason's marks, also quays and warehouse walls), `tex-water-river-brown-01`,
 `tex-water-harbour-grey-01`, `tex-lock-gate-green-01`, `tex-roof-tin-harbour-01` (loud) vs
 `tex-roof-tar-harbour-01` (quiet). Consumers: e25-river-art-audio, e40-harbor-art-dress, e40-rooftops-net-lofts.
 
@@ -291,12 +296,12 @@ lock-gate green) and Harbour (salt-bleached planks, tar black, sail canvas, gull
 
 | Asset ID | Contents | Consumers |
 |---|---|---|
-| `model-barge-patient-ann-01` | Flat-bottomed ore barge (hero-ish; also the winched Adit barge variant) | e25-barge-travel, e25-weeping-adit |
-| `prop-river-quay-set-01` | Bollards, ore bins, quay crane, toll shed, Ore Stair chute segments | e25-quay-ore-stair |
+| `model-barge-patient-ann-01` | Flat-bottomed stone barge with dressed blocks on timber cradles (hero-ish; also the winched Adit barge variant `model-barge-stone-adit-01`) | e25-barge-travel, e25-weeping-adit |
+| `prop-river-quay-set-01` | Bollards, dressed-block stacks on timber cradles, quay crane, toll shed, Stone Stair slipway segments | e25-quay-stone-stair |
 | `prop-river-weir-lock-set-01` | Sluice gates, lock gates, paddles, beam walk, toll board, cottage interior | e25-millweir-sluice-walk, e25-towpath-kestrel-lock |
 | `prop-adit-set-01` | Drainage timbering, winch, air-pocket rock shelves | e25-weeping-adit |
 | `model-ship-gilded-tern-01` | **Hero model:** three-masted merchantman, climbable rigging, interior hold/cabin/berth sections, "sailed" absence variant | e40-gilded-tern |
-| `prop-harbour-wharf-set-01` | Cranes (jib + winch), cargo nets, crate stacks, ore bins, Tidefair markers, Lantern Court notice | e40-ore-wharf |
+| `prop-harbour-wharf-set-01` | Treadwheel cranes on stone piers (jib + winch), cargo nets, crate stacks, block-yard stacks, Tidefair markers, Lantern Court notice | e40-stone-wharf |
 | `prop-harbour-customs-set-01` | Cargo scale, desks, strongroom shelves, Cray's romance-novel shelf | e40-customs-house |
 | `prop-harbour-warehouse-set-01` | Bay doors with customs-seal entity (intact/broken/re-sealed), hoist beams, manifest desk, Quell's office, the relic crate and ballast | e40-bonded-warehouse, e40-crate-heist |
 | `prop-harbour-tavern-set-01` | Arm-wrestling table, dice table, tankards, trapdoor | e40-drowned-gull |
@@ -366,7 +371,7 @@ Ambient life (not creature types): `model-ambient-gull-01` (idle, fly, snatch, h
 
 ### R7. Set-piece SFX (`sfx-`)
 
-- River: `sfx-ore-stair-slide-01`, `sfx-sluice-gate-heavy-01`, `sfx-lock-paddle-01`, `sfx-lock-gate-strain-01`,
+- River: `sfx-stone-stair-slide-01`, `sfx-sluice-gate-heavy-01`, `sfx-lock-paddle-01`, `sfx-lock-gate-strain-01`,
   `sfx-lock-chamber-fill-loop-01`, `sfx-adit-current-push-loop-01`, `sfx-adit-winch-barge-01`, `sfx-barge-horn-01`.
 - Harbour: `sfx-crane-winch-loop-01`, `sfx-crane-jib-swing-01`, `sfx-cargo-net-drop-splash-01`,
   `sfx-customs-stamp-01`, `sfx-customs-seal-break-01`, `sfx-customs-seal-restamp-01`, `sfx-strongroom-door-01`,
@@ -383,5 +388,5 @@ Ambient life (not creature types): `model-ambient-gull-01` (idle, fly, snatch, h
 
 `vfx-water-splash-large-01` (net drop, pier throw), `vfx-adit-current-foam-01`, `vfx-lock-fill-churn-01`,
 `vfx-lighthouse-sweep-01`, `vfx-regatta-sail-gust-01`, `vfx-harbour-pool-freeze-sheet-01`. Consumers:
-e40-ore-wharf, e25-weeping-adit, e25-towpath-kestrel-lock, e40-harbor-lighting-audio, e40-tidefair-regatta,
+e40-stone-wharf, e25-weeping-adit, e25-towpath-kestrel-lock, e40-harbor-lighting-audio, e40-tidefair-regatta,
 e40-gilded-tern.
