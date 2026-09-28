@@ -28,7 +28,9 @@
     "secrets:lint": "node scripts/check-gitleaks-config-cli.ts",
     "hooks:install": "git config core.hooksPath .beads/hooks",
     "deps:audit": "pnpm audit --json > audit.json; node scripts/dependency-audit-cli.ts --audit audit.json",
-    "beads:validate": "node scripts/validate-beads-cli.ts"
+    "beads:validate": "node scripts/validate-beads-cli.ts",
+    "replay:record": "node scripts/replay-cli.ts record",
+    "replay:rebless": "node scripts/replay-cli.ts rebless"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",

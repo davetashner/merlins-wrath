@@ -39,3 +39,40 @@ export {
   xxHash32,
   type SnapshotDifference,
 } from './snapshot';
+export {
+  DEFAULT_CHECKPOINT_INTERVAL,
+  InvalidReplayError,
+  parseReplay,
+  REPLAY_FORMAT_VERSION,
+  serializeReplay,
+  UnsupportedReplayVersionError,
+  type InputRun,
+  type JsonValue,
+  type Replay,
+  type ReplayCheckpoint,
+} from './replay/format';
+export {
+  describeOutcome,
+  playReplay,
+  reblessReplay,
+  ReplayError,
+  type Divergence,
+  type PlayOptions,
+  type ReblessOptions,
+  type ReplayOutcome,
+} from './replay/player';
+export {
+  recordScenario,
+  ReplayRecordError,
+  ReplayRecorder,
+  type RecorderOptions,
+  type RecordScenarioOptions,
+} from './replay/recorder';
+export type { DriveContext, ReplayScenario } from './replay/scenario';
+export { replayScenarios } from './replay/scenarios';
+export {
+  coreCommand,
+  coreComponents,
+  coreScenario,
+  type CoreCommand,
+} from './replay/scenarios/core';
