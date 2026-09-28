@@ -2,6 +2,7 @@
 // name under src/content/data/. Adding a content type = a schema module + one line here + a folder.
 
 import type { Catalogue, EntryOf } from './loader.ts';
+import { attackSchema } from './types/attack.ts';
 import { creatureSchema } from './types/creature.ts';
 import { locomotionSchema } from './types/locomotion.ts';
 import { materialSchema } from './types/material.ts';
@@ -12,6 +13,7 @@ import { testPropSchema } from './types/testprop.ts';
 
 /** Content type name → schema of one entry. */
 export const contentTypes = {
+  attack: attackSchema,
   creature: creatureSchema,
   locomotion: locomotionSchema,
   material: materialSchema,

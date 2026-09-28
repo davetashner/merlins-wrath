@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique attack id, e.g. \"forgotten-overhead-chop\". Stable once shipped."
+    },
+    "schemaVersion": {
+      "default": 1,
+      "description": "AttackDef schema version, for future migrations.",
+      "type": "number",
+      "const": 1
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the numbers come from (bead, design intent), for owner review."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "melee",
+        "projectile",
+        "area",
+        "grab",
+        "special"
+      ],
+      "description": "How it reaches its target."
+    },
+    "move": {
+      "description": "The move it performs: windup (startup), active and recovery ticks, hit volume, damage template, parry/block flags, telegraph tick and cues. Must be an \"attack\" move.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "x-contentRef": "move"
+    },
+    "telegraph": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Telegraph cue id render and audio play when the windup reads (AttackTelegraph event), e.g. \"guard-strike-windup\"; placeholder cues can be swapped later."
+    },
+    "range": {
+      "type": "object",
+      "properties": {
+        "min": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Closest distance to the target it is used from, metres."
+        },
+        "max": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Farthest distance to the target it is used from, metres; at least min."
+        }
+      },
+      "required": [
+        "min",
+        "max"
+      ],
+      "additionalProperties": false,
+      "description": "Distance band to the target (centre to centre, metres) the attack is used from: the distance precondition, and what AI spacing (e11) aims for."
+    },
+    "extraPackets": {
+      "description": "Damage packets applied per hit after the move’s own damage template (e.g. a separate poison packet); each goes through the damage model on its own.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "amounts": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "slash",
+                "pierce",
+                "blunt",
+                "fire",
+                "frost",
+                "shock",
+                "arcane",
+                "poison"
+              ]
+            },
+            "additionalProperties": {
+              "type": "number",
+              "minimum": 0
+            },
+            "description": "Damage points per damage type (before resistances); unlisted types deal 0."
+          },
+          "poiseDamage": {
+            "default": 0,
+            "description": "Poise damage in points.",
+            "type": "number",
+            "minimum": 0
+          },
+          "staminaDamage": {
+            "default": 0,
+            "description": "Stamina drained from a blocker, in points (before shield stability).",
+            "type": "number",
+            "minimum": 0
+          },
+          "impulse": {
+            "description": "Knockback impulse, N·s, in the attacker’s frame (+z forward, +y up).",
+            "default": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false
+          },
+          "impactForce": {
+            "default": 0,
+            "description": "Peak impact force, N (breakables, knockdown).",
+            "type": "number",
+            "minimum": 0
+          },
+          "tags": {
+            "description": "Damage-packet tags every hit carries, e.g. \"critical\" (damage model tags).",
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            }
+          }
+        },
+        "required": [
+          "amounts"
+        ],
+        "additionalProperties": false,
+        "description": "Damage packet template: what each hit applies through the damage model. Required with a hitbox."
+      }
+    },
+    "cooldown": {
+      "default": 0,
+      "description": "Seconds after it starts before it may start again.",
+      "type": "number",
+      "minimum": 0
+    },
+    "weight": {
+      "default": 1,
+      "description": "Relative selection weight among usable attacks (AI, e11).",
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "preconditions": {
+      "description": "When the attack may be started, besides range and cooldown; evaluated deterministically by the sim (canStartAttack).",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "targetStances": {
+          "description": "Target stances it may be used against; absent = any.",
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "moving",
+              "blocking",
+              "attacking",
+              "dodging",
+              "staggered",
+              "downed"
+            ]
+          }
+        },
+        "health": {
+          "description": "Own health band (current / max health) it may be used in, e.g. a desperation move.",
+          "default": {},
+          "type": "object",
+          "properties": {
+            "min": {
+              "default": 0,
+              "description": "Lowest own health fraction, 0–1.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "max": {
+              "default": 1,
+              "description": "Highest own health fraction, 0–1; at least min.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "projectile": {
+      "type": "object",
+      "properties": {
+        "speed": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Flight speed, metres per second (straight line)."
+        },
+        "maxRange": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Distance after which it vanishes, metres."
+        }
+      },
+      "required": [
+        "speed",
+        "maxRange"
+      ],
+      "additionalProperties": false,
+      "description": "Projectile flight (required for kind \"projectile\", forbidden otherwise). It launches on the first active tick from the move’s sphere hit volume, which is its size and launch point."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "kind",
+    "move",
+    "telegraph",
+    "range"
+  ],
+  "additionalProperties": false
+}

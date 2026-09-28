@@ -6,7 +6,7 @@ stable.
 
 | Id                 | Archetype | What tests rely on                                                                                                                                  |
 | ------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `fixture-guard`    | humanoid  | `humanoid` senses (sight-dominant, needs light) and locomotion; tags `patrols` and `communicates`; sleeps.                                          |
+| `fixture-guard`    | humanoid  | `humanoid` senses (sight-dominant, needs light) and locomotion; tags `patrols` and `communicates`; sleeps; one melee attack `fixture-guard-strike`. |
 | `fixture-hound`    | beast     | `beast` senses (hearing and smell dominant, follows scent trails); fast (9 m/s run); cannot climb, open doors or swim; sleeps.                     |
 | `fixture-sentinel` | undead    | `undead` senses (dark vision 1.0, 3 m `life-sense` through walls); tag `never-sleeps` and no needs; slow, never jumps, opens doors (a Hollow Sentinel stand-in). |
 
@@ -19,8 +19,11 @@ stable.
   bestiary creature, and its notes name these fixtures. **Locomotion** is inline except the guard's,
   which uses the `humanoid` baseline; the hound and sentinel do not borrow the Briar Wolf or any other
   bestiary profile.
-- **Capsules only**: `placeholder-capsule` mesh, `placeholder` SFX. No attacks until the `attack`
-  type exists (mw-e12.5).
+- **Capsules only**: `placeholder-capsule` mesh, `placeholder` SFX.
+- **Attacks** (mw-e12.5): only `fixture-guard` attacks, with `fixture-guard-strike` (`attack/` and its
+  `move/` here): melee, 18/4/14 ticks, telegraph `fixture-guard-strike-windup`, range 0–1.8 m, 2 s
+  cooldown, and two packets per hit (18 slash + 15 poise from the move, then 4 blunt). The hound and
+  sentinel have none.
 - **Never shipped.** Files live under `src/content/fixtures/creatures/<type>/`, outside the game's
   content root (`src/content/data`), so the game bundle never includes them. Tests load them with
   `loadFixtureContent()` from `src/content/test-fixtures.ts` (game content plus these fixtures).

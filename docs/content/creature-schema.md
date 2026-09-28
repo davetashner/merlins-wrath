@@ -88,7 +88,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `locomotion.squeezes` | boolean | — | Overrides whether it fits through crawlspaces. |
 | `locomotion.opensDoors` | boolean | — | Overrides whether it opens unlocked doors. |
 | `locomotion.areaCosts` | map of `"ground"` \| `"water-shallow"` \| `"water-deep"` \| `"crawlspace"` → number 0.1–100 or null | — | Area costs to override (ground, water-shallow, water-deep, crawlspace); null resets one to 1. |
-| `attacks` | list of ref → attack | `[]` | Attack ids it can use (e12.5); none = it never attacks. |
+| `attacks` | list of ref → attack | `[]` | Attack ids it can use (attack content, e12.5); none = it never attacks. |
 | `properties` | list of id | `[]` | World-property tags (e03), e.g. "flammable", "conductive". |
 | `resistances` | map of `"slash"` \| `"pierce"` \| `"blunt"` \| `"fire"` \| `"frost"` \| `"shock"` \| `"arcane"` \| `"poison"` → number 0–3 | `{}` | Damage multiplier per damage type, 0–3: 0 = immune, below 1 resists, above 1 vulnerable. Unlisted types take 1. |
 | `poiseRegen` | object | `{}` | How poise recovers after poise damage. |

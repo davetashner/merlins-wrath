@@ -12,6 +12,7 @@ import {
   fixtureContentSources,
   loadFixtureContent,
 } from './test-fixtures.ts';
+import { compileAttacks } from './types/attack.ts';
 import { creatureSchema } from './types/creature.ts';
 import {
   canEnterArea,
@@ -19,6 +20,7 @@ import {
   deriveNavAgent,
   resolveLocomotion,
 } from './types/locomotion.ts';
+import { compileMoves } from './types/move.ts';
 import { resolveSenses } from './types/sense.ts';
 
 const content = loadFixtureContent();
@@ -27,16 +29,18 @@ const senses = (id: string) => resolveSenses(creature(id).senses, content);
 const nav = (id: string) => deriveNavAgent(resolveLocomotion(creature(id).locomotion, content));
 
 describe('creature fixtures', () => {
-  it('reads the fixture files from their own root, one per fixture id', () => {
+  it('reads the fixture files from their own root: one per fixture id, plus the guard strike', () => {
     const sources = [...fixtureContentSources()].sort((a, b) => (a.path < b.path ? -1 : 1));
     expect(sources).toEqual(readContentSources(FIXTURE_CONTENT_ROOT));
-    expect(sources.map((s) => s.path)).toEqual(
-      FIXTURE_CREATURE_IDS.map((id) => `${FIXTURE_CONTENT_ROOT}/creature/${id}.json`),
-    );
+    expect(sources.map((s) => s.path)).toEqual([
+      `${FIXTURE_CONTENT_ROOT}/attack/fixture-guard-strike.json`,
+      ...FIXTURE_CREATURE_IDS.map((id) => `${FIXTURE_CONTENT_ROOT}/creature/${id}.json`),
+      `${FIXTURE_CONTENT_ROOT}/move/fixture-guard-strike.json`,
+    ]);
   });
 
   it('AC-1: the three fixture files validate against CreatureDef', () => {
-    for (const source of fixtureContentSources()) {
+    for (const source of fixtureContentSources().filter((s) => s.path.includes('/creature/'))) {
       const json = JSON.parse(source.text) as Record<string, unknown>;
       delete json['$schema'];
       expect(creatureSchema.safeParse(json).error).toBeUndefined();
@@ -47,11 +51,34 @@ describe('creature fixtures', () => {
     );
   });
 
-  it('AC-1: every fixture is tagged test-fixture, capsule-only and has no attacks', () => {
+  it('AC-1: every fixture is tagged test-fixture and capsule-only; only the guard attacks', () => {
     const fixtures = FIXTURE_CREATURE_IDS.map(creature);
     expect(fixtures.map((c) => c.tags.includes('test-fixture'))).toEqual([true, true, true]);
     expect(fixtures.map((c) => c.presentation.mesh)).toEqual(Array(3).fill('placeholder-capsule'));
-    expect(fixtures.map((c) => c.attacks)).toEqual([[], [], []]);
+    expect(fixtures.map((c) => c.attacks.map((a) => a.id))).toEqual([
+      ['fixture-guard-strike'],
+      [],
+      [],
+    ]);
+  });
+
+  it('fixture-guard-strike (mw-e12.5) is frozen: melee, 18/4/14, two packets, 0–1.8 m, 2 s cooldown', () => {
+    const [attack] = compileAttacks(
+      [content.get('attack', 'fixture-guard-strike')],
+      compileMoves(content.all('move')),
+    ).values();
+    expect(attack).toMatchObject({
+      kind: 'melee',
+      telegraph: 'fixture-guard-strike-windup',
+      rangeMin: 0,
+      rangeMax: 1.8,
+      cooldownMs: 2000,
+      move: { startup: 18, active: 4, recovery: 14, telegraphTick: 0, parryable: true },
+    });
+    expect(attack?.packets.map((p) => [p.amounts, p.poiseDamage])).toEqual([
+      [{ slash: 18 }, 15],
+      [{ blunt: 4 }, 0],
+    ]);
   });
 
   it('AC-1: senses and locomotion resolve to complete profiles', () => {

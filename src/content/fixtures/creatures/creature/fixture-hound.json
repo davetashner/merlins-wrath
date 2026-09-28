@@ -18,6 +18,7 @@
       }
     }
   },
+  "attacks": [],
   "resistances": {},
   "personality": {
     "bravery": 0.5,
