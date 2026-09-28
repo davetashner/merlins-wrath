@@ -103,6 +103,28 @@ const SIM_LOCKED_RULES = [
   '@eslint-community/eslint-comments/*',
 ];
 
+// Element rules act on properties, never on what a thing is (mw-e03.5, contract §2): under
+// src/sim/elements no code may compare a string literal against a material, archetype or prefab id
+// (an identifier or member named like one, or a `…Property(world, entity, 'material')` read), nor
+// switch on one. Per-kind behaviour belongs in data: a property or a material preset.
+const ARCHETYPE_NAME = '/material|archetype|prefab/i';
+const ARCHETYPE_MESSAGE =
+  'Element rules must not branch on material, archetype or prefab ids (mw-e03.5, contract §2): ' +
+  'express the difference as a property or in material data.';
+/** Selectors for an expression at `path` that names what a thing is. */
+const archetypeAt = (/** @type {string} */ path) => [
+  `[${path}.type='Identifier'][${path}.name=${ARCHETYPE_NAME}]`,
+  `[${path}.type='MemberExpression'][${path}.property.name=${ARCHETYPE_NAME}]`,
+  `[${path}.type='CallExpression'][${path}.arguments.2.value='material']`,
+];
+const STRING_AT = (/** @type {string} */ path) => `[${path}.type='Literal'][${path}.value=/^/]`;
+const EQUALITY = 'BinaryExpression[operator=/^[!=]==?$/]';
+const ARCHETYPE_SELECTORS = [
+  ...archetypeAt('left').map((side) => `${EQUALITY}${side}${STRING_AT('right')}`),
+  ...archetypeAt('right').map((side) => `${EQUALITY}${side}${STRING_AT('left')}`),
+  ...archetypeAt('discriminant').map((side) => `SwitchStatement${side}`),
+];
+
 /** Import-boundary config for one layer. */
 function layerConfig(/** @type {string} */ layer) {
   const { values, types } = LAYER_DEPS[layer] ?? { values: [], types: [] };
@@ -150,6 +172,21 @@ export function layerConfigs(eslintComments) {
       // Later flat-config entries replace a rule's options: only Math.random stays banned here.
       files: SIM_MATH_FILES,
       rules: { 'no-restricted-properties': ['error', MATH_RANDOM] },
+    },
+    {
+      files: ['src/sim/elements/**/*.ts'],
+      ignores: ['**/*.test.ts'],
+      rules: {
+        'no-restricted-syntax': [
+          'error',
+          ...ARCHETYPE_SELECTORS.map((selector) => ({ selector, message: ARCHETYPE_MESSAGE })),
+        ],
+        '@eslint-community/eslint-comments/no-restricted-disable': [
+          'error',
+          ...SIM_LOCKED_RULES,
+          'no-restricted-syntax',
+        ],
+      },
     },
   ];
 }

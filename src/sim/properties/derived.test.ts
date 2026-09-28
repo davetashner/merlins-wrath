@@ -29,9 +29,12 @@ describe('isFlammableNow', () => {
     expect(ids.map((id) => isFlammableNow(w, id))).toEqual([false, true]);
   });
 
-  it('wetness exactly at the soaked threshold still burns', () => {
-    const { w, ids } = worldWith({ flammable: true, wetness: SOAKED_WETNESS });
-    expect(isFlammableNow(w, ids[0] ?? 0)).toBe(true);
+  it('wetness exactly at the soaked threshold is soaked (mw-e03.5: ignites below 0.5 only)', () => {
+    const { w, ids } = worldWith(
+      { flammable: true, wetness: SOAKED_WETNESS },
+      { flammable: true, wetness: 0.49 },
+    );
+    expect(ids.map((id) => isFlammableNow(w, id))).toEqual([false, true]);
   });
 
   it('frozen or non-flammable entities cannot burn; defaults are dry and unfrozen', () => {

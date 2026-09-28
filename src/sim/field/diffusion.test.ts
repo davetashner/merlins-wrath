@@ -5,6 +5,13 @@ import { ElementField, type CellCoord } from './grid';
 
 const c = (x: number, y = 0, z = 0): CellCoord => ({ x, y, z });
 
+/**
+ * A field without temperature's default ambient loss (so heat totals are exactly conserved) and with
+ * a fine epsilon (so small tails still spill into neighbouring chunks): the bare kernel.
+ */
+const lossless = (input: FieldConfigInput = {}) =>
+  new ElementField({ ...input, temperature: { decay: 0, epsilon: 0.05 } });
+
 function cells(field: ElementField, lo: CellCoord, hi: CellCoord) {
   return { min: field.cellCenter(lo), max: field.cellCenter(hi) };
 }
@@ -37,7 +44,7 @@ function room(field: ElementField, r: number): void {
 
 describe('stepField diffusion', () => {
   it('AC-1: a single hot cell in an open field conserves total heat over N ticks', () => {
-    const field = new ElementField();
+    const field = lossless();
     field.add('temperature', c(0), 980);
     const reports = run(field, 120);
     const total = field.total('temperature');
@@ -68,13 +75,13 @@ describe('stepField diffusion', () => {
   });
 
   it('AC-2: no quantity crosses a wall', () => {
-    const field = new ElementField();
+    const field = lossless();
     room(field, 3);
     field.add('temperature', c(0), 1000);
-    field.add('gas:smoke', c(1, 1, 1), 1);
+    field.add('gas:marsh-gas', c(1, 1, 1), 1);
     field.add('moisture', c(-2, -2, -2), 1);
     run(field, 300);
-    for (const channel of ['temperature', 'gas:smoke', 'moisture'] as const) {
+    for (const channel of ['temperature', 'gas:marsh-gas', 'moisture'] as const) {
       const initial = channel === 'temperature' ? 1000 : 1;
       let inside = 0;
       field.forCellsIn(cells(field, c(-2, -2, -2), c(2, 2, 2)), (cell) => {
@@ -88,7 +95,7 @@ describe('stepField diffusion', () => {
   });
 
   it('AC-3: a chunk within epsilon of ambient for 60 ticks sleeps and costs nothing until touched', () => {
-    const field = new ElementField();
+    const field = lossless();
     field.setConductivity(cells(field, c(0), c(0)), 0); // geometry keeps the chunk allocated
     field.add('temperature', c(3, 3, 3), 0.01);
     field.add('temperature', c(4, 4, 4), -0.01); // cancels: settles with no net loss
@@ -117,7 +124,7 @@ describe('stepField diffusion', () => {
   });
 
   it('drops layers that return exactly to ambient', () => {
-    const field = new ElementField();
+    const field = lossless();
     field.add('charge', c(0), 1);
     field.add('charge', c(0), -1);
     field.add('moisture', c(0), 0.5);
@@ -137,7 +144,7 @@ describe('stepField diffusion', () => {
   });
 
   it('exchanges across a boundary where both chunks participate, and into chunks lacking the layer', () => {
-    const field = new ElementField();
+    const field = lossless();
     field.add('temperature', c(7), 100);
     field.add('temperature', c(8), 50);
     field.add('moisture', c(-1), 0.5); // chunk -1 is awake but has no temperature layer
@@ -149,7 +156,7 @@ describe('stepField diffusion', () => {
   });
 
   it('treats a neighbour the chunk cap refuses as a wall', () => {
-    const field = new ElementField({ maxChunks: 1 });
+    const field = lossless({ maxChunks: 1 });
     field.add('temperature', c(7, 7, 7), 100);
     run(field, 50);
     expect(field.chunkCount).toBe(1);

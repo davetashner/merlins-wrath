@@ -15,7 +15,7 @@ import {
 describe('resolveFieldConfig', () => {
   it('fills every default: 0.5 m cells, 8³ chunks, sleep after 60 calm ticks', () => {
     const config = resolveFieldConfig();
-    expect(config).toEqual({ ...DEFAULT_FIELD_CONFIG, gases: {} });
+    expect(config).toEqual(DEFAULT_FIELD_CONFIG);
     expect(config.cellSize).toBe(0.5);
     expect(config.sleepTicks).toBe(60);
   });
@@ -33,7 +33,10 @@ describe('resolveFieldConfig', () => {
     expect(config.maxChunks).toBe(7);
     expect(config.temperature).toEqual({ ...DEFAULT_FIELD_CONFIG.temperature, decay: 0.5 });
     expect(config.gas.diffusion).toBe(0.1);
-    expect(config.gases).toEqual({ smoke: { decay: 0.01 } });
+    expect(config.gases).toEqual({
+      ...DEFAULT_FIELD_CONFIG.gases,
+      smoke: { ...DEFAULT_FIELD_CONFIG.gases['smoke'], decay: 0.01 },
+    });
   });
 
   const bad: [string, FieldConfigInput][] = [
@@ -79,7 +82,7 @@ describe('channels', () => {
     expect(temperature.high).toBe(9980 * FIXED_ONE);
     expect(temperature.rate).toBe(Math.round(0.1 * RATE_ONE));
     expect(fixedChannel(config, 'gas:steam').decay).toBe(RATE_ONE / 2);
-    expect(fixedChannel(config, 'gas:smoke').decay).toBe(0);
+    expect(fixedChannel(config, 'gas:marsh-gas').decay).toBe(0);
   });
 
   it('never produces -0 counts', () => {

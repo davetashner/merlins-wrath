@@ -6,10 +6,11 @@
 // of a material, it is checked for physically inconsistent combinations that a sparse per-object
 // override can't be (a flammable material with no ignition point, a frozen one above its freezing
 // point). Every value is explained in the entry's `notes` so the owner can review the numbers;
-// docs/design/materials.md is generated from the data (`pnpm content:docs`).
+// docs/design/materials.md is generated from the data (`pnpm content:docs`). A flammable material
+// also says what fire leaves of it (mw-e03.5): another material (wood → charred) or nothing.
 
 import { z } from 'zod';
-import { contentId } from '../schema.ts';
+import { contentId, ref, type ContentRef } from '../schema.ts';
 import { worldPropertiesSchema, type Present } from '../world-properties.ts';
 
 /** Footstep loudness offset range, dB relative to stone (matches e09 surface acoustics). */
@@ -61,25 +62,56 @@ export const materialPropertiesSchema = presetFields
     'World-property defaults for objects of this material; omitted ones take the global default.',
   );
 
+/** What a burnt-out object becomes: `destroyed` (it burns away) or another material's id. */
+export const BURNT_DESTROYED = 'destroyed';
+
+/** A material's burnt state (see BURNT_DESTROYED). */
+export const burntStateSchema = z
+  .union([z.literal(BURNT_DESTROYED), ref('material')])
+  .describe(
+    'Flammable materials only: what fire leaves when the fuel is spent: "destroyed" (it burns away) or the id of the material it becomes (e.g. "charred").',
+  );
+
+/** Flammable materials must say what they burn to; others must not. */
+function checkBurnt(m: { properties: PresetFields; burnt?: unknown }, ctx: z.RefinementCtx): void {
+  const flammable = m.properties.flammable === true;
+  if (flammable && m.burnt === undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['burnt'],
+      message: 'a flammable material needs a burnt state',
+    });
+  } else if (!flammable && m.burnt !== undefined) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['burnt'],
+      message: 'only a flammable material has a burnt state',
+    });
+  }
+}
+
 /** One material preset: `src/content/data/material/<id>.json`. */
-export const materialSchema = z.strictObject({
-  id: contentId,
-  name: z.string().min(1).describe('Display name (editor and docs).'),
-  notes: z
-    .string()
-    .min(1)
-    .describe('Why these values (sources, units, design intent), for owner review.'),
-  footstepLoudness: z
-    .number()
-    .min(FOOTSTEP_LOUDNESS_RANGE.min)
-    .max(FOOTSTEP_LOUDNESS_RANGE.max)
-    .describe('Footstep loudness offset relative to stone, dB.'),
-  impactSound: z
-    .string()
-    .regex(IMPACT_SOUND_PATTERN, 'must be an impact sound set id, e.g. "sfx-impact-wood"')
-    .describe('Impact sound set id (audio bible §7.2), e.g. "sfx-impact-wood".'),
-  properties: materialPropertiesSchema,
-});
+export const materialSchema = z
+  .strictObject({
+    id: contentId,
+    name: z.string().min(1).describe('Display name (editor and docs).'),
+    notes: z
+      .string()
+      .min(1)
+      .describe('Why these values (sources, units, design intent), for owner review.'),
+    footstepLoudness: z
+      .number()
+      .min(FOOTSTEP_LOUDNESS_RANGE.min)
+      .max(FOOTSTEP_LOUDNESS_RANGE.max)
+      .describe('Footstep loudness offset relative to stone, dB.'),
+    impactSound: z
+      .string()
+      .regex(IMPACT_SOUND_PATTERN, 'must be an impact sound set id, e.g. "sfx-impact-wood"')
+      .describe('Impact sound set id (audio bible §7.2), e.g. "sfx-impact-wood".'),
+    properties: materialPropertiesSchema,
+    burnt: burntStateSchema.optional(),
+  })
+  .superRefine(checkBurnt);
 
 /** A material preset as written in a data file. */
 export type MaterialDefInput = z.input<typeof materialSchema>;
@@ -97,4 +129,19 @@ export function materialPresets(
 ): ReadonlyMap<string, MaterialProperties> {
   // Parsed JSON never holds an explicit undefined, so the properties are already `Present`.
   return new Map(materials.map((m) => [m.id, m.properties as MaterialProperties]));
+}
+
+/**
+ * Material id → what it becomes when it burns out: a material id, or null when it burns away. The
+ * lookup the sim's fire rules take (`fireRules({ burnt })`); non-flammable materials are absent.
+ */
+export function burntMaterials(
+  materials: readonly Pick<MaterialDef, 'id' | 'burnt'>[],
+): ReadonlyMap<string, string | null> {
+  const entries: [string, string | null][] = [];
+  for (const { id, burnt } of materials) {
+    if (burnt === undefined) continue;
+    entries.push([id, typeof burnt === 'string' ? null : (burnt as ContentRef).id]);
+  }
+  return new Map(entries);
 }

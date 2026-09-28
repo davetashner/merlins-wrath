@@ -94,6 +94,9 @@ export {
 export {
   FOOTSTEP_LOUDNESS_RANGE,
   IMPACT_SOUND_PATTERN,
+  BURNT_DESTROYED,
+  burntMaterials,
+  burntStateSchema,
   materialPresets,
   materialPropertiesSchema,
   materialSchema,

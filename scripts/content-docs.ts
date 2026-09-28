@@ -151,10 +151,24 @@ export function renderMaterialsDoc(materials: readonly GameEntry<'material'>[]):
     used.map((key) =>
       valueCell((m.properties as Readonly<Record<string, number | boolean | object>>)[key]),
     );
+  const burnsTo = ({ burnt }: GameEntry<'material'>) =>
+    burnt === undefined ? '—' : `\`${typeof burnt === 'string' ? burnt : burnt.id}\``;
   const rows = materials.map((m) =>
-    [`\`${m.id}\``, String(m.footstepLoudness), `\`${m.impactSound}\``, ...values(m)].join(' | '),
+    [
+      `\`${m.id}\``,
+      String(m.footstepLoudness),
+      `\`${m.impactSound}\``,
+      burnsTo(m),
+      ...values(m),
+    ].join(' | '),
   );
-  const header = ['Material', 'Footsteps (dB)', 'Impact sound', ...used.map((k) => `\`${k}\``)];
+  const header = [
+    'Material',
+    'Footsteps (dB)',
+    'Impact sound',
+    'Burns to',
+    ...used.map((k) => `\`${k}\``),
+  ];
   return [
     '# Material presets',
     '',
@@ -163,7 +177,8 @@ export function renderMaterialsDoc(materials: readonly GameEntry<'material'>[]):
     "Every material preset and the world-property values it gives objects made of it. An object's",
     'own value overrides its preset, and "—" means the preset leaves the property at its global',
     'default (src/sim/properties/spec.ts). Units: temperatures °C, `fuel` seconds, `density` kg/m³,',
-    '`fragile` J; footsteps are a loudness offset relative to stone. Field meanings:',
+    '`fragile` J; footsteps are a loudness offset relative to stone; "Burns to" is what fire leaves',
+    'of a flammable material (another material, or `destroyed`). Field meanings:',
     '[material schema](../content/material-schema.md).',
     '',
     `| ${header.join(' | ')} |`,

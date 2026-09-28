@@ -38,3 +38,4 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `properties.soundDamping` | number 0–1 | — | Fraction of sound it absorbs, 0 … 1. |
 | `properties.friction` | number 0–2 | — | Surface friction coefficient. |
 | `properties.impactAbsorb` | number 0–1 | — | Fraction of impact energy it absorbs, 0 … 1. |
+| `burnt` | `"destroyed"` or ref → material | — | Flammable materials only: what fire leaves when the fuel is spent: "destroyed" (it burns away) or the id of the material it becomes (e.g. "charred"). |
