@@ -1,0 +1,1360 @@
+{
+  "bead": "mw-e00.13",
+  "started": "2026-09-28T22:52:17.057Z",
+  "finished": "2026-09-28T23:03:22.821Z",
+  "preset": "official",
+  "settings": {
+    "rounds": 3,
+    "warmupS": 5,
+    "sampleS": 30,
+    "vsyncModes": [
+      "on",
+      "off"
+    ],
+    "headless": false,
+    "window": "1280x720",
+    "loadThreshold": 3,
+    "loadWaitMin": 0
+  },
+  "browser": {
+    "id": "chrome",
+    "label": "Google Chrome",
+    "appVersion": "154.0.8037.58",
+    "chromiumVersion": "154.0.8037.58"
+  },
+  "machine": {
+    "model": "MacBookPro18,1",
+    "chip": "Apple M1 Pro",
+    "cores": 10,
+    "memoryGB": 16,
+    "os": "macOS 27.0 (26A428)",
+    "gpu": "Apple M1 Pro (16 GPU cores)",
+    "display": "Built-in Liquid Retina XDR Display 3456 x 2234 Retina",
+    "node": "v24.21.0"
+  },
+  "rafCadenceMs": {
+    "on": 8.3,
+    "off": 17.6
+  },
+  "prototypes": {
+    "three-rapier": {
+      "id": "three-rapier",
+      "label": "Three.js + Rapier",
+      "dist": {
+        "jsRawKB": 4869.6,
+        "jsGzKB": 1772,
+        "wasmRawKB": 0,
+        "wasmGzKB": 0,
+        "codeGzKB": 1772
+      },
+      "info": {
+        "prototype": "three-rapier",
+        "renderer": "three",
+        "physics": "rapier",
+        "versions": {
+          "three": "186",
+          "rapier": "0.21.0"
+        },
+        "drawingBuffer": {
+          "width": 2560,
+          "height": 1440
+        },
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+        "counts": {
+          "npcs": 30,
+          "bodies": 200,
+          "pointLights": 8,
+          "particles": 2000
+        }
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "vsync": "on",
+          "ttffMs": 1936.5,
+          "interval": {
+            "frames": 3601,
+            "p50": 8.3,
+            "p95": 10.3,
+            "p99": 10.4,
+            "mean": 8.33,
+            "fps": 120.01,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 3601,
+            "p50": 5.5,
+            "p95": 6,
+            "p99": 6.3,
+            "mean": 5.51,
+            "fps": 181.51,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 3599,
+            "p50": 8.31,
+            "p95": 10.62,
+            "p99": 12.81,
+            "mean": 8.3,
+            "fps": 120.51,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 27.96,
+          "heapTotalMB": 59.76,
+          "cdpHeapUsedMB": 22.51,
+          "loaded": {
+            "jsRawKB": 4869.6,
+            "jsGzKB": 1772,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 1772
+          },
+          "noiseBefore": {
+            "load1": 3.65,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.2,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 2,
+          "vsync": "on",
+          "ttffMs": 276.7,
+          "interval": {
+            "frames": 3601,
+            "p50": 8.3,
+            "p95": 10.2,
+            "p99": 10.4,
+            "mean": 8.33,
+            "fps": 120,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 3601,
+            "p50": 5.4,
+            "p95": 5.8,
+            "p99": 6,
+            "mean": 5.4,
+            "fps": 185.36,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 3599,
+            "p50": 8.52,
+            "p95": 11.6,
+            "p99": 14.36,
+            "mean": 8.7,
+            "fps": 114.95,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 25.8,
+          "heapTotalMB": 58.51,
+          "cdpHeapUsedMB": 19.53,
+          "loaded": {
+            "jsRawKB": 4869.6,
+            "jsGzKB": 1772,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 1772
+          },
+          "noiseBefore": {
+            "load1": 5.94,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.81,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 3,
+          "vsync": "on",
+          "ttffMs": 280,
+          "interval": {
+            "frames": 3601,
+            "p50": 8.3,
+            "p95": 10.1,
+            "p99": 10.3,
+            "mean": 8.33,
+            "fps": 120,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 3601,
+            "p50": 5.4,
+            "p95": 5.9,
+            "p99": 6.1,
+            "mean": 5.44,
+            "fps": 183.73,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 3599,
+            "p50": 8.5,
+            "p95": 11.45,
+            "p99": 14.15,
+            "mean": 8.66,
+            "fps": 115.54,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 34.98,
+          "heapTotalMB": 59.51,
+          "cdpHeapUsedMB": 28.71,
+          "loaded": {
+            "jsRawKB": 4869.6,
+            "jsGzKB": 1772,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 1772
+          },
+          "noiseBefore": {
+            "load1": 5.94,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.29,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 1,
+          "vsync": "off",
+          "ttffMs": 365,
+          "interval": {
+            "frames": 5269,
+            "p50": 5.7,
+            "p95": 6.2,
+            "p99": 6.8,
+            "mean": 5.7,
+            "fps": 175.58,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 5269,
+            "p50": 5.6,
+            "p95": 6.1,
+            "p99": 6.5,
+            "mean": 5.54,
+            "fps": 180.41,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 5267,
+            "p50": 6.43,
+            "p95": 7.37,
+            "p99": 8.24,
+            "mean": 6.41,
+            "fps": 156.07,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 35.25,
+          "heapTotalMB": 94.76,
+          "cdpHeapUsedMB": 30.67,
+          "loaded": {
+            "jsRawKB": 4869.6,
+            "jsGzKB": 1772,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 1772
+          },
+          "noiseBefore": {
+            "load1": 5.59,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 6.02,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 2,
+          "vsync": "off",
+          "ttffMs": 354.1,
+          "interval": {
+            "frames": 5449,
+            "p50": 5.5,
+            "p95": 5.9,
+            "p99": 6.5,
+            "mean": 5.51,
+            "fps": 181.61,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 5449,
+            "p50": 5.3,
+            "p95": 5.7,
+            "p99": 6.3,
+            "mean": 5.36,
+            "fps": 186.49,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 5447,
+            "p50": 6.7,
+            "p95": 7.54,
+            "p99": 7.97,
+            "mean": 6.7,
+            "fps": 149.36,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 33.88,
+          "heapTotalMB": 95.01,
+          "cdpHeapUsedMB": 29.25,
+          "loaded": {
+            "jsRawKB": 4869.6,
+            "jsGzKB": 1772,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 1772
+          },
+          "noiseBefore": {
+            "load1": 4.94,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 4.63,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 3,
+          "vsync": "off",
+          "ttffMs": 330.6,
+          "interval": {
+            "frames": 5482,
+            "p50": 5.5,
+            "p95": 5.8,
+            "p99": 6.3,
+            "mean": 5.47,
+            "fps": 182.68,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 5482,
+            "p50": 5.3,
+            "p95": 5.7,
+            "p99": 6.1,
+            "mean": 5.33,
+            "fps": 187.62,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 5480,
+            "p50": 6.67,
+            "p95": 7.54,
+            "p99": 7.99,
+            "mean": 6.65,
+            "fps": 150.33,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 28.84,
+          "heapTotalMB": 95.26,
+          "cdpHeapUsedMB": 24.24,
+          "loaded": {
+            "jsRawKB": 4869.6,
+            "jsGzKB": 1772,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 1772
+          },
+          "noiseBefore": {
+            "load1": 5.24,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 4.56,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        }
+      ]
+    },
+    "babylon-havok": {
+      "id": "babylon-havok",
+      "label": "Babylon.js + Havok",
+      "dist": {
+        "jsRawKB": 3812.2,
+        "jsGzKB": 945.3,
+        "wasmRawKB": 2045.5,
+        "wasmGzKB": 643.3,
+        "codeGzKB": 1588.6
+      },
+      "info": {
+        "prototype": "babylon-havok",
+        "renderer": "babylon",
+        "physics": "havok",
+        "versions": {
+          "babylon": "9.28.0",
+          "havok": "@babylonjs/havok 1.3.14"
+        },
+        "drawingBuffer": {
+          "width": 2560,
+          "height": 1440
+        },
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+        "counts": {
+          "npcs": 30,
+          "bodies": 200,
+          "pointLights": 8,
+          "particles": 2000
+        }
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "vsync": "on",
+          "ttffMs": 1237.8,
+          "interval": {
+            "frames": 2655,
+            "p50": 11.2,
+            "p95": 12.3,
+            "p99": 12.7,
+            "mean": 11.3,
+            "fps": 88.48,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2655,
+            "p50": 11,
+            "p95": 12,
+            "p99": 12.5,
+            "mean": 11.12,
+            "fps": 89.92,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2653,
+            "p50": 6.6,
+            "p95": 8.65,
+            "p99": 9.14,
+            "mean": 6.65,
+            "fps": 150.37,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 107.46,
+          "heapTotalMB": 148.51,
+          "cdpHeapUsedMB": 89.62,
+          "loaded": {
+            "jsRawKB": 2740.2,
+            "jsGzKB": 670,
+            "wasmRawKB": 2045.5,
+            "wasmGzKB": 643.3,
+            "codeGzKB": 1313.3
+          },
+          "noiseBefore": {
+            "load1": 5.2,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.73,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 2,
+          "vsync": "on",
+          "ttffMs": 800.6,
+          "interval": {
+            "frames": 2693,
+            "p50": 11,
+            "p95": 12.1,
+            "p99": 12.7,
+            "mean": 11.14,
+            "fps": 89.73,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2693,
+            "p50": 10.9,
+            "p95": 11.9,
+            "p99": 12.4,
+            "mean": 10.97,
+            "fps": 91.15,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2691,
+            "p50": 6.64,
+            "p95": 8.58,
+            "p99": 9.1,
+            "mean": 6.67,
+            "fps": 149.94,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 104.22,
+          "heapTotalMB": 148.9,
+          "cdpHeapUsedMB": 100.15,
+          "loaded": {
+            "jsRawKB": 2740.2,
+            "jsGzKB": 670,
+            "wasmRawKB": 2045.5,
+            "wasmGzKB": 643.3,
+            "codeGzKB": 1313.3
+          },
+          "noiseBefore": {
+            "load1": 5.59,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.38,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 3,
+          "vsync": "on",
+          "ttffMs": 791.7,
+          "interval": {
+            "frames": 2689,
+            "p50": 11.1,
+            "p95": 11.9,
+            "p99": 12.6,
+            "mean": 11.16,
+            "fps": 89.6,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2689,
+            "p50": 10.9,
+            "p95": 11.7,
+            "p99": 12.1,
+            "mean": 10.98,
+            "fps": 91.07,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2687,
+            "p50": 6.75,
+            "p95": 8.63,
+            "p99": 9.14,
+            "mean": 6.76,
+            "fps": 147.93,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 101.69,
+          "heapTotalMB": 148.65,
+          "cdpHeapUsedMB": 97.62,
+          "loaded": {
+            "jsRawKB": 2740.2,
+            "jsGzKB": 670,
+            "wasmRawKB": 2045.5,
+            "wasmGzKB": 643.3,
+            "codeGzKB": 1313.3
+          },
+          "noiseBefore": {
+            "load1": 5.29,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.59,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 1,
+          "vsync": "off",
+          "ttffMs": 891.5,
+          "interval": {
+            "frames": 2717,
+            "p50": 11,
+            "p95": 11.8,
+            "p99": 12.2,
+            "mean": 11.04,
+            "fps": 90.54,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2717,
+            "p50": 10.8,
+            "p95": 11.7,
+            "p99": 12,
+            "mean": 10.89,
+            "fps": 91.85,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2715,
+            "p50": 6.69,
+            "p95": 8.68,
+            "p99": 9.14,
+            "mean": 6.71,
+            "fps": 148.93,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 94.25,
+          "heapTotalMB": 148.9,
+          "cdpHeapUsedMB": 90.17,
+          "loaded": {
+            "jsRawKB": 2740.2,
+            "jsGzKB": 670,
+            "wasmRawKB": 2045.5,
+            "wasmGzKB": 643.3,
+            "codeGzKB": 1313.3
+          },
+          "noiseBefore": {
+            "load1": 6.02,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.42,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 2,
+          "vsync": "off",
+          "ttffMs": 859.6,
+          "interval": {
+            "frames": 2802,
+            "p50": 10.7,
+            "p95": 11.2,
+            "p99": 11.6,
+            "mean": 10.71,
+            "fps": 93.39,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2802,
+            "p50": 10.6,
+            "p95": 11.1,
+            "p99": 11.5,
+            "mean": 10.55,
+            "fps": 94.75,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2800,
+            "p50": 6.72,
+            "p95": 8.5,
+            "p99": 8.6,
+            "mean": 6.63,
+            "fps": 150.88,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 105.92,
+          "heapTotalMB": 149.15,
+          "cdpHeapUsedMB": 101.85,
+          "loaded": {
+            "jsRawKB": 2740.2,
+            "jsGzKB": 670,
+            "wasmRawKB": 2045.5,
+            "wasmGzKB": 643.3,
+            "codeGzKB": 1313.3
+          },
+          "noiseBefore": {
+            "load1": 5.06,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.03,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 3,
+          "vsync": "off",
+          "ttffMs": 842.1,
+          "interval": {
+            "frames": 2780,
+            "p50": 10.8,
+            "p95": 11.3,
+            "p99": 11.7,
+            "mean": 10.79,
+            "fps": 92.65,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2780,
+            "p50": 10.6,
+            "p95": 11.2,
+            "p99": 11.6,
+            "mean": 10.64,
+            "fps": 94.01,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2778,
+            "p50": 6.65,
+            "p95": 8.5,
+            "p99": 8.58,
+            "mean": 6.57,
+            "fps": 152.32,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 115.59,
+          "heapTotalMB": 148.65,
+          "cdpHeapUsedMB": 79.61,
+          "loaded": {
+            "jsRawKB": 2740.2,
+            "jsGzKB": 670,
+            "wasmRawKB": 2045.5,
+            "wasmGzKB": 643.3,
+            "codeGzKB": 1313.3
+          },
+          "noiseBefore": {
+            "load1": 4.56,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 4.49,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        }
+      ]
+    },
+    "babylon-rapier": {
+      "id": "babylon-rapier",
+      "label": "Babylon.js + Rapier",
+      "dist": {
+        "jsRawKB": 7950.5,
+        "jsGzKB": 2534.9,
+        "wasmRawKB": 0,
+        "wasmGzKB": 0,
+        "codeGzKB": 2534.9
+      },
+      "info": {
+        "prototype": "babylon-rapier",
+        "renderer": "babylon",
+        "physics": "rapier",
+        "versions": {
+          "babylon": "9.28.0",
+          "rapier": "0.21.0"
+        },
+        "drawingBuffer": {
+          "width": 2560,
+          "height": 1440
+        },
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M1 Pro, Unspecified Version)",
+        "counts": {
+          "npcs": 30,
+          "bodies": 200,
+          "pointLights": 8,
+          "particles": 2000
+        }
+      },
+      "rounds": [
+        {
+          "round": 1,
+          "vsync": "on",
+          "ttffMs": 840.8,
+          "interval": {
+            "frames": 2791,
+            "p50": 10.7,
+            "p95": 11.6,
+            "p99": 12.1,
+            "mean": 10.75,
+            "fps": 93.02,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2791,
+            "p50": 10.5,
+            "p95": 11.4,
+            "p99": 11.8,
+            "mean": 10.58,
+            "fps": 94.56,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2789,
+            "p50": 6.62,
+            "p95": 8.73,
+            "p99": 9.14,
+            "mean": 6.63,
+            "fps": 150.94,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 101.88,
+          "heapTotalMB": 156.13,
+          "cdpHeapUsedMB": 111.2,
+          "loaded": {
+            "jsRawKB": 6878.4,
+            "jsGzKB": 2259.6,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 2259.6
+          },
+          "noiseBefore": {
+            "load1": 5.73,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.82,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 2,
+          "vsync": "on",
+          "ttffMs": 854.9,
+          "interval": {
+            "frames": 2770,
+            "p50": 10.7,
+            "p95": 11.7,
+            "p99": 12.3,
+            "mean": 10.84,
+            "fps": 92.29,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2770,
+            "p50": 10.6,
+            "p95": 11.5,
+            "p99": 12,
+            "mean": 10.66,
+            "fps": 93.76,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2768,
+            "p50": 6.54,
+            "p95": 8.64,
+            "p99": 9.12,
+            "mean": 6.58,
+            "fps": 151.94,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 118.55,
+          "heapTotalMB": 156.77,
+          "cdpHeapUsedMB": 110.43,
+          "loaded": {
+            "jsRawKB": 6878.4,
+            "jsGzKB": 2259.6,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 2259.6
+          },
+          "noiseBefore": {
+            "load1": 5.38,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.94,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 3,
+          "vsync": "on",
+          "ttffMs": 837.8,
+          "interval": {
+            "frames": 2757,
+            "p50": 10.8,
+            "p95": 11.8,
+            "p99": 12.4,
+            "mean": 10.88,
+            "fps": 91.88,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2757,
+            "p50": 10.6,
+            "p95": 11.6,
+            "p99": 12,
+            "mean": 10.71,
+            "fps": 93.35,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2755,
+            "p50": 6.58,
+            "p95": 8.71,
+            "p99": 9.13,
+            "mean": 6.63,
+            "fps": 150.92,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 117.12,
+          "heapTotalMB": 156.52,
+          "cdpHeapUsedMB": 109,
+          "loaded": {
+            "jsRawKB": 6878.4,
+            "jsGzKB": 2259.6,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 2259.6
+          },
+          "noiseBefore": {
+            "load1": 5.81,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.94,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 1,
+          "vsync": "off",
+          "ttffMs": 908.6,
+          "interval": {
+            "frames": 2857,
+            "p50": 10.4,
+            "p95": 11.2,
+            "p99": 12,
+            "mean": 10.5,
+            "fps": 95.2,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2857,
+            "p50": 10.3,
+            "p95": 11.1,
+            "p99": 11.8,
+            "mean": 10.35,
+            "fps": 96.64,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2855,
+            "p50": 6.62,
+            "p95": 8.52,
+            "p99": 9,
+            "mean": 6.59,
+            "fps": 151.66,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 112.64,
+          "heapTotalMB": 156.13,
+          "cdpHeapUsedMB": 104.5,
+          "loaded": {
+            "jsRawKB": 6878.4,
+            "jsGzKB": 2259.6,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 2259.6
+          },
+          "noiseBefore": {
+            "load1": 5.42,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.06,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 2,
+          "vsync": "off",
+          "ttffMs": 931.7,
+          "interval": {
+            "frames": 2900,
+            "p50": 10.3,
+            "p95": 10.9,
+            "p99": 11.4,
+            "mean": 10.35,
+            "fps": 96.64,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2900,
+            "p50": 10.2,
+            "p95": 10.8,
+            "p99": 11.2,
+            "mean": 10.19,
+            "fps": 98.12,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2898,
+            "p50": 6.61,
+            "p95": 8.5,
+            "p99": 8.58,
+            "mean": 6.58,
+            "fps": 152.03,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 108.74,
+          "heapTotalMB": 156.38,
+          "cdpHeapUsedMB": 100.55,
+          "loaded": {
+            "jsRawKB": 6878.4,
+            "jsGzKB": 2259.6,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 2259.6
+          },
+          "noiseBefore": {
+            "load1": 5.03,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 4.94,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        },
+        {
+          "round": 3,
+          "vsync": "off",
+          "ttffMs": 915.6,
+          "interval": {
+            "frames": 2898,
+            "p50": 10.3,
+            "p95": 10.9,
+            "p99": 11.4,
+            "mean": 10.35,
+            "fps": 96.59,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "cpu": {
+            "frames": 2898,
+            "p50": 10.2,
+            "p95": 10.7,
+            "p99": 11.3,
+            "mean": 10.2,
+            "fps": 98.07,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "gpu": {
+            "frames": 2896,
+            "p50": 6.64,
+            "p95": 8.5,
+            "p99": 8.58,
+            "mean": 6.57,
+            "fps": 152.24,
+            "over25pct": 0,
+            "over33_3pct": 0
+          },
+          "heapUsedMB": 121.54,
+          "heapTotalMB": 156.13,
+          "cdpHeapUsedMB": 81.44,
+          "loaded": {
+            "jsRawKB": 6878.4,
+            "jsGzKB": 2259.6,
+            "wasmRawKB": 0,
+            "wasmGzKB": 0,
+            "codeGzKB": 2259.6
+          },
+          "noiseBefore": {
+            "load1": 4.63,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noiseAfter": {
+            "load1": 5.24,
+            "power": "AC Power",
+            "lowPowerMode": false,
+            "thermal": "nominal"
+          },
+          "noisy": true,
+          "consoleErrors": []
+        }
+      ]
+    }
+  },
+  "summaries": [
+    {
+      "id": "three-rapier",
+      "label": "Three.js + Rapier",
+      "vsync": "on",
+      "rounds": 3,
+      "p50": 8.3,
+      "p95": 10.2,
+      "p99": 10.4,
+      "cpuP50": 5.4,
+      "cpuP95": 5.9,
+      "gpuP50": 8.5,
+      "gpuP95": 11.45,
+      "fps": 120,
+      "over25pct": 0,
+      "ttffMs": 280,
+      "heapUsedMB": 27.96,
+      "cdpHeapUsedMB": 22.51,
+      "loadedCodeGzKB": 1772,
+      "loadedJsGzKB": 1772,
+      "distCodeGzKB": 1772,
+      "load1Min": 3.65,
+      "load1Max": 5.94,
+      "power": "AC Power",
+      "noisyRounds": 3,
+      "consoleErrors": 0
+    },
+    {
+      "id": "babylon-havok",
+      "label": "Babylon.js + Havok",
+      "vsync": "on",
+      "rounds": 3,
+      "p50": 11.1,
+      "p95": 12.1,
+      "p99": 12.7,
+      "cpuP50": 10.9,
+      "cpuP95": 11.9,
+      "gpuP50": 6.64,
+      "gpuP95": 8.63,
+      "fps": 89.6,
+      "over25pct": 0,
+      "ttffMs": 800.6,
+      "heapUsedMB": 104.22,
+      "cdpHeapUsedMB": 97.62,
+      "loadedCodeGzKB": 1313.3,
+      "loadedJsGzKB": 670,
+      "distCodeGzKB": 1588.6,
+      "load1Min": 5.2,
+      "load1Max": 5.73,
+      "power": "AC Power",
+      "noisyRounds": 3,
+      "consoleErrors": 0
+    },
+    {
+      "id": "babylon-rapier",
+      "label": "Babylon.js + Rapier",
+      "vsync": "on",
+      "rounds": 3,
+      "p50": 10.7,
+      "p95": 11.7,
+      "p99": 12.3,
+      "cpuP50": 10.6,
+      "cpuP95": 11.5,
+      "gpuP50": 6.58,
+      "gpuP95": 8.71,
+      "fps": 92.29,
+      "over25pct": 0,
+      "ttffMs": 840.8,
+      "heapUsedMB": 117.12,
+      "cdpHeapUsedMB": 110.43,
+      "loadedCodeGzKB": 2259.6,
+      "loadedJsGzKB": 2259.6,
+      "distCodeGzKB": 2534.9,
+      "load1Min": 5.38,
+      "load1Max": 5.94,
+      "power": "AC Power",
+      "noisyRounds": 3,
+      "consoleErrors": 0
+    },
+    {
+      "id": "three-rapier",
+      "label": "Three.js + Rapier",
+      "vsync": "off",
+      "rounds": 3,
+      "p50": 5.5,
+      "p95": 5.9,
+      "p99": 6.5,
+      "cpuP50": 5.3,
+      "cpuP95": 5.7,
+      "gpuP50": 6.67,
+      "gpuP95": 7.54,
+      "fps": 181.61,
+      "over25pct": 0,
+      "ttffMs": 354.1,
+      "heapUsedMB": 33.88,
+      "cdpHeapUsedMB": 29.25,
+      "loadedCodeGzKB": 1772,
+      "loadedJsGzKB": 1772,
+      "distCodeGzKB": 1772,
+      "load1Min": 4.56,
+      "load1Max": 6.02,
+      "power": "AC Power",
+      "noisyRounds": 3,
+      "consoleErrors": 0
+    },
+    {
+      "id": "babylon-havok",
+      "label": "Babylon.js + Havok",
+      "vsync": "off",
+      "rounds": 3,
+      "p50": 10.8,
+      "p95": 11.3,
+      "p99": 11.7,
+      "cpuP50": 10.6,
+      "cpuP95": 11.2,
+      "gpuP50": 6.69,
+      "gpuP95": 8.5,
+      "fps": 92.65,
+      "over25pct": 0,
+      "ttffMs": 859.6,
+      "heapUsedMB": 105.92,
+      "cdpHeapUsedMB": 90.17,
+      "loadedCodeGzKB": 1313.3,
+      "loadedJsGzKB": 670,
+      "distCodeGzKB": 1588.6,
+      "load1Min": 4.49,
+      "load1Max": 6.02,
+      "power": "AC Power",
+      "noisyRounds": 3,
+      "consoleErrors": 0
+    },
+    {
+      "id": "babylon-rapier",
+      "label": "Babylon.js + Rapier",
+      "vsync": "off",
+      "rounds": 3,
+      "p50": 10.3,
+      "p95": 10.9,
+      "p99": 11.4,
+      "cpuP50": 10.2,
+      "cpuP95": 10.8,
+      "gpuP50": 6.62,
+      "gpuP95": 8.5,
+      "fps": 96.59,
+      "over25pct": 0,
+      "ttffMs": 915.6,
+      "heapUsedMB": 112.64,
+      "cdpHeapUsedMB": 100.55,
+      "loadedCodeGzKB": 2259.6,
+      "loadedJsGzKB": 2259.6,
+      "distCodeGzKB": 2534.9,
+      "load1Min": 4.63,
+      "load1Max": 5.42,
+      "power": "AC Power",
+      "noisyRounds": 3,
+      "consoleErrors": 0
+    }
+  ]
+}

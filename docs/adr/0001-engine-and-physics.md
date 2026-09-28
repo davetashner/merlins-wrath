@@ -1,6 +1,6 @@
 # ADR-0001: Renderer and physics engine
 
-- **Status:** Proposed (DRAFT: waiting for the official benchmark run; every `TODO(official)` is filled from it)
+- **Status:** Proposed (pending the owner's sign-off on the scorecard weights and the decision)
 - **Date:** 2026-09-28
 - **Decider:** Owner
 - **Bead:** `mw-e00.13`
@@ -12,9 +12,9 @@
 fixed timestep. `src/render` only reads interpolated transforms. Babylon.js + Havok and Babylon.js + Rapier
 are rejected (see [Options](#options-considered)).
 
-The proposal is based on qualitative evidence, the determinism check and a smoke benchmark. It becomes a
-decision only once the official benchmark on the reference machine fills the results table and the
-scorecard's performance rows are confirmed (AC-1, AC-3).
+The proposal rests on the official benchmark on the reference machine (Chrome 154 and Brave 154), the
+determinism check and the qualitative evidence below. It becomes a decision when the owner signs off the
+scorecard weights and the choice (AC-3).
 
 ## Platform: browser vs native engine
 
@@ -62,7 +62,7 @@ Constraints that decide it:
 | Option | Summary | Result |
 |---|---|---|
 | **Three.js + Rapier (deterministic)** | Minimal renderer library, rich ecosystem; physics is a separate renderer-agnostic WASM module | **Proposed** |
-| Babylon.js + Havok | Full engine with first-party inspector, particles and physics integration; Havok is a closed-source WASM binary driven through Babylon's Physics V2 | **Rejected (proposed)**: roughly 2× main-thread cost per frame in the smoke run, about 2.5× the JS heap, no physics snapshot/restore, and physics bound to the scene graph rather than the sim |
+| Babylon.js + Havok | Full engine with first-party inspector, particles and physics integration; Havok is a closed-source WASM binary driven through Babylon's Physics V2 | **Rejected (proposed)**: roughly 2× the main-thread cost per frame in the official run (CPU p95 11.2 vs 5.7 ms), about 3× the JS heap, no physics snapshot/restore, and physics bound to the scene graph rather than the sim |
 | Babylon.js + Rapier | Babylon renderer, Rapier synced by hand (no official plugin) | **Rejected (proposed)**: same renderer cost as Babylon + Havok, and it gives up Babylon's physics integration, which is Babylon's main advantage over Three.js here |
 
 ## Evidence
@@ -93,36 +93,57 @@ Versions: three 0.186.1, @babylonjs/core 9.28.0, @babylonjs/havok 1.3.14, @dimfo
 
 ### Results table (AC-1)
 
-TODO(official): paste the `vsync off` and `vsync on` tables from `spikes/bench/results/<date>-chrome-official.md`
-and the Brave one, and `git add -f` those result files.
+Official run on 2026-09-28 on the reference machine. Raw results:
+[`2026-09-28T22-52-14-chrome-official`](../../spikes/bench/results/2026-09-28T22-52-14-chrome-official.md)
+and [`2026-09-28T23-03-23-brave-official`](../../spikes/bench/results/2026-09-28T23-03-23-brave-official.md)
+(`.md` + `.json`).
 
-| Prototype | Frame p50 / p95 / p99 ms (vsync on) | Frame p50 / p95 ms (vsync off) | CPU p95 ms | GPU p95 ms | Bundle gz KB (JS + WASM loaded) | TTFF ms | JS heap MB |
+- **Browsers:** Google Chrome 154.0.8037.58 (contract reference browser); Brave 154.1.96.59 (Chromium 154.0.8037.58)
+- **OS / machine:** macOS 27.0 (26A428); MacBookPro18,1, Apple M1 Pro (10 CPU cores, 16-core GPU), 16 GB;
+  built-in 3456×2234 Liquid Retina XDR display at 120 Hz (ProMotion); on AC power
+- **Method:** 3 interleaved rounds per prototype, 5 s warm-up then 30 s sampled, median across rounds;
+  drawing buffer 2560×1440 in every prototype; headed browser, 1280×720 CSS px window
+- **Low-tier machine:** none available (no Iris Xe or base-M1 8 GB machine), so the Low preset stays an
+  open risk. TODO: add a run if the owner can borrow one.
+
+**Chrome 154, vsync off** (uncapped, so the frame interval is real CPU+GPU throughput; use this to compare engines)
+
+| Prototype | Frame p50 / p95 / p99 ms | FPS | CPU p50 / p95 ms | GPU p50 / p95 ms | Bundle gz KB (JS + WASM loaded) | TTFF ms | JS heap MB |
 |---|---|---|---|---|---|---|---|
-| Three.js + Rapier | TODO(official) | TODO(official) | TODO | TODO | TODO | TODO | TODO |
-| Babylon.js + Havok | TODO(official) | TODO(official) | TODO | TODO | TODO | TODO | TODO |
-| Babylon.js + Rapier | TODO(official) | TODO(official) | TODO | TODO | TODO | TODO | TODO |
+| Three.js + Rapier | 5.5 / **5.9** / 6.5 | 182 | 5.3 / 5.7 | 6.7 / 7.5 | 1772 | 354 | 34 |
+| Babylon.js + Havok | 10.8 / **11.3** / 11.7 | 93 | 10.6 / 11.2 | 6.7 / 8.5 | 1313 | 860 | 106 |
+| Babylon.js + Rapier | 10.3 / **10.9** / 11.4 | 97 | 10.2 / 10.8 | 6.6 / 8.5 | 2260 | 916 | 113 |
 
-- **Browser:** TODO(official): Google Chrome version, plus the Brave version (Chromium version)
-- **OS / machine:** TODO(official): macOS version and build; MacBookPro18,1 (M1 Pro, 16 GB, 16-core GPU); the owner's M3 Mac, if run
-- **Low-tier machine:** none available (no Iris Xe / base-M1 8 GB machine). TODO: add one if the owner can
-  borrow one, otherwise this stays an open risk for the Low preset.
+**Chrome 154, vsync on** (default flags; capped at the 8.33 ms refresh of the 120 Hz panel; use this for the ≤ 16.7 ms budget)
 
-**Smoke run. These are not the official numbers.** They were taken on 2026-09-28 in Chrome 153.0.8010.53,
-headed, on the reference MacBook Pro, with 1 round of 4 s while other agent sessions were building (load
-average 4–5 on 10 cores). They only show that the harness works and which way the results lean.
+| Prototype | Frame p50 / p95 / p99 ms | FPS | CPU p50 / p95 ms | GPU p50 / p95 ms | TTFF ms | JS heap MB |
+|---|---|---|---|---|---|---|
+| Three.js + Rapier | 8.3 / **10.2** / 10.4 | 120 | 5.4 / 5.9 | 8.5 / 11.5 | 280 | 28 |
+| Babylon.js + Havok | 11.1 / **12.1** / 12.7 | 90 | 10.9 / 11.9 | 6.6 / 8.6 | 801 | 104 |
+| Babylon.js + Rapier | 10.7 / **11.7** / 12.3 | 92 | 10.6 / 11.5 | 6.6 / 8.7 | 841 | 117 |
 
-| Prototype | Frame p50 / p95 ms (vsync on, 120 Hz panel) | Frame p50 / p95 ms (vsync off) | CPU p50 / p95 ms | GPU p50 / p95 ms (vsync off) | Bundle gz KB loaded | TTFF ms | JS heap MB |
-|---|---|---|---|---|---|---|---|
-| Three.js + Rapier | 8.3 / 9.3 | 6.1 / 6.7 | 5.9 / 6.5 | 6.9 / 8.0 | 1772 | ~350 | ~42 |
-| Babylon.js + Havok | 12.8 / 13.8 | 12.5 / 13.4 | 12.3 / 13.2 | 5.9 / 8.5 | 1313 | ~870 | ~105 |
-| Babylon.js + Rapier | 12.3 / 13.1 | 12.0 / 12.8 | 11.8 / 12.7 | 6.0 / 8.5 | 2260 | ~900 | ~115 |
+**Brave 154 (secondary: the owner's daily browser)**
+
+| Prototype | vsync off: frame p50 / p95 ms | vsync off: CPU p95 ms | vsync on: frame p50 / p95 ms | TTFF ms (vsync on) | JS heap MB (vsync on) |
+|---|---|---|---|---|---|
+| Three.js + Rapier | 5.5 / 5.9 | 5.7 | 8.3 / 9.9 | 274 | 35 |
+| Babylon.js + Havok | 10.7 / 11.2 | 11.0 | 10.8 / 11.4 | 819 | 101 |
+| Babylon.js + Rapier | 10.4 / 10.9 | 10.7 | 10.4 / 10.9 | 865 | 107 |
+
+No frame in any block was longer than 25 ms, and no page logged a console error.
+
+**Noise.** The 1-minute load average was 3.3–6 on 10 cores throughout, even with the peer agent
+session idle. That is most likely the harness and the browser themselves (the headed browser, its GPU
+process and the Node harness), which is why the harness flagged every block as noisy against its 3.0
+threshold. Because the engines were interleaved (round 1 A B C, round 2 B C A, …), they all saw the same
+background load, so the comparison between them is fair; the absolute numbers may be slightly
+pessimistic. Chrome and Brave agree to within about 0.5 ms.
 
 Reading it:
 
-- **Both engines keep up with 60 Hz; Three.js has about twice the headroom.** All three have p95 well
-  under 16.7 ms. With vsync off, Babylon is CPU-bound at about 12–13 ms of main-thread work per frame,
-  which leaves about 4 ms of a 60 Hz frame for game logic, AI, audio and UI. Three.js needs about 6 ms,
-  leaving about 10 ms.
+- **Every option keeps up with 60 Hz; Three.js has about twice the headroom.** With vsync off, Babylon
+  is CPU-bound at about 11 ms of main-thread work per frame (CPU p95 ≈ frame p95). That leaves about 5.5 ms
+  of a 60 Hz frame for game logic, AI, audio and UI. Three.js needs about 5.7 ms, leaving about 11 ms.
 - **Profile of the Babylon prototype** (CDP sampling, Chrome headless): the cost is spread across
   per-mesh and per-light work each frame, led by uniform caching (`_cacheFloat4`, about 7%), world-matrix
   sync, active-mesh evaluation, material updates and light binding. No single setting fixes it. One
@@ -130,17 +151,37 @@ Reading it:
   about 6%, so it was turned off to match the Three prototype. Babylon has deeper CPU optimisations
   (`freezeActiveMeshes`, frozen materials, thin instances) that were **not** tried. Three.js would get
   the same instancing gains.
+- **TTFF and heap:** Three.js reaches its first complete frame in about 0.3 s against about 0.8–0.9 s
+  for Babylon, and uses about a third of the JS heap (28–35 MB against 100–117 MB). All are far inside
+  the 10 s and 1.5 GB budgets. The first block of each browser launch pays a cold-start cost (up to
+  1.9 s TTFF), which the median across rounds removes.
 - **Bundle:** Three.js alone is about 160 KB gz. The Rapier `-compat` packages inline their WASM as
   base64 (1614 KB gz inside JS, against 1141 KB gz as a separate `.wasm`), so a production Three + Rapier
   build is about 1.3 MB gz, comparable to Babylon + Havok (670 KB JS + 643 KB WASM). All options are far
   below the 50 MB budget.
-- **GPU time** is similar (6–9 ms) and not the bottleneck on the M1 Pro. Three's `UnrealBloomPass` is
-  heavier than Babylon's pipeline bloom. Treat timer-query numbers on ANGLE/Metal as indicative.
+- **GPU time** is similar (about 6.6–6.7 ms p50) and is not the bottleneck on the M1 Pro. Three's
+  `UnrealBloomPass` has a heavier tail than Babylon's pipeline bloom. With vsync on, Three's GPU p95
+  (11.5 ms) is above its frame p95 (10.2 ms). That can only be a pipelining or measurement artefact, so
+  treat timer-query numbers on ANGLE/Metal as indicative.
+
+<details><summary>Superseded: smoke run before the official one</summary>
+
+Taken on 2026-09-28 in Chrome 153.0.8010.53, headed, 1 round of 4 s while other agent sessions were
+building (load average 4–5). It only showed that the harness worked. It leaned the same way as the
+official run, with Babylon about 1–2 ms slower under that load.
+
+| Prototype | Frame p50 / p95 ms (vsync on) | Frame p50 / p95 ms (vsync off) | CPU p50 / p95 ms | TTFF ms | JS heap MB |
+|---|---|---|---|---|---|
+| Three.js + Rapier | 8.3 / 9.3 | 6.1 / 6.7 | 5.9 / 6.5 | ~350 | ~42 |
+| Babylon.js + Havok | 12.8 / 13.8 | 12.5 / 13.4 | 12.3 / 13.2 | ~870 | ~105 |
+| Babylon.js + Rapier | 12.3 / 13.1 | 12.0 / 12.8 | 11.8 / 12.7 | ~900 | ~115 |
+
+</details>
 
 ### Determinism (AC-2)
 
-Smoke run on 2026-09-28 on the reference MacBook Pro. TODO(official): rerun with Firefox (see below) and
-record it here. Script: `spikes/determinism/input-script.json`.
+Run on 2026-09-28 on the reference MacBook Pro. Script: `spikes/determinism/input-script.json`.
+Firefox is still **pending** (see below).
 
 | Runtime | rapier-deterministic 0.21.0 | rapier-standard 0.21.0 | Havok 1.3.14 |
 |---|---|---|---|
@@ -149,22 +190,24 @@ record it here. Script: `spikes/determinism/input-script.json`.
 | Playwright WebKit 26.6 | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
 | Safari 27.0 (real app, `--external Safari`) | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
 | Node 24.21.0 | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
-| Firefox | TODO: blocked, see below | TODO | TODO |
+| Firefox | pending: Playwright Firefox is broken on macOS 27 | pending | pending |
 | **Snapshot → restore → replay steps 300–599** | **identical** (every checkpoint) | **identical** | **differs** (no snapshot API; copying transforms and velocities into a new world does not carry Havok's internal contact/solver state) |
 
 - **Final hashes match across every runtime tested, for all three engines.** This is expected: WASM float
   arithmetic is IEEE-754 and neither module imports `Math.*` from the host (checked: 0 of 29 Rapier and 0
   of 25 Havok WASM imports are math functions). Every runtime here is the same Apple-silicon CPU, though.
   The deterministic build's point is portability across CPU architectures and compilers. **Not tested:**
-  x86-64 (Windows/Linux/Intel Mac). Proposed follow-up: run `node spikes/determinism/src/node-run.ts` on a
-  CI `ubuntu-latest` x86-64 runner and compare hashes. It takes a few seconds.
+  x86-64 (Windows/Linux/Intel Mac). Follow-up, to be filed as a bead: run
+  `node spikes/determinism/src/node-run.ts` on a CI `ubuntu-latest` x86-64 runner and compare its hashes
+  with the ones above. It takes a few seconds.
 - **Only Rapier has real snapshot/restore.** `World.takeSnapshot()` / `World.restoreSnapshot()` continue
   bit-identically. The snapshot is 350 KB for 200 bodies, so it needs compression if it goes into saves.
 - **Firefox is blocked on this machine.** Playwright's Firefox 155 build (`firefox-1543`) exits with
   "Could not find profile folder" on macOS 27, headless or headed, even when launched by hand. The harness
   can drive a real Firefox through `--external Firefox` (it opens the page with `open -a`, and the page
-  posts its result back). Stock Firefox is not installed. **Owner action:** install Firefox, or run the
-  check on the M3.
+  posts its result back). Stock Firefox is not installed. **Pending owner action:** install Firefox and run
+  `pnpm -C spikes determinism --browsers chrome,chrome,webkit --external Firefox,Safari`, or run the same
+  check on the M3. The result goes into the table above before AC-2 counts as met.
 - **Cost:** 600 + 300 replayed steps took about 460 ms with the deterministic build, about 410 ms with the
   standard build and about 300 ms with Havok. That is roughly 0.5 ms per step for 200 awake bodies, a
   real share of the sim's 1 ms `step()` budget (`mw-e00.15` AC-6). The e03 max-body budget and sleeping
@@ -201,14 +244,14 @@ record it here. Script: `spikes/determinism/input-script.json`.
 
 ### Weighted scorecard (AC-3)
 
-Scores are 1–5. Weights are proposed and should be confirmed by the owner. Performance scores are
-provisional until the official run.
+Scores are 1–5. The weights are proposed and wait for the owner's sign-off. The official run confirmed
+the performance and bundle/TTFF/heap scores from the smoke run.
 
 | Criterion | Weight | Three + Rapier | Babylon + Havok | Babylon + Rapier | Basis |
 |---|---|---|---|---|---|
-| Runtime performance (p95 frame, CPU/GPU headroom) | 25 | 5 | 3 | 3 | Smoke: CPU 6 vs 12–13 ms per frame. TODO(official) |
+| Runtime performance (p95 frame, CPU/GPU headroom) | 25 | 5 | 3 | 3 | Official, vsync off: frame p95 5.9 vs 11.3 / 10.9 ms, CPU-bound |
 | Physics determinism + `src/sim` fit | 20 | 5 | 2 | 5 | Rapier snapshot/restore identical, runs in Node, renderer-agnostic; Havok has no snapshot and is bound to Babylon's scene |
-| Bundle size, TTFF, heap | 10 | 4 | 3 | 2 | Smoke: TTFF ~350 vs ~870 ms, heap ~42 vs ~105 MB. TODO(official) |
+| Bundle size, TTFF, heap | 10 | 4 | 3 | 2 | Official: TTFF 0.28–0.35 vs 0.80–0.92 s; heap 28–34 vs 104–117 MB; about 1.3 MB gz production vs 1.3 / 2.3 MB |
 | glTF / animation / retargeting | 10 | 4 | 5 | 5 | Babylon has built-in retargeting |
 | TypeScript ergonomics (for agents) | 10 | 4 | 3 | 3 | Babylon's side-effect imports and silent defaults |
 | Inspector / debug tooling | 7 | 2 | 5 | 5 | Babylon Inspector |
@@ -260,14 +303,18 @@ boundary.
 
 ## Performance gap and mitigations (AC-4)
 
-TODO(official): fill in from the official run. If every option has **p95 ≤ 16.7 ms on High** with vsync
-on, record "no gap" plus the headroom (16.7 minus CPU p95), and keep the mitigations below as the plan for
-growth. If an option misses, record the gap in milliseconds and which mitigations are assumed to close it.
+**No gap.** Every option meets **p95 ≤ 16.7 ms on High** on the reference machine: vsync-on p95 is
+10.2 / 12.1 / 11.7 ms in Chrome and 9.9 / 11.4 / 10.9 ms in Brave. Uncapped (vsync off), Three.js
++ Rapier's p95 is about 5.9 ms and both Babylon options are about 11 ms. No block had a frame over 25 ms.
+No budget change is proposed.
 
-The smoke run shows no gap on the reference machine: p95 ≤ 13.8 ms for every option. But the scene is
-lighter than a full combat encounter (no AI, audio, UI or game logic), and the Low preset is untested.
+**Headroom** is what matters for the choice. The benchmark scene has no AI, audio, UI, save or game
+logic, and a real combat encounter will add all of them on the same main thread. On a 16.7 ms frame,
+Three.js + Rapier leaves about 11 ms of main-thread time (16.7 − CPU p95 5.7), and the Babylon options
+about 5.5 ms (16.7 − 11.2 / 10.8). The Low preset (Iris Xe / base-M1 class) is still untested and has
+less CPU. Babylon's margin is the one that would run out first there.
 
-Mitigations the renderer bootstrap and E32 should assume, cheapest first:
+Mitigations the renderer bootstrap and E32 should plan for as content grows, cheapest first:
 
 1. Instancing for repeated props (boxes and barrels as one `InstancedMesh` each: about 200 fewer draw
    calls in each of the main and shadow passes).
@@ -278,9 +325,11 @@ Mitigations the renderer bootstrap and E32 should assume, cheapest first:
 5. Dynamic resolution scale on Low (render below 1080p, upscale), keeping the UI at native resolution.
 6. Physics budget: cap awake bodies (`mw-e03.10` max-body budget) and rely on sleeping.
 
-Budget changes to propose if the official run misses: TODO(official). Candidates: define "1440p-equivalent"
-as a render scale rather than a fixed buffer; set a per-subsystem CPU budget (render submission ≤ 7 ms,
-sim ≤ 4 ms); and add the "worst-case combat 30 fps floor" from the Low preset to High as well.
+Budget discussion for `e32-perf-budgets` (not changes to the contract): add a per-subsystem CPU budget
+so the headroom above stays visible, e.g. render submission ≤ 7 ms and sim ≤ 4 ms per 60 Hz frame on
+High; define "1440p-equivalent" as a render scale rather than a fixed buffer, so dynamic resolution
+counts; and consider giving High the Low preset's "30 fps floor in worst-case combat" as well. Revisit
+with a Low-tier measurement before any of these goes into the contract.
 
 ## Consequences
 
@@ -296,7 +345,7 @@ sim ≤ 4 ms); and add the "worst-case combat 30 fps floor" from the Low preset 
 
 ## Revisit triggers
 
-- The official run or a later perf-budget suite (`e32-perf-budgets`) shows Three.js + Rapier missing
+- A later perf-budget suite (`e32-perf-budgets`) or a Low-tier measurement shows Three.js + Rapier missing
   p95 ≤ 16.7 ms on High after the mitigations above, while another option meets it.
 - Rapier deterministic hashes differ across the browsers or CPU architectures we support (x86-64 CI run,
   Firefox, Edge), or a Rapier release breaks snapshot compatibility.

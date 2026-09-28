@@ -8,7 +8,7 @@ project-wide decision, the same PR updates the contract row that states it.
 
 | ADR | Title | Status | Bead |
 |---|---|---|---|
-| [0001](0001-engine-and-physics.md) | Renderer and physics engine | Proposed (draft) | `mw-e00.13` |
+| [0001](0001-engine-and-physics.md) | Renderer and physics engine | Proposed | `mw-e00.13` |
 | [0002](0002-game-title.md) | Game title — The Vesper Bell | Accepted | `mw-e39.2` |
 
 ## Writing one
