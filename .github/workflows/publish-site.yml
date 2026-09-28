@@ -1,11 +1,12 @@
 name: Publish site
 
-# Builds the site (currently the backlog) and publishes it to thevesperbell.com:
-# S3 origin behind CloudFront, deployed through a GitHub OIDC role (infra/site.yml).
+# Builds the site (the landing page in site/ plus backlog.html from scripts/backlog, mw-e00.11) and
+# publishes it to thevesperbell.com: S3 origin behind CloudFront, deployed through a GitHub OIDC
+# role (infra/site.yml).
 on:
   push:
     branches: [main]
-    paths: ['.beads/issues.jsonl', 'scripts/build-backlog-html.mjs', 'site/**', '.github/workflows/publish-site.yml']
+    paths: ['.beads/issues.jsonl', 'scripts/backlog/**', 'site/**', '.github/workflows/publish-site.yml']
   workflow_dispatch:
 
 permissions:
@@ -26,12 +27,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .node-version # the generator is TypeScript run by Node 24 type stripping
       - name: Build
         run: |
           mkdir -p _site
           cp -R site/. _site/
-          node scripts/build-backlog-html.mjs .beads/issues.jsonl _site/backlog.html
+          node scripts/backlog/generate-cli.ts .beads/issues.jsonl _site/backlog.html
       - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
