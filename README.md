@@ -33,6 +33,8 @@ pnpm dev                 # Vite dev server
 | `pnpm content:coverage` | After `pnpm test`: fails listing content entries no passing test exercised |
 | `pnpm content:schemas`  | Regenerates `src/content/data/<type>.schema.json` for editor autocompletion |
 | `pnpm content:docs`     | Regenerates the field reference `docs/content/<type>-schema.md` for each content type |
+| `pnpm replay:record`    | Records a registered sim scenario into a golden replay in `tests/replays/` |
+| `pnpm replay:rebless`   | Re-records golden replays after an intended sim/content change (review the diff) |
 
 First e2e run: `pnpm exec playwright install chromium`.
 
@@ -78,6 +80,13 @@ problem with file and JSON pointer, and returns a deeply frozen catalogue with a
 needs a passing test: `describeContent(type, 'AC-n: …', (entry) => …)` from `src/content/testing.ts`
 generates one per entry (or credit a hand-written test with `markExercised`); CI's `pnpm content:coverage`
 fails otherwise.
+
+**Replays** (mw-e00.17) are the determinism net (contract §3). A replay (`src/sim/replay/format.ts`) is a
+versioned JSON file: the scenario, seed and tick rate, the run-length encoded sim commands fed to
+`World.step` on each tick, and a state hash (plus snapshot) every 60 ticks. Every `tests/replays/*.json`
+runs in CI (`expectReplay` from `src/tools/replay/expect-replay.ts`); a failure names the first diverging
+checkpoint and the entity/component/field that differs, and says when the content hash changed instead.
+Scenarios (the code that builds the world a replay drives) register in `src/sim/replay/scenarios/`.
 
 **Secrets** never go in the repo. The `secrets` CI job (`.github/workflows/security.yml`) runs gitleaks over
 every PR's commits and the full history on main, and GitHub push protection is on. Locally,
