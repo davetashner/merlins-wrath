@@ -90,8 +90,8 @@ describe('parseExclusions', () => {
     );
   });
 
-  it('the committed file lists the bootstrap and the render layer', () => {
-    expect(readExclusionGlobs()).toEqual(['src/main.ts', 'src/render/**']);
+  it('the committed file lists the bootstraps (app, testbeds) and the render layer', () => {
+    expect(readExclusionGlobs()).toEqual(['src/main.ts', 'src/render/**', 'src/testbed/**']);
   });
 });
 

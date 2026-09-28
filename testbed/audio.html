@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Audio testbed — The Vesper Bell</title>
+  </head>
+  <body>
+    <main>
+      <h1>Audio testbed</h1>
+      <p>Click a button: the first gesture unlocks audio, then the test cue plays.</p>
+      <button id="play-2d" type="button">Play test cue (2D)</button>
+      <button id="play-3d" type="button">Play test cue (positional, orbiting)</button>
+      <output id="status" data-state="uncreated" data-cue="none"></output>
+    </main>
+    <script type="module" src="/src/testbed/audio.ts"></script>
+  </body>
+</html>

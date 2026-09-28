@@ -14,7 +14,13 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // Web Audio differs per engine (autoplay policy, AudioListener params, codecs), so the audio
+    // testbed also runs in Firefox and WebKit (mw-e28.1 AC-6).
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testMatch: 'audio.spec.ts' },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] }, testMatch: 'audio.spec.ts' },
+  ],
   webServer: {
     // Call vite directly (not via `pnpm preview`): pnpm's wrapper doesn't forward SIGTERM,
     // so Playwright would hang waiting for the preview server to exit.
