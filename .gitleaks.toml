@@ -1,9 +1,15 @@
-# Extends the default gitleaks rules. Bead plan keys (e.g. "key": "e22-crime-bounty") look like
-# generic API keys to the default ruleset; allow exactly that shape and nothing else.
+# gitleaks configuration (mw-e00.5): the default ruleset plus a small, explained allowlist.
+# Every allowlist entry needs a comment directly above it or at the end of its line saying why it is
+# safe; `pnpm secrets:lint` (run in CI) fails otherwise. Prefer fixing a false positive's source over
+# allowlisting it.
 [extend]
 useDefault = true
 
 [allowlist]
-description = "Beads plan keys"
+description = "Known false positives"
 regexTarget = "match"
-regexes = ['''key\\?"\s*:\s*\\?"e\d{2}-[a-z0-9-]+\\?"''']
+regexes = [
+  # Bead plan keys ("key": "e22-crime-bounty") look like generic API keys to the default ruleset;
+  # allow exactly that shape and nothing else.
+  '''key\\?"\s*:\s*\\?"e\d{2}-[a-z0-9-]+\\?"''',
+]

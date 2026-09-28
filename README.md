@@ -66,5 +66,11 @@ committed `coverage-baseline.json`; refresh that with `pnpm test:coverage && pnp
 Exclusions and glue-layer gaps live only in `coverage-exclusions.md` (`pnpm coverage:exclusions` checks
 them); see that file for how to request one.
 
+**Secrets** never go in the repo. The `secrets` CI job (`.github/workflows/security.yml`) runs gitleaks over
+every PR's commits and the full history on main, and GitHub push protection is on. Locally,
+`pnpm hooks:install` (or `bd hooks install`) points git at `.beads/hooks`, whose pre-commit also scans staged
+changes when gitleaks is installed (`brew install gitleaks`). A false positive gets an allowlist entry in
+`.gitleaks.toml` with a comment explaining it (`pnpm secrets:lint` enforces that).
+
 Tests sit next to the code as `*.test.ts`. Toolchain tests live in `tests/`, Playwright specs in `e2e/`.
 `site/` is the separate static landing site; it is not part of the Vite app.
