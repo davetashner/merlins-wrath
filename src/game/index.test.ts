@@ -6,7 +6,7 @@ describe('game layer', () => {
     expect(layer).toBe('game');
   });
 
-  it('binds every layer from the contract §2 layout', () => {
-    expect(layers).toEqual(['sim', 'content', 'game', 'render', 'audio', 'ui', 'tools']);
+  it('binds every runtime layer from the contract §2 layout (tools sit above game)', () => {
+    expect(layers).toEqual(['sim', 'content', 'game', 'render', 'audio', 'ui']);
   });
 });
