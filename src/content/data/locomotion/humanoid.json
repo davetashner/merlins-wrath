@@ -1,0 +1,21 @@
+{
+  "$schema": "../locomotion.schema.json",
+  "id": "humanoid",
+  "name": "Humanoid (baseline)",
+  "notes": "Baseline for adult humans: the harbour watch, Low Tide Company, the Tern's crew, and the frame Hollow Sentinels and the Abbot override. Agent 0.35 m radius, 1.8 m tall. Real walking pace is about 1.4 m/s; a guard patrols at 1.5, sneaks at 1.0 and sprints at 5.0, a little under the player's run so a chase is winnable. Steps 0.4 m, walks 45° slopes, jumps onto 0.6 m ledges, takes 2.5 m drops. Wades to 1.2 m (e02.14: wading 0.5–1.2 m, swimming beyond) and swims slowly at the surface, but pays 5× to path through deep water, so a moat or flooded gallery is a real escape. Climbs grade 1 only (ladders, ivy): rough walls and rooftops stay the thief's routes. Opens unlocked doors.",
+  "agent": { "radius": 0.35, "height": 1.8 },
+  "modes": {
+    "walk": {
+      "speeds": { "sneak": 1.0, "walk": 1.5, "run": 5.0 },
+      "stepHeight": 0.4,
+      "maxSlope": 45,
+      "jumpHeight": 0.6,
+      "maxDrop": 2.5,
+      "wadeDepth": 1.2
+    },
+    "climb": { "speeds": { "sneak": 0.4, "walk": 0.6, "run": 1.0 }, "maxGrade": 1 },
+    "swim": { "speeds": { "sneak": 0.5, "walk": 0.8, "run": 1.2 }, "dives": false }
+  },
+  "opensDoors": true,
+  "areaCosts": { "water-deep": 5 }
+}

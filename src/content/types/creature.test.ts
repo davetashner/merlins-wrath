@@ -16,12 +16,26 @@ const sight = {
   detectionSpeed: 1,
 };
 
+const walker = {
+  agent: { radius: 0.35, height: 1.8 },
+  modes: {
+    walk: {
+      speeds: { sneak: 1, walk: 1.5, run: 5 },
+      stepHeight: 0.4,
+      maxSlope: 45,
+      jumpHeight: 0.6,
+      maxDrop: 2.5,
+      wadeDepth: 1.2,
+    },
+  },
+};
+
 const minimal = {
   id: 'fixture-walker',
   family: 'human',
   stats: { health: 100, poise: 40, mass: 80, size: 'medium' },
   senses: { sight },
-  locomotion: [{ mode: 'walk', speed: 1.5 }],
+  locomotion: walker,
 } satisfies CreatureDefInput;
 
 const source = (path: string, json: unknown): ContentSource => ({
@@ -54,7 +68,7 @@ describe('creature schema', () => {
       tags: [],
       stats: { health: 100, poise: 40, mass: 80, size: 'medium' },
       senses: { sight, hearing: { thresholdDb: 30, range: 25 } },
-      locomotion: [{ mode: 'walk', speed: 1.5 }],
+      locomotion: walker,
       attacks: [],
       properties: [],
       resistances: {},
@@ -155,10 +169,7 @@ describe('creature schema', () => {
       family: 'forgotten',
       tags: ['undead', 'miner'],
       senses: 'undead',
-      locomotion: [
-        { mode: 'walk', speed: 1.2 },
-        { mode: 'climb', speed: 0.5 },
-      ],
+      locomotion: { base: 'forgotten', modes: { climb: null, walk: { speeds: { run: 2 } } } },
       attacks: ['overhead-chop', 'lunging-thrust'],
       properties: ['brittle'],
       resistances: { blunt: 1.5, pierce: 0.5, poison: 0 },
@@ -175,6 +186,7 @@ describe('creature schema', () => {
     const text = serializeContent(full);
     expect(JSON.parse(text)).toMatchObject({
       senses: 'undead',
+      locomotion: { base: 'forgotten', modes: { climb: null, walk: { speeds: { run: 2 } } } },
       attacks: ['overhead-chop', 'lunging-thrust'],
     });
     expect(creatureSchema.parse(JSON.parse(text))).toEqual(full);
@@ -184,27 +196,18 @@ describe('creature schema', () => {
     const result = creatureSchema.safeParse({
       ...minimal,
       stats: { ...minimal.stats, health: 0 },
-      locomotion: [
-        { mode: 'walk', speed: 1 },
-        { mode: 'walk', speed: 2 },
-      ],
+      locomotion: { base: 'goblin', agent: { radius: 0 } },
       resistances: { blunt: 3.5, holy: 1 },
       fears: [{ kind: 'property', stimulus: 'burning', intensity: 101 }],
       personality: { greed: 2 },
     });
     expect(result.error?.issues.map((i) => i.path.join('.'))).toEqual([
       'stats.health',
-      'locomotion',
+      'locomotion.agent.radius',
       'resistances.blunt',
       'resistances', // unknown damage type "holy"
       'fears.0.intensity',
       'personality.greed',
     ]);
-  });
-
-  it('requires at least one locomotion mode (stationary creatures say so)', () => {
-    expect(creatureSchema.safeParse({ ...minimal, locomotion: [] }).success).toBe(false);
-    const still = { ...minimal, locomotion: [{ mode: 'stationary', speed: 0 }] };
-    expect(creatureSchema.safeParse(still).success).toBe(true);
   });
 });

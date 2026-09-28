@@ -51,15 +51,18 @@ interface Issue {
   readonly message: string;
 }
 
-/** A creature with `senses`, parsed as the loader would. */
-const creature = (senses: CreatureDefInput['senses']) =>
-  creatureSchema.parse({
+/** A creature file with `senses`. */
+const creatureFile = (senses: CreatureDefInput['senses']) =>
+  ({
     id: 'fixture-creature',
     family: 'human',
     stats: { health: 10, poise: 0, mass: 70, size: 'medium' },
     senses,
-    locomotion: [{ mode: 'walk', speed: 1.5 }],
-  } satisfies CreatureDefInput);
+    locomotion: 'humanoid',
+  }) satisfies CreatureDefInput;
+
+/** A creature with `senses`, parsed as the loader would. */
+const creature = (senses: CreatureDefInput['senses']) => creatureSchema.parse(creatureFile(senses));
 
 /** The resolved profile of a creature with `senses`, against the game's sense profiles. */
 const resolved = (senses: CreatureDefInput['senses']) =>
@@ -82,7 +85,7 @@ describe('sense profiles', () => {
     expect(problems(senseProfileSchema, { sight: inverted })).toEqual([message]);
     // An inline creature profile is checked the same way, under senses.
     expect(
-      problems(creatureSchema, { ...creature('humanoid'), senses: { sight: inverted } }),
+      problems(creatureSchema, { ...creatureFile('humanoid'), senses: { sight: inverted } }),
     ).toEqual([`senses.${message}`]);
   });
 
@@ -117,7 +120,7 @@ describe('sense profiles', () => {
       `special.echolocation: ${message}`,
     ]);
     const override = { base: 'humanoid', special: { echolocation: { range: 4 } } };
-    expect(problems(creatureSchema, { ...creature('humanoid'), senses: override })).toEqual([
+    expect(problems(creatureSchema, { ...creatureFile('humanoid'), senses: override })).toEqual([
       `senses.special.echolocation: ${message}`,
     ]);
   });
@@ -144,7 +147,7 @@ describe('sense profiles', () => {
       special: { tremor: { range: -1 } },
     };
     expect(
-      problems(creatureSchema, { ...creature('humanoid'), senses: override }).map(
+      problems(creatureSchema, { ...creatureFile('humanoid'), senses: override }).map(
         (p) => p.split(':')[0],
       ),
     ).toEqual(['senses.sight.farRange', 'senses.special.tremor.range']);
@@ -166,7 +169,10 @@ describe('sense profiles', () => {
 
   it('an inline profile must be complete and is reported once per problem', () => {
     expect(
-      problems(creatureSchema, { ...creature('humanoid'), senses: { sight: { farRange: 20 } } }),
+      problems(creatureSchema, {
+        ...creatureFile('humanoid'),
+        senses: { sight: { farRange: 20 } },
+      }),
     ).toEqual(
       expect.arrayContaining([
         'senses.sight.nearRange: Invalid input: expected number, received undefined',
@@ -174,7 +180,7 @@ describe('sense profiles', () => {
     );
     expect(
       problems(creatureSchema, {
-        ...creature('humanoid'),
+        ...creatureFile('humanoid'),
         senses: { sight: { ...sight, farRange: -1 } },
       }),
     ).toEqual(['senses.sight.farRange: Too small: expected number to be >=0']);
