@@ -18,6 +18,7 @@ export {
   type DeleteSlotOutcome,
   type LoadSlotResult,
   type ReadySlotSummary,
+  type SavedSlotOutcome,
   type RenameSlotOutcome,
   type SaveSlotInput,
   type SaveSlotOutcome,
