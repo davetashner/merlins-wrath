@@ -26,6 +26,8 @@ const layerImport = (/** @type {string} */ layer) =>
 const RNG = 'Use the seeded RNG streams injected into the sim (mw-e00.14), never Math.random.';
 const CLOCK =
   'Use the injected sim clock / tick count (mw-e00.14); wall-clock time breaks replays.';
+const SIM_MATH =
+  'Use simMath from src/sim/math.ts: Math transcendentals are engine-defined, so the sim routes them through one swappable place.';
 const HOST =
   'The sim has no host environment: no DOM, browser, timers or I/O. Emit an event for src/game to handle.';
 
@@ -60,6 +62,38 @@ const SIM_GLOBALS = [
     'process',
   ].map((name) => ({ name, message: HOST })),
 ];
+
+// Math functions whose results are implementation-defined (not correctly rounded by IEEE-754), so
+// src/sim reaches them only through simMath. sqrt, floor, min, max, abs, imul, … stay allowed.
+const SIM_MATH_BANNED = [
+  'sin',
+  'cos',
+  'tan',
+  'asin',
+  'acos',
+  'atan',
+  'atan2',
+  'sinh',
+  'cosh',
+  'tanh',
+  'asinh',
+  'acosh',
+  'atanh',
+  'exp',
+  'expm1',
+  'log',
+  'log1p',
+  'log2',
+  'log10',
+  'pow',
+  'hypot',
+  'cbrt',
+];
+
+const MATH_RANDOM = { object: 'Math', property: 'random', message: RNG };
+
+// simMath itself (and its test, which checks it against Math) are the only sim files allowed them.
+const SIM_MATH_FILES = ['src/sim/math.ts', 'src/sim/math.test.ts'];
 
 // Rules the sim may not switch off with eslint-disable comments.
 const SIM_LOCKED_RULES = [
@@ -103,10 +137,19 @@ export function layerConfigs(eslintComments) {
       plugins: { '@eslint-community/eslint-comments': eslintComments },
       rules: {
         'no-restricted-globals': ['error', ...SIM_GLOBALS],
-        'no-restricted-properties': ['error', { object: 'Math', property: 'random', message: RNG }],
+        'no-restricted-properties': [
+          'error',
+          MATH_RANDOM,
+          ...SIM_MATH_BANNED.map((property) => ({ object: 'Math', property, message: SIM_MATH })),
+        ],
         '@eslint-community/eslint-comments/no-restricted-disable': ['error', ...SIM_LOCKED_RULES],
         '@eslint-community/eslint-comments/no-unlimited-disable': 'error',
       },
+    },
+    {
+      // Later flat-config entries replace a rule's options: only Math.random stays banned here.
+      files: SIM_MATH_FILES,
+      rules: { 'no-restricted-properties': ['error', MATH_RANDOM] },
     },
   ];
 }
