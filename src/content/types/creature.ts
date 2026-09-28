@@ -119,15 +119,17 @@ export const creatureSchema = z.strictObject({
     .describe('World-property tags (e03), e.g. "flammable", "conductive".'),
   resistances: resistancesSchema,
   poiseRegen: poiseRegenSchema,
-  faction: contentId
-    .default('unaligned')
-    .describe('Faction id (e12.8); "unaligned" = belongs to no faction.'),
+  faction: ref('faction')
+    .optional()
+    .describe('Faction it belongs to (e12.8); absent = the "unaligned" faction.'),
   disposition: z
     .strictObject({
       towardPlayer: z
         .enum(STANCES)
-        .default('hostile')
-        .describe('Starting stance toward the player.'),
+        .optional()
+        .describe(
+          'Starting stance toward the player that overrides its faction’s; absent = the faction’s.',
+        ),
     })
     .prefault({})
     .describe('Default disposition; spawn points and runtime state can override it.'),

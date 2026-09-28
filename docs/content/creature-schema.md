@@ -94,9 +94,9 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `poiseRegen` | object | `{}` | How poise recovers after poise damage. |
 | `poiseRegen.delayTicks` | integer ≥ 0 | `120` | Sim ticks (60 Hz) without poise damage before poise starts to regenerate. |
 | `poiseRegen.percentPerSecond` | number 0–100 | `25` | Poise regained per second once regenerating, as a percentage of max poise. |
-| `faction` | id | `"unaligned"` | Faction id (e12.8); "unaligned" = belongs to no faction. |
+| `faction` | ref → faction | — | Faction it belongs to (e12.8); absent = the "unaligned" faction. |
 | `disposition` | object | `{}` | Default disposition; spawn points and runtime state can override it. |
-| `disposition.towardPlayer` | `"ally"` \| `"friendly"` \| `"neutral"` \| `"wary"` \| `"hostile"` \| `"prey"` \| `"predator"` | `"hostile"` | Starting stance toward the player. |
+| `disposition.towardPlayer` | `"ally"` \| `"friendly"` \| `"neutral"` \| `"wary"` \| `"hostile"` \| `"prey"` \| `"predator"` | — | Starting stance toward the player that overrides its faction’s; absent = the faction’s. |
 | `fears` | list of object | `[]` | Stimuli that lower its morale (e12.10). |
 | `fears[].kind` | `"property"` \| `"faction"` \| `"event"` | required | What kind of stimulus it fears. |
 | `fears[].stimulus` | id | required | The world property, faction id or event name, e.g. "burning". |
