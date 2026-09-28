@@ -51,7 +51,8 @@ describe('content-docs', () => {
       '| `senses` | ref → sense or object | required |',
       '| `senses.base` | ref → sense | — |',
       '| `senses.sight.farRange` | number ≥ 0 | — |',
-      '| `locomotion[].mode` | `"walk"` \\| `"climb"`',
+      '| `locomotion` | ref → locomotion or object | required |',
+      '| `locomotion.modes.climb.maxGrade` | integer 1–3 | — |',
       '| `attacks` | list of ref → attack | `[]` |',
       '| `faction` | id | `"unaligned"` |',
       '| `personality.greed` | number 0–1 | `0.5` |',
@@ -62,7 +63,7 @@ describe('content-docs', () => {
       expect(doc).toContain(row);
     }
     const documented = [...doc.matchAll(/^\| `([^`]+)`/gm)].map((m) => m[1]);
-    expect(documented).toHaveLength(62);
+    expect(documented).toHaveLength(109);
   });
 
   it('writes one doc per content type, creating docs/content, then --check passes', () => {

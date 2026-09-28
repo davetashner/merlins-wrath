@@ -1,0 +1,18 @@
+{
+  "$schema": "../locomotion.schema.json",
+  "id": "loom-spider",
+  "name": "Loom Spider",
+  "notes": "Loom Spiders (story bible §8, style bible §5.2): pale, dog-sized, legs wider than the body. Agent 0.5 m radius (leg span), 0.6 m tall. On the ground: sneak 1.0, walk 2.0, run 6.0 m/s, 0.5 m steps, 60° slopes, 1.5 m pounces, 4 m drops. They wallcrawl up any wall and across ceilings (0.8–4.0 m/s), whatever its climbing grade, so they drop on the player from above and a climbing thief is never out of reach. They barely wade (0.3 m), cannot swim, cannot open doors and are too wide for crawlspaces. Fear of light is a behaviour (e12.10), not locomotion.",
+  "agent": { "radius": 0.5, "height": 0.6 },
+  "modes": {
+    "walk": {
+      "speeds": { "sneak": 1.0, "walk": 2.0, "run": 6.0 },
+      "stepHeight": 0.5,
+      "maxSlope": 60,
+      "jumpHeight": 1.5,
+      "maxDrop": 4,
+      "wadeDepth": 0.3
+    },
+    "wallcrawl": { "speeds": { "sneak": 0.8, "walk": 1.5, "run": 4.0 }, "ceilings": true }
+  }
+}
