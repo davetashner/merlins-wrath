@@ -64,6 +64,16 @@ describe('publish-site workflow', () => {
     expect(violations('on:\n  push:\n')).toEqual([]);
   });
 
+  it('only runs that deploy may cancel other deploys', () => {
+    const trusted =
+      'contains(fromJSON(\'["OWNER","MEMBER","COLLABORATOR"]\'), github.event.pull_request.author_association)';
+    const flat = yaml.replace(/\n\s*/g, ' ');
+    expect(flat).toContain(`if: >- github.event_name != 'pull_request_target' || ${trusted}`);
+    expect(flat).toContain(
+      `group: >- \${{ (github.event_name != 'pull_request_target' || ${trusted}) && 'publish-site' || format('publish-site-skipped-{0}', github.run_id) }}`,
+    );
+  });
+
   it('passes a token to the generator only in the build step and runs it with Node directly', () => {
     expect(yaml).toContain('GITHUB_TOKEN: ${{ github.token }}');
     expect(yaml).toContain('node scripts/backlog/generate-cli.ts .beads/issues.jsonl');
