@@ -35,7 +35,8 @@
     "breaksInto": {
       "description": "Id of the testprop left when this one breaks.",
       "type": "string",
-      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "x-contentRef": "testprop"
     }
   },
   "required": [

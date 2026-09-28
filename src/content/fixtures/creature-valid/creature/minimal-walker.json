@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../data/creature.schema.json",
+  "id": "minimal-walker",
+  "family": "human",
+  "stats": { "health": 100, "poise": 40, "mass": 80, "size": "medium" },
+  "senses": {
+    "sight": { "range": 20, "halfAngle": 60 },
+    "hearing": { "thresholdDb": 30, "range": 25 }
+  },
+  "locomotion": [{ "mode": "walk", "speed": 1.5 }]
+}

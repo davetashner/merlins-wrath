@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { readContentSources } from './fs-sources.ts';
 import {
   ContentLoadError,
+  dottedPath,
   jsonPointer,
   loadContent,
   type ContentIssue,
@@ -231,5 +232,14 @@ describe('jsonPointer', () => {
       spell: z.strictObject({ id: contentId, by: z.record(z.string(), ref('creature')) }),
     });
     expect(issues[0]?.pointer).toBe('/by/a~1b');
+  });
+});
+
+describe('dottedPath', () => {
+  it('joins keys with dots and indexes with brackets', () => {
+    expect(dottedPath([])).toBe('');
+    expect(dottedPath(['stats', 'health'])).toBe('stats.health');
+    expect(dottedPath(['moves', 0, 'name'])).toBe('moves[0].name');
+    expect(dottedPath([0, 'a'])).toBe('[0].a');
   });
 });
