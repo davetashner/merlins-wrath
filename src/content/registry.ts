@@ -5,6 +5,7 @@ import type { Catalogue, EntryOf } from './loader.ts';
 import { creatureSchema } from './types/creature.ts';
 import { locomotionSchema } from './types/locomotion.ts';
 import { materialSchema } from './types/material.ts';
+import { moveSchema } from './types/move.ts';
 import { senseSchema } from './types/sense.ts';
 import { signalGraphSchema } from './types/signal-graph.ts';
 import { testPropSchema } from './types/testprop.ts';
@@ -14,6 +15,7 @@ export const contentTypes = {
   creature: creatureSchema,
   locomotion: locomotionSchema,
   material: materialSchema,
+  move: moveSchema,
   sense: senseSchema,
   'signal-graph': signalGraphSchema,
   testprop: testPropSchema,

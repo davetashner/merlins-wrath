@@ -1,0 +1,50 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "sword-light-3",
+  "notes": "Knight light attack 3 (mw-e04.6): 16/5/26 ticks, 18 stamina, 30 slash, 30 poise; the overhead finisher that ends the chain. Dodge cancel from recovery tick 6. staminaDamage 20 is a placeholder.",
+  "verb": "attack",
+  "frames": {
+    "startup": 16,
+    "active": 5,
+    "recovery": 26
+  },
+  "staminaCost": 18,
+  "cancelWindows": [
+    {
+      "into": "dodge",
+      "from": 27,
+      "to": 46
+    }
+  ],
+  "damage": {
+    "amounts": {
+      "slash": 30
+    },
+    "poiseDamage": 30,
+    "staminaDamage": 20
+  },
+  "hitbox": {
+    "track": "knight-sword-arc-light-3",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0.35,
+        "y": 1.2,
+        "z": 0.35
+      },
+      "to": {
+        "x": 0.35,
+        "y": 1.2,
+        "z": 1.45
+      },
+      "radius": 0.08
+    },
+    "reach": "medium",
+    "swing": "vertical"
+  },
+  "presentation": {
+    "anim": "anim-knight-sword-light-3",
+    "audioCue": "sfx-knight-swing-light",
+    "vfxCue": "vfx-sword-trail-light"
+  }
+}

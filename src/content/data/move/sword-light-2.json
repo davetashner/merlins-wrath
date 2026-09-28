@@ -1,0 +1,51 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "sword-light-2",
+  "notes": "Knight light attack 2 (mw-e04.6): 10/4/20 ticks, 14 stamina, 22 slash, 15 poise; the backhand return of light 1. Dodge cancel from recovery tick 6. staminaDamage 12 is a placeholder.",
+  "verb": "attack",
+  "frames": {
+    "startup": 10,
+    "active": 4,
+    "recovery": 20
+  },
+  "staminaCost": 14,
+  "cancelWindows": [
+    {
+      "into": "dodge",
+      "from": 20,
+      "to": 33
+    }
+  ],
+  "damage": {
+    "amounts": {
+      "slash": 22
+    },
+    "poiseDamage": 15,
+    "staminaDamage": 12
+  },
+  "hitbox": {
+    "track": "knight-sword-arc-light-2",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0.35,
+        "y": 1.2,
+        "z": 0.35
+      },
+      "to": {
+        "x": 0.35,
+        "y": 1.2,
+        "z": 1.45
+      },
+      "radius": 0.08
+    },
+    "reach": "medium",
+    "swing": "horizontal"
+  },
+  "chainNext": "sword-light-3",
+  "presentation": {
+    "anim": "anim-knight-sword-light-2",
+    "audioCue": "sfx-knight-swing-light",
+    "vfxCue": "vfx-sword-trail-light"
+  }
+}

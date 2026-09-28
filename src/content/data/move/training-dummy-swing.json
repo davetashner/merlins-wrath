@@ -1,0 +1,42 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "training-dummy-swing",
+  "notes": "The combat sandbox attacker dummy's metronome swing (mw-e04.9) for parry and dodge practice: an 18-tick windup (the creature readability minimum, e04.20) telegraphed from tick 0, 4 active, 20 recovery; 15 slash, 15 poise and staminaDamage 20 (the e04.6 block example). Parryable and blockable by default; the sandbox toggles those at runtime.",
+  "verb": "attack",
+  "frames": {
+    "startup": 18,
+    "active": 4,
+    "recovery": 20
+  },
+  "damage": {
+    "amounts": {
+      "slash": 15
+    },
+    "poiseDamage": 15,
+    "staminaDamage": 20
+  },
+  "hitbox": {
+    "track": "dummy-swing-arc",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0.3,
+        "y": 1.2,
+        "z": 0.3
+      },
+      "to": {
+        "x": 0.3,
+        "y": 1.2,
+        "z": 1.3
+      },
+      "radius": 0.1
+    },
+    "reach": "medium",
+    "swing": "horizontal"
+  },
+  "presentation": {
+    "anim": "anim-dummy-swing",
+    "audioCue": "sfx-dummy-swing",
+    "vfxCue": "vfx-telegraph-glint"
+  }
+}
