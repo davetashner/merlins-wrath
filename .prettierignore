@@ -4,6 +4,7 @@ coverage/
 playwright-report/
 test-results/
 pnpm-lock.yaml
+coverage-baseline.json
 
 # Hand-written prose, backlog data and assets: not reformatted by the code formatter.
 *.md
@@ -11,7 +12,7 @@ pnpm-lock.yaml
 plan/
 site/
 assets/
-scripts/
+scripts/*.mjs
 .agents/
 .claude/
 .codex/

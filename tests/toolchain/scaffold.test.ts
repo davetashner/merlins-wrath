@@ -45,7 +45,8 @@ describe('repo scaffold', () => {
     { timeout: 60_000 },
     async () => {
       const reports = tmp('coverage');
-      // Child run over the sim layer only, so this test does not recurse into itself.
+      // Child run over the sim layer only (tests and coverage scope), so it does not recurse into
+      // itself or trip the other layers' thresholds.
       await run(
         'pnpm',
         [
@@ -54,6 +55,7 @@ describe('repo scaffold', () => {
           'run',
           'src/sim',
           '--coverage',
+          '--coverage.include=src/sim/**',
           `--coverage.reportsDirectory=${reports}`,
         ],
         { cwd: root },

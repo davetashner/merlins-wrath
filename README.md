@@ -58,5 +58,11 @@ Code lives in `src/`, split into layers (contract §2), each importable through 
   `sim` and `content`. `game` may import every runtime layer, but not `tools`. `tools` may import anything.
   The bootstrap (`src/main.ts`) is unrestricted.
 
+**Coverage** (contract §3) is enforced in CI from one file, `coverage-layers.json`. `src/sim`,
+`src/content`, `src/game/save` and `scripts/*.ts` need 100% on every file. `src/game`, `src/ui`, `src/audio`
+and `src/tools` need ≥ 90% lines and branches. A **ratchet** (`pnpm coverage:ratchet`) fails a PR if any
+metric falls versus main, globally or per layer. When main's CI artifact is unavailable it falls back to the
+committed `coverage-baseline.json`; refresh that with `pnpm test:coverage && pnpm coverage:baseline`.
+
 Tests sit next to the code as `*.test.ts`. Toolchain tests live in `tests/`, Playwright specs in `e2e/`.
 `site/` is the separate static landing site; it is not part of the Vite app.

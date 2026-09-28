@@ -32,7 +32,7 @@
       "@tools/*": ["./src/tools/*"]
     }
   },
-  "include": ["src", "tests", "e2e", "*.config.ts"],
+  "include": ["src", "tests", "e2e", "scripts/**/*.ts", "*.config.ts"],
   // Deliberately broken files that toolchain tests feed to tsc / ESLint one at a time.
   "exclude": ["tests/toolchain/fixtures", "tests/lint-fixtures"]
 }
