@@ -45,7 +45,8 @@ describe('repo scaffold', () => {
     { timeout: 60_000 },
     async () => {
       const reports = tmp('coverage');
-      // Child run over the sim layer only, so this test does not recurse into itself.
+      // Child run over the sim layer only (tests and coverage scope), so it does not recurse into
+      // itself or trip the other layers' thresholds.
       await run(
         'pnpm',
         [
@@ -54,6 +55,7 @@ describe('repo scaffold', () => {
           'run',
           'src/sim',
           '--coverage',
+          '--coverage.include=src/sim/**',
           `--coverage.reportsDirectory=${reports}`,
         ],
         { cwd: root },
@@ -75,7 +77,8 @@ describe('repo scaffold', () => {
     async () => {
       // We can't swap the running Node, so pin engines to a range that excludes it instead.
       const dir = tmp('engines');
-      const excluded = { ...pkg, engines: { node: '<1' }, devDependencies: {} };
+      // No packageManager: an --offline pnpm would otherwise fail resolving itself before the engine check.
+      const excluded = { name: 'engine-probe', private: true, engines: { node: '<1' } };
       writeFileSync(join(dir, 'package.json'), JSON.stringify(excluded));
       writeFileSync(
         join(dir, 'pnpm-workspace.yaml'),

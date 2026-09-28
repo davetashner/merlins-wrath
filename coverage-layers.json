@@ -1,0 +1,29 @@
+{
+  "$comment": "Coverage policy (backlog contract §3), read by vite.config.ts and scripts/coverage-ratchet.ts. Adding a 100% runtime directory is one entry here.",
+  "layers": {
+    "sim": {
+      "globs": ["src/sim/**"],
+      "thresholds": { "lines": 100, "branches": 100, "functions": 100, "statements": 100 },
+      "perFile": true
+    },
+    "content": {
+      "globs": ["src/content/**"],
+      "thresholds": { "lines": 100, "branches": 100, "functions": 100, "statements": 100 },
+      "perFile": true
+    },
+    "save": {
+      "globs": ["src/game/save/**"],
+      "thresholds": { "lines": 100, "branches": 100, "functions": 100, "statements": 100 },
+      "perFile": true
+    },
+    "scripts": {
+      "globs": ["scripts/**/*.ts"],
+      "thresholds": { "lines": 100, "branches": 100, "functions": 100, "statements": 100 },
+      "perFile": true
+    },
+    "game": { "globs": ["src/game/**"], "thresholds": { "lines": 90, "branches": 90 } },
+    "ui": { "globs": ["src/ui/**"], "thresholds": { "lines": 90, "branches": 90 } },
+    "audio": { "globs": ["src/audio/**"], "thresholds": { "lines": 90, "branches": 90 } },
+    "tools": { "globs": ["src/tools/**"], "thresholds": { "lines": 90, "branches": 90 } }
+  }
+}
