@@ -29,6 +29,7 @@ pnpm dev                 # Vite dev server
 | `pnpm test`          | Vitest unit + integration tests                                  |
 | `pnpm test:coverage` | Vitest with v8 coverage into `coverage/` (text, json-summary, lcov) |
 | `pnpm e2e`           | Playwright smoke tests against the production build              |
+| `pnpm bench`         | Vitest benchmarks (`*.bench.ts`) that assert sim perf budgets    |
 
 First e2e run: `pnpm exec playwright install chromium`.
 
