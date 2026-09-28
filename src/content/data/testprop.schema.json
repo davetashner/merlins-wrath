@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name for debug overlays."
+    },
+    "mass": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Mass in kilograms."
+    },
+    "flammable": {
+      "type": "boolean",
+      "description": "World property: fire can ignite it."
+    },
+    "tags": {
+      "default": [],
+      "description": "Free-form tags for grey-box scenes.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "breaksInto": {
+      "description": "Id of the testprop left when this one breaks.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "mass",
+    "flammable"
+  ],
+  "additionalProperties": false
+}

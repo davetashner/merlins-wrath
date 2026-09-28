@@ -30,6 +30,8 @@ pnpm dev                 # Vite dev server
 | `pnpm test:coverage` | Vitest with v8 coverage into `coverage/` (text, json-summary, lcov) |
 | `pnpm e2e`           | Playwright smoke tests against the production build              |
 | `pnpm bench`         | Vitest benchmarks (`*.bench.ts`) that assert sim perf budgets    |
+| `pnpm content:coverage` | After `pnpm test`: fails listing content entries no passing test exercised |
+| `pnpm content:schemas`  | Regenerates `src/content/data/<type>.schema.json` for editor autocompletion |
 
 First e2e run: `pnpm exec playwright install chromium`.
 
@@ -66,6 +68,15 @@ metric falls versus main, globally or per layer. When main's CI artifact is unav
 committed `coverage-baseline.json`; refresh that with `pnpm test:coverage && pnpm coverage:baseline`.
 Exclusions and glue-layer gaps live only in `coverage-exclusions.md` (`pnpm coverage:exclusions` checks
 them); see that file for how to request one.
+
+**Content** (mw-e00.18) is data, not code. Each content type is a zod schema registered in
+`src/content/registry.ts`; each entry is one JSON file at `src/content/data/<type>/<name>.json` (optionally
+starting with `"$schema": "../<type>.schema.json"` for editor autocompletion). `loadGameContent()` validates
+every file, rejects duplicate ids and references (`ref('creature')`) to missing entries, reporting every
+problem with file and JSON pointer, and returns a deeply frozen catalogue with a content hash. Every entry
+needs a passing test: `describeContent(type, 'AC-n: …', (entry) => …)` from `src/content/testing.ts`
+generates one per entry (or credit a hand-written test with `markExercised`); CI's `pnpm content:coverage`
+fails otherwise.
 
 **Secrets** never go in the repo. The `secrets` CI job (`.github/workflows/security.yml`) runs gitleaks over
 every PR's commits and the full history on main, and GitHub push protection is on. Locally,

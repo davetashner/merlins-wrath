@@ -5,6 +5,8 @@ playwright-report/
 test-results/
 pnpm-lock.yaml
 coverage-baseline.json
+# Written by pnpm content:schemas; checked byte-for-byte by scripts/content-schemas.test.ts.
+src/content/data/*.schema.json
 
 # Hand-written prose, backlog data and assets: not reformatted by the code formatter.
 *.md
