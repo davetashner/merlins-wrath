@@ -83,6 +83,14 @@ const segment = (key: PropertyKey): string =>
 export const jsonPointer = (path: readonly PropertyKey[]): string =>
   path.map((key) => `/${segment(key)}`).join('');
 
+/** Dotted path for a zod issue path, e.g. `['moves', 0, 'name']` → `moves[0].name`. */
+export const dottedPath = (path: readonly PropertyKey[]): string =>
+  path
+    .map((key, i) =>
+      typeof key === 'number' ? `[${String(key)}]` : `${i > 0 ? '.' : ''}${String(key)}`,
+    )
+    .join('');
+
 /** Calls `visit` for every ContentRef inside `value`, with its JSON pointer. */
 function findRefs(value: unknown, pointer: string, visit: (r: ContentRef, at: string) => void) {
   if (value instanceof ContentRef) {
@@ -132,7 +140,8 @@ function loadFile(schemas: ContentSchemas, source: ContentSource, issues: Conten
   const result = schema.safeParse(withoutSchemaKey(json));
   if (!result.success) {
     for (const issue of result.error.issues) {
-      issues.push({ file, pointer: jsonPointer(issue.path), message: issue.message });
+      const at = issue.path.length > 0 ? ` (at ${dottedPath(issue.path)})` : '';
+      issues.push({ file, pointer: jsonPointer(issue.path), message: `${issue.message}${at}` });
     }
     return undefined;
   }

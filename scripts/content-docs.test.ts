@@ -1,0 +1,141 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
+import { contentJsonSchema } from '../src/content/json-schema.ts';
+import { contentId, ref } from '../src/content/schema.ts';
+import {
+  expectedDocs,
+  fieldRows,
+  main,
+  renderDoc,
+  typeOf,
+  type JsonSchemaNode,
+} from './content-docs.ts';
+
+const docPath = 'docs/content/creature-schema.md';
+const jsonSchema = (schema: z.ZodType): JsonSchemaNode => contentJsonSchema(schema);
+
+describe('content-docs', () => {
+  const cwd = process.cwd();
+  const argv = process.argv;
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'content-docs-'));
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    process.chdir(cwd);
+    process.argv = argv;
+    process.exitCode = undefined;
+    vi.restoreAllMocks();
+    rmSync(dir, { recursive: true });
+  });
+
+  it('AC-6: the committed field references are up to date (run pnpm content:docs if this fails)', () => {
+    expect(main(['--check'], cwd)).toBe(0);
+  });
+
+  it('AC-6: the creature reference lists every field with its type and default', () => {
+    const doc = expectedDocs().get(docPath) ?? '';
+    for (const row of [
+      '| `id` | id | required |',
+      '| `stats.health` | integer > 0 | required |',
+      '| `senses` | ref → sense or object | required |',
+      '| `senses.sight.halfAngle` | number 0–180 | required |',
+      '| `locomotion[].mode` | `"walk"` \\| `"climb"`',
+      '| `attacks` | list of ref → attack | `[]` |',
+      '| `faction` | id | `"unaligned"` |',
+      '| `personality.greed` | number 0–1 | `0.5` |',
+      '| `needs.<key>.threshold` | number 0–100 | required |',
+      '| `loot` | id | — |',
+      '| `presentation.mesh` | id | `"placeholder-capsule"` |',
+    ]) {
+      expect(doc).toContain(row);
+    }
+    const documented = [...doc.matchAll(/^\| `([^`]+)`/gm)].map((m) => m[1]);
+    expect(documented).toHaveLength(49);
+  });
+
+  it('writes one doc per content type, creating docs/content, then --check passes', () => {
+    expect(main([], dir)).toBe(0);
+    expect(console.log).toHaveBeenCalledWith(`wrote ${docPath}`);
+    expect(readFileSync(join(dir, docPath), 'utf8')).toBe(expectedDocs().get(docPath));
+    expect(main(['--check'], dir)).toBe(0);
+  });
+
+  it('--check fails listing missing or stale docs without writing them', () => {
+    expect(main(['--check'], dir)).toBe(1);
+    main([], dir);
+    writeFileSync(join(dir, docPath), 'old\n');
+    expect(main(['--check'], dir)).toBe(1);
+    expect(console.log).toHaveBeenCalledWith(
+      `::error title=Content docs::${docPath} is stale; run pnpm content:docs.`,
+    );
+    expect(readFileSync(join(dir, docPath), 'utf8')).toBe('old\n');
+  });
+
+  it('the CLI sets the process exit code from main', async () => {
+    process.chdir(dir);
+    process.argv = ['node', 'content-docs-cli.ts', '--check'];
+    await import('./content-docs-cli.ts');
+    expect(process.exitCode).toBe(1);
+  });
+});
+
+describe('typeOf', () => {
+  it('names refs, unions, enums, constants, bounded numbers, ids, lists and maps', () => {
+    const t = (schema: z.ZodType) => typeOf(jsonSchema(schema));
+    expect(t(ref('attack'))).toBe('ref → attack');
+    expect(t(z.union([z.string(), z.boolean()]))).toBe('string or boolean');
+    expect(t(z.enum(['a', 'b']))).toBe('`"a"` \\| `"b"`');
+    expect(t(z.literal(2))).toBe('`2`');
+    expect(t(z.int())).toBe('integer');
+    expect(t(z.number())).toBe('number');
+    expect(t(z.number().positive().max(5))).toBe('number > 0 ≤ 5');
+    expect(t(z.number().max(5))).toBe('number ≤ 5');
+    expect(t(z.int().min(1).max(3))).toBe('integer 1–3');
+    expect(t(contentId)).toBe('id');
+    expect(t(z.string().regex(/x/))).toBe('string');
+    expect(t(z.array(z.string()).min(2))).toBe('list of string (at least 2)');
+    expect(t(z.record(z.string(), z.number()))).toBe('map of string → number');
+    expect(t(z.object({}))).toBe('object');
+    expect(t(z.any())).toBe('any');
+  });
+});
+
+describe('fieldRows / renderDoc', () => {
+  const schema = jsonSchema(
+    z.strictObject({
+      id: contentId,
+      plain: z.string().optional(),
+      list: z.array(z.strictObject({ a: z.number().describe('multi\nline') })),
+      either: z.union([ref('x'), z.strictObject({ b: z.boolean() })]),
+    }),
+  );
+
+  it('skips $schema, recurses into lists, maps and union options, and marks required fields', () => {
+    expect(fieldRows(schema).map((r) => [r.field, r.default])).toEqual([
+      ['id', 'required'],
+      ['plain', '—'],
+      ['list', 'required'],
+      ['list[].a', 'required'],
+      ['either', 'required'],
+      ['either.b', 'required'],
+    ]);
+  });
+
+  it('has no rows for a schema without properties', () => {
+    expect(fieldRows({ type: 'string' })).toEqual([]);
+  });
+
+  it('renders a Markdown table with one line per field', () => {
+    const doc = renderDoc('thing', schema);
+    expect(doc).toMatch(/^# `thing` content schema\n/);
+    expect(doc).toContain('| `list[].a` | number | required | multi line |');
+    expect(doc.endsWith('|\n')).toBe(true);
+  });
+});

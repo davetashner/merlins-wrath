@@ -24,6 +24,7 @@
     "coverage:exclusions": "node scripts/check-coverage-exclusions-cli.ts",
     "content:coverage": "node scripts/content-coverage-cli.ts",
     "content:schemas": "node scripts/content-schemas-cli.ts",
+    "content:docs": "node scripts/content-docs-cli.ts",
     "secrets:lint": "node scripts/check-gitleaks-config-cli.ts",
     "hooks:install": "git config core.hooksPath .beads/hooks",
     "deps:audit": "pnpm audit --json > audit.json; node scripts/dependency-audit-cli.ts --audit audit.json",
