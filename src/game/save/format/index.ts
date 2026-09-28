@@ -26,6 +26,7 @@ export {
   SaveRegistry,
   WORLD_SECTION_ID,
   WORLD_SECTION_VERSION,
+  type CheckSaveResult,
   type LoadSaveResult,
   type SaveWarning,
   type WriteSaveOptions,

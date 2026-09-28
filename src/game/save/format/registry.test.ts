@@ -363,6 +363,24 @@ describe('SaveRegistry', () => {
     expect(target.snapshot()).toEqual(before);
   });
 
+  it('checks a save without touching any world: everything but apply', () => {
+    const registry = threeSections().register({
+      id: 'fragile',
+      version: 1,
+      schema: z.null(),
+      serialize: () => null,
+      deserialize: () => {
+        throw new Error('boom');
+      },
+    });
+    const bytes = registry.write(randomWorld(16), options);
+    const checked = registry.check(bytes);
+    expect(checked.ok && checked.envelope.wallClockSavedAt).toBe(options.wallClockSavedAt);
+    const damaged = bytes.slice();
+    damaged[damaged.length - 1] = (damaged[damaged.length - 1] ?? 0) ^ 0xff;
+    expect(registry.check(damaged)).toMatchObject({ ok: false, error: { kind: 'corrupt' } });
+  });
+
   it('returns SaveApplyError for the world section when the target world lacks a component type', () => {
     const bytes = threeSections().write(randomWorld(15), options);
     const bare = new World({ seed: 1 }).register(Position, Health, Bag);
