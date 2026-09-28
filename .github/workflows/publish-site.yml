@@ -32,7 +32,7 @@ jobs:
           mkdir -p _site
           cp -R site/. _site/
           node scripts/build-backlog-html.mjs .beads/issues.jsonl _site/backlog.html
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: us-east-1
