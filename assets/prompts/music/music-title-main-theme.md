@@ -76,7 +76,7 @@ vocals, lyrics, rap, pop, EDM, dubstep, trap, drum kit, electric guitar, synth, 
 
 | # | Date | Tool / model / tier | Prompt change | Result | Keep? |
 |---|---|---|---|---|---|
-| 1 | 2026-09-27 | Suno / Pro plan (annual) | initial | `assets/_incoming/music/music-title-main-theme.wav` (3:03, 48 kHz 16-bit stereo, −16.5 LUFS integrated, LRA 4.7 LU) | yes — owner's pick |
+| 1 | 2026-09-27 | Suno v6 / Pro plan (annual) | initial | `assets/_incoming/music/music-title-main-theme.wav` (3:03, 48 kHz 16-bit stereo, −16.5 LUFS integrated, LRA 4.7 LU) | yes — owner's pick |
 
 ## Website copies (`site/audio/`, `mw-e00.25`)
 
@@ -97,4 +97,4 @@ rather than overwriting v1.
 
 | Asset id | Source file | Tool | Date | Licence / terms | Prompt file |
 |---|---|---|---|---|---|
-| music-title-main-theme | `assets/_incoming/music/music-title-main-theme.wav` | Suno (Pro plan, annual), owner-made | 2026-09-27 | Suno terms: paid-tier output owned by the user | this file |
+| music-title-main-theme | `assets/_incoming/music/music-title-main-theme.wav` | Suno v6 (Pro plan, annual), owner-made | 2026-09-27 | Suno terms: paid-tier output owned by the user | this file |
