@@ -33,6 +33,6 @@
     }
   },
   "include": ["src", "tests", "e2e", "*.config.ts"],
-  // Deliberately ill-typed files that the AC-3 test feeds to the compiler one at a time.
-  "exclude": ["tests/toolchain/fixtures"]
+  // Deliberately broken files that toolchain tests feed to tsc / ESLint one at a time.
+  "exclude": ["tests/toolchain/fixtures", "tests/lint-fixtures"]
 }

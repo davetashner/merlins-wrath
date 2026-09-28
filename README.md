@@ -47,5 +47,16 @@ Code lives in `src/`, split into layers (contract §2), each importable through 
 | `src/ui`       | HUD, menus and dialogue UI                                             |
 | `src/tools`    | Dev and content tools                                                  |
 
+**Layer rules are enforced by ESLint** (`eslint/layers.js`; each rule is proven by a fixture in
+`tests/lint-fixtures/`):
+
+- `src/sim` must stay deterministic: no `Math.random`, `Date`, `performance`, `crypto`, timers, DOM or
+  browser globals. Use the seeded RNG and injected clock instead. `eslint-disable` comments for these rules
+  are themselves errors. Iterate arrays and `Map`s (insertion-ordered); avoid `for…in`, even where the
+  spec fixes the order.
+- Imports: `sim` and `content` may import each other only as types. `render`, `audio` and `ui` may import
+  `sim` and `content`. `game` may import every runtime layer, but not `tools`. `tools` may import anything.
+  The bootstrap (`src/main.ts`) is unrestricted.
+
 Tests sit next to the code as `*.test.ts`. Toolchain tests live in `tests/`, Playwright specs in `e2e/`.
 `site/` is the separate static landing site; it is not part of the Vite app.
