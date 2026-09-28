@@ -72,5 +72,10 @@ every PR's commits and the full history on main, and GitHub push protection is o
 changes when gitleaks is installed (`brew install gitleaks`). A false positive gets an allowlist entry in
 `.gitleaks.toml` with a comment explaining it (`pnpm secrets:lint` enforces that).
 
+**Dependencies:** the `audit` CI job (also nightly) fails on any CRITICAL advisory, whether in a runtime
+or a dev dependency, and warns on HIGH; `pnpm deps:audit` runs the same check locally. A temporary waiver
+goes in `audit-waivers.json` with the GHSA id, a reason, a bead and an expiry date. PRs also run GitHub
+dependency review (critical advisories, GPL/AGPL licences). Dependabot opens grouped weekly updates.
+
 Tests sit next to the code as `*.test.ts`. Toolchain tests live in `tests/`, Playwright specs in `e2e/`.
 `site/` is the separate static landing site; it is not part of the Vite app.

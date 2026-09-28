@@ -1,0 +1,22 @@
+# Dependency updates (mw-e00.6): weekly, minor and patch grouped into one PR per ecosystem so they are
+# cheap to review; majors arrive as their own PRs. Security updates are separate and immediate.
+version: 2
+updates:
+  - package-ecosystem: npm # pnpm-lock.yaml
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: deps
+  - package-ecosystem: github-actions
+    directories: [/, /.github/actions/*]
+    schedule:
+      interval: weekly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: ci
