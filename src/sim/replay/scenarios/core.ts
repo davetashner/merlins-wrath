@@ -4,14 +4,17 @@
 // golden replay (tests/replays/core.json) catches nondeterminism in the sim core itself. It is test
 // scaffolding, not game rules: game features bring their own scenarios.
 //
-// It deliberately avoids simMath transcendentals: Node 24's Math.sin/cos differ in the last bit
-// between macOS arm64 and Linux x64, so a trig-driven golden recorded on a laptop fails in CI
-// (mw-e00.28 makes simMath bit-identical across platforms). + - * / are exact everywhere.
+// Motion is deliberately trig-driven (mw-e00.29): each body is blown along its own heading
+// (atan2 → cos/sin) by a sinusoidal gust, and drag is exp of its speed (hypot). Transcendentals
+// are the likeliest source of cross-platform drift — the engines' Math.sin/cos differ in the last
+// bit between macOS arm64 and Linux x64 — so the golden is recorded on one platform and checked in
+// CI on the other; simMath (mw-e00.28) is what makes that pass.
 
 import { z } from 'zod';
 import { defineComponent, type EntityId } from '../../core/component';
 import { defineEvent } from '../../core/events';
 import { World } from '../../core/world';
+import { atan2, cos, exp, hypot, sin } from '../../math';
 import type { DriveContext, ReplayScenario } from '../scenario';
 
 /** Arena half-width: bodies bounce off ±ARENA on both axes. */
@@ -20,6 +23,8 @@ const ARENA = 10;
 const MAX_BODIES = 12;
 /** Every body loses 1 hp this often (ticks). */
 const DECAY_EVERY = 30;
+/** Gust angular frequency (radians per tick): one swell every 80 ticks. */
+const GUST_OMEGA = (2 * Math.PI) / 80;
 
 const Position = defineComponent<{ x: number; y: number }>('Position');
 const Velocity = defineComponent<{ x: number; y: number }>('Velocity');
@@ -112,12 +117,14 @@ function createCoreWorld({ seed, hz }: { seed: number; hz: number }): World<Core
       run({ tick }) {
         const rng = world.random('wander');
         bodies.forEach((id, _position, velocity) => {
-          // A triangle-wave gust per body plus a random nudge on each axis.
-          const phase = ((tick + id * 17) % 80) / 40; // 0..2
-          const gust = 0.2 * (phase < 1 ? phase : 2 - phase);
+          // A gust along the body's heading, swelling and fading on a per-body sine, then drag
+          // that grows with speed, then a small random nudge on each axis.
+          const gust = 0.1 * (1 + sin((tick + id * 17) * GUST_OMEGA));
+          const heading = atan2(velocity.y, velocity.x) + (rng.float() - 0.5);
+          const drag = exp(-0.02 - 0.002 * hypot(velocity.x, velocity.y));
           world.set(id, Velocity, {
-            x: velocity.x * 0.95 + gust * (rng.float() * 2 - 1),
-            y: velocity.y * 0.95 + gust * (rng.float() * 2 - 1),
+            x: (velocity.x + gust * cos(heading)) * drag + 0.05 * (rng.float() * 2 - 1),
+            y: (velocity.y + gust * sin(heading)) * drag + 0.05 * (rng.float() * 2 - 1),
           });
         });
       },
