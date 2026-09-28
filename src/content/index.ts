@@ -1,2 +1,29 @@
-// Placeholder so the content layer exists from day one; real modules replace it.
+// Public API of the content layer (mw-e00.18): schemas + data files, validated at load into a typed,
+// deeply frozen catalogue. src/sim may import these only as types (`import type`).
+// Not exported here, by design: fs-sources.ts (Node only), testing.ts (Vitest only) and
+// json-schema.ts (build-time tooling; keeps zod's JSON Schema generator out of the game bundle).
+
+/** Layer marker, checked by the alias smoke test. */
 export const layer = 'content' as const;
+
+export { CONTENT_ID_PATTERN, ContentRef, contentId, ref } from './schema.ts';
+export {
+  ContentLoadError,
+  jsonPointer,
+  loadContent,
+  type Catalogue,
+  type ContentIssue,
+  type ContentSchemas,
+  type ContentSource,
+  type EntryOf,
+  type Frozen,
+} from './loader.ts';
+export { canonicalJson, fnv1a64 } from './hash.ts';
+export {
+  contentTypes,
+  type ContentType,
+  type ContentTypes,
+  type GameContent,
+  type GameEntry,
+} from './registry.ts';
+export { GAME_CONTENT_ROOT, gameContentSources, loadGameContent } from './game-content.ts';

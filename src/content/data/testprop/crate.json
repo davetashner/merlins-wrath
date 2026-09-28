@@ -1,0 +1,9 @@
+{
+  "$schema": "../testprop.schema.json",
+  "id": "crate",
+  "name": "Wooden crate",
+  "mass": 12,
+  "flammable": true,
+  "tags": ["breakable", "stackable"],
+  "breaksInto": "plank"
+}

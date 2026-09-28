@@ -22,6 +22,8 @@
     "coverage:ratchet": "node scripts/coverage-ratchet-cli.ts",
     "coverage:baseline": "node scripts/coverage-ratchet-cli.ts --write-baseline",
     "coverage:exclusions": "node scripts/check-coverage-exclusions-cli.ts",
+    "content:coverage": "node scripts/content-coverage-cli.ts",
+    "content:schemas": "node scripts/content-schemas-cli.ts",
     "secrets:lint": "node scripts/check-gitleaks-config-cli.ts",
     "hooks:install": "git config core.hooksPath .beads/hooks",
     "deps:audit": "pnpm audit --json > audit.json; node scripts/dependency-audit-cli.ts --audit audit.json",
@@ -41,5 +43,8 @@
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.1",
     "vitest": "^5.0.2"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
   }
 }

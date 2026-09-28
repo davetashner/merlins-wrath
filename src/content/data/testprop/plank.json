@@ -1,0 +1,7 @@
+{
+  "$schema": "../testprop.schema.json",
+  "id": "plank",
+  "name": "Broken plank",
+  "mass": 1.5,
+  "flammable": true
+}

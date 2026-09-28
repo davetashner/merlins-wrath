@@ -39,6 +39,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       - run: pnpm test
+      # Every content entry is exercised by a passing test (contract §3, mw-e00.18); reads the report
+      # the Vitest content reporter wrote during pnpm test.
+      - run: pnpm content:coverage
       # Sim perf budgets asserted in vitest benchmark files (mw-e00.15 AC-6: mean step() ≤ 1 ms).
       - run: pnpm bench --reporter=verbose
 

@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import { DEFAULT_EXCLUDES, readExclusionGlobs } from './scripts/check-coverage-exclusions.ts';
+import { ContentCoverageReporter } from './scripts/content-coverage-reporter.ts';
 import { readLayers, vitestThresholds } from './scripts/coverage-layers.ts';
 
 // One config for dev, build and tests: path aliases come from tsconfig.json `paths`,
@@ -14,6 +15,8 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts', 'scripts/**/*.test.ts'],
     environment: 'node',
+    // The content reporter records which content entries passing tests exercised (mw-e00.18).
+    reporters: ['default', new ContentCoverageReporter()],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts', 'scripts/**/*.ts'],
