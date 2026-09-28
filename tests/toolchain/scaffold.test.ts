@@ -77,7 +77,8 @@ describe('repo scaffold', () => {
     async () => {
       // We can't swap the running Node, so pin engines to a range that excludes it instead.
       const dir = tmp('engines');
-      const excluded = { ...pkg, engines: { node: '<1' }, devDependencies: {} };
+      // No packageManager: an --offline pnpm would otherwise fail resolving itself before the engine check.
+      const excluded = { name: 'engine-probe', private: true, engines: { node: '<1' } };
       writeFileSync(join(dir, 'package.json'), JSON.stringify(excluded));
       writeFileSync(
         join(dir, 'pnpm-workspace.yaml'),
