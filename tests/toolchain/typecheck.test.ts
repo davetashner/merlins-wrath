@@ -17,7 +17,8 @@ function diagnosticCodes(file: string): number[] {
   return ts.getPreEmitDiagnostics(program).map((d) => d.code);
 }
 
-describe('tsconfig strictness', () => {
+// Each case builds a TypeScript program: a few seconds on a small CI runner.
+describe('tsconfig strictness', { timeout: 30_000 }, () => {
   it('AC-3: an implicit any fails the typecheck', () => {
     // TS7006: Parameter implicitly has an 'any' type.
     expect(diagnosticCodes(fixture('implicit-any.ts'))).toContain(7006);

@@ -73,12 +73,18 @@ describe('Rng helpers', () => {
   it('AC-5: 1,000,000 float() draws fill 10 bins at 10% ± 0.5%', () => {
     const r = rng();
     const bins = new Array<number>(10).fill(0);
+    let min = 1;
+    let max = 0;
     for (let i = 0; i < 1_000_000; i++) {
       const f = r.float();
-      expect(f >= 0 && f < 1).toBe(true);
+      if (f < min) min = f;
+      if (f > max) max = f;
       const bin = Math.floor(f * 10);
       bins[bin] = (bins[bin] ?? 0) + 1;
     }
+    expect(min).toBeGreaterThanOrEqual(0);
+    expect(max).toBeLessThan(1);
+    expect(bins).toHaveLength(10);
     for (const count of bins) expect(Math.abs(count / 1_000_000 - 0.1)).toBeLessThanOrEqual(0.005);
   });
 
