@@ -59,7 +59,7 @@ non-commercial use are **placeholders only** and must be flagged `placeholder: y
 
 | Asset id | Type | Source | Tier | Date | Licence | Terms / URL | Author / attribution | Prompt file | Placeholder |
 |---|---|---|---|---|---|---|---|---|---|
-| music-title-main-theme | music | generated:suno/(model not recorded) | Suno Pro (annual) | 2026-09-27 | GEN-OWNED | https://suno.com/terms | owner | `assets/prompts/music/music-title-main-theme.md` | no |
+| music-title-main-theme | music | generated:suno/v6 | Suno Pro (annual) | 2026-09-27 | GEN-OWNED | https://suno.com/terms | owner | `assets/prompts/music/music-title-main-theme.md` | no |
 
 ## Sound effects & ambience
 
