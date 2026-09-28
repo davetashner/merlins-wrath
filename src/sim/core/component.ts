@@ -31,6 +31,17 @@ export interface ComponentOptions<T> {
   readonly deserialize?: (data: unknown) => T;
 }
 
+/** Types defined with the default (clone) snapshot hook; see `usesDefaultSerialize`. */
+const defaultSerialized = new WeakSet<ComponentType<unknown>>();
+
+/**
+ * Whether `type` snapshots with the default `structuredClone` hook. The world skips that copy for
+ * read-only snapshots (`World.snapshot({ shared: true })`), where cloning is pure cost.
+ */
+export function usesDefaultSerialize(type: ComponentType<unknown>): boolean {
+  return defaultSerialized.has(type);
+}
+
 /**
  * Defines a component type. Values should be plain data; the default snapshot hooks deep-copy them
  * with `structuredClone` so a snapshot never aliases live state.
@@ -43,7 +54,9 @@ export function defineComponent<T>(
   const serialize = options.serialize ?? ((value: T): unknown => structuredClone(value));
   // Snapshot data came from serialize() of a T, so cloning it back yields a T.
   const deserialize = options.deserialize ?? ((data: unknown): T => structuredClone(data) as T);
-  return { name, serialize, deserialize };
+  const type: ComponentType<T> = { name, serialize, deserialize };
+  if (options.serialize === undefined) defaultSerialized.add(type);
+  return type;
 }
 
 /** Dense storage for one component type. Internal to the world. */
