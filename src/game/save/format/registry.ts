@@ -56,6 +56,21 @@ export type LoadSaveResult =
     }
   | { readonly ok: false; readonly error: SaveLoadError };
 
+/** Outcome of checking save bytes without loading them. */
+export type CheckSaveResult =
+  | { readonly ok: true; readonly envelope: SaveEnvelope }
+  | { readonly ok: false; readonly error: SaveLoadError };
+
+type Prepared =
+  | {
+      readonly ok: true;
+      readonly envelope: SaveEnvelope;
+      readonly warnings: SaveWarning[];
+      readonly unknownSections: Record<string, SectionRecord>;
+      readonly prepared: readonly { section: SaveSection; data: unknown }[];
+    }
+  | { readonly ok: false; readonly error: SaveLoadError };
+
 export interface WriteSaveOptions {
   readonly build: BuildInfo;
   /** Wall-clock milliseconds since the Unix epoch; injected so saving stays pure. */
@@ -150,10 +165,38 @@ export class SaveRegistry {
   }
 
   /**
+   * Decodes, migrates and validates save bytes without touching any world: everything a load does
+   * except applying. Corruption recovery (mw-e30.8) uses it to find a save worth offering. A save
+   * that passes can still fail to apply (SaveApplyError) when loaded.
+   */
+  check(bytes: Uint8Array): CheckSaveResult {
+    const prepared = this.prepare(bytes);
+    return prepared.ok ? { ok: true, envelope: prepared.envelope } : prepared;
+  }
+
+  /**
    * Loads save bytes into `world` (which must have the save's component types registered). On any
    * failure the world is left exactly as it was and a typed error is returned.
    */
   read(world: World, bytes: Uint8Array): LoadSaveResult {
+    const result = this.prepare(bytes);
+    if (!result.ok) return result;
+    const { envelope, warnings, unknownSections, prepared } = result;
+    const before = world.snapshot();
+    let applying = WORLD_SECTION_ID;
+    try {
+      for (const { section, data } of prepared) {
+        applying = section.id;
+        section.deserialize(world, data);
+      }
+    } catch (cause) {
+      world.restore(before);
+      return { ok: false, error: new SaveApplyError(applying, cause) };
+    }
+    return { ok: true, envelope, warnings, unknownSections };
+  }
+
+  private prepare(bytes: Uint8Array): Prepared {
     const decoded = decodeSave(bytes);
     if (!decoded.ok) return decoded;
     const { envelope } = decoded;
@@ -190,17 +233,6 @@ export class SaveRegistry {
       prepared.push({ section, data: valid.data });
     }
 
-    const before = world.snapshot();
-    let applying = WORLD_SECTION_ID;
-    try {
-      for (const { section, data } of prepared) {
-        applying = section.id;
-        section.deserialize(world, data);
-      }
-    } catch (cause) {
-      world.restore(before);
-      return { ok: false, error: new SaveApplyError(applying, cause) };
-    }
-    return { ok: true, envelope, warnings, unknownSections };
+    return { ok: true, envelope, warnings, unknownSections, prepared };
   }
 }

@@ -208,8 +208,8 @@ export class SaveSlots {
   }
 
   /**
-   * Loads a slot's current save into `world`. On failure the world is untouched. Falling back to
-   * the backup copy is corruption recovery's job (mw-e30.8).
+   * Loads a slot's current save into `world`. On failure the world is untouched. The player-facing
+   * load path is `SaveRecovery.load` (mw-e30.8), which falls back to the backup and other saves.
    * @throws RangeError for an unknown slot; SaveStorageError when storage itself fails.
    */
   async load(slot: SlotId, world: World): Promise<LoadSlotResult> {
