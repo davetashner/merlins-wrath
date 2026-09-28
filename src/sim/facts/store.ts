@@ -7,7 +7,11 @@
 // string) or tick (a sim tick from the world clock, never wall time). A declared fact (`declare`, fed
 // by the content registry in mw-e27.2) has a fixed type and an optional default; an undeclared one
 // takes its type from its first value (boolean → bool, integer → int, string → id) and keeps it.
-// Writing a value of another type throws a FactTypeError and changes nothing.
+// Writing a value of another type throws a FactTypeError and changes nothing. Entity-scoped facts
+// are declared once per fact name as a template (`entity:*.looted` governs every
+// `entity:<level>/<entity>.looted`; an exact declaration of one key wins over its template). With
+// the default policy an undeclared fact is inferred as above; `setUndeclaredPolicy` makes writes of
+// undeclared facts throw (dev/test) or be ignored with a warning (production), mw-e27.2.
 //
 // Every real change queues exactly one `factChanged` event with `{ old, new, source }`, like
 // `propertyChanged`. `transaction` batches writes: nothing is emitted until the outermost
@@ -66,14 +70,39 @@ export interface FactWriteOptions {
 }
 
 const SEGMENT = '[a-z0-9]+(?:-[a-z0-9]+)*';
-const FACT_KEY = new RegExp(`^(?:entity:${SEGMENT}/${SEGMENT}\\.)?${SEGMENT}(?:\\.${SEGMENT})*$`);
 
 /**
- * True for a well-formed fact key: kebab-case segments joined by `.`, optionally prefixed with
- * `entity:<levelId>/<entityId>.` for entity-scoped facts.
+ * A well-formed fact key: kebab-case segments joined by `.`, optionally prefixed with
+ * `entity:<levelId>/<entityId>.` for entity-scoped facts. The content layer mirrors it (checked by
+ * tests/contracts/facts.test.ts).
  */
+export const FACT_KEY_PATTERN = new RegExp(
+  `^(?:entity:${SEGMENT}/${SEGMENT}\\.)?${SEGMENT}(?:\\.${SEGMENT})*$`,
+);
+
+/** A fact template: `entity:*.<fact>` declares `<fact>` for every entity of every level. */
+export const FACT_TEMPLATE_PATTERN = new RegExp(`^entity:\\*\\.${SEGMENT}(?:\\.${SEGMENT})*$`);
+
+/** Captures the fact name of an entity-scoped key. */
+const ENTITY_FACT = new RegExp(`^entity:${SEGMENT}/${SEGMENT}\\.(.+)$`);
+
+/** True for a well-formed fact key (see FACT_KEY_PATTERN). */
 export function isFactKey(key: string): boolean {
-  return FACT_KEY.test(key);
+  return FACT_KEY_PATTERN.test(key);
+}
+
+/** True for a fact template such as `entity:*.looted`. */
+export function isFactTemplate(key: string): boolean {
+  return FACT_TEMPLATE_PATTERN.test(key);
+}
+
+/**
+ * The template governing an entity-scoped key (`entity:mine/chest-3.looted` → `entity:*.looted`),
+ * or undefined for any other string.
+ */
+export function factTemplateOf(key: string): string | undefined {
+  const name = ENTITY_FACT.exec(key)?.[1];
+  return name === undefined ? undefined : `entity:*.${name}`;
 }
 
 /** Thrown for a malformed fact key. */
@@ -102,6 +131,26 @@ export class FactTypeError extends TypeError {
     super(`fact "${key}" takes ${wanted}, got ${describe(value)}`);
   }
 }
+
+/** Thrown, under the `throw` policy, when code writes a fact that was never declared. */
+export class UndeclaredFactError extends Error {
+  override readonly name = 'UndeclaredFactError';
+
+  constructor(readonly key: string) {
+    super(`fact "${key}" is not declared: add it (or its entity:* template) to the fact registry`);
+  }
+}
+
+/**
+ * What happens when code writes a fact that is not declared, exactly or by template:
+ * - `infer` (default): the fact takes its type from its first value (mw-e27.1).
+ * - `throw`: the write throws an UndeclaredFactError (dev and test builds).
+ * - `ignore`: the write is dropped and `warn` is called with the error (production builds).
+ */
+export type UndeclaredFactPolicy =
+  | { readonly mode: 'infer' }
+  | { readonly mode: 'throw' }
+  | { readonly mode: 'ignore'; readonly warn: (error: UndeclaredFactError) => void };
 
 /** Thrown for a malformed or repeated fact declaration. */
 export class FactDeclarationError extends Error {
@@ -176,6 +225,7 @@ interface JournalEntry {
 export class FactStore {
   private values = new Map<string, FactValue>();
   private readonly specs = new Map<string, FactSpec>();
+  private policy: UndeclaredFactPolicy = { mode: 'infer' };
   /** Writes of the open transaction, oldest first; null outside a transaction. */
   private journal: JournalEntry[] | null = null;
   /** Keys in code-unit order; null when a key was added or removed since it was built. */
@@ -189,14 +239,17 @@ export class FactStore {
   }
 
   /**
-   * Declares a fact's type and default. Declarations are configuration, not state: they are not in
-   * snapshots and survive `restore`, like registered component types.
+   * Declares a fact's type and default. `key` is a fact key or an `entity:*.<fact>` template, which
+   * governs every entity-scoped key with that fact name that has no exact declaration of its own.
+   * Declarations are configuration, not state: they are not in snapshots and survive `restore`,
+   * like registered component types.
    * @throws FactKeyError for a malformed key; FactDeclarationError for a repeated declaration, an
-   *   unknown type, bad enum values or a default of the wrong type; FactTypeError when the fact
-   *   already holds a value of another type.
+   *   unknown type, bad enum values or a default of the wrong type; FactTypeError when the fact (for
+   *   a template: a set fact it governs) already holds a value of another type.
    */
   declare(key: string, spec: FactSpec): this {
-    checkKey(key);
+    const template = isFactTemplate(key);
+    if (!template) checkKey(key);
     if (this.specs.has(key)) throw new FactDeclarationError(key, 'is already declared');
     if (!(FACT_TYPES as readonly string[]).includes(spec.type)) {
       throw new FactDeclarationError(key, `unknown type "${spec.type}"`);
@@ -213,24 +266,41 @@ export class FactStore {
         `default ${describe(spec.default)} is not of type ${spec.type}`,
       );
     }
-    const current = this.values.get(key);
-    if (current !== undefined && !accepts(spec, current)) {
-      throw new FactTypeError(key, spec.type, current);
+    for (const [held, current] of this.values) {
+      const governed = template
+        ? factTemplateOf(held) === key && !this.specs.has(held)
+        : held === key;
+      if (governed && !accepts(spec, current)) throw new FactTypeError(held, spec.type, current);
     }
     const copy = spec.type === 'enum' ? { ...spec, values: Object.freeze([...spec.values]) } : spec;
     this.specs.set(key, Object.freeze({ ...copy }));
     return this;
   }
 
-  /** The declaration of `key`, if any. */
+  /** The declaration governing `key` (its own, else its entity template's), if any. */
   spec(key: string): FactSpec | undefined {
-    return this.specs.get(key);
+    return this.specs.get(key) ?? this.specs.get(factTemplateOf(key) ?? key);
+  }
+
+  /** True when `key` is declared, exactly or by an entity template. */
+  isDeclared(key: string): boolean {
+    return this.spec(key) !== undefined;
+  }
+
+  /**
+   * Sets what writes of undeclared facts do (see UndeclaredFactPolicy). Like declarations, the
+   * policy is configuration: not in snapshots, kept by `restore`. Restoring a snapshot is not a
+   * write, so saves holding facts the registry no longer declares still load (migrations: mw-e27.4).
+   */
+  setUndeclaredPolicy(policy: UndeclaredFactPolicy): this {
+    this.policy = policy;
+    return this;
   }
 
   /** The type `key` holds: declared, or taken from its value; undefined for an unknown fact. */
   typeOf(key: string): FactType | undefined {
     const current = this.values.get(key);
-    return this.specs.get(key)?.type ?? (current === undefined ? undefined : inferType(current));
+    return this.spec(key)?.type ?? (current === undefined ? undefined : inferType(current));
   }
 
   /** True once `key` has been set (a declared default alone does not count). */
@@ -240,23 +310,27 @@ export class FactStore {
 
   /** The value of `key`: the stored value, else its declared default, else undefined. */
   get(key: string): FactValue | undefined {
-    return this.values.get(key) ?? this.specs.get(key)?.default;
+    return this.values.get(key) ?? this.spec(key)?.default;
   }
 
   /**
    * Writes a fact now. Returns true and queues one `factChanged` (at transaction commit, inside a
    * transaction) when the value changes; writing the value it already holds does nothing.
+   * An undeclared fact is handled by the undeclared policy: under `ignore` the write is dropped
+   * (returns false) after a warning.
    * @throws FactKeyError for a malformed key; FactTypeError for a value of the wrong type (the stored
-   *   value is unchanged).
+   *   value is unchanged); UndeclaredFactError for an undeclared fact under the `throw` policy.
    */
   set(key: string, value: FactValue, options: FactWriteOptions = {}): boolean {
     checkKey(key);
+    const spec = this.spec(key);
+    if (spec === undefined && !this.admitUndeclared(key)) return false;
     const current = this.values.get(key);
     const type = this.typeOf(key);
     const valid =
       type === undefined
         ? inferType(value) !== undefined
-        : accepts(this.specs.get(key) ?? ({ type } as FactSpec), value);
+        : accepts(spec ?? ({ type } as FactSpec), value);
     if (!valid) throw new FactTypeError(key, type ?? 'new', value);
     const next = normalize(value);
     if (next === current) return false;
@@ -265,8 +339,8 @@ export class FactStore {
   }
 
   /**
-   * Adds `by` (default 1) to an integer fact, starting from its default or 0, and returns the new
-   * value.
+   * Adds `by` (default 1) to an integer fact, starting from its default or 0, and returns the value
+   * it then holds (unchanged when an undeclared write is ignored).
    * @throws RangeError when `by` or the result is not a safe integer; FactTypeError for a
    *   non-integer fact.
    */
@@ -280,8 +354,7 @@ export class FactStore {
     if (!Number.isSafeInteger(next)) {
       throw new RangeError(`fact "${key}" would leave the safe integer range`);
     }
-    this.set(key, next, options);
-    return next;
+    return this.set(key, next, options) ? next : base;
   }
 
   /** Sets a tick fact to the current sim tick (e.g. "when the bell last rang"). */
@@ -346,7 +419,7 @@ export class FactStore {
     const values = new Map<string, FactValue>();
     for (const [key, value] of Object.entries(snapshot)) {
       checkKey(key);
-      const spec = this.specs.get(key);
+      const spec = this.spec(key);
       if (spec === undefined ? inferType(value) === undefined : !accepts(spec, value)) {
         throw new FactTypeError(key, spec?.type ?? 'new', value);
       }
@@ -356,6 +429,16 @@ export class FactStore {
       this.values = values;
       this.order = null;
     };
+  }
+
+  /** Applies the undeclared policy to a write of `key`: true to go ahead, false to drop it. */
+  private admitUndeclared(key: string): boolean {
+    const { policy } = this;
+    if (policy.mode === 'infer') return true;
+    const error = new UndeclaredFactError(key);
+    if (policy.mode === 'throw') throw error;
+    policy.warn(error);
+    return false;
   }
 
   private write(

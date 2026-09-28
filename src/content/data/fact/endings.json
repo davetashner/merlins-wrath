@@ -1,0 +1,61 @@
+{
+  "$schema": "../fact.schema.json",
+  "id": "endings",
+  "name": "Ending facts",
+  "notes": "Story bible §4.4 (CANON v1): the world-state facts the endings are assembled from — Horn's fate, the abbot's fate, Vane's fate, breach sealed, Clatter restored, goblin standing, Tansy saved. The headline ending and its epilogue slides are chosen from these.",
+  "facts": [
+    {
+      "key": "horn.fate",
+      "type": "enum",
+      "values": ["alive", "dead"],
+      "default": "alive",
+      "description": "Brother Horn's fate: dead only if the player finished him (Fight & kill, §4.2). Alive picks \"Vespers Rung\", dead \"The Last Warden\".",
+      "owner": "quest"
+    },
+    {
+      "key": "abbot.fate",
+      "type": "enum",
+      "values": ["unresolved", "at-rest", "defeated", "joined"],
+      "default": "unresolved",
+      "description": "The Sleepless Abbot's fate: laid to rest, defeated, or joined by the player (\"The Long Vespers\").",
+      "owner": "quest"
+    },
+    {
+      "key": "vane.fate",
+      "type": "enum",
+      "values": ["unexposed", "exposed", "confessed", "bribed-player", "fled"],
+      "default": "unexposed",
+      "description": "Harrow Vane's fate (Framed in Brass, §6.1): exposed, confesses, bribes the player or flees on the mountain road. Siding with him leads to \"The Hireling's Silence\".",
+      "owner": "quest"
+    },
+    {
+      "key": "knot.breach-sealed",
+      "type": "bool",
+      "default": false,
+      "description": "Vane's breach into the Knot is sealed (tunnel collapsed, frozen and shored, or walled by the goblins). Adds \"the song never reaches the town again\".",
+      "owner": "quest"
+    },
+    {
+      "key": "clatter.restored",
+      "type": "bool",
+      "default": false,
+      "description": "Clatter remembers his name, Brother Anselm Hobb (The Name on the Bones, §6.1).",
+      "owner": "quest"
+    },
+    {
+      "key": "goblins.standing",
+      "type": "enum",
+      "values": ["hostile", "neutral", "friendly"],
+      "default": "neutral",
+      "description": "Where the player stands with Mother Kettleback's goblins. Decides who keeps watch in \"The Last Warden\" and where the player wakes if Horn is dead (§4.5).",
+      "owner": "quest"
+    },
+    {
+      "key": "tansy.saved",
+      "type": "bool",
+      "default": false,
+      "description": "The player stopped Tansy before she reached the Cradle in Act III; otherwise the abbot holds her hostage in the final scene (§4.5).",
+      "owner": "quest"
+    }
+  ]
+}

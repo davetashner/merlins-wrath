@@ -1,0 +1,57 @@
+{
+  "$schema": "../fact.schema.json",
+  "id": "warden",
+  "name": "The Warden encounter",
+  "notes": "Story bible §4.2 (CANON v1): how the player resolved Brother Horn, the Warden of the Knot. Resolutions combine (trick him, then befriend him in the Fold; befriend him, then help him), so each is its own fact. Whether he lives is horn.fate (endings). Rescues are §4.5: each time Horn drags the defeated player to the Fold.",
+  "facts": [
+    {
+      "key": "horn.defeated",
+      "type": "bool",
+      "default": false,
+      "description": "The player beat Horn in combat and he yielded (\"Enough. Hear me, or finish it.\"). Fight & kill and Fight & spare both start here.",
+      "owner": "quest"
+    },
+    {
+      "key": "horn.spared",
+      "type": "bool",
+      "default": false,
+      "description": "Fight & spare: after beating Horn the player listened instead of finishing him. He cannot hold the shaft in Act III until healed.",
+      "owner": "quest"
+    },
+    {
+      "key": "horn.tricked",
+      "type": "bool",
+      "default": false,
+      "description": "Trick: the player reached the Fold without him (sneaked past, lured him with a Mirror Self, trapped him behind the portcullis or stole the horn-key).",
+      "owner": "quest"
+    },
+    {
+      "key": "horn.befriended",
+      "type": "bool",
+      "default": false,
+      "description": "Befriend (or won the Trial of Horns, which counts as Befriend): Horn is a full ally, shares Hornfolk lore, opens the crypt shortcut and fights at the shaft.",
+      "owner": "quest"
+    },
+    {
+      "key": "horn.trial-won",
+      "type": "bool",
+      "default": false,
+      "description": "Knight: the player won the Trial of Horns honour duel (first to three clean parries or blocks). Also sets horn.befriended.",
+      "owner": "quest"
+    },
+    {
+      "key": "horn.helped",
+      "type": "bool",
+      "default": false,
+      "description": "Help, after Befriend: the player brought bread for the sleepers, healed Horn and sealed the breach. The best outcome.",
+      "owner": "quest"
+    },
+    {
+      "key": "horn.rescues",
+      "type": "int",
+      "default": 0,
+      "description": "Times Horn dragged the defeated player to the Fold (story bible §4.5). Horn remarks on the count.",
+      "owner": "quest"
+    }
+  ]
+}

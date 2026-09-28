@@ -15,8 +15,10 @@ export {
   type Catalogue,
   type ContentIssue,
   type ContentSchemas,
+  type ContentCheck,
   type ContentSource,
   type EntryOf,
+  type LoadedEntry,
   type Frozen,
 } from './loader.ts';
 export {
@@ -45,6 +47,25 @@ export {
   type CreatureDef,
   type CreatureDefInput,
 } from './types/creature.ts';
+export {
+  FACT_KEY_PATTERN,
+  FACT_PERSISTENCE,
+  FACT_TEMPLATE_PATTERN,
+  FACT_VALUE_TYPES,
+  factSchema,
+  factTemplateOf,
+  type FactDef,
+  type FactGroup,
+  type FactGroupInput,
+} from './types/fact.ts';
+export {
+  FACT_USAGES,
+  checkFacts,
+  factIndex,
+  lookupFact,
+  type FactIndex,
+  type FactUsage,
+} from './fact-checks.ts';
 export {
   PLAYER_FACTION_ID,
   UNALIGNED_FACTION,
@@ -167,6 +188,7 @@ export {
   type WorldPropertiesInit,
 } from './world-properties.ts';
 export {
+  contentChecks,
   contentTypes,
   type ContentType,
   type ContentTypes,

@@ -1,0 +1,22 @@
+{
+  "$schema": "../fact.schema.json",
+  "id": "entity",
+  "name": "Entity facts",
+  "notes": "Facts every placed entity can hold, declared once as entity:* templates so a level never registers each chest or door (mw-e27.2). The key of one entity's fact is entity:<level>/<entity>.<fact>, e.g. entity:mine/chest-3.looted.",
+  "facts": [
+    {
+      "key": "entity:*.opened",
+      "type": "bool",
+      "default": false,
+      "description": "The door, gate, chest or hatch has been opened (by hand, key, lockpick, spell or mechanism). Level variants and saves read it to restore the entity open.",
+      "owner": "interaction"
+    },
+    {
+      "key": "entity:*.looted",
+      "type": "bool",
+      "default": false,
+      "description": "The container or corpse has been emptied by the player. Saves and loot tables read it so it stays empty.",
+      "owner": "interaction"
+    }
+  ]
+}

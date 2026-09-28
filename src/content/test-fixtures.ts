@@ -7,7 +7,7 @@
 
 import { gameContentSources } from './game-content.ts';
 import { loadContent, type ContentSource } from './loader.ts';
-import { contentTypes, type GameContent } from './registry.ts';
+import { contentChecks, contentTypes, type GameContent } from './registry.ts';
 
 const files = import.meta.glob<string>('./fixtures/creatures/*/*.json', {
   eager: true,
@@ -37,5 +37,9 @@ export function fixtureContentSources(): ContentSource[] {
  * baseline `sense` and `locomotion` profiles). Throws a ContentLoadError listing every problem.
  */
 export function loadFixtureContent(): GameContent {
-  return loadContent(contentTypes, [...gameContentSources(), ...fixtureContentSources()]);
+  return loadContent(
+    contentTypes,
+    [...gameContentSources(), ...fixtureContentSources()],
+    contentChecks,
+  );
 }

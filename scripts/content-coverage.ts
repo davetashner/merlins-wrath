@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { readContentSources } from '../src/content/fs-sources.ts';
 import { ContentLoadError, loadContent } from '../src/content/loader.ts';
-import { contentTypes, type ContentType } from '../src/content/registry.ts';
+import { contentChecks, contentTypes, type ContentType } from '../src/content/registry.ts';
 import { CONTENT_COVERAGE_REPORT } from './content-coverage-reporter.ts';
 
 const TITLE = 'Content coverage';
@@ -46,6 +46,7 @@ export function main(argv: readonly string[], root: string = process.cwd()): num
     const content = loadContent(
       contentTypes,
       readContentSources(resolve(root, contentDir), contentDir),
+      contentChecks,
     );
     all = (Object.keys(contentTypes) as ContentType[]).flatMap((type) =>
       content.all(type).map((entry) => `${type}:${entry.id}`),
