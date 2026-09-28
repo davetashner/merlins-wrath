@@ -21,6 +21,7 @@ approves the row, not just the code.
 |---|---|---|---|
 | `src/main.ts` | Browser bootstrap: wires the layers into the page; no logic of its own. | mw-e00.1 | Playwright smoke `e2e/smoke.spec.ts` (page loads, zero console errors). |
 | `src/render/**` | Renderer-specific code (scene graph, materials, shaders, VFX) needs a GPU context. | mw-e00.19 | Playwright boot smoke and perf budgets (`mw-e32.1`). |
+| `src/testbed/**` | Browser testbed page bootstraps (DOM buttons, rAF loop, real `AudioContext`); the engine logic they call is unit tested in `src/audio`. | mw-e28.1 | Playwright `e2e/audio.spec.ts` in Chromium, Firefox and WebKit (context running, cue plays, zero console errors). |
 
 ## Glue-layer gaps
 

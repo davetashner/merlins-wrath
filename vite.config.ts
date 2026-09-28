@@ -11,6 +11,10 @@ export default defineConfig({
   },
   build: {
     target: 'es2023',
+    rolldownOptions: {
+      // The game, plus dev testbed pages (mw-e28.1 audio) that e2e drives against the real build.
+      input: { main: 'index.html', 'testbed-audio': 'testbed/audio.html' },
+    },
   },
   test: {
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts', 'scripts/**/*.test.ts'],
