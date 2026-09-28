@@ -11,6 +11,15 @@ export interface PrRef {
   number: number;
   state: 'merged' | 'open';
   url: string;
+  /** ISO timestamp of the merge; null for open PRs. */
+  mergedAt: string | null;
+}
+
+/** A PR `Closes` line naming a bead that is not in issues.jsonl. */
+export interface UnknownRef {
+  id: string;
+  number: number;
+  url: string;
 }
 
 export interface DepView {
@@ -31,6 +40,8 @@ export interface ItemView {
   className: string | null;
   deps: DepView[];
   pr: PrRef | null;
+  /** Where `status` came from: the jsonl export, or the PR overlay when a PR changed it. */
+  source: 'jsonl' | 'pr';
 }
 
 export interface MilestoneGroup {
@@ -62,6 +73,8 @@ export interface Backlog {
   tally: { epics: number; items: number; inProgress: number; completed: number; ready: number };
   milestones: { key: string; label: string }[];
   classes: string[];
+  /** PR references to ids missing from issues.jsonl, by id then PR number. */
+  unknownRefs: UnknownRef[];
 }
 
 export const MILESTONES: Readonly<Record<string, string>> = {
@@ -153,6 +166,7 @@ export function buildModel(issues: readonly Issue[], prStatus: readonly PrRef[])
         className: labelValue(issue, 'class'),
         deps,
         pr: prs.get(issue.id) ?? null,
+        source: own === issue.status ? 'jsonl' : 'pr',
       };
     });
 
@@ -203,5 +217,9 @@ export function buildModel(issues: readonly Issue[], prStatus: readonly PrRef[])
     classes: [
       ...new Set(items.map((i) => i.className).filter((c): c is string => c !== null)),
     ].sort(byId),
+    unknownRefs: prStatus
+      .filter((pr) => !known.has(pr.id))
+      .map(({ id, number, url }) => ({ id, number, url }))
+      .sort((a, b) => byId(a.id, b.id) || a.number - b.number),
   };
 }

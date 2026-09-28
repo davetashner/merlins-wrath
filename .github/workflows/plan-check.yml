@@ -18,4 +18,4 @@ jobs:
       - name: Validate plan files against the backlog contract
         run: node scripts/load-plan.mjs --check
       - name: Validate issues.jsonl parses and renders
-        run: node scripts/backlog/generate-cli.ts .beads/issues.jsonl "$RUNNER_TEMP/backlog.html"
+        run: node scripts/backlog/generate-cli.ts --no-github .beads/issues.jsonl "$RUNNER_TEMP/backlog.html"
