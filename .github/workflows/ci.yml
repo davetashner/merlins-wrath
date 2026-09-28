@@ -114,6 +114,14 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium firefox webkit
       - if: steps.browsers.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps chromium firefox webkit
+      # Firefox only runs an AudioContext with a sound server; the runner has no sound card, so give
+      # it PulseAudio with a null sink (mw-e28.1 AC-6).
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends pulseaudio
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=ci_null
+          pactl set-default-sink ci_null
       - run: pnpm e2e
       - uses: actions/upload-artifact@v7
         if: failure()
