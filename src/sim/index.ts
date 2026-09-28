@@ -47,6 +47,7 @@ export {
 } from './core/world';
 export * from './elements';
 export * from './factions';
+export * from './facts';
 export * from './field';
 export * as simMath from './math';
 export * from './properties';

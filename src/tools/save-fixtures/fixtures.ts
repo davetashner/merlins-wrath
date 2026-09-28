@@ -9,6 +9,7 @@ import {
   replayScenarios,
   Rng,
   type DifficultyOverrides,
+  type FactValue,
   type ReplayScenario,
   type World,
 } from '@sim/index';
@@ -27,6 +28,8 @@ export interface FixtureWorld {
   readonly ticks: number;
   /** Difficulty overrides applied before saving, to cover the optional field. */
   readonly difficulty?: DifficultyOverrides;
+  /** World facts set before saving, to cover the optional `facts` field. */
+  readonly facts?: Readonly<Record<string, FactValue>>;
 }
 
 /**
@@ -55,6 +58,18 @@ export const FIXTURE_WORLDS: readonly FixtureWorld[] = [
     seed: 11,
     ticks: 240,
     difficulty: { detectionSpeed: 0.5, damageTaken: 1.5 },
+  },
+  {
+    name: 'core-facts',
+    description: 'core scenario after 2 s with world facts of every value kind set',
+    scenario: 'core',
+    seed: 13,
+    ticks: 120,
+    facts: {
+      'chapel-of-echoes.portcullis-dropped': true,
+      'quest.missing-miller.stage': 3,
+      'entity:mine/chest-3.looted-by': 'player',
+    },
   },
 ];
 
@@ -123,6 +138,7 @@ export function buildFixtureWorld(
   for (let tick = 0; tick < spec.ticks; tick++) {
     world.step(scenario.drive({ tick, world, rng }));
   }
+  for (const [key, value] of Object.entries(spec.facts ?? {})) world.facts.set(key, value);
   if (spec.difficulty !== undefined) {
     world.restore({ ...world.snapshot(), difficulty: spec.difficulty });
   }

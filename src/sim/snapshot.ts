@@ -187,9 +187,9 @@ class Encoder {
    */
   snapshot(snapshot: WorldSnapshot): void {
     const out = this.out;
-    // clock, components, [difficulty], entities, nextEntity, rng, seed — in code-unit order
-    const { difficulty } = snapshot;
-    out.header(TAG_OBJECT, difficulty === undefined ? 6 : 7);
+    // clock, components, [difficulty], entities, [facts], nextEntity, rng, seed — code-unit order
+    const { difficulty, facts } = snapshot;
+    out.header(TAG_OBJECT, 6 + (difficulty === undefined ? 0 : 1) + (facts === undefined ? 0 : 1));
     this.field('clock', snapshot.clock);
     out.string('components');
     const components = Object.entries(snapshot.components).sort(byKey);
@@ -210,6 +210,7 @@ class Encoder {
     }
     if (difficulty !== undefined) this.field('difficulty', difficulty);
     this.field('entities', snapshot.entities);
+    if (facts !== undefined) this.field('facts', facts);
     this.field('nextEntity', snapshot.nextEntity);
     this.field('rng', snapshot.rng);
     this.field('seed', snapshot.seed);
@@ -359,7 +360,7 @@ export function hashWorld(world: Pick<World, 'snapshot'>): string {
 /** The first place two snapshots disagree; `a`/`b` are the differing values (undefined = absent). */
 export interface SnapshotDifference {
   readonly section:
-    'seed' | 'clock' | 'difficulty' | 'nextEntity' | 'entities' | 'components' | 'rng';
+    'seed' | 'clock' | 'difficulty' | 'nextEntity' | 'entities' | 'components' | 'facts' | 'rng';
   /** Human-readable location, e.g. `components.Position[7].x` or `entities[12]`. */
   readonly path: string;
   /** The entity involved, for `entities` and `components` differences. */
@@ -368,6 +369,8 @@ export interface SnapshotDifference {
   readonly component?: string;
   /** The RNG stream involved, for `rng` differences. */
   readonly stream?: string;
+  /** The fact key involved, for `facts` differences. */
+  readonly fact?: string;
   /**
    * Field path inside the component value, clock/RNG state or difficulty (`x`, `pos.y`, `[2]`,
    * `damageTaken`); `''` when the
@@ -458,7 +461,8 @@ function firstRowDifference(name: string, a: Rows, b: Rows): SnapshotDifference 
 /**
  * The first difference between two snapshots, checked in a fixed order — seed, clock, difficulty
  * (effective values, so an absent multiplier reads as its neutral 1), nextEntity,
- * entities, components (by name, then entity id, then field), RNG streams — or undefined when they
+ * entities, components (by name, then entity id, then field), facts (by key; an unset fact is
+ * undefined), RNG streams — or undefined when they
  * would hash identically. Built for desync debugging and replay failure reports.
  */
 export function diffSnapshots(a: WorldSnapshot, b: WorldSnapshot): SnapshotDifference | undefined {
@@ -488,6 +492,19 @@ export function diffSnapshots(a: WorldSnapshot, b: WorldSnapshot): SnapshotDiffe
   for (const name of unionKeys(Object.keys(a.components), Object.keys(b.components))) {
     const found = firstRowDifference(name, a.components[name] ?? [], b.components[name] ?? []);
     if (found) return found;
+  }
+  const factsA = a.facts ?? {};
+  const factsB = b.facts ?? {};
+  for (const key of unionKeys(Object.keys(factsA), Object.keys(factsB))) {
+    if (!Object.is(factsA[key], factsB[key])) {
+      return {
+        section: 'facts',
+        path: `facts${segment(key)}`,
+        fact: key,
+        a: factsA[key],
+        b: factsB[key],
+      };
+    }
   }
   for (const name of unionKeys(Object.keys(a.rng), Object.keys(b.rng))) {
     const found = firstValueDifference(a.rng[name], b.rng[name]);

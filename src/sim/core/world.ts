@@ -17,6 +17,8 @@ import {
   type DifficultyConfig,
   type DifficultyOverrides,
 } from '../difficulty';
+import { applyFactCommands } from '../facts/commands';
+import { factChanged, FactStore, type FactSnapshot } from '../facts/store';
 import { Rng, type RngState } from '../rng';
 import {
   ComponentStore,
@@ -66,6 +68,8 @@ export interface WorldSnapshot {
   readonly clock: ClockState;
   /** Non-neutral difficulty multipliers; absent when every multiplier is 1 (see difficulty.ts). */
   readonly difficulty?: DifficultyOverrides;
+  /** Set world facts, keys in code-unit order; absent when none is set (see facts/store.ts). */
+  readonly facts?: FactSnapshot;
   /** The next id `spawn` will hand out; ids below it are never reused. */
   readonly nextEntity: EntityId;
   readonly entities: readonly EntityId[];
@@ -105,6 +109,7 @@ export class World<TInput = unknown> {
   private root: Rng;
   private simClock: SimClock;
   private config: DifficultyConfig;
+  private readonly factStore: FactStore;
   private readonly streams = new Map<string, Rng>();
   private readonly stores = new Map<string, ComponentStore<unknown>>();
   private readonly systems: System<TInput>[] = [];
@@ -122,6 +127,12 @@ export class World<TInput = unknown> {
     this.simClock = new SimClock(options.hz);
     this.config = resolveDifficulty(options.difficulty);
     this.events = new EventBus(options.maxEventsPerFlush ?? DEFAULT_MAX_EVENTS_PER_FLUSH);
+    this.factStore = new FactStore({
+      emit: (change) => {
+        this.events.emit(factChanged, change);
+      },
+      tick: () => this.simClock.tick,
+    });
   }
 
   get seed(): number {
@@ -140,6 +151,14 @@ export class World<TInput = unknown> {
   /** The current difficulty multipliers (frozen). */
   get difficulty(): DifficultyConfig {
     return this.config;
+  }
+
+  /**
+   * Persistent world facts (quests, dialogue, endings, puzzles). Systems write them during a tick;
+   * outside the sim, change them with a `factCommand` input so replays record it.
+   */
+  get facts(): FactStore {
+    return this.factStore;
   }
 
   /** Live entities (spawns queued in the current tick are not counted until it ends). */
@@ -240,8 +259,8 @@ export class World<TInput = unknown> {
   }
 
   /**
-   * Simulates one fixed tick. First applies any `difficultyCommand` among the inputs (so the whole
-   * tick, and every later one, sees the new multipliers). Then runs every system in order with this
+   * Simulates one fixed tick. First applies any `difficultyCommand` and `factCommand` among the
+   * inputs (so the whole tick, and every later one, sees the new values). Then runs every system in order with this
    * tick's inputs, flushing events at
    * each phase boundary, then applies queued structural changes and advances the clock. If a system
    * or handler throws, the tick's queued changes are dropped and the world should be restored from a
@@ -254,6 +273,7 @@ export class World<TInput = unknown> {
       // Difficulty commands apply before the first system, so the whole tick sees the new values.
       const tick = this.simClock.tick;
       const { config, changes } = applyDifficultyCommands(this.config, inputs, tick);
+      applyFactCommands(this.factStore, inputs); // all or nothing, before difficulty commits
       this.config = config;
       for (const change of changes) this.events.emit(DifficultyChanged, change);
       const ctx: TickContext<TInput> = {
@@ -301,6 +321,7 @@ export class World<TInput = unknown> {
       seed: this.seedValue,
       clock: this.simClock.serialize(),
       ...(Object.keys(difficulty).length > 0 && { difficulty }),
+      ...(this.factStore.size > 0 && { facts: this.factStore.snapshot() }),
       nextEntity: this.nextEntity,
       entities: [...this.alive].sort((a, b) => a - b),
       components,
@@ -342,11 +363,13 @@ export class World<TInput = unknown> {
     const streams = Object.entries(snapshot.rng).map(
       ([name, state]) => [name, Rng.restore(state)] as const,
     );
+    const restoreFacts = this.factStore.prepareRestore(snapshot.facts);
 
     this.seedValue = snapshot.seed;
     this.root = root;
     this.simClock = clock;
     this.config = config;
+    restoreFacts();
     this.nextEntity = nextEntity;
     this.alive = alive;
     this.streams.clear();

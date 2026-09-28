@@ -21,8 +21,11 @@ import {
 /** Id of the built-in section holding the world snapshot. */
 export const WORLD_SECTION_ID = 'world';
 
-/** Data version of the world section (the WorldSnapshot shape). */
-export const WORLD_SECTION_VERSION = 1;
+/**
+ * Data version of the world section (the WorldSnapshot shape). v2 (mw-e27.1) adds the optional
+ * `facts` record; a v1 save has no facts, so its migration is the identity.
+ */
+export const WORLD_SECTION_VERSION = 2;
 
 const worldSnapshotSchema = z.strictObject({
   seed: z.number(),
@@ -30,6 +33,7 @@ const worldSnapshotSchema = z.strictObject({
   difficulty: z.partialRecord(z.enum(DIFFICULTY_KEYS), z.number()).exactOptional(),
   nextEntity: z.number(),
   entities: z.array(z.number()),
+  facts: z.record(z.string(), z.union([z.boolean(), z.number(), z.string()])).exactOptional(),
   components: z.record(z.string(), z.array(z.tuple([z.number(), z.unknown()]))),
   rng: z.record(z.string(), z.strictObject({ seed: z.number(), state: z.array(z.number()) })),
 }) satisfies z.ZodType<WorldSnapshot>;
@@ -94,6 +98,7 @@ export class SaveRegistry {
         id: WORLD_SECTION_ID,
         version: WORLD_SECTION_VERSION,
         schema: worldSnapshotSchema,
+        migrations: { 1: (data) => data },
         serialize: (world) => {
           const snapshot = world.snapshot();
           const components = Object.fromEntries(
