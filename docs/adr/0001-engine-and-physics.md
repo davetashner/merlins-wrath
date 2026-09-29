@@ -1,20 +1,20 @@
 # ADR-0001: Renderer and physics engine
 
-- **Status:** Proposed (pending the owner's sign-off on the scorecard weights and the decision)
+- **Status:** Accepted
 - **Date:** 2026-09-28
 - **Decider:** Owner
 - **Bead:** `mw-e00.13`
 
 ## Decision
 
-**Proposed:** render with **Three.js** and simulate physics with **Rapier's deterministic build**
+Render with **Three.js** and simulate physics with **Rapier's deterministic build**
 (`@dimforge/rapier3d-deterministic`), with gameplay physics stepped **inside `src/sim`** on the sim's
 fixed timestep. `src/render` only reads interpolated transforms. Babylon.js + Havok and Babylon.js + Rapier
 are rejected (see [Options](#options-considered)).
 
-The proposal rests on the official benchmark on the reference machine (Chrome 154 and Brave 154), the
-determinism check and the qualitative evidence below. It becomes a decision when the owner signs off the
-scorecard weights and the choice (AC-3).
+The decision rests on the official benchmark on the reference machine (Chrome 154 and Brave 154), the
+determinism check across six runtimes and the qualitative evidence below. The owner accepted the decision
+and the scorecard weights on 2026-09-28 (AC-3).
 
 ## Platform: browser vs native engine
 
@@ -61,9 +61,9 @@ Constraints that decide it:
 
 | Option | Summary | Result |
 |---|---|---|
-| **Three.js + Rapier (deterministic)** | Minimal renderer library, rich ecosystem; physics is a separate renderer-agnostic WASM module | **Proposed** |
-| Babylon.js + Havok | Full engine with first-party inspector, particles and physics integration; Havok is a closed-source WASM binary driven through Babylon's Physics V2 | **Rejected (proposed)**: roughly 2× the main-thread cost per frame in the official run (CPU p95 11.2 vs 5.7 ms), about 3× the JS heap, no physics snapshot/restore, and physics bound to the scene graph rather than the sim |
-| Babylon.js + Rapier | Babylon renderer, Rapier synced by hand (no official plugin) | **Rejected (proposed)**: same renderer cost as Babylon + Havok, and it gives up Babylon's physics integration, which is Babylon's main advantage over Three.js here |
+| **Three.js + Rapier (deterministic)** | Minimal renderer library, rich ecosystem; physics is a separate renderer-agnostic WASM module | **Chosen** |
+| Babylon.js + Havok | Full engine with first-party inspector, particles and physics integration; Havok is a closed-source WASM binary driven through Babylon's Physics V2 | **Rejected**: roughly 2× the main-thread cost per frame in the official run (CPU p95 11.2 vs 5.7 ms), about 3× the JS heap, no physics snapshot/restore, and physics bound to the scene graph rather than the sim |
+| Babylon.js + Rapier | Babylon renderer, Rapier synced by hand (no official plugin) | **Rejected**: same renderer cost as Babylon + Havok, and it gives up Babylon's physics integration, which is Babylon's main advantage over Three.js here |
 
 ## Evidence
 
@@ -180,34 +180,32 @@ official run, with Babylon about 1–2 ms slower under that load.
 
 ### Determinism (AC-2)
 
-Run on 2026-09-28 on the reference MacBook Pro. Script: `spikes/determinism/input-script.json`.
-Firefox is still **pending** (see below).
+Run on 2026-09-28 on the reference MacBook Pro. Script: `spikes/determinism/input-script.json`. Raw results:
+[`2026-09-28T23-48-32-determinism`](../../spikes/bench/results/2026-09-28T23-48-32-determinism.md) (`.md` + `.json`).
 
 | Runtime | rapier-deterministic 0.21.0 | rapier-standard 0.21.0 | Havok 1.3.14 |
 |---|---|---|---|
-| Chrome 153.0.8010.53, run 1 | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
-| Chrome 153.0.8010.53, run 2 | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
+| Chrome 154.0.8037.58, run 1 | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
+| Chrome 154.0.8037.58, run 2 | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
 | Playwright WebKit 26.6 | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
+| Firefox 156.0 (real app, `--external Firefox`) | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
 | Safari 27.0 (real app, `--external Safari`) | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
 | Node 24.21.0 | `44c1e00d2abd4e5a` | `44c1e00d2abd4e5a` | `cdc259c1f3d6ae7e` |
-| Firefox | pending: Playwright Firefox is broken on macOS 27 | pending | pending |
 | **Snapshot → restore → replay steps 300–599** | **identical** (every checkpoint) | **identical** | **differs** (no snapshot API; copying transforms and velocities into a new world does not carry Havok's internal contact/solver state) |
 
-- **Final hashes match across every runtime tested, for all three engines.** This is expected: WASM float
+- **Final hashes match across all six runtimes, for all three engines** (Chrome twice, WebKit, Firefox,
+  Safari, Node). This is expected: WASM float
   arithmetic is IEEE-754 and neither module imports `Math.*` from the host (checked: 0 of 29 Rapier and 0
   of 25 Havok WASM imports are math functions). Every runtime here is the same Apple-silicon CPU, though.
   The deterministic build's point is portability across CPU architectures and compilers. **Not tested:**
-  x86-64 (Windows/Linux/Intel Mac). Follow-up, to be filed as a bead: run
+  x86-64 (Windows/Linux/Intel Mac). Follow-up bead `mw-548`: run
   `node spikes/determinism/src/node-run.ts` on a CI `ubuntu-latest` x86-64 runner and compare its hashes
   with the ones above. It takes a few seconds.
 - **Only Rapier has real snapshot/restore.** `World.takeSnapshot()` / `World.restoreSnapshot()` continue
   bit-identically. The snapshot is 350 KB for 200 bodies, so it needs compression if it goes into saves.
-- **Firefox is blocked on this machine.** Playwright's Firefox 155 build (`firefox-1543`) exits with
-  "Could not find profile folder" on macOS 27, headless or headed, even when launched by hand. The harness
-  can drive a real Firefox through `--external Firefox` (it opens the page with `open -a`, and the page
-  posts its result back). Stock Firefox is not installed. **Pending owner action:** install Firefox and run
-  `pnpm -C spikes determinism --browsers chrome,chrome,webkit --external Firefox,Safari`, or run the same
-  check on the M3. The result goes into the table above before AC-2 counts as met.
+- **Firefox ran as the real app.** Playwright's Firefox 155 build (`firefox-1543`) exits with "Could not
+  find profile folder" on macOS 27, headless or headed. So Firefox 156.0.1 was installed and driven through
+  `--external Firefox`: the harness opens the page with `open -a`, and the page posts its result back.
 - **Cost:** 600 + 300 replayed steps took about 460 ms with the deterministic build, about 410 ms with the
   standard build and about 300 ms with Havok. That is roughly 0.5 ms per step for 200 awake bodies, a
   real share of the sim's 1 ms `step()` budget (`mw-e00.15` AC-6). The e03 max-body budget and sleeping
@@ -244,7 +242,7 @@ Firefox is still **pending** (see below).
 
 ### Weighted scorecard (AC-3)
 
-Scores are 1–5. The weights are proposed and wait for the owner's sign-off. The official run confirmed
+Scores are 1–5. The owner accepted the weights on 2026-09-28. The official run confirmed
 the performance and bundle/TTFF/heap scores from the smoke run.
 
 | Criterion | Weight | Three + Rapier | Babylon + Havok | Babylon + Rapier | Basis |
@@ -267,7 +265,7 @@ retargeting together weighed more than performance and determinism.
 
 ## Where gameplay physics runs (AC-5)
 
-**Proposal: inside `src/sim`, deterministically.** Rapier's deterministic build is stepped by the sim on
+**Decision: inside `src/sim`, deterministically.** Rapier's deterministic build is stepped by the sim on
 its fixed timestep and wrapped behind a sim-owned physics port, as `mw-e03.10` already assumes. The sim
 owns bodies, impacts and outcomes. `src/game` never steps physics, and `src/render` only interpolates the
 transforms the sim publishes.
@@ -295,9 +293,9 @@ How it fits the §2 rules:
   checkpoints can store physics state exactly (350 KB per 200 bodies before compression).
 
 **The contract's "the renderer" wording stays valid.** Physics is not part of the renderer, so stories keep
-saying "the renderer" for whatever `src/render` wraps. When this ADR is accepted, the contract §1 rows
-become "Rendering engine: Three.js (ADR-0001)" and "Physics: Rapier deterministic build, stepped inside
-`src/sim` (ADR-0001)". Babylon + Havok would have broken this: its Physics V2 aggregates attach bodies to
+saying "the renderer" for whatever `src/render` wraps. This PR updates the contract §1 rows to "Rendering
+engine: Three.js (ADR-0001)" and "Physics: Rapier deterministic build, stepped inside `src/sim`
+(ADR-0001)". Babylon + Havok would have broken this: its Physics V2 aggregates attach bodies to
 scene-graph nodes and step inside `scene.render()`, which puts physics on the renderer's side of the
 boundary.
 

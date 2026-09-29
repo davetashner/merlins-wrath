@@ -1,9 +1,16 @@
 # Engine and physics spike (mw-e00.13, ADR-0001)
 
+> **Archived reference material.** ADR-0001 was accepted on 2026-09-28 (Three.js + Rapier deterministic,
+> physics in `src/sim`). This directory is kept only so that the ADR's evidence stays reproducible. It is
+> not maintained, and it stays out of the game build, lint, typecheck, tests and coverage. Do not import
+> from it; production code starts fresh in `src/` (`mw-e00.19`). It will be deleted or moved to an archive
+> branch after the ADR merges.
+
 Throwaway prototypes and a benchmark harness for choosing the renderer and physics engine. **This is not
 game code.** It lives outside `src/`, has its own pnpm workspace and lockfile (`spikes/pnpm-workspace.yaml`),
-and the root lint, format, typecheck, tests, coverage, build and audit all skip it. Delete or archive it
-once ADR-0001 is accepted.
+and the root lint, format, typecheck, tests, coverage, build and audit all skip it. ADR-0001 is accepted;
+this directory is kept as archived reference material (the benchmark and determinism harnesses can be
+re-run for the ADR's revisit triggers). Do not import from it.
 
 | Path | What |
 |---|---|

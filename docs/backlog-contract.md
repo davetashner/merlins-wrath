@@ -15,8 +15,8 @@ coherent plan. Read `CONSTITUTION.md` first — this document is subordinate to 
 | Platform | Desktop browser MVP. Keyboard + mouse first, gamepad second, mobile post-MVP (E36). |
 | Dimension | **3D**, third-person, stylized. |
 | Language / build | TypeScript (strict), Vite, pnpm. |
-| Rendering engine | Three.js vs Babylon.js — decided by `mw-e00` ADR spike (key `e00-engine-decision`). Stories must not assume either; they talk about "the renderer". |
-| Physics | Rapier (WASM) unless the engine ADR says otherwise. |
+| Rendering engine | **Three.js** — decided by the `mw-e00` ADR spike (key `e00-engine-decision`, `docs/adr/0001-engine-and-physics.md`). Stories still talk about "the renderer" (whatever `src/render` wraps) rather than Three.js APIs. |
+| Physics | **Rapier, deterministic build** (`@dimforge/rapier3d-deterministic`, WASM), stepped inside `src/sim` on the fixed timestep behind a sim-owned physics port; the renderer only interpolates transforms (ADR-0001). |
 | Tests | Vitest (unit/integration, v8 coverage), Playwright (browser smoke, e2e, perf budgets). |
 | Content data | Data-driven JSON/TS content validated by schemas (zod). Spells, items, creatures, puzzles, dialogue, quests, loot tables are **data**, not code. |
 | Repo / flow | https://github.com/davetashner/thevesperbell — all work via PR from a git worktree, **squash merge only**, branch auto-deleted, CI must be green. |
