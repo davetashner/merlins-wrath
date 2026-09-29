@@ -1,4 +1,4 @@
-import { loadGameContent, PLAYER_CONTROLLER_ID } from '@content/index';
+import { loadGameContent, PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
 import { layers } from '@game/index';
 import { ActionSampler } from '@game/input/index';
 import { browserFrameSources, createGameLoop, object3DBinding } from '@game/loop/index';
@@ -171,7 +171,7 @@ function startRenderer(root: HTMLElement): void {
       hint.textContent = active ? `${DEBUG_CAMERA_HINT} · ON` : DEBUG_CAMERA_HINT;
       // The fly camera shares WASD: the player lets go of input and the camera while it flies.
       playerInput.enabled = !active;
-      if (player) player.followCamera = !active;
+      if (player) player.drivesCamera = !active;
       writeCameraData();
     },
   });
@@ -187,10 +187,11 @@ function startRenderer(root: HTMLElement): void {
       world,
       sources,
       sampleCommands: sampler.sampleCommands,
-      draw: ({ timeMs }) => {
+      draw: (frame) => {
+        const { timeMs } = frame;
         if (debugCamera.update(timeMs - (lastFrameMs ?? timeMs))) writeCameraData();
         lastFrameMs = timeMs;
-        player?.frame();
+        player?.frame(frame);
         view.renderFrame(timeMs);
       },
     });
@@ -213,14 +214,20 @@ function startRenderer(root: HTMLElement): void {
       camera.position.set(...scene.camera.position);
       camera.lookAt(...scene.camera.target);
       // A controllable player (mw-e02.23) in scenes with a player start; it collides with the
-      // scene through the sim's Rapier world (mw-e02.21) and brings its own follow camera.
+      // scene through the sim's Rapier world (mw-e02.21) and brings the orbit camera (mw-e02.4),
+      // which queries the same world read-only to stay out of walls.
       if (playerStart(loaded.layout.spawns) !== undefined) {
         const tuning = content.get('controller', PLAYER_CONTROLLER_ID);
+        const cameraTuning = content.get('camera', PLAYER_CAMERA_ID);
+        camera.fov = cameraTuning.fov;
+        camera.near = cameraTuning.near;
+        camera.updateProjectionMatrix();
         player = setupTestbedPlayer({
           world,
           scene: loaded,
           sync,
           tuning,
+          cameraTuning,
           collision: new RapierCollisionWorld(physics),
           object: createPlayerCapsule(tuning.capsule),
           binding: (object, read) => {
@@ -231,7 +238,21 @@ function startRenderer(root: HTMLElement): void {
           publish: (readout) => {
             root.dataset['player'] = JSON.stringify(readout);
           },
+          // The e2e clipping probe (mw-e02.4 AC-5): frames drawn, and how many clipped (must be 0).
+          publishCamera: (readout) => {
+            root.dataset['orbitCamera'] = JSON.stringify(readout);
+          },
         });
+        // The mouse wheel zooms the orbit camera while the player has control (2–6 m).
+        view.canvas.addEventListener(
+          'wheel',
+          (event) => {
+            if (!playerInput.locked) return;
+            event.preventDefault();
+            player?.zoom(Math.sign(event.deltaY));
+          },
+          { passive: false },
+        );
         controls.textContent = PLAYER_CONTROLS_HINT;
       }
       label.textContent = sceneLabel(scene, __BUILD_SHA__);

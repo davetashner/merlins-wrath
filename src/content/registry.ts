@@ -5,6 +5,7 @@
 import { checkFacts } from './fact-checks.ts';
 import type { Catalogue, ContentCheck, EntryOf } from './loader.ts';
 import { attackSchema } from './types/attack.ts';
+import { cameraSchema } from './types/camera.ts';
 import { controllerSchema } from './types/controller.ts';
 import { creatureSchema } from './types/creature.ts';
 import { factSchema } from './types/fact.ts';
@@ -21,6 +22,7 @@ import { testPropSchema } from './types/testprop.ts';
 /** Content type name → schema of one entry. */
 export const contentTypes = {
   attack: attackSchema,
+  camera: cameraSchema,
   controller: controllerSchema,
   creature: creatureSchema,
   fact: factSchema,

@@ -38,6 +38,14 @@ export {
   type TargetStance,
 } from './types/attack.ts';
 export {
+  PLAYER_CAMERA_ID,
+  cameraSchema,
+  cameraTuningSchema,
+  type CameraDef,
+  type CameraDefInput,
+  type CameraTuning,
+} from './types/camera.ts';
+export {
   MAX_COYOTE_MS,
   MAX_JUMP_BUFFER_MS,
   PLAYER_CONTROLLER_ID,

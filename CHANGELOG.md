@@ -30,6 +30,10 @@ check enforces this).
   move it with WASD, turn with the mouse, jump with Space, sprint with Shift and crouch with C (Esc
   lets go). Walls stop you, and a simple camera follows from behind. F2's fly camera still works and
   hands control back when you turn it off.
+- The testbed camera is now a proper third-person orbit camera: move the mouse to look around and up
+  or down (−70° to +60°), and use the wheel to zoom between 2 and 6 m. It sits over the right
+  shoulder, pulls in instantly instead of clipping into walls and pillars, and eases back out once the
+  way is clear. The testbed's corridor now has pillars to squeeze past.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.

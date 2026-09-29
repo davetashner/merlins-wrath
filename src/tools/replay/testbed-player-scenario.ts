@@ -13,7 +13,7 @@
 
 import { z } from 'zod';
 import { loadGameContent } from '@content/game-content';
-import { PLAYER_CONTROLLER_ID } from '@content/index';
+import { PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
 import { ActionSampler } from '@game/input/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
 import { setupTestbedPlayer, type TransformReader } from '@game/player/index';
@@ -133,10 +133,11 @@ export function createTestbedWorld(
     scene,
     sync,
     tuning: content.get('controller', PLAYER_CONTROLLER_ID),
+    cameraTuning: content.get('camera', PLAYER_CAMERA_ID),
     collision: new RapierCollisionWorld(physics),
     object: {},
     binding: headless,
-    camera: { position: { set: nothing }, lookAt: nothing },
+    camera: { position: { set: nothing }, lookAt: nothing, fov: 70, near: 0.1, aspect: 16 / 9 },
   });
   return world;
 }

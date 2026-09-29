@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Rig id, e.g. \"player\"."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (debug tools and docs)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why these values (feel targets, references), for owner review."
+    },
+    "fov": {
+      "type": "number",
+      "minimum": 30,
+      "maximum": 120,
+      "description": "Vertical field of view, degrees."
+    },
+    "near": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "description": "Near clip plane, m."
+    },
+    "pivotHeight": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 3,
+      "description": "Height above the feet the camera orbits, m (about the head). Lowered while crouched so it stays inside the capsule."
+    },
+    "shoulder": {
+      "type": "number",
+      "minimum": -2,
+      "maximum": 2,
+      "description": "Sideways offset of the orbit pivot, m; positive is over the right shoulder."
+    },
+    "distance": {
+      "type": "object",
+      "properties": {
+        "min": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "description": "Closest zoom, m from the shoulder pivot."
+        },
+        "max": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "description": "Farthest zoom, m; at least min."
+        },
+        "initial": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "description": "Zoom at spawn, m; between min and max."
+        },
+        "step": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 5,
+          "description": "How far one mouse-wheel notch zooms, m."
+        }
+      },
+      "required": [
+        "min",
+        "max",
+        "initial",
+        "step"
+      ],
+      "additionalProperties": false,
+      "description": "Boom length behind the shoulder pivot (zoom), before collision pulls it in."
+    },
+    "pitch": {
+      "type": "object",
+      "properties": {
+        "min": {
+          "type": "number",
+          "minimum": -89,
+          "maximum": 0,
+          "description": "Lowest pitch, degrees (looking down); ≤ 0."
+        },
+        "max": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 89,
+          "description": "Highest pitch, degrees (looking up); ≥ 0."
+        },
+        "initial": {
+          "type": "number",
+          "minimum": -89,
+          "maximum": 89,
+          "description": "Pitch at spawn, degrees; between min and max. Negative looks down on the player."
+        }
+      },
+      "required": [
+        "min",
+        "max",
+        "initial"
+      ],
+      "additionalProperties": false,
+      "description": "Look pitch limits, degrees above the horizon. The sim clamps to them."
+    },
+    "mouseSensitivity": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 0.1,
+      "description": "Mouse look, radians per mouse count, both axes (a delta: no time scaling)."
+    },
+    "stick": {
+      "type": "object",
+      "properties": {
+        "deadzone": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.9,
+          "description": "Radial deflection at or below this is ignored, 0–0.9."
+        },
+        "exponent": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 4,
+          "description": "Response curve over the live range: 1 is linear, 2 gives finer aim near centre."
+        },
+        "yawRate": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1080,
+          "description": "Turn rate at full deflection, degrees/s."
+        },
+        "pitchRate": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1080,
+          "description": "Pitch rate at full deflection, degrees/s."
+        }
+      },
+      "required": [
+        "deadzone",
+        "exponent",
+        "yawRate",
+        "pitchRate"
+      ],
+      "additionalProperties": false,
+      "description": "Rate-based look for an analog stick (gamepad, mw-e02.9): deflection → curve → degrees/s."
+    },
+    "invertY": {
+      "type": "boolean",
+      "description": "Looking up (mouse or stick) looks down."
+    },
+    "collisionRadius": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "description": "Radius of the sphere swept from the player to the camera, m. The camera stops this far in front of anything in the way, so the near plane never enters geometry."
+    },
+    "recoveryTime": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 2,
+      "description": "Seconds to ease back out to the zoom distance once nothing is in the way. Pulling in is instant."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "fov",
+    "near",
+    "pivotHeight",
+    "shoulder",
+    "distance",
+    "pitch",
+    "mouseSensitivity",
+    "stick",
+    "invertY",
+    "collisionRadius",
+    "recoveryTime"
+  ],
+  "additionalProperties": false
+}

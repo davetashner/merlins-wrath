@@ -16,14 +16,19 @@ import { TEST_SCENE, testKit } from '../scene/fixtures';
 import { layoutScene, type SceneSpawnPlacement } from '../scene/layout';
 import { hashWorld } from '../snapshot';
 import {
+  clampPitch,
+  DEFAULT_LOOK_SETTINGS,
   installPlayer,
+  lookTurn,
   NoPlayerStartError,
   PLAYER_LOOK_SENSITIVITY,
   PlayerLook,
   playerLookSystem,
   playerStart,
   spawnYaw,
+  stickResponse,
   wrapYaw,
+  type PlayerOptions,
 } from './player';
 
 const TUNING: Frozen<ControllerTuning> = {
@@ -49,25 +54,33 @@ const sceneCollisionWorld = () =>
 interface FrameSpec {
   move?: [number, number];
   look?: number;
+  lookY?: number;
   pressed?: ButtonAction[];
   held?: ButtonAction[];
 }
 
-function frame({ move = [0, 0], look = 0, pressed = [], held = [] }: FrameSpec): ActionFrame {
+function frame({
+  move = [0, 0],
+  look = 0,
+  lookY = 0,
+  pressed = [],
+  held = [],
+}: FrameSpec): ActionFrame {
   return actionFrame({
     move: actionVector(move[0], move[1]),
-    look: actionVector(look, 0),
+    look: actionVector(look, lookY),
     buttons: (action) => actionButton(pressed.includes(action), held.includes(action), false),
   });
 }
 
-function setup(sensitivity?: number) {
+function setup(sensitivity?: number, extra: Partial<PlayerOptions> = {}) {
   const world = new World<ActionFrame>({ seed: 3 });
   const player = installPlayer(world, {
     spawns: LAYOUT.spawns,
     collision: sceneCollisionWorld(),
     tuning: TUNING,
-    ...(sensitivity !== undefined && { sensitivity }),
+    ...(sensitivity !== undefined && { look: { sensitivity } }),
+    ...extra,
   });
   const state = () => {
     const value = world.get(player, CharacterController);
@@ -75,7 +88,8 @@ function setup(sensitivity?: number) {
     return value;
   };
   const yaw = () => world.get(player, PlayerLook)?.yaw;
-  return { world, player, state, yaw };
+  const pitch = () => world.get(player, PlayerLook)?.pitch;
+  return { world, player, state, yaw, pitch };
 }
 
 const spawn = (yaw: SceneSpawnPlacement['yaw'], tags: string[]) =>
@@ -196,9 +210,10 @@ describe('ActionFrames drive the player (mw-e02.23)', () => {
     const world = new World<ActionFrame>({ seed: 1 }).register(PlayerLook);
     world.addSystem(playerLookSystem());
     const id = world.spawn();
-    world.add(id, PlayerLook, { yaw: 0 });
-    world.step([frame({ look: 10 })]);
+    world.add(id, PlayerLook, { yaw: 0, pitch: 0 });
+    world.step([frame({ look: 10, lookY: 10 })]);
     expect(world.get(id, PlayerLook)?.yaw).toBeCloseTo(-10 * PLAYER_LOOK_SENSITIVITY, 12);
+    expect(world.get(id, PlayerLook)?.pitch).toBeCloseTo(10 * PLAYER_LOOK_SENSITIVITY, 12);
   });
 
   it('the same frames give the same state hash', () => {
@@ -210,5 +225,124 @@ describe('ActionFrames drive the player (mw-e02.23)', () => {
       return hashWorld(world);
     };
     expect(run()).toBe(run());
+  });
+});
+
+const DEG = Math.PI / 180;
+
+describe('look pitch (mw-e02.4)', () => {
+  it('spawns level by default, or at the given pitch within the limits', () => {
+    expect(setup().pitch()).toBe(0);
+    expect(setup(undefined, { pitch: -0.3 }).pitch()).toBe(-0.3);
+    expect(setup(undefined, { pitch: -3 }).pitch()).toBe(DEFAULT_LOOK_SETTINGS.minPitch);
+  });
+
+  it('mouse up looks up, mouse down looks down; invertY swaps them', () => {
+    const plain = setup(0.01);
+    plain.world.step([frame({ lookY: 10 })]);
+    expect(plain.pitch()).toBeCloseTo(0.1, 12);
+    plain.world.step([frame({ lookY: -30 })]);
+    expect(plain.pitch()).toBeCloseTo(-0.2, 12);
+    const inverted = setup(undefined, { look: { sensitivity: 0.01, invertY: true } });
+    inverted.world.step([frame({ lookY: 10 })]);
+    expect(inverted.pitch()).toBeCloseTo(-0.1, 12);
+  });
+
+  it('AC-1: pitch input beyond the clamp keeps pitch within −70°..+60°', () => {
+    expect(DEFAULT_LOOK_SETTINGS.minPitch).toBeCloseTo(-70 * DEG, 12);
+    expect(DEFAULT_LOOK_SETTINGS.maxPitch).toBeCloseTo(60 * DEG, 12);
+    const { world, pitch } = setup(0.01);
+    const seen: number[] = [];
+    // Far past the top (10 rad of input), then far past the bottom, then back up again.
+    for (const lookY of [1000, 1000, -500, -3000, -1000, 50, 5000]) {
+      world.step([frame({ lookY })]);
+      seen.push(pitch() ?? NaN);
+    }
+    for (const value of seen) {
+      expect(value).toBeGreaterThanOrEqual(-70 * DEG - 1e-12);
+      expect(value).toBeLessThanOrEqual(60 * DEG + 1e-12);
+    }
+    expect(seen[0]).toBeCloseTo(60 * DEG, 12); // pinned at the top
+    expect(seen[3]).toBeCloseTo(-70 * DEG, 12); // pinned at the bottom
+    expect(seen[5]).toBeCloseTo(-70 * DEG + 0.5, 12); // and back out at once, no wind-up
+  });
+
+  it('AC-1: the clamp follows the limits the game passes in', () => {
+    const limits = { minPitch: -0.5, maxPitch: 0.25 };
+    expect(clampPitch(1, limits)).toBe(0.25);
+    expect(clampPitch(-1, limits)).toBe(-0.5);
+    expect(clampPitch(0.1, limits)).toBe(0.1);
+    const { world, pitch } = setup(undefined, { look: { sensitivity: 0.01, ...limits } });
+    world.step([frame({ lookY: 100 })]);
+    expect(pitch()).toBe(0.25);
+  });
+
+  it('pitch does not change where the player moves', () => {
+    const level = setup();
+    const tilted = setup(0.01);
+    tilted.world.step([frame({ lookY: 50 })]);
+    level.world.step([frame({})]);
+    for (let i = 0; i < 30; i++) {
+      level.world.step([frame({ move: [0.5, 1] })]);
+      tilted.world.step([frame({ move: [0.5, 1] })]);
+    }
+    expect(tilted.state().position).toEqual(level.state().position);
+  });
+
+  it('AC-4: at camera yaw 90°, move (0, 1) moves the player along the camera forward vector', () => {
+    const { world, state, yaw } = setup(Math.PI / 2 / 100);
+    world.step([frame({ look: -100 })]); // mouse left a quarter turn: yaw π → 3π/2 ≡ −π/2
+    world.step([frame({ look: -200 })]); // another half turn: yaw π/2
+    expect(yaw()).toBeCloseTo(Math.PI / 2, 12);
+    const before = state().position;
+    for (let i = 0; i < 30; i++) world.step([frame({ move: [0, 1] })]);
+    const after = state().position;
+    // Camera forward at yaw 90° is (−sin 90°, 0, −cos 90°) = −x.
+    const dx = after.x - before.x;
+    const dz = after.z - before.z;
+    expect(dx).toBeLessThan(-1);
+    expect(Math.abs(dz)).toBeLessThan(1e-9);
+  });
+});
+
+describe('device-agnostic look (mw-e02.4, ready for mw-e02.9)', () => {
+  const settings = {
+    ...DEFAULT_LOOK_SETTINGS,
+    sensitivity: 0.01,
+    stick: { deadzone: 0.2, exponent: 2, yawRate: 4, pitchRate: 2 },
+  };
+
+  it('a mouse delta turns by counts × sensitivity, whatever the tick length', () => {
+    const turn = { yaw: -0.3, pitch: 0.2 };
+    expect(lookTurn({ mouse: { x: 30, y: 20 } }, settings, 1 / 60)).toEqual(turn);
+    expect(lookTurn({ mouse: { x: 30, y: 20 } }, settings, 1 / 30)).toEqual(turn);
+    expect(lookTurn({}, settings, 1 / 60)).toEqual({ yaw: 0, pitch: 0 });
+  });
+
+  it('a stick turns at a rate: full deflection × max rate × dt', () => {
+    const turn = lookTurn({ stick: { x: 1, y: 0 } }, settings, 0.5);
+    expect(turn.yaw).toBeCloseTo(-2, 12); // right, at 4 rad/s for half a second
+    expect(turn.pitch).toBe(0);
+    expect(lookTurn({ stick: { x: 0, y: -1 } }, settings, 0.25).pitch).toBeCloseTo(-0.5, 12);
+    const inverted = lookTurn({ stick: { x: 0, y: 1 } }, { ...settings, invertY: true }, 0.25);
+    expect(inverted.pitch).toBeCloseTo(-0.5, 12);
+  });
+
+  it('the stick ignores the deadzone and follows the response curve beyond it', () => {
+    expect(stickResponse({ x: 0.2, y: 0 }, settings.stick)).toEqual({ x: 0, y: 0 });
+    expect(stickResponse({ x: 0.1, y: -0.1 }, settings.stick)).toEqual({ x: 0, y: 0 });
+    // Halfway through the live range (0.6) is a quarter of full speed with exponent 2.
+    expect(stickResponse({ x: 0.6, y: 0 }, settings.stick).x).toBeCloseTo(0.25, 12);
+    // Direction is kept, and deflection past the rim counts as full.
+    const diagonal = stickResponse({ x: 1, y: 1 }, settings.stick);
+    expect(diagonal.x).toBeCloseTo(Math.SQRT1_2, 12);
+    expect(diagonal.y).toBeCloseTo(Math.SQRT1_2, 12);
+    const linear = { ...settings.stick, exponent: 1 };
+    expect(stickResponse({ x: 0, y: -0.6 }, linear).y).toBeCloseTo(-0.5, 12);
+  });
+
+  it('mouse and stick add up in one tick', () => {
+    const turn = lookTurn({ mouse: { x: 10, y: 0 }, stick: { x: -1, y: 0 } }, settings, 0.1);
+    expect(turn.yaw).toBeCloseTo(-0.1 + 0.4, 12);
   });
 });

@@ -3,14 +3,15 @@
 // controller systems; see src/sim/player), resolves collisions against the given CollisionWorld (the
 // game passes RapierCollisionWorld over the sim's physics, mw-e02.21), binds a placeholder capsule to
 // the player through render sync so it is interpolated like every other entity, and each drawn frame
-// points a fixed follow camera at the interpolated capsule and publishes a small read-only readout
-// (position, grounded, yaw) for the HUD and the Playwright e2e.
+// places the orbit camera (mw-e02.4, src/game/camera) behind the interpolated capsule and publishes
+// small read-only readouts for the HUD and the Playwright e2e: the player's state after every sim
+// tick, and the camera's after every frame it drives.
 //
 // Renderer-agnostic: the caller supplies the capsule object and how an object follows its entity
 // (object3DBinding for Three.js). The sim steps only through the frame loop, as ever; nothing here
-// mutates the sim after setup.
+// mutates the sim after setup (the camera's collision queries are read-only).
 
-import type { ControllerTuning, Frozen } from '@content/index';
+import type { CameraTuning, ControllerTuning, Frozen } from '@content/index';
 import {
   CharacterController,
   installPlayer,
@@ -20,16 +21,16 @@ import {
   type LoadedScene,
   type World,
 } from '@sim/index';
-import type { RenderSync, SceneBinding, SimView, Transform, Vec3 } from '../loop/render-sync';
 import {
-  applyCameraPose,
-  DEFAULT_FOLLOW_RIG,
-  followCameraPose,
-  yawOf,
-  yawRotation,
-  type FollowCameraTarget,
-  type FollowRig,
-} from './follow-camera';
+  applyOrbitPose,
+  lookSettings,
+  nearPlaneClear,
+  OrbitCamera,
+  toRadians,
+  type OrbitCameraTarget,
+} from '../camera';
+import type { FrameInfo } from '../loop';
+import type { Quat, RenderSync, SceneBinding, SimView, Transform, Vec3 } from '../loop/render-sync';
 
 /** Reads an entity's transform from the sim (what render sync interpolates). */
 export type TransformReader = (view: SimView, entity: EntityId) => Transform | undefined;
@@ -43,6 +44,23 @@ export interface PlayerReadout {
   readonly grounded: boolean;
   /** Look yaw, radians (0 looks along −z). */
   readonly yaw: number;
+  /** Look pitch, radians above the horizon. */
+  readonly pitch: number;
+}
+
+/** What the orbit camera publishes each frame it drives (the e2e clipping probe reads it). */
+export interface CameraReadout {
+  /** Frames the orbit camera has placed the camera for. */
+  readonly frames: number;
+  /** Of those, frames whose near plane touched geometry (nearPlaneClear failed): must stay 0. */
+  readonly clipped: number;
+  /** Of those, frames where collision held the boom short of the zoom distance. */
+  readonly pulledIn: number;
+  /** This frame's boom length and zoom distance, metres (rounded to 0.1 mm). */
+  readonly boom: number;
+  readonly zoom: number;
+  /** This frame's camera position (rounded to 0.1 mm). */
+  readonly position: Vec3;
 }
 
 export interface TestbedPlayerOptions<TObject, TCommand> {
@@ -51,26 +69,31 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
   readonly scene: LoadedScene;
   readonly sync: RenderSync;
   readonly tuning: Frozen<ControllerTuning>;
-  /** Collision for the controller: RapierCollisionWorld over the world's physics in the game. */
+  /** The orbit camera and look tuning (content `camera`, `player`). */
+  readonly cameraTuning: Frozen<CameraTuning>;
+  /** Collision for the controller and the camera: RapierCollisionWorld over the world's physics. */
   readonly collision: CollisionWorld;
   /** The placeholder capsule; its origin is the player's feet and it faces −z. */
   readonly object: TObject;
   /** How `object` follows the player (object3DBinding for Three.js). */
   readonly binding: (object: TObject, read: TransformReader) => SceneBinding<TObject>;
-  readonly camera: FollowCameraTarget;
-  readonly rig?: FollowRig;
+  readonly camera: OrbitCameraTarget;
   /** Receives a readout after every sim tick that a frame shows (the e2e test hook). */
   readonly publish?: (readout: PlayerReadout) => void;
-  /** Mouse look, radians per count. */
+  /** Receives the camera's readout after every frame it drives (the e2e clipping probe). */
+  readonly publishCamera?: (readout: CameraReadout) => void;
+  /** Mouse look, radians per count; defaults to the camera tuning's. */
   readonly sensitivity?: number;
 }
 
 export interface TestbedPlayer {
   readonly entity: EntityId;
-  /** Whether the follow camera drives the camera (off while the debug camera flies). */
-  followCamera: boolean;
+  /** Whether the orbit camera drives the camera (off while the debug camera flies). */
+  drivesCamera: boolean;
   /** Call once per drawn frame, after render sync and before drawing. */
-  frame(): void;
+  frame(info?: Pick<FrameInfo, 'alpha' | 'timeMs'>): void;
+  /** Zooms the orbit camera by whole mouse-wheel notches (positive = out). */
+  zoom(notches: number): void;
   /** The player's state now, or undefined once disposed. */
   readout(): PlayerReadout | undefined;
   /** Unbinds the capsule and removes the player (its systems stay; they find no player). */
@@ -78,6 +101,17 @@ export interface TestbedPlayer {
 }
 
 const round = (n: number): number => Math.round(n * 1e4) / 1e4 + 0;
+const roundVec = ({ x, y, z }: Vec3): Vec3 => ({ x: round(x), y: round(y), z: round(z) });
+
+/** The yaw (radians about +y) of a rotation about +y only, as the player's transform carries. */
+export function yawOf(rotation: Quat): number {
+  return 2 * Math.atan2(rotation.y, rotation.w);
+}
+
+/** The rotation of `yaw` radians about +y. */
+export function yawRotation(yaw: number): Quat {
+  return { x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) };
+}
 
 /** The player's transform: its feet, turned to its look yaw. */
 export const readPlayerTransform: TransformReader = (view, entity) => {
@@ -87,18 +121,28 @@ export const readPlayerTransform: TransformReader = (view, entity) => {
   return { position: state.position, rotation: yawRotation(look.yaw) };
 };
 
+/** Seconds between two frame timestamps; 0 for the first frame or a clock that went back. */
+const secondsSince = (last: number | undefined, now: number): number =>
+  last === undefined ? 0 : Math.max(0, now - last) / 1000;
+
 /** Puts a controllable player into `options.scene`. Call between sim steps, after loading. */
 export function setupTestbedPlayer<TObject, TCommand>(
   options: TestbedPlayerOptions<TObject, TCommand>,
 ): TestbedPlayer {
-  const { world, scene, sync, camera, publish } = options;
-  const rig = options.rig ?? DEFAULT_FOLLOW_RIG;
+  const { world, scene, sync, camera, publish, publishCamera, collision, tuning } = options;
+  const cameraTuning = options.cameraTuning;
+  const look = lookSettings(cameraTuning);
   const entity = installPlayer(world, {
     spawns: scene.layout.spawns,
-    collision: options.collision,
-    tuning: options.tuning,
-    ...(options.sensitivity !== undefined && { sensitivity: options.sensitivity }),
+    collision,
+    tuning,
+    look: {
+      ...look,
+      ...(options.sensitivity !== undefined && { sensitivity: options.sensitivity }),
+    },
+    pitch: toRadians(cameraTuning.pitch.initial),
   });
+  const orbit = new OrbitCamera(cameraTuning, collision);
 
   // Remember the interpolated transform render sync last applied: the camera follows exactly what
   // is drawn.
@@ -114,30 +158,90 @@ export function setupTestbedPlayer<TObject, TCommand>(
 
   const readout = (): PlayerReadout | undefined => {
     const state = world.get(entity, CharacterController);
-    const look = world.get(entity, PlayerLook);
-    if (state === undefined || look === undefined) return undefined;
-    const { x, y, z } = state.position;
+    const view = world.get(entity, PlayerLook);
+    if (state === undefined || view === undefined) return undefined;
     return {
       tick: world.tick,
-      position: { x: round(x), y: round(y), z: round(z) },
+      position: roundVec(state.position),
       grounded: state.grounded,
-      yaw: round(look.yaw),
+      yaw: round(view.yaw),
+      pitch: round(view.pitch),
     };
   };
 
+  // Pitch is not part of the interpolated transform (the capsule does not tilt), so it is
+  // interpolated here between the last two ticks the camera saw, as render sync does for yaw.
+  let pitchTick: number | undefined;
+  let pitchBefore = 0;
+  let pitchNow = 0;
+  const drawnPitch = (current: number, alpha: number): number => {
+    if (pitchTick === undefined) pitchNow = current;
+    if (world.tick !== pitchTick) {
+      pitchBefore = pitchNow;
+      pitchNow = current;
+      pitchTick = world.tick;
+    }
+    return pitchBefore + (pitchNow - pitchBefore) * alpha;
+  };
+
+  const counts = { frames: 0, clipped: 0, pulledIn: 0 };
+  let lastMs: number | undefined;
   let publishedTick = -1;
+  let drove = false;
+  let drivesCamera = true;
+
+  const placeCamera = (alpha: number, dt: number): void => {
+    const state = world.get(entity, CharacterController);
+    const look = world.get(entity, PlayerLook);
+    if (shown === undefined || state === undefined || look === undefined) return;
+    const height = state.crouched ? tuning.capsule.crouchHeight : tuning.capsule.height;
+    // Coming back from the debug camera is a cut: no recovery from wherever it last was.
+    if (!drove) orbit.cut();
+    drove = true;
+    const pose = orbit.update(
+      {
+        feet: shown.position,
+        yaw: yawOf(shown.rotation),
+        pitch: drawnPitch(look.pitch, alpha),
+        height,
+      },
+      camera,
+      dt,
+    );
+    applyOrbitPose(camera, pose);
+    if (publishCamera === undefined) return;
+    counts.frames += 1;
+    if (!nearPlaneClear(collision, pose, camera)) counts.clipped += 1;
+    if (pose.boom < pose.ideal - 1e-6) counts.pulledIn += 1;
+    publishCamera({
+      ...counts,
+      boom: round(pose.boom),
+      zoom: round(pose.ideal),
+      position: roundVec(pose.position),
+    });
+  };
+
   const player: TestbedPlayer = {
     entity,
-    followCamera: true,
-    frame() {
-      if (player.followCamera && shown !== undefined) {
-        applyCameraPose(camera, followCameraPose(shown.position, yawOf(shown.rotation), rig));
-      }
+    get drivesCamera() {
+      return drivesCamera;
+    },
+    set drivesCamera(value: boolean) {
+      drivesCamera = value;
+      if (!value) drove = false;
+    },
+    frame(info) {
+      const dt = info === undefined ? 0 : secondsSince(lastMs, info.timeMs);
+      if (info !== undefined) lastMs = info.timeMs;
+      if (drivesCamera) placeCamera(info?.alpha ?? 1, dt);
       if (publish === undefined || world.tick === publishedTick) return;
       const current = readout();
       if (current === undefined) return;
       publishedTick = world.tick;
       publish(current);
+    },
+    zoom(notches) {
+      orbit.zoomBy(notches);
     },
     readout,
     dispose() {
