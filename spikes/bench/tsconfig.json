@@ -1,0 +1,5 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": { "types": ["node"] },
+  "include": ["*.ts", "../shared/bench-hook.ts", "../determinism/src/script.ts"]
+}

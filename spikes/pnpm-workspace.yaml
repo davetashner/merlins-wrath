@@ -1,0 +1,9 @@
+# Separate pnpm workspace for the mw-e00.13 engine spike. It has its own lockfile so the game's
+# root install, lint, typecheck, tests, coverage, build and audit never see these dependencies.
+packages:
+  - engine-three
+  - engine-babylon
+  - determinism
+  - bench
+engineStrict: true
+onlyBuiltDependencies: []

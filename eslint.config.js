@@ -17,6 +17,8 @@ export default tseslint.config(
       '.claude/',
       'assets/',
       'site/',
+      // Throwaway engine spike (mw-e00.13): own pnpm workspace, lockfile and typecheck; not game code.
+      'spikes/',
       'tests/toolchain/fixtures/',
       'tests/lint-fixtures/',
     ],
