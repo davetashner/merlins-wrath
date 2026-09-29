@@ -1,16 +1,32 @@
+import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { loadGameContent } from '@content/index';
 import {
   InMemoryColliderSink,
+  PhysicsColliderComponent,
+  PhysicsObjectComponent,
+  RapierPhysics,
+  readProperty,
   registerSceneComponents,
   SceneLayoutError,
   sceneMembers,
   World,
+  type ColliderHandle,
+  type EntityId,
   type SceneLayout,
   type SceneSpawnPlacement,
+  type Vec3,
 } from '@sim/index';
 import { describe, expect, it } from 'vitest';
 import { RenderSync, type SceneBinding, type Transform } from '../loop/render-sync';
-import { DEFAULT_SCENE, readSceneTransform, SceneLoader, UnknownSceneError } from './scene-loader';
+import { installGamePhysics } from '../physics-objects';
+import {
+  DEFAULT_SCENE,
+  readPhysicsObjectTransform,
+  readSceneTransform,
+  SceneLoader,
+  UnknownSceneError,
+  type SceneTransformReader,
+} from './scene-loader';
 import { resolveSceneRequest } from './scene-request';
 
 /** A stand-in render object: what it was built from, where it was put, whether it was disposed. */
@@ -180,5 +196,110 @@ describe('scene loader glue (mw-e00.21)', () => {
       requested: 'testbed',
       available: ['kit-gallery'],
     });
+  });
+});
+
+describe('scene loader physics (mw-e03.39)', () => {
+  interface Drawn {
+    readonly label: string;
+    readonly size?: Vec3;
+    transform?: Transform;
+  }
+
+  function physicsSetup(options: { levelMaterial?: string; noBody?: boolean } = {}) {
+    const content = loadGameContent();
+    const physics = new RapierPhysics(RAPIER);
+    const world = installGamePhysics(registerSceneComponents(new World({ seed: 3, physics })));
+    const sync = new RenderSync(world);
+    const drawn = new Map<string, Drawn>();
+    const reads = new Map<string, SceneTransformReader>();
+    const make = (label: string, size?: Vec3): Drawn => {
+      const object: Drawn = size === undefined ? { label } : { label, size };
+      drawn.set(label, object);
+      return object;
+    };
+    const loader = new SceneLoader({
+      world,
+      sync,
+      colliders: physics,
+      content,
+      objects: {
+        staticGeometry: (layout) => make(layout.id),
+        spawn: (spawn) => make(spawn.id),
+        ...(options.noBody !== true && { body: (spawn, size) => make(`body:${spawn.id}`, size) }),
+      },
+      binding: (object, read) => {
+        reads.set(object.label, read);
+        return {
+          object,
+          read,
+          apply(target, transform) {
+            target.transform = transform;
+          },
+          dispose: () => undefined,
+        };
+      },
+      physics: options.levelMaterial === undefined ? {} : { levelMaterial: options.levelMaterial },
+    });
+    const loaded = loader.load('testbed');
+    const entityOf = (id: string): EntityId =>
+      loaded.spawns.find((s) => s.spawn.id === id)?.entity ?? -1;
+    return { world, physics, sync, drawn, reads, loader, loaded, entityOf };
+  }
+
+  it('AC-1: movable props become physics objects; markers and level pieces do not', () => {
+    const { world, drawn, reads, loaded, entityOf } = physicsSetup();
+    const crate = entityOf('loose-crate');
+    expect(world.get(crate, PhysicsObjectComponent)?.shape).toEqual({
+      kind: 'box',
+      halfExtents: { x: 0.35, y: 0.35, z: 0.35 },
+    });
+    expect(world.has(entityOf('arena-plank'), PhysicsObjectComponent)).toBe(true);
+    expect(world.has(entityOf('player-start'), PhysicsObjectComponent)).toBe(false);
+    expect(drawn.get('body:loose-crate')?.size).toEqual({ x: 0.7, y: 0.7, z: 0.7 });
+    expect(reads.get('body:loose-crate')).toBe(readPhysicsObjectTransform);
+    expect(reads.get('player-start')).toBe(readSceneTransform);
+    expect(reads.get('testbed')).toBe(readSceneTransform);
+    // Level pieces are stone entities owning their colliders.
+    const floor = loaded.pieces[0] ?? -1;
+    expect(readProperty(world as World<never>, floor, 'material')).toBe('stone');
+    expect(world.has(floor, PhysicsColliderComponent)).toBe(true);
+    expect(readPhysicsObjectTransform(world, floor)).toBeUndefined();
+  });
+
+  it('AC-3: render objects follow the sim pose, interpolated between the last two ticks', () => {
+    const { world, physics, sync, drawn, entityOf } = physicsSetup();
+    const crate = entityOf('loose-crate');
+    const body = world.get(crate, PhysicsObjectComponent)?.body as ColliderHandle;
+    const object = drawn.get('body:loose-crate');
+    expect(object?.transform?.position.y).toBeCloseTo(0.35); // the body's centre, on the floor
+    physics.applyImpulse(body, { x: 0, y: 60, z: 0 }); // toss it up at 5 m/s
+    world.step();
+    sync.capture();
+    world.step();
+    sync.capture();
+    const pose = (): Vec3 =>
+      world.get(crate, PhysicsObjectComponent)?.position ?? { x: 0, y: 0, z: 0 };
+    const latest = pose();
+    sync.render(0);
+    const previous = object?.transform?.position.y ?? NaN;
+    expect(previous).toBeLessThan(latest.y);
+    sync.render(0.5);
+    expect(object?.transform?.position.y).toBeCloseTo((previous + latest.y) / 2, 6);
+    expect(pose()).toEqual(latest); // drawing never moves the sim
+  });
+
+  it('AC-5: unloading removes every body and collider; a level material can be chosen', () => {
+    const { world, physics, loader, loaded } = physicsSetup({ levelMaterial: 'wood' });
+    expect(readProperty(world as World<never>, loaded.pieces[0] ?? -1, 'material')).toBe('wood');
+    loader.unload();
+    expect(physics.count()).toBe(0);
+    expect(world.query(PhysicsObjectComponent).ids()).toEqual([]);
+  });
+
+  it('draws movable props with the spawn object when the renderer has no body builder', () => {
+    const { drawn, reads } = physicsSetup({ noBody: true });
+    expect(drawn.has('loose-crate')).toBe(true);
+    expect(reads.get('loose-crate')).toBe(readPhysicsObjectTransform);
   });
 });

@@ -98,6 +98,13 @@ type Command =
     }
   | { readonly kind: 'remove'; readonly id: EntityId; readonly store: ComponentStore<unknown> };
 
+/**
+ * Called when a component leaves a live entity: removed, or destroyed with its entity. Receives the
+ * value it had. Runs when the change applies (at once between steps, at the end of the tick during
+ * a step); never on `restore`, which replaces all state wholesale.
+ */
+export type RemoveListener<T> = (id: EntityId, value: T) => void;
+
 export interface SnapshotOptions {
   /**
    * When true, rows of components using the default (clone) hook reference the live values instead
@@ -123,6 +130,7 @@ export class World<TInput = unknown> {
   private readonly stores = new Map<string, ComponentStore<unknown>>();
   private readonly systems: System<TInput>[] = [];
   private readonly queries = new Map<string, Query<ComponentList>>();
+  private readonly removeListeners = new Map<ComponentStore<unknown>, RemoveListener<unknown>[]>();
   private readonly structure: StructureVersion = { version: 0 };
   private alive = new Set<EntityId>();
   private readonly pendingSpawns = new Set<EntityId>();
@@ -238,6 +246,19 @@ export class World<TInput = unknown> {
   remove(id: EntityId, type: ComponentType<unknown>): void {
     this.requireKnown(id);
     this.issue({ kind: 'remove', id, store: this.storeOf(type) });
+  }
+
+  /**
+   * Calls `listener` whenever a `type` component leaves an entity, by `remove` or `destroy`, so
+   * whatever the component owns outside the world (a physics body) goes with it. Listeners run in
+   * the order they were added; for a destroyed entity, components go in registration order.
+   */
+  onRemove<T>(type: ComponentType<T>, listener: RemoveListener<T>): this {
+    const store = this.storeOf(type) as ComponentStore<unknown>;
+    const listeners = this.removeListeners.get(store) ?? [];
+    listeners.push(listener as RemoveListener<unknown>);
+    this.removeListeners.set(store, listeners);
+    return this;
   }
 
   /** Replaces an existing component's value immediately (not a structural change). */
@@ -428,7 +449,7 @@ export class World<TInput = unknown> {
         return;
       case 'destroy':
         if (this.alive.delete(command.id)) {
-          for (const store of this.stores.values()) store.delete(command.id);
+          for (const store of this.stores.values()) this.deleteRow(store, command.id);
         }
         return;
       case 'add':
@@ -436,9 +457,21 @@ export class World<TInput = unknown> {
         if (this.alive.has(command.id)) command.store.put(command.id, command.value);
         return;
       case 'remove':
-        command.store.delete(command.id);
+        this.deleteRow(command.store, command.id);
         return;
     }
+  }
+
+  /** Deletes `id`'s row from `store`, telling the store's remove listeners what it held. */
+  private deleteRow(store: ComponentStore<unknown>, id: EntityId): void {
+    const listeners = this.removeListeners.get(store);
+    if (listeners === undefined || !store.has(id)) {
+      store.delete(id);
+      return;
+    }
+    const value = store.get(id);
+    store.delete(id);
+    for (const listener of listeners) listener(id, value);
   }
 
   /** Re-sorts stores and invalidates cached queries after structural changes. */

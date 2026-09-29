@@ -21,7 +21,6 @@ import {
   hitVolumeSystem,
   noAllies,
   openHitbox,
-  PlacementComponent,
   placeEntity,
   simMath,
   type GeomShape,
@@ -72,7 +71,7 @@ describe('hit-volume overlay (mw-e04.2)', () => {
     const move = compileMove(content.get('move', DUMMY_MOVE));
 
     const world = createTestbedWorld(RAPIER, { seed: 1, hz: 60 });
-    world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS, PlacementComponent);
+    world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS); // placements: the testbed has them
     world.addSystem(hitVolumeSystem({ isAlly: noAllies }));
     const hits: HitboxHitInfo[] = [];
     world.events.on(HitboxHit, (hit) => hits.push(hit));

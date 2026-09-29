@@ -3,9 +3,15 @@ import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
 import { browserFrameSources, createGameLoop, object3DBinding } from '@game/loop/index';
 import { bootPhysics } from '@game/physics-loader';
+import { formatBudgetWarning, installGamePhysics, playerFocus } from '@game/physics-objects';
 import { createUiGameBridge } from '@game/ui/index';
 import { attachPlayerInput, setupTestbedPlayer, type TestbedPlayer } from '@game/player/index';
-import { readSceneTransform, resolveSceneRequest, SceneLoader } from '@game/scene/index';
+import {
+  readPhysicsObjectTransform,
+  readSceneTransform,
+  resolveSceneRequest,
+  SceneLoader,
+} from '@game/scene/index';
 import { openSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { VfxSystem } from '@game/vfx/index';
@@ -19,7 +25,7 @@ import {
   HIT_VOLUME_COMPONENTS,
   hitVolumeSystem,
   noAllies,
-  PlacementComponent,
+  PhysicsObjectComponent,
   playerStart,
   RapierCollisionWorld,
   registerSceneComponents,
@@ -250,8 +256,19 @@ function startRenderer(root: HTMLElement): void {
     const world = registerSceneComponents(new World<ActionFrame>({ seed: BOOT_SEED, physics }));
     // Swept hitboxes and region-tagged hurtboxes (mw-e04.2). No faction table is loaded yet, so
     // nobody counts as an ally; ?hitboxes draws what the system tests each tick.
-    world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS, PlacementComponent);
+    world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS);
     world.addSystem(hitVolumeSystem({ isAlly: noAllies }));
+    // Physics objects (mw-e03.39): scene props fall, stack and get knocked about in the sim; bodies
+    // near the player never get forced to sleep. Budget warnings go to the console and to the
+    // `data-physics-budget` debug attribute.
+    const focus = playerFocus(world);
+    installGamePhysics(world, {
+      focus: focus.read,
+      onBudgetExceeded: (warning) => {
+        console.warn(formatBudgetWarning(warning));
+        root.dataset['physicsBudget'] = JSON.stringify(warning);
+      },
+    });
     const hitOverlay = createHitVolumeOverlay();
     hitOverlay.enabled = new URLSearchParams(location.search).has('hitboxes');
     view.scene.add(hitOverlay.object);
@@ -265,7 +282,8 @@ function startRenderer(root: HTMLElement): void {
     // now. `?vfx` shows the stats overlay; `?vfx=demo` / `?vfx=stress` spawn the test effects.
     const vfx = new VfxSystem({
       effects: content.all('vfx-effect'),
-      anchors: (entity) => readSceneTransform(world, entity),
+      anchors: (entity) =>
+        readPhysicsObjectTransform(world, entity) ?? readSceneTransform(world, entity),
     });
     const vfxView = createVfxRenderer(view.scene);
     const vfxMode = parseVfxParam(location.search);
@@ -322,14 +340,16 @@ function startRenderer(root: HTMLElement): void {
     });
 
     // The scene loader fills the world from content (mw-e00.21); static colliders go into the
-    // sim's Rapier world.
+    // sim's Rapier world, bound to stone piece entities, and movable props become physics objects
+    // drawn from their sim pose (mw-e03.39).
     const scenes = new SceneLoader({
       world,
       sync,
       colliders: physics,
       content,
       objects: createGreyboxView(view.renderer, view.scene),
-      binding: (object) => object3DBinding(object, readSceneTransform),
+      binding: (object, read) => object3DBinding(object, read),
+      physics: {},
     });
     const request = resolveSceneRequest(location.search, scenes.available());
     if (request.kind === 'scene') {
@@ -367,6 +387,7 @@ function startRenderer(root: HTMLElement): void {
             root.dataset['orbitCamera'] = JSON.stringify(readout);
           },
         });
+        focus.entity = player.entity; // bodies near the player never get forced to sleep
         // The mouse wheel zooms the orbit camera while the player has control (2–6 m).
         view.canvas.addEventListener(
           'wheel',
@@ -403,6 +424,8 @@ function startRenderer(root: HTMLElement): void {
     }
     // Debug attribute (mw-e03.35 AC-4): colliders registered in the physics world.
     root.dataset['colliders'] = String(physics.count());
+    // Debug attribute (mw-e03.39): the physics objects the scene spawned.
+    root.dataset['physicsObjects'] = String(world.query(PhysicsObjectComponent).ids().length);
     writeCameraData();
     loop.start();
   };

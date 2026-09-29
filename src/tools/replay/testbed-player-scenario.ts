@@ -1,6 +1,6 @@
 // The testbed player replay (mw-e02.23 AC-4): the player walking the greybox testbed, built through
-// the same wiring the game boots (the sim's Rapier physics, the scene loader, setupTestbedPlayer
-// with RapierCollisionWorld) and driven by ActionFrames sampled from a scripted key and mouse log by
+// the same wiring the game boots (the sim's Rapier physics with physics objects and the scene's
+// movable props (mw-e03.39), the scene loader, setupTestbedPlayer with RapierCollisionWorld) and driven by ActionFrames sampled from a scripted key and mouse log by
 // the real ActionSampler. Its recording (tests/integration/fixtures/testbed-player.replay.json)
 // replays in tests/integration/testbed-player.test.ts on every CI run, so a change to the wiring, the
 // testbed scene, the input mapping, the controller or Rapier that moves the player fails at the first
@@ -15,8 +15,9 @@ import { loadGameContent } from '@content/game-content';
 import { PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
 import { ActionSampler } from '@game/input/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
+import { installGamePhysics, playerFocus } from '@game/physics-objects';
 import { setupTestbedPlayer, type TransformReader } from '@game/player/index';
-import { readSceneTransform, SceneLoader } from '@game/scene/index';
+import { SceneLoader } from '@game/scene/index';
 import {
   RapierCollisionWorld,
   RapierPhysics,
@@ -108,6 +109,8 @@ export function createTestbedWorld(
   const content = loadGameContent();
   const physics = new RapierPhysics(rapier);
   const world = registerSceneComponents(new World<ActionFrame>({ seed, hz, physics }));
+  const focus = playerFocus(world);
+  installGamePhysics(world, { focus: focus.read });
   const sync = new RenderSync(world);
   const scenes = new SceneLoader({
     world,
@@ -115,10 +118,11 @@ export function createTestbedWorld(
     colliders: physics,
     content,
     objects: { staticGeometry: () => ({}), spawn: () => ({}) },
-    binding: (object) => headless(object, readSceneTransform),
+    binding: headless,
+    physics: {},
   });
   const scene = scenes.load('testbed');
-  setupTestbedPlayer({
+  focus.entity = setupTestbedPlayer({
     world,
     scene,
     sync,
@@ -128,7 +132,7 @@ export function createTestbedWorld(
     object: {},
     binding: headless,
     camera: { position: { set: nothing }, lookAt: nothing, fov: 70, near: 0.1, aspect: 16 / 9 },
-  });
+  }).entity;
   return world;
 }
 
