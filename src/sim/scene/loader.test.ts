@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { World } from '../core/world';
 import { InMemoryColliderSink } from '../physics/static-colliders';
 import { TEST_SCENE, testKit } from './fixtures';
+import { hashWorld } from '../snapshot';
 import { SceneLayoutError, type SceneSpec } from './layout';
 import {
   loadScene,
@@ -52,6 +53,17 @@ describe('scene loader (mw-e00.21)', () => {
       prop: 'crate',
       tags: [],
     });
+  });
+
+  it('stores a marker spawn without a prop field, so a loaded scene can be state-hashed', () => {
+    const { world, colliders } = setup();
+    const loaded = loadScene(world, TEST_SCENE, testKit, colliders);
+    const marker = loaded.spawns[0];
+    expect(world.get(marker?.entity ?? 0, SceneSpawnComponent)).toEqual({
+      id: 'player-start',
+      tags: ['player-start'],
+    });
+    expect(hashWorld(world)).toMatch(/^[0-9a-f]{8}$/);
   });
 
   it('AC-2: loading then unloading a scene leaves zero scene entities and zero colliders', () => {

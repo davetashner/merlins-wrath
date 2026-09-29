@@ -23,6 +23,9 @@ check enforces this).
   level kit, instead of the placeholder scene. Add `?scene=<name>` to the URL to open another scene;
   an unknown name shows the list of scenes to pick from. The scene name and build are shown in the
   corner, and F2 toggles a free-fly debug camera (WASD, Q/E, Shift, drag to look).
+- Scenes are now solid: level geometry is loaded into the game's physics simulation, which runs in
+  lockstep with the rest of the game rules. The scene appears once physics has loaded, and if physics
+  fails to load the page says so instead of breaking.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.

@@ -125,8 +125,17 @@ const ARCHETYPE_SELECTORS = [
   ...archetypeAt('discriminant').map((side) => `SwitchStatement${side}`),
 ];
 
-/** Import-boundary config for one layer. */
-function layerConfig(/** @type {string} */ layer) {
+// The physics WASM is loaded by src/game and injected into the sim's physics port (ADR-0001,
+// mw-e03.35): sim code may import Rapier's types only. Sim tests load the real module.
+const PHYSICS_WASM_IMPORT = {
+  regex: '^@dimforge/',
+  allowTypeImports: true,
+  message:
+    'The sim never loads the physics WASM: import its types only (import type …); the game injects the loaded module into the physics port (mw-e03.35).',
+};
+
+/** Import-boundary patterns for one layer. */
+function layerPatterns(/** @type {string} */ layer) {
   const { values, types } = LAYER_DEPS[layer] ?? { values: [], types: [] };
   const patterns = LAYERS.filter((other) => other !== layer && !values.includes(other)).map(
     (other) => ({
@@ -144,6 +153,13 @@ function layerConfig(/** @type {string} */ layer) {
       message: 'The sim is engine-agnostic: no renderer packages (backlog contract §2).',
     });
   }
+  return patterns;
+}
+
+/** Import-boundary config for one layer. */
+function layerConfig(/** @type {string} */ layer) {
+  const patterns = layerPatterns(layer);
+  if (layer === 'sim') patterns.push(PHYSICS_WASM_IMPORT);
   return {
     files: [`src/${layer}/**/*.ts`],
     rules: { '@typescript-eslint/no-restricted-imports': ['error', { patterns }] },
@@ -154,6 +170,13 @@ function layerConfig(/** @type {string} */ layer) {
 export function layerConfigs(eslintComments) {
   return [
     ...LAYERS.map(layerConfig),
+    {
+      // Sim tests run the real physics engine, so they may load it; every other boundary stands.
+      files: ['src/sim/**/*.test.ts'],
+      rules: {
+        '@typescript-eslint/no-restricted-imports': ['error', { patterns: layerPatterns('sim') }],
+      },
+    },
     {
       files: ['src/sim/**/*.ts'],
       plugins: { '@eslint-community/eslint-comments': eslintComments },

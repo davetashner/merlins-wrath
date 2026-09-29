@@ -19,6 +19,7 @@ import {
 } from '../difficulty';
 import { applyFactCommands } from '../facts/commands';
 import { factChanged, FactStore, type FactSnapshot } from '../facts/store';
+import type { PhysicsPort, PhysicsState } from '../physics/port';
 import { Rng, type RngState } from '../rng';
 import {
   ComponentStore,
@@ -38,6 +39,11 @@ export interface WorldOptions {
   readonly maxEventsPerFlush?: number;
   /** Difficulty multipliers that differ from neutral (1.0); validated, see `resolveDifficulty`. */
   readonly difficulty?: DifficultyOverrides;
+  /**
+   * The physics this world owns (ADR-0001, mw-e03.35): stepped once per tick before the systems run,
+   * and part of every snapshot. Absent for worlds without physics.
+   */
+  readonly physics?: PhysicsPort;
 }
 
 /** What a system receives each tick. */
@@ -70,6 +76,8 @@ export interface WorldSnapshot {
   readonly difficulty?: DifficultyOverrides;
   /** Set world facts, keys in code-unit order; absent when none is set (see facts/store.ts). */
   readonly facts?: FactSnapshot;
+  /** The physics port's state; present exactly when the world has physics (see physics/port.ts). */
+  readonly physics?: PhysicsState;
   /** The next id `spawn` will hand out; ids below it are never reused. */
   readonly nextEntity: EntityId;
   readonly entities: readonly EntityId[];
@@ -110,6 +118,7 @@ export class World<TInput = unknown> {
   private simClock: SimClock;
   private config: DifficultyConfig;
   private readonly factStore: FactStore;
+  private readonly physicsPort: PhysicsPort | undefined;
   private readonly streams = new Map<string, Rng>();
   private readonly stores = new Map<string, ComponentStore<unknown>>();
   private readonly systems: System<TInput>[] = [];
@@ -127,6 +136,7 @@ export class World<TInput = unknown> {
     this.simClock = new SimClock(options.hz);
     this.config = resolveDifficulty(options.difficulty);
     this.events = new EventBus(options.maxEventsPerFlush ?? DEFAULT_MAX_EVENTS_PER_FLUSH);
+    this.physicsPort = options.physics;
     this.factStore = new FactStore({
       emit: (change) => {
         this.events.emit(factChanged, change);
@@ -159,6 +169,11 @@ export class World<TInput = unknown> {
    */
   get facts(): FactStore {
     return this.factStore;
+  }
+
+  /** The physics this world owns and steps, if it has any. */
+  get physics(): PhysicsPort | undefined {
+    return this.physicsPort;
   }
 
   /** Live entities (spawns queued in the current tick are not counted until it ends). */
@@ -260,8 +275,9 @@ export class World<TInput = unknown> {
 
   /**
    * Simulates one fixed tick. First applies any `difficultyCommand` and `factCommand` among the
-   * inputs (so the whole tick, and every later one, sees the new values). Then runs every system in order with this
-   * tick's inputs, flushing events at
+   * inputs (so the whole tick, and every later one, sees the new values). Then steps physics by one
+   * tick (1 / hz seconds), so every system sees this tick's bodies and queries. Then runs every
+   * system in order with this tick's inputs, flushing events at
    * each phase boundary, then applies queued structural changes and advances the clock. If a system
    * or handler throws, the tick's queued changes are dropped and the world should be restored from a
    * snapshot.
@@ -276,6 +292,7 @@ export class World<TInput = unknown> {
       applyFactCommands(this.factStore, inputs); // all or nothing, before difficulty commits
       this.config = config;
       for (const change of changes) this.events.emit(DifficultyChanged, change);
+      this.physicsPort?.step(1 / this.simClock.hz);
       const ctx: TickContext<TInput> = {
         world: this,
         inputs,
@@ -322,6 +339,7 @@ export class World<TInput = unknown> {
       clock: this.simClock.serialize(),
       ...(Object.keys(difficulty).length > 0 && { difficulty }),
       ...(this.factStore.size > 0 && { facts: this.factStore.snapshot() }),
+      ...(this.physicsPort !== undefined && { physics: this.physicsPort.snapshot() }),
       nextEntity: this.nextEntity,
       entities: [...this.alive].sort((a, b) => a - b),
       components,
@@ -331,7 +349,8 @@ export class World<TInput = unknown> {
 
   /**
    * Replaces all state with a snapshot. The world must already have the snapshot's component types
-   * registered (and its systems added); systems and event handlers are code, not state.
+   * registered (and its systems added); systems and event handlers are code, not state. A world
+   * with physics needs a snapshot with physics state and vice versa; the physics port restores it.
    */
   restore(snapshot: WorldSnapshot): void {
     this.requireIdle('restore');
@@ -364,6 +383,17 @@ export class World<TInput = unknown> {
       ([name, state]) => [name, Rng.restore(state)] as const,
     );
     const restoreFacts = this.factStore.prepareRestore(snapshot.facts);
+    // Last check and first change: the port only swaps its state once the new one has loaded.
+    const { physics } = snapshot;
+    if (this.physicsPort === undefined) {
+      if (physics !== undefined) {
+        throw new Error('invalid snapshot: it has physics state but this world has no physics');
+      }
+    } else if (physics === undefined) {
+      throw new Error('invalid snapshot: this world has physics but the snapshot has none');
+    } else {
+      this.physicsPort.restore(physics);
+    }
 
     this.seedValue = snapshot.seed;
     this.root = root;

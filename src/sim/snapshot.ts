@@ -187,9 +187,11 @@ class Encoder {
    */
   snapshot(snapshot: WorldSnapshot): void {
     const out = this.out;
-    // clock, components, [difficulty], entities, [facts], nextEntity, rng, seed — code-unit order
-    const { difficulty, facts } = snapshot;
-    out.header(TAG_OBJECT, 6 + (difficulty === undefined ? 0 : 1) + (facts === undefined ? 0 : 1));
+    // clock, components, [difficulty], entities, [facts], nextEntity, [physics], rng, seed — code-unit
+    // order
+    const { difficulty, facts, physics } = snapshot;
+    const optional = [difficulty, facts, physics].filter((field) => field !== undefined).length;
+    out.header(TAG_OBJECT, 6 + optional);
     this.field('clock', snapshot.clock);
     out.string('components');
     const components = Object.entries(snapshot.components).sort(byKey);
@@ -212,6 +214,7 @@ class Encoder {
     this.field('entities', snapshot.entities);
     if (facts !== undefined) this.field('facts', facts);
     this.field('nextEntity', snapshot.nextEntity);
+    if (physics !== undefined) this.field('physics', physics);
     this.field('rng', snapshot.rng);
     this.field('seed', snapshot.seed);
   }
@@ -360,7 +363,15 @@ export function hashWorld(world: Pick<World, 'snapshot'>): string {
 /** The first place two snapshots disagree; `a`/`b` are the differing values (undefined = absent). */
 export interface SnapshotDifference {
   readonly section:
-    'seed' | 'clock' | 'difficulty' | 'nextEntity' | 'entities' | 'components' | 'facts' | 'rng';
+    | 'seed'
+    | 'clock'
+    | 'difficulty'
+    | 'nextEntity'
+    | 'entities'
+    | 'components'
+    | 'facts'
+    | 'physics'
+    | 'rng';
   /** Human-readable location, e.g. `components.Position[7].x` or `entities[12]`. */
   readonly path: string;
   /** The entity involved, for `entities` and `components` differences. */
@@ -372,8 +383,8 @@ export interface SnapshotDifference {
   /** The fact key involved, for `facts` differences. */
   readonly fact?: string;
   /**
-   * Field path inside the component value, clock/RNG state or difficulty (`x`, `pos.y`, `[2]`,
-   * `damageTaken`); `''` when the
+   * Field path inside the component value, clock/RNG state, difficulty or physics state (`x`,
+   * `pos.y`, `[2]`, `damageTaken`, `data.world`); `''` when the
    * whole value differs (e.g. present in one snapshot only). Absent for `seed`, `nextEntity` and
    * `entities`.
    */
@@ -462,7 +473,7 @@ function firstRowDifference(name: string, a: Rows, b: Rows): SnapshotDifference 
  * The first difference between two snapshots, checked in a fixed order — seed, clock, difficulty
  * (effective values, so an absent multiplier reads as its neutral 1), nextEntity,
  * entities, components (by name, then entity id, then field), facts (by key; an unset fact is
- * undefined), RNG streams — or undefined when they
+ * undefined), physics state, RNG streams — or undefined when they
  * would hash identically. Built for desync debugging and replay failure reports.
  */
 export function diffSnapshots(a: WorldSnapshot, b: WorldSnapshot): SnapshotDifference | undefined {
@@ -505,6 +516,10 @@ export function diffSnapshots(a: WorldSnapshot, b: WorldSnapshot): SnapshotDiffe
         b: factsB[key],
       };
     }
+  }
+  const physics = firstValueDifference(a.physics, b.physics);
+  if (physics) {
+    return { section: 'physics', path: `physics${fieldSuffix(physics.field)}`, ...physics };
   }
   for (const name of unionKeys(Object.keys(a.rng), Object.keys(b.rng))) {
     const found = firstValueDifference(a.rng[name], b.rng[name]);
