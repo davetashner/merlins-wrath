@@ -51,6 +51,7 @@ export * from './factions';
 export * from './facts';
 export * from './field';
 export * from './input';
+export * from './light';
 export * as simMath from './math';
 export * from './physics';
 export * from './player';
