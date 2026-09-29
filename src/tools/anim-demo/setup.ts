@@ -63,6 +63,12 @@ export interface AnimDemoOptions {
     read: (view: SimView, entity: EntityId) => Transform | undefined,
   ) => SceneBinding<Object3D>;
   readonly characters?: readonly AnimDemoCharacter[];
+  /**
+   * The world already runs the action timeline (the player's combat, mw-e04.8, installs it with the
+   * same shipped moves): the demo neither registers it nor adds a second one. Its requests are then
+   * taken on the timeline's next run.
+   */
+  readonly sharedTimeline?: boolean;
 }
 
 export interface AnimDemo {
@@ -71,14 +77,18 @@ export interface AnimDemo {
 }
 
 /**
- * Registers the demo and action timeline with `world` (call once, before stepping), spawns the demo
- * characters and binds their grey-box rigs.
+ * Registers the demo and action timeline with `world` (call once, before stepping; see
+ * `sharedTimeline`), spawns the demo characters and binds their grey-box rigs.
  */
 export function setupAnimationDemo(options: AnimDemoOptions): AnimDemo {
   const { world, sync, content } = options;
   const moves = compileMoves(content.all('move'));
-  world.register(AnimDemoComponent, ...ACTION_TIMELINE_COMPONENTS, StaminaComponent);
-  world.addSystem(animDemoSystem()).addSystem(actionTimelineSystem({ moves }));
+  if (options.sharedTimeline === true) {
+    world.register(AnimDemoComponent).addSystem(animDemoSystem());
+  } else {
+    world.register(AnimDemoComponent, ...ACTION_TIMELINE_COMPONENTS, StaminaComponent);
+    world.addSystem(animDemoSystem()).addSystem(actionTimelineSystem({ moves }));
+  }
   const clips = content.all('anim-clip');
   const read = simAnimReader({ moves, locomotion: animDemoLocomotion });
   const driver = new AnimationDriver(world);

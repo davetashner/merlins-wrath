@@ -3,12 +3,17 @@
 // systems run each tick in this order: look (mouse and right stick) turns the player's view yaw, then
 // the character controller moves it with the tick's ActionFrame and that yaw.
 //
+// With `combat` (mw-e04.8) the player also gets a stamina pool, an action timeline and a dodge, and
+// four systems run between look and the controller: stamina, dodge input (a dodge press rolls in the
+// held direction relative to the view yaw, or backsteps), the action timeline, and dodge motion,
+// whose root-motion velocity the controller travels at while a roll or backstep runs.
+//
 // The view yaw and pitch live in the sim (not in the camera) so a replay of ActionFrames alone
 // reproduces every turn: the recorded look input (mouse counts, stick deflection) is their only source. Pitch does not move
 // the player today, but aiming will (bow, spells: mw-e05.3, mw-e06.15), so it is clamped here once,
 // as a rule, rather than in the camera. The orbit camera (src/game/camera, mw-e02.4) only reads them.
 
-import type { ControllerTuning, Frozen } from '@content/index';
+import type { ControllerTuning, Frozen, MoveTable } from '@content/index';
 import { SKIN } from '../character/controller';
 import type { CollisionWorld } from '../character/collision-world';
 import { radians } from '../character/greybox';
@@ -17,10 +22,25 @@ import {
   characterControllerSystem,
   spawnCharacter,
 } from '../character/system';
+import { DodgeComponent, giveDodge, type DodgeMoves } from '../combat/dodge/components';
+import { dodgeInputSystem, dodgeMotionSystem, type DodgeFacing } from '../combat/dodge/dodge';
+import {
+  DEFAULT_STAMINA_PROFILE,
+  giveStamina,
+  StaminaComponent,
+  staminaSystem,
+  type StaminaProfile,
+} from '../combat/stamina';
+import {
+  ACTION_TIMELINE_COMPONENTS,
+  giveActionInput,
+  giveActionTimeline,
+} from '../combat/timeline/components';
+import { actionTimelineSystem } from '../combat/timeline/timeline';
 import { defineComponent, type EntityId } from '../core/component';
 import type { System, World } from '../core/world';
 import { actionFrameOf, type ActionVector } from '../input/action-frame';
-import { pow } from '../math';
+import { cos, pow, sin } from '../math';
 import type { SceneSpawnPlacement } from '../scene/layout';
 
 /** The tag that marks a scene's player spawn. */
@@ -180,6 +200,30 @@ export function playerLookSystem<TInput>(
   };
 }
 
+/** The knight's dodge moves (src/content/data/move). */
+export const KNIGHT_DODGE: DodgeMoves = Object.freeze({ roll: 'dodge-roll', backstep: 'backstep' });
+
+/** The player's combat (mw-e04.8): what its action timeline can perform. */
+export interface PlayerCombatOptions {
+  /** Every move the player may perform (`compileMoves` of the game content). */
+  readonly moves: MoveTable;
+  /** The moves the dodge button starts; defaults to KNIGHT_DODGE. */
+  readonly dodge?: DodgeMoves;
+  /** The stamina pool the moves draw on; defaults to DEFAULT_STAMINA_PROFILE. */
+  readonly stamina?: StaminaProfile;
+}
+
+/** The horizontal direction a look yaw faces (yaw 0 faces −z). */
+export function yawForward(yaw: number): { readonly x: number; readonly y: 0; readonly z: number } {
+  return { x: -sin(yaw) + 0, y: 0, z: -cos(yaw) + 0 };
+}
+
+/** The player's facing for dodge input: its look yaw (the camera), until lock-on exists. */
+const lookFacing: DodgeFacing = (world, entity) => {
+  const look = world.get(entity, PlayerLook);
+  return look === undefined ? undefined : yawForward(look.yaw);
+};
+
 export interface PlayerOptions {
   /** The loaded scene's spawns; the player starts at the one tagged `player-start`. */
   readonly spawns: readonly SceneSpawnPlacement[];
@@ -189,6 +233,8 @@ export interface PlayerOptions {
   readonly look?: Partial<LookSettings>;
   /** The pitch the player starts with, radians (clamped to the limits); defaults to level (0). */
   readonly pitch?: number;
+  /** Stamina, the action timeline and the dodge (see the file header); absent = movement only. */
+  readonly combat?: PlayerCombatOptions;
 }
 
 /** Thrown when a scene has no spawn tagged `player-start`. */
@@ -209,22 +255,41 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     throw new NoPlayerStartError(`the scene has no spawn tagged "${PLAYER_START_TAG}"`);
   }
   const look: LookSettings = { ...DEFAULT_LOOK_SETTINGS, ...options.look };
+  const { combat } = options;
   world.register(CharacterController, PlayerLook);
-  world.addSystem(playerLookSystem(look)).addSystem(
+  world.addSystem(playerLookSystem(look));
+  if (combat !== undefined) {
+    const { moves } = combat;
+    world.register(StaminaComponent, ...ACTION_TIMELINE_COMPONENTS, DodgeComponent);
+    world
+      .addSystem(staminaSystem())
+      .addSystem(dodgeInputSystem({ facing: lookFacing }))
+      .addSystem(actionTimelineSystem({ moves }))
+      .addSystem(dodgeMotionSystem({ moves, facing: lookFacing }));
+  }
+  world.addSystem(
     characterControllerSystem<TInput>({
       collision: options.collision,
       tuning: options.tuning,
       input: (inputs, entity) => {
         const actions = actionFrameOf(inputs);
         const look = world.get(entity, PlayerLook);
-        return actions === undefined || look === undefined
-          ? undefined
-          : { actions, cameraYaw: look.yaw };
+        if (actions === undefined || look === undefined) return undefined;
+        const motion = combat && world.get(entity, DodgeComponent)?.velocity;
+        return motion == null
+          ? { actions, cameraYaw: look.yaw }
+          : { actions, cameraYaw: look.yaw, motion };
       },
     }),
   );
   const { x, y, z } = start.position;
   const id = spawnCharacter(world, { x, y: y + SKIN, z });
   world.add(id, PlayerLook, { yaw: spawnYaw(start), pitch: clampPitch(options.pitch ?? 0, look) });
+  if (combat !== undefined) {
+    giveStamina(world, id, combat.stamina ?? DEFAULT_STAMINA_PROFILE);
+    giveActionTimeline(world, id);
+    giveActionInput(world, id, {});
+    giveDodge(world, id, combat.dodge ?? KNIGHT_DODGE);
+  }
   return id;
 }

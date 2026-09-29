@@ -38,6 +38,7 @@ describe('default bindings', () => {
     expect(DEFAULT_BINDINGS.moveForward).toContain('KeyW');
     expect(DEFAULT_BINDINGS.jump).toEqual(['Space']);
     expect(DEFAULT_BINDINGS.primaryAttack).toEqual(['Mouse0']);
+    expect(DEFAULT_BINDINGS.dodge).toEqual(['KeyR']);
     expect(Object.isFrozen(DEFAULT_BINDINGS)).toBe(true);
     expect(Object.isFrozen(DEFAULT_BINDINGS.jump)).toBe(true);
   });
@@ -192,7 +193,9 @@ describe('gamepad bindings (mw-e02.9)', () => {
   it('the default Xbox layout binds every button action but cycle target, with no conflicts', () => {
     expect(findConflicts(DEFAULT_PAD_BINDINGS)).toEqual([]);
     expect(DEFAULT_PAD_BINDINGS.jump).toEqual(['PadA']);
-    expect(DEFAULT_PAD_BINDINGS.crouch).toEqual(['PadB']);
+    expect(DEFAULT_PAD_BINDINGS.crouch).toEqual(['PadDown']);
+    expect(DEFAULT_PAD_BINDINGS.dodge).toEqual(['PadB']);
+    expect(DEFAULT_PAD_BINDINGS.ability3).toEqual(['PadLB']);
     expect(DEFAULT_PAD_BINDINGS.interact).toEqual(['PadX']);
     expect(DEFAULT_PAD_BINDINGS.primaryAttack).toEqual(['PadRT']);
     expect(DEFAULT_PAD_BINDINGS.secondaryAttack).toEqual(['PadLT']);
@@ -210,7 +213,7 @@ describe('gamepad bindings (mw-e02.9)', () => {
 
   it('rebinding a pad button follows the keyboard conflict rules', () => {
     const taken = rebind(DEFAULT_PAD_BINDINGS, 'jump', 'PadB');
-    expect(taken).toEqual({ ok: false, conflict: { code: 'PadB', actions: ['jump', 'crouch'] } });
+    expect(taken).toEqual({ ok: false, conflict: { code: 'PadB', actions: ['jump', 'dodge'] } });
     const global = rebind(DEFAULT_PAD_BINDINGS, 'jump', 'PadMenu');
     expect(global.ok).toBe(false);
     const cycle = rebound(DEFAULT_PAD_BINDINGS, 'cycleTarget', 'PadGuide');

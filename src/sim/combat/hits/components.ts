@@ -95,7 +95,7 @@ export interface LiveHitbox {
   readonly sweptFrom: GeomShape | null;
   /** World shape the latest sweep ended at, null before the first sweep. */
   readonly pose: GeomShape | null;
-  /** Entities struck so far in this window, ascending. */
+  /** Entities struck (or that dodged it, mw-e04.8) so far in this window, ascending. */
   readonly hit: readonly EntityId[];
 }
 

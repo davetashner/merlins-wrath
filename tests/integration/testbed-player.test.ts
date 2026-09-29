@@ -90,6 +90,33 @@ describe('testbed player (mw-e02.23)', () => {
     expect(trace.at(-1)?.grounded).toBe(true);
   });
 
+  it('mw-e04.8: R rolls 3.0 m in the held direction and, with none held, backsteps 1.2 m', () => {
+    const world = createTestbedWorld(RAPIER, { seed: SEED, hz: 60 });
+    const player = playerOf(world);
+    const log = testbedLog();
+    const roll = log.findIndex((frame) => frame.dodge.pressed && frame.move.y > 0);
+    const backstep = log.findIndex((frame) => frame.dodge.pressed && frame.move.y === 0);
+    expect(roll).toBeGreaterThan(0);
+    expect(backstep).toBeGreaterThan(roll);
+    const at: CharacterState[] = [];
+    log.forEach((frame) => {
+      world.step([frame]);
+      const state = world.get(player, CharacterController);
+      if (state === undefined) throw new Error('player gone');
+      at.push(state);
+    });
+    const travel = (from: number, to: number) => {
+      const a = at[from]?.position;
+      const b = at[to]?.position;
+      if (a === undefined || b === undefined) throw new Error('tick out of range');
+      return Math.hypot(b.x - a.x, b.z - a.z);
+    };
+    // The roll starts on its press tick and moves on its 13 active ticks (2–14); the backstep's six.
+    expect(travel(roll + 1, roll + 14)).toBeCloseTo(3, 3);
+    expect(travel(roll + 14, roll + 35)).toBe(0);
+    expect(travel(backstep + 1, backstep + 7)).toBeCloseTo(1.2, 3);
+  });
+
   it('AC-4: the recorded input log replays twice through the testbed wiring to the same final hash', ({
     task,
   }) => {

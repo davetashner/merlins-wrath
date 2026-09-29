@@ -16,7 +16,8 @@
 // One timeline step: advance the move (emit phase changes; end it after its last tick) or count down
 // an interrupt lock, then try the buffered request, then age it. A request is legal when the entity
 // is idle and unlocked, or when the move's current tick is inside a cancel window whose `into` is the
-// requested move's verb. The buffer holds one request, the most recent (a newer one replaces it). It
+// requested move's verb; a window that names a `move` starts that move instead (a roll's attack
+// window turns the light attack into the roll attack, e04.8). The buffer holds one request, the most recent (a newer one replaces it). It
 // is tried on the step it is made (age 0) and on each of the next ACTION_BUFFER_TICKS local ticks (9
 // ticks, 150 ms), then dropped with ActionRejected{reason:"busy"}. So a request made 8 ticks before
 // recovery ends starts on the tick it ends, and one made 12 ticks before is dropped.
@@ -35,7 +36,13 @@
 // reaction's length (e04.7 chooses it). Hitbox rules (e04.2) read `activeHitbox` or listen for
 // ActionPhaseChanged; the timeline itself spawns nothing.
 
-import type { CancelTarget, MoveTable, MoveVerb, RuntimeMove } from '@content/index';
+import type {
+  CancelTarget,
+  MoveTable,
+  MoveVerb,
+  RuntimeCancelWindow,
+  RuntimeMove,
+} from '@content/index';
 import type { EntityId } from '../../core/component';
 import type { System, World } from '../../core/world';
 import { actionFrameOf, BUTTON_ACTIONS } from '../../input/action-frame';
@@ -109,8 +116,17 @@ export function activeHitbox(
   return { move, moveTick: current.tick, hitbox };
 }
 
+/** The cancel window of `move` open on `tick` into `into`, if any (the first, in data order). */
+function windowAt(
+  move: RuntimeMove,
+  tick: number,
+  into: MoveVerb | CancelTarget,
+): RuntimeCancelWindow | undefined {
+  return move.cancelWindows.find((w) => w.into === into && tick >= w.from && tick <= w.to);
+}
+
 function inWindow(move: RuntimeMove, tick: number, into: MoveVerb | CancelTarget): boolean {
-  return move.cancelWindows.some((w) => w.into === into && tick >= w.from && tick <= w.to);
+  return windowAt(move, tick, into) !== undefined;
 }
 
 /**
@@ -236,9 +252,12 @@ function tryStart(
 ): Attempt {
   const { current, locked, ended } = step;
   const running = current === null ? null : { at: current.tick, move: lookup(moves, current.move) };
-  const move = resolve(moves, requested, running?.move ?? ended);
-  const legal = running === null ? !locked : inWindow(running.move, running.at, move.verb);
+  const resolved = resolve(moves, requested, running?.move ?? ended);
+  const window = running && windowAt(running.move, running.at, resolved.verb);
+  const legal = running === null ? !locked : window !== undefined;
   if (!legal) return 'wait';
+  // A window may name the move its kind of request starts instead (a roll's attack: the roll attack).
+  const move = window?.move == null ? resolved : lookup(moves, window.move);
   if (!pay(world, entity, move)) return 'refused';
   if (current !== null) emitEnded(world, entity, current, current.tick, 'cancelled');
   const tick = world.tick;
@@ -247,7 +266,7 @@ function tryStart(
     entity,
     move: move.id,
     cancelled: current?.move ?? null,
-    chained: move.id !== requested,
+    chained: resolved.id !== requested && move === resolved,
   });
   world.events.emit(ActionPhaseChanged, {
     tick,

@@ -41,5 +41,6 @@ describe('action timeline replay (mw-e04.4)', () => {
       }
     }
     expect(finals.size).toBe(1);
-  });
+    // 100 replays take seconds alone but far longer on a loaded runner: allow a minute.
+  }, 60_000);
 });

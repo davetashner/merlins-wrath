@@ -83,6 +83,7 @@ function makeAttack(
       telegraphTick,
       chainNext: null,
       charge: null,
+      motion: null,
       presentation: { anim: 'anim-test' },
     },
     hitbox,

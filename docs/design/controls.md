@@ -16,7 +16,8 @@ B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT
 | Move             | Left stick                         | W A S D (or arrows)      |
 | Look             | Right stick                        | Mouse                    |
 | Jump             | A                                  | Space                    |
-| Crouch (dodge later) | B                              | C                        |
+| Crouch           | D-pad Down                         | C                        |
+| Dodge            | B                                  | R                        |
 | Interact         | X                                  | E                        |
 | Sprint           | LS click (toggle)                  | Left Shift (hold)        |
 | Lock on          | RS click                           | Q, middle click          |
@@ -25,13 +26,19 @@ B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT
 | Secondary / block | LT                                | Right click              |
 | Ability 1        | Y, D-pad Up                        | 1                        |
 | Ability 2        | RB, D-pad Right                    | 2                        |
-| Ability 3        | LB, D-pad Down                     | 3                        |
+| Ability 3        | LB                                 | 3                        |
 | Ability 4        | D-pad Left                         | 4                        |
 | Inventory        | View                               | I                        |
 | Pause            | Menu                               | Esc, P                   |
 
-The d-pad mirrors the number row (abilities 1–4), and Y, RB and LB reach abilities 1–3 without taking
-the thumb off the face buttons or the stick. Cycle target has no pad default: flicking the right stick
+B is the souls-like dodge button (mw-e04.8), which moved crouch to D-pad Down; the rest of the d-pad
+mirrors the number row (abilities 1, 2 and 4), and Y, RB and LB reach abilities 1–3 without taking
+the thumb off the face buttons or the stick. On the keyboard, R dodges: F stays free (it is the
+remapping example) and Ctrl or Alt would trip browser shortcuts (Ctrl+W closes the tab).
+
+**Dodge.** A dodge with a direction held rolls that way (relative to the camera, or to the lock-on
+target once lock-on exists); with no direction held it backsteps. Timing and i-frames:
+`src/content/data/move/dodge-roll.json` and `backstep.json`; the rules: `src/sim/combat/dodge`. Cycle target has no pad default: flicking the right stick
 while locked on is the usual convention and belongs to the lock-on work.
 
 **Sprint toggle.** On the pad, clicking the left stick latches sprint on; it stays on until the stick

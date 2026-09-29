@@ -195,6 +195,28 @@ test('AC-3: Space leaves the ground and lands again within 1 s', async ({ page }
   expect(problems).toEqual([]);
 });
 
+test('mw-e04.8: R with no direction held backsteps the player 1.2 m away from the camera', async ({
+  page,
+}) => {
+  const problems = collectProblems(page);
+  await play(page);
+  const before = await player(page);
+  await page.evaluate(() => {
+    for (const type of ['keydown', 'keyup']) {
+      window.dispatchEvent(new KeyboardEvent(type, { code: 'KeyR', key: 'r' }));
+    }
+  });
+  // The backstep lasts 24 ticks; its 1.2 m are covered on ticks 2–7.
+  const after = await waitTicks(page, 40);
+  // Looking along −sin(yaw), −cos(yaw): the backstep goes the other way.
+  const dx = after.position.x - before.position.x;
+  const dz = after.position.z - before.position.z;
+  expect(Math.hypot(dx, dz)).toBeCloseTo(1.2, 2);
+  expect(dx * -Math.sin(before.yaw) + dz * -Math.cos(before.yaw)).toBeCloseTo(-1.2, 2);
+  expect(after.grounded).toBe(true);
+  expect(problems).toEqual([]);
+});
+
 test('the debug camera (F2) takes WASD from the player, and hands it back', async ({ page }) => {
   const problems = collectProblems(page);
   await play(page);

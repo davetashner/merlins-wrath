@@ -53,13 +53,14 @@ function padTestbed() {
   const hint = () => {
     const device = sampler.lastDevice;
     const bindings = { keyboardMouse: sampler.bindings, gamepad: sampler.padBindings };
-    const glyph = (action: 'move' | 'jump' | 'sprint' | 'crouch') =>
+    const glyph = (action: 'move' | 'jump' | 'sprint' | 'crouch' | 'dodge') =>
       inputGlyph(action, device, bindings);
     return playerControlsHint(device, {
       move: glyph('move'),
       jump: glyph('jump'),
       sprint: glyph('sprint'),
       crouch: glyph('crouch'),
+      dodge: glyph('dodge'),
     });
   };
   return { world, sampler, run, state, look, hint, events, frames };
@@ -112,7 +113,7 @@ describe('a virtual Xbox pad in the testbed (mw-e02.9)', () => {
     t.run(1, { pressed: ['PadA'] });
     expect(t.sampler.lastDevice).toBe('gamepad');
     expect(t.hint()).toBe(
-      'Controller: Left stick move, right stick look, A jump, LS sprint (toggle), B crouch',
+      'Controller: Left stick move, right stick look, A jump, LS sprint (toggle), D-pad Down crouch, B dodge',
     );
     t.sampler.down('KeyW');
     t.run(1, {});

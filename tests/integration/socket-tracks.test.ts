@@ -46,6 +46,7 @@ describe('socket tracks (mw-e04.26)', () => {
   it('ships a track for every move that can hit', () => {
     expect(moves.map((m) => m.id)).toEqual([
       'kick',
+      'roll-attack',
       'shield-bash',
       'sword-heavy',
       'sword-heavy-charged',

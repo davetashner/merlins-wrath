@@ -84,7 +84,33 @@ const framesSchema = z
 const cancelWindowSchema = z.strictObject({
   into: z.enum(CANCEL_TARGETS).describe('What the move may be cancelled into.'),
   ...tickRangeShape,
+  move: ref('move')
+    .optional()
+    .describe(
+      'The move a request of kind `into` starts instead when it cancels through this window, e.g. ' +
+        'a roll’s attack window starts the roll attack (e04.8); absent = the requested move.',
+    ),
 });
+
+/** Directions a move's motion can travel (resolved by the dodge rule, e04.8). */
+export const MOTION_DIRECTIONS = ['input', 'backward'] as const;
+/** A motion direction. */
+export type MotionDirection = (typeof MOTION_DIRECTIONS)[number];
+
+const motionSchema = z
+  .strictObject({
+    distance: points.describe(
+      'Metres travelled, spread evenly over the active ticks; the character stands still (grounded) ' +
+        'on the move’s other ticks. Walls stop it; ledges do not.',
+    ),
+    direction: z
+      .enum(MOTION_DIRECTIONS)
+      .describe(
+        '"input": the direction held when the move was requested, relative to the camera or ' +
+          'lock-on target (facing when none); "backward": away from the facing.',
+      ),
+  })
+  .describe('Root motion of a committed move, e.g. a roll’s 3.0 m (e04.8); absent = none.');
 
 /**
  * A damage packet template: the DamagePacketInput fields known before a hit lands. Shared by moves and
@@ -263,6 +289,7 @@ export const moveSchema = z
       .optional()
       .describe('Move the next attack press chains into (e.g. light 1 → light 2); absent = none.'),
     charge: chargeSchema.optional(),
+    motion: motionSchema.optional(),
     presentation: presentationSchema,
   })
   .superRefine((move, ctx) => {
@@ -313,6 +340,14 @@ export const moveSchema = z
       fail(['telegraphTick'], `telegraphTick (${String(move.telegraphTick)}) is past the move`);
     }
     if (move.chainNext?.id === move.id) fail(['chainNext'], 'a move cannot chain into itself');
+    move.cancelWindows.forEach((window, i) => {
+      if (window.move?.id === move.id) {
+        fail(['cancelWindows', i, 'move'], 'a move cannot cancel into itself');
+      }
+    });
+    if (move.motion !== undefined && move.motion.distance > 0 && active === 0) {
+      fail(['motion'], 'a move with motion needs at least one active tick to travel on');
+    }
 
     const charge = move.charge;
     if (charge !== undefined) {
@@ -399,6 +434,20 @@ export interface TickRange {
   readonly to: number;
 }
 
+/** A cancel window as the action timeline reads it. */
+export interface RuntimeCancelWindow extends TickRange {
+  readonly into: CancelTarget;
+  /** Id of the move a request of kind `into` starts instead through this window, or null. */
+  readonly move: string | null;
+}
+
+/** Root motion as the dodge rule (e04.8) reads it. */
+export interface RuntimeMotion {
+  /** Metres over the active ticks. */
+  readonly distance: number;
+  readonly direction: MotionDirection;
+}
+
 /** A move as the action timeline (e04.4) reads it: flat, derived numbers, plain ids, nulls. */
 export interface RuntimeMove {
   readonly id: string;
@@ -413,7 +462,7 @@ export interface RuntimeMove {
   /** First recovery tick (= startup + active). */
   readonly recoveryFrom: number;
   readonly staminaCost: number;
-  readonly cancelWindows: readonly (TickRange & { readonly into: CancelTarget })[];
+  readonly cancelWindows: readonly RuntimeCancelWindow[];
   /** Damage packet template (DamagePacketInput fields; impulse in the attacker's frame). */
   readonly damage: DamageTemplate | null;
   readonly hitbox: NonNullable<MoveEntry['hitbox']> | null;
@@ -434,6 +483,8 @@ export interface RuntimeMove {
     readonly fullHoldTicks: number;
     readonly autoReleaseTicks: number;
   } | null;
+  /** Root motion (a dodge's travel), or null. */
+  readonly motion: RuntimeMotion | null;
   readonly presentation: MoveEntry['presentation'];
 }
 
@@ -455,7 +506,11 @@ export function compileMove(move: MoveEntry): RuntimeMove {
     activeFrom: startup,
     recoveryFrom: startup + active,
     staminaCost: move.staminaCost,
-    cancelWindows: move.cancelWindows,
+    cancelWindows: Object.freeze(
+      move.cancelWindows.map(({ into, from, to, move: target }) =>
+        Object.freeze({ into, from, to, move: target?.id ?? null }),
+      ),
+    ),
     damage: move.damage ?? null,
     hitbox: move.hitbox ?? null,
     parryable: canHit && flags.parryable,
@@ -475,6 +530,10 @@ export function compileMove(move: MoveEntry): RuntimeMove {
             fullHoldTicks: charge.fullHoldTicks,
             autoReleaseTicks: charge.autoReleaseTicks,
           }),
+    motion:
+      move.motion === undefined
+        ? null
+        : Object.freeze({ distance: move.motion.distance, direction: move.motion.direction }),
     presentation: move.presentation,
   });
 }

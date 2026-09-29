@@ -1,11 +1,61 @@
-import { loadGameContent } from '@content/index';
+import { compileMoves, loadGameContent } from '@content/index';
 import { RenderSync } from '@game/loop/render-sync';
-import { World } from '@sim/index';
+import {
+  ACTION_TIMELINE_COMPONENTS,
+  actionTimelineSystem,
+  StaminaComponent,
+  World,
+} from '@sim/index';
 import type { Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { compactProbe, setupAnimationDemo, TESTBED_ANIM_DEMO } from './setup';
 
+/** Steps `world` and the demo for `ticks` ticks; returns each rig's state history. */
+function run(
+  world: World,
+  sync: RenderSync,
+  demo: ReturnType<typeof setupAnimationDemo>,
+  ticks: number,
+) {
+  for (let i = 0; i < ticks; i++) {
+    world.step();
+    sync.capture();
+    demo.driver.capture();
+    sync.render(0.5);
+    demo.driver.frame(0.5, 1 / 60, { x: 0, y: 0, z: 0 });
+  }
+  return compactProbe(demo.driver.probe());
+}
+
+const headless = (
+  object: Object3D,
+  read: Parameters<Parameters<typeof setupAnimationDemo>[0]['binding']>[1],
+) => ({
+  object,
+  read,
+  apply: () => undefined,
+  dispose: () => undefined,
+});
+
 describe('setupAnimationDemo', () => {
+  it('mw-e04.8: shares an action timeline the world already runs (the player’s combat)', () => {
+    const world = new World({ seed: 1 }).register(...ACTION_TIMELINE_COMPONENTS, StaminaComponent);
+    const content = loadGameContent();
+    world.addSystem(actionTimelineSystem({ moves: compileMoves(content.all('move')) }));
+    const sync = new RenderSync(world);
+    const demo = setupAnimationDemo({
+      world,
+      sync,
+      content,
+      binding: headless,
+      sharedTimeline: true,
+    });
+    const probe = run(world, sync, demo, 320);
+    for (const rig of ['greybox-humanoid', 'greybox-beast']) {
+      expect(probe[rig]?.history).toEqual(expect.arrayContaining(['attack', 'hit-react']));
+    }
+  });
+
   it('AC-6: the humanoid and the non-humanoid rig each enter idle → move → attack → hit-react via sim state', () => {
     const world = new World({ seed: 1 });
     const sync = new RenderSync(world);

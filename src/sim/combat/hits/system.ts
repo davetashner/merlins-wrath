@@ -1,7 +1,8 @@
 // The hit-volume system (mw-e04.2): each tick, every open hitbox sweeps from its previous pose to this
 // tick's pose and is tested against every living entity's hurtboxes. A target is struck at most once
 // per hitbox window; the hurtbox that wins region priority names the region, multiplier and armor of
-// the hit. Allies (by the ally rule) are skipped unless the hitbox has friendly fire, so a creature
+// the hit. A target invulnerable on that tick (a dodge's i-frames, mw-e04.8) gets DodgedHit instead
+// of HitboxHit, and counts as struck for the window: a swing dodged once cannot catch it later. Allies (by the ally rule) are skipped unless the hitbox has friendly fire, so a creature
 // lured into a swing meant for the player can hit its packmate. A dead attacker's hitboxes close
 // without hitting; a destroyed one's vanish with it.
 //
@@ -50,7 +51,7 @@ import {
   type LiveHitbox,
   type SocketTrack,
 } from './components';
-import { HitboxHit, type HitboxHitInfo } from './events';
+import { DodgedHit, HitboxHit, type HitboxHitInfo } from './events';
 
 /** Whether `target` is `attacker`'s ally (skipped by hitboxes without friendly fire). */
 export type AllyRule = (world: World<never>, attacker: EntityId, target: EntityId) => boolean;
@@ -69,6 +70,12 @@ export function alliesByStance(table: FactionTable): AllyRule {
   return (world, attacker, target) => isFriendlyStance(relation(world, table, attacker, target));
 }
 
+/** Whether `target` is invulnerable this tick (a dodge's i-frames: `iframeRule`, mw-e04.8). */
+export type InvulnerabilityRule = (world: World<never>, target: EntityId) => boolean;
+
+/** Nobody is ever invulnerable (worlds without dodges). */
+export const noInvulnerability: InvulnerabilityRule = () => false;
+
 /** Options of the hit-volume system. */
 export interface HitVolumeOptions {
   /**
@@ -76,6 +83,11 @@ export interface HitVolumeOptions {
    * `alliesByStance(table)`, or `noAllies` in a world without factions.
    */
   readonly isAlly: AllyRule;
+  /**
+   * Who is invulnerable this tick: a hit on them is DodgedHit, not HitboxHit. Defaults to nobody;
+   * `iframeRule(moves)` gives the action timeline's i-frames (run the timeline first).
+   */
+  readonly invulnerable?: InvulnerabilityRule;
 }
 
 /** Whether `entity` can act or be struck: alive, and not at 0 health when it has health. */
@@ -179,7 +191,7 @@ function resolve(
 
 function sweep(
   world: World<never>,
-  isAlly: AllyRule,
+  rules: { readonly isAlly: AllyRule; readonly invulnerable: InvulnerabilityRule },
   attacker: EntityId,
   frame: Pose,
   hitbox: LiveHitbox,
@@ -194,7 +206,7 @@ function sweep(
     const { entity } = target;
     if (!meet(bounds, target.bounds)) continue;
     if (entity === attacker || hitbox.hit.includes(entity)) continue;
-    if (!hitbox.friendlyFire && isAlly(world, attacker, entity)) continue;
+    if (!hitbox.friendlyFire && rules.isAlly(world, attacker, entity)) continue;
     const hurtbox = resolve(pieces, bounds, target);
     if (hurtbox === undefined) continue;
     struck.push(entity);
@@ -210,7 +222,7 @@ function sweep(
       armored: hurtbox.armored,
       direction: hitbox.aim,
     };
-    world.events.emit(HitboxHit, hit);
+    world.events.emit(rules.invulnerable(world, entity) ? DodgedHit : HitboxHit, hit);
   }
   const hit =
     struck.length === 0
@@ -226,7 +238,7 @@ function sweep(
  * components (health: the dead neither strike nor are struck) first.
  */
 export function hitVolumeSystem<TInput>(options: HitVolumeOptions): System<TInput> {
-  const { isAlly } = options;
+  const rules = { isAlly: options.isAlly, invulnerable: options.invulnerable ?? noInvulnerability };
   return {
     name: 'hit-volumes',
     run: ({ world }) => {
@@ -245,7 +257,7 @@ export function hitVolumeSystem<TInput>(options: HitVolumeOptions): System<TInpu
             const frame = entityFrame(w, attacker, hitbox.aim);
             if (frame === undefined) return hitbox;
             targets ??= targetsOf(w);
-            return sweep(w, isAlly, attacker, frame, hitbox, targets);
+            return sweep(w, rules, attacker, frame, hitbox, targets);
           });
         }
         w.set(attacker, HitboxComponent, Object.freeze({ live: Object.freeze(live) }));

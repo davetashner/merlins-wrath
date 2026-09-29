@@ -31,7 +31,7 @@ import {
   type LiveHitbox,
   type SocketTrack,
 } from './components';
-import { HitboxHit, type HitboxHitInfo } from './events';
+import { DodgedHit, HitboxHit, type HitboxHitInfo } from './events';
 import {
   alliesByStance,
   debugShapes,
@@ -208,6 +208,33 @@ describe('hit volumes (mw-e04.2)', () => {
     openHitbox(world, a, spec);
     steps(4);
     expect(hits).toHaveLength(2);
+  });
+
+  it('mw-e04.8: an invulnerable target gets DodgedHit, not HitboxHit, once per window', () => {
+    let invulnerableUntil = 0;
+    const { world, hits, attacker, target, steps } = setup({
+      isAlly: noAllies,
+      invulnerable: (w) => w.tick <= invulnerableUntil,
+    });
+    const dodged: HitboxHitInfo[] = [];
+    world.events.on(DodgedHit, (hit) => dodged.push(hit));
+    const a = attacker();
+    const spec = swing({
+      shape: { kind: 'sphere', center: v3(0, 0, 1), radius: 0.5 },
+      track: STILL,
+    });
+    const t = target(v3(0, 0, 1.2));
+    invulnerableUntil = world.tick;
+    openHitbox(world, a, spec);
+    steps(4);
+    expect(hits).toEqual([]);
+    expect(dodged.map((h) => [h.target, h.activeTick, h.region])).toEqual([[t, 1, 'torso']]);
+    // The next swing, after the i-frames: an ordinary hit.
+    steps(1);
+    openHitbox(world, a, spec);
+    steps(4);
+    expect(hits.map((h) => [h.target, h.activeTick])).toEqual([[t, 1]]);
+    expect(dodged).toHaveLength(1);
   });
 
   it('AC-3: overlapping head and torso crossed on the same tick resolve to the head and its multiplier', () => {

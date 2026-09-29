@@ -19,11 +19,12 @@ import {
   type RuntimeMove,
 } from './move.ts';
 
-/** The moves the bead asks for: knight sword light 1–3, heavy, charged, bash, kick, roll, backstep, dummy. */
+/** The moves the beads ask for: knight sword light 1–3, heavy, charged, bash, kick, roll, backstep, roll attack, dummy. */
 const REQUIRED_MOVES = [
   'backstep',
   'dodge-roll',
   'kick',
+  'roll-attack',
   'shield-bash',
   'sword-heavy',
   'sword-heavy-charged',
@@ -117,6 +118,77 @@ describe('move schema', () => {
     });
   });
 
+  it('mw-e04.8: the shipped roll and backstep carry the bead’s timing, i-frames, motion and roll attack', () => {
+    const table = compileMoves(loadGameContent().all('move'));
+    expect(table.get('dodge-roll')).toMatchObject({
+      verb: 'dodge',
+      totalTicks: 36,
+      staminaCost: 20,
+      iframes: { from: 2, to: 14 },
+      motion: { distance: 3, direction: 'input' },
+      cancelWindows: [{ into: 'attack', from: 28, to: 35, move: 'roll-attack' }],
+    });
+    expect(table.get('backstep')).toMatchObject({
+      verb: 'dodge',
+      totalTicks: 24,
+      staminaCost: 12,
+      iframes: { from: 2, to: 7 },
+      motion: { direction: 'backward' },
+    });
+    expect(table.get('roll-attack')?.verb).toBe('attack');
+  });
+
+  it('mw-e04.8: motion and a cancel window’s move compile to plain values', () => {
+    const runtime = compileMove(
+      entry({
+        ...roll,
+        cancelWindows: [
+          { into: 'attack', from: 28, to: 35, move: 'fixture-swing' },
+          { into: 'block', from: 30, to: 35 },
+        ],
+        motion: { distance: 3, direction: 'input' },
+      }),
+    );
+    expect(runtime.motion).toEqual({ distance: 3, direction: 'input' });
+    expect(runtime.cancelWindows).toEqual([
+      { into: 'attack', from: 28, to: 35, move: 'fixture-swing' },
+      { into: 'block', from: 30, to: 35, move: null },
+    ]);
+    expect(Object.isFrozen(runtime.cancelWindows[0])).toBe(true);
+    expect(Object.isFrozen(runtime.motion)).toBe(true);
+  });
+
+  it('mw-e04.8: a window cannot name its own move, motion needs active ticks, and window moves must exist', () => {
+    expect(
+      problems({
+        ...roll,
+        cancelWindows: [{ into: 'dodge', from: 20, to: 30, move: 'fixture-roll' }],
+      }),
+    ).toEqual(['cancelWindows.0.move: move "fixture-roll": a move cannot cancel into itself']);
+    expect(
+      problems({
+        ...roll,
+        frames: { startup: 2, active: 0, recovery: 10 },
+        motion: { distance: 1, direction: 'backward' },
+      }),
+    ).toEqual([
+      'motion: move "fixture-roll": a move with motion needs at least one active tick to travel on',
+    ]);
+    expect(
+      problems({
+        ...roll,
+        frames: { startup: 2, active: 0, recovery: 10 },
+        motion: { distance: 0, direction: 'backward' },
+      }),
+    ).toEqual([]);
+    expect(
+      issuesOf({
+        ...roll,
+        cancelWindows: [{ into: 'attack', from: 28, to: 35, move: 'nope' }],
+      }).map((i) => [i.pointer, i.message]),
+    ).toEqual([['/cancelWindows/0/move', 'move:fixture-roll references missing move:nope']]);
+  });
+
   it('AC-1: the runtime table is sorted by id, whatever order the moves come in', () => {
     const a = entry({ ...swing, id: 'a' });
     const b = entry({ ...swing, id: 'b' });
@@ -147,6 +219,7 @@ describe('move schema', () => {
       telegraphTick: 0,
       chainNext: null,
       charge: null,
+      motion: null,
       presentation: { anim: 'anim-fixture-roll' },
     } satisfies RuntimeMove);
     expect(Object.isFrozen(runtime)).toBe(true);

@@ -1,6 +1,7 @@
-// The event the hit-volume system emits (mw-e04.2). Whoever opened the hitbox (the action timeline,
-// knight attacks, creature attacks) turns it into damage — `hitPacket` builds the packet — so hit
-// detection stays one query every attacker shares.
+// The events the hit-volume system emits (mw-e04.2). Whoever opened the hitbox (the action timeline,
+// knight attacks, creature attacks) turns HitboxHit into damage — `hitPacket` builds the packet — so
+// hit detection stays one query every attacker shares. A hit on an invulnerable target (a dodge's
+// i-frames, mw-e04.8) is DodgedHit instead, which nothing turns into damage.
 
 import type { EntityId } from '../../core/component';
 import { defineEvent } from '../../core/events';
@@ -28,3 +29,10 @@ export interface HitboxHitInfo {
 
 /** A hitbox struck a target: emitted once per hitbox, target and active window. */
 export const HitboxHit = defineEvent<HitboxHitInfo>('HitboxHit');
+
+/**
+ * A hitbox struck a target during its invulnerability frames (mw-e04.8): no damage, poise or hit
+ * reaction follows. Feedback (a whoosh, a "dodged" flash) and telemetry listen for it. Emitted once
+ * per hitbox, target and active window: a dodged swing cannot hit that target later in its window.
+ */
+export const DodgedHit = defineEvent<HitboxHitInfo>('DodgedHit');
