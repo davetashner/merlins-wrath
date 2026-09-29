@@ -3,6 +3,7 @@ import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
 import { browserFrameSources, createGameLoop, object3DBinding } from '@game/loop/index';
 import { bootPhysics } from '@game/physics-loader';
+import { createUiGameBridge } from '@game/ui/index';
 import { attachPlayerInput, setupTestbedPlayer, type TestbedPlayer } from '@game/player/index';
 import { readSceneTransform, resolveSceneRequest, SceneLoader } from '@game/scene/index';
 import { openSaveStore } from '@game/save/storage/index';
@@ -31,6 +32,7 @@ import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
 import { formatVfxStats, parseVfxParam, VfxDemo } from '@tools/vfx-demo/index';
+import { UiRoot } from '@ui/index';
 import {
   DEBUG_CAMERA_HINT,
   GAMEPAD_DISCONNECTED_HINT,
@@ -168,6 +170,24 @@ function startRenderer(root: HTMLElement): void {
   // canvas takes control (pointer lock) of the player, once there is one (mw-e02.23). A gamepad needs
   // no click: the sampler polls it every tick while the page has focus.
   const sampler = new ActionSampler();
+
+  // The HUD/menu layer (mw-e00.23). Screens pushed onto it may capture input (gameplay action frames
+  // are withheld) and pause the sim; menus need the pointer, so capture releases pointer lock.
+  const ui = new UiRoot(root);
+  const uiInput = ui.attachInput({
+    window: globalThis.window,
+    navigator: globalThis.navigator,
+    now: () => performance.now(),
+  });
+  const bridge = createUiGameBridge({
+    ui,
+    sampleCommands: sampler.sampleCommands,
+    drain: () => sampler.sample(),
+  });
+  ui.subscribe(({ capturesInput }) => {
+    root.dataset['uiCapture'] = String(capturesInput);
+    if (capturesInput && document.pointerLockElement !== null) document.exitPointerLock();
+  });
   // The controls hint follows the device last used (mw-e02.9 AC-5); a disconnect says so (AC-4).
   let shown: InputDevice | 'gone' | undefined;
   let padGone = false;
@@ -273,11 +293,14 @@ function startRenderer(root: HTMLElement): void {
     const { loop, sync } = createGameLoop({
       world,
       sources,
-      sampleCommands: sampler.sampleCommands,
+      sampleCommands: bridge.sampleCommands,
+      simPaused: bridge.simPaused,
       onStep: () => {
         animation?.driver.capture();
       },
       draw: (frame) => {
+        uiInput.poll();
+        bridge.frame();
         const { timeMs } = frame;
         const elapsedMs = timeMs - (lastFrameMs ?? timeMs);
         if (debugCamera.update(elapsedMs)) writeCameraData();
