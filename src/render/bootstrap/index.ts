@@ -16,6 +16,11 @@ export interface RenderBootstrapOptions {
   readonly renderScale?: number;
   /** Called once, right after the first frame has been submitted. */
   readonly onFirstFrame?: () => void;
+  /**
+   * When false, the bootstrap runs no animation loop of its own: the caller draws each frame with
+   * `renderFrame` (the game's frame loop does, after stepping the sim; mw-e00.20). Default true.
+   */
+  readonly animationLoop?: boolean;
 }
 
 export interface RenderBootstrap {
@@ -25,6 +30,8 @@ export interface RenderBootstrap {
   readonly camera: PerspectiveCamera;
   /** Current render scale after clamping. */
   readonly renderScale: number;
+  /** Draws one frame at render-side time `timeMs` (resizing first if needed). */
+  renderFrame(timeMs: number): void;
   /** Settings hook: changes the render scale; applied before the next frame. */
   setRenderScale(scale: number): void;
   /** Stops the loop, frees GPU resources, releases the WebGL context and removes the canvas. Idempotent. */
@@ -72,7 +79,9 @@ export function createRenderBootstrap(options: RenderBootstrapOptions): RenderBo
   };
 
   let firstFrame = true;
-  renderer.setAnimationLoop((timeMs: number) => {
+  let disposed = false;
+  const renderFrame = (timeMs: number): void => {
+    if (disposed) return;
     resizeIfNeeded();
     boot.update(timeMs);
     renderer.render(scene, camera);
@@ -80,14 +89,15 @@ export function createRenderBootstrap(options: RenderBootstrapOptions): RenderBo
       firstFrame = false;
       options.onFirstFrame?.();
     }
-  });
+  };
+  if (options.animationLoop ?? true) renderer.setAnimationLoop(renderFrame);
 
-  let disposed = false;
   return {
     canvas,
     renderer,
     scene,
     camera,
+    renderFrame,
     get renderScale() {
       return renderScale;
     },

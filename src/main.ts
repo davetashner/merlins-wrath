@@ -1,8 +1,10 @@
 import { layers } from '@game/index';
+import { browserFrameSources, createGameLoop } from '@game/loop/index';
 import { loadPhysics } from '@game/physics-loader';
 import { openSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { createRenderBootstrap } from '@render/bootstrap/index';
+import { World } from '@sim/index';
 import { layer as tools } from '@tools/index';
 import {
   PHYSICS_FAILED_TEXT,
@@ -10,6 +12,9 @@ import {
   unsupportedMessage,
   type MissingFeature,
 } from '@ui/unsupported';
+
+/** Placeholder world seed until new-game/save flows choose one. */
+const BOOT_SEED = 1;
 
 const app = document.querySelector<HTMLElement>('#app');
 if (app) {
@@ -44,9 +49,12 @@ function startRenderer(root: HTMLElement): void {
     showUnsupported(root, missing);
     return;
   }
+  let view;
   try {
-    createRenderBootstrap({
+    view = createRenderBootstrap({
       container: root,
+      // The game loop below draws each frame after stepping the sim (mw-e00.20).
+      animationLoop: false,
       onFirstFrame: () => {
         root.dataset['firstFrameMs'] = String(Math.round(performance.now()));
       },
@@ -56,6 +64,16 @@ function startRenderer(root: HTMLElement): void {
     showUnsupported(root, ['webgl2']);
     return;
   }
+  // Fixed-step sim on requestAnimationFrame (mw-e00.20). The world is empty until the testbed scene
+  // (mw-e00.21) and input actions (e02) arrive; entities bind to scene objects through the loop's sync.
+  const { loop } = createGameLoop({
+    world: new World({ seed: BOOT_SEED }),
+    sources: browserFrameSources(globalThis.window),
+    draw: ({ timeMs }) => {
+      view.renderFrame(timeMs);
+    },
+  });
+  loop.start();
 
   const status = document.createElement('p');
   status.setAttribute('role', 'status');
