@@ -26,3 +26,15 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].yaw` | `0` \| `90` \| `180` \| `270` | `0` | Rotation about +y in degrees: 0, 90, 180 or 270. |
 | `spawns[].prop` | ref → testprop | — | Prop to spawn; without one the spawn is a marker. |
 | `spawns[].tags` | list of string | `[]` | Free-form tags for systems and tools. |
+| `spawns[].interact` | object | — | Makes the spawned entity interactable: its affordances (mw-e02.5). |
+| `spawns[].interact.affordances` | list of object (at least 1) | required | In priority order: Interact uses the first one the actor can. |
+| `spawns[].interact.affordances[].verb` | `"use"` \| `"open"` \| `"close"` \| `"pull"` \| `"press"` \| `"pick-up"` \| `"read"` \| `"search"` \| `"hide"` \| `"climb"` \| `"talk"` \| `"push"` \| `"unlock"` \| `"pick-lock"` \| `"light"` \| `"extinguish"` | required | What Interact does. |
+| `spawns[].interact.affordances[].label` | string | — | Prompt text; defaults to the verb (e.g. "Pull"). |
+| `spawns[].interact.affordances[].hold` | number 0–10 | — | Seconds Interact must be held; 0 or omitted fires on press. |
+| `spawns[].interact.affordances[].requires` | list of object | — | Every one must hold for the actor to use it (else shown greyed with the reason). |
+| `spawns[].interact.affordances[].requires[].capability` | id | required | Capability the actor needs (class, skill). |
+| `spawns[].interact.affordances[].requires[].item` | id | required | Item id the actor must carry (a key). |
+| `spawns[].interact.affordances[].reason` | string | — | Shown while unavailable, e.g. "Locked — needs Iron Key". |
+| `spawns[].interact.range` | number > 0 | — | Reach in metres; defaults to 2.5. |
+| `spawns[].interact.anchor` | list of any (at least 3) | — | Focus point relative to the entity, metres; defaults to [0, 1, 0]. |
+| `spawns[].interact.radius` | number ≥ 0 | — | Bounding radius of the focus point, metres. |

@@ -9,6 +9,7 @@
 
 import type { KitPurpose, KitShape, SceneYaw } from '@content/index';
 import type { RampRise } from '../character/greybox';
+import type { InteractableSpec } from '../interaction/affordance';
 import type { StaticColliderDesc } from '../physics/static-colliders';
 import type { Vec3 } from '../stimulus/shapes';
 
@@ -54,6 +55,8 @@ export interface SceneSpawnSpec {
   readonly yaw: SceneYaw;
   readonly prop?: { readonly id: string } | undefined;
   readonly tags: readonly string[];
+  /** Makes the spawned entity interactable (mw-e02.5). */
+  readonly interact?: InteractableSpec | undefined;
 }
 
 /** A scene as the layout needs it; `GameEntry<'scene'>` satisfies it. */
@@ -108,6 +111,8 @@ export interface SceneSpawnPlacement {
   readonly rotation: Quat;
   readonly prop: string | undefined;
   readonly tags: readonly string[];
+  /** Its affordances, when the spawn is interactable (see src/sim/interaction). */
+  readonly interact?: InteractableSpec | undefined;
 }
 
 export interface SceneLayout {
@@ -245,6 +250,7 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       rotation: ROTATIONS[spawn.yaw],
       prop: spawn.prop?.id,
       tags: Object.freeze([...spawn.tags]),
+      interact: spawn.interact,
     }),
   );
   return Object.freeze({

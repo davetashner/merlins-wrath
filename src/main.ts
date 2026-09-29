@@ -10,7 +10,12 @@ import { browserFrameSources, createGameLoop, object3DBinding } from '@game/loop
 import { bootPhysics } from '@game/physics-loader';
 import { formatBudgetWarning, installGamePhysics, playerFocus } from '@game/physics-objects';
 import { createUiGameBridge } from '@game/ui/index';
-import { attachPlayerInput, setupTestbedPlayer, type TestbedPlayer } from '@game/player/index';
+import {
+  attachPlayerInput,
+  interactPromptModel,
+  setupTestbedPlayer,
+  type TestbedPlayer,
+} from '@game/player/index';
 import {
   readPhysicsObjectTransform,
   readSceneTransform,
@@ -30,10 +35,13 @@ import {
   HIT_VOLUME_COMPONENTS,
   hitVolumeSystem,
   noAllies,
+  physicsBodiesOf,
   PhysicsObjectComponent,
   playerStart,
   RapierCollisionWorld,
+  RapierSightWorld,
   registerSceneComponents,
+  SceneSpawnComponent,
   World,
   type ActionFrame,
   type RapierPhysics,
@@ -43,7 +51,7 @@ import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
 import { formatVfxStats, parseVfxParam, VfxDemo } from '@tools/vfx-demo/index';
-import { UiRoot } from '@ui/index';
+import { InteractPrompt, UiRoot } from '@ui/index';
 import {
   DEBUG_CAMERA_HINT,
   GAMEPAD_DISCONNECTED_HINT,
@@ -185,6 +193,9 @@ function startRenderer(root: HTMLElement): void {
   // The HUD/menu layer (mw-e00.23). Screens pushed onto it may capture input (gameplay action frames
   // are withheld) and pause the sim; menus need the pointer, so capture releases pointer lock.
   const ui = new UiRoot(root);
+  // The contextual Interact prompt (mw-e02.5): the player's focus, with the bound key or button.
+  const interactPrompt = new InteractPrompt();
+  ui.hud.append(interactPrompt.element);
   const uiInput = ui.attachInput({
     window: globalThis.window,
     navigator: globalThis.navigator,
@@ -311,6 +322,7 @@ function startRenderer(root: HTMLElement): void {
     };
 
     let lastFrameMs: number | undefined;
+    const interactions: { tick: number; verb: string; spawn: string | null }[] = [];
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
     let animation: AnimDemo | undefined;
     let publishedProbe = '';
@@ -330,6 +342,13 @@ function startRenderer(root: HTMLElement): void {
         if (debugCamera.update(elapsedMs)) writeCameraData();
         lastFrameMs = timeMs;
         player?.frame(frame);
+        if (player !== undefined) {
+          const glyph = inputGlyph('interact', sampler.lastDevice, {
+            keyboardMouse: sampler.bindings,
+            gamepad: sampler.padBindings,
+          });
+          interactPrompt.update(interactPromptModel(player.prompt(), glyph));
+        }
         hitOverlay.sync(world);
         if (animation !== undefined) {
           animation.driver.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
@@ -393,6 +412,20 @@ function startRenderer(root: HTMLElement): void {
           // The e2e clipping probe (mw-e02.4 AC-5): frames drawn, and how many clipped (must be 0).
           publishCamera: (readout) => {
             root.dataset['orbitCamera'] = JSON.stringify(readout);
+          },
+          // Focus and Interact (mw-e02.5): reach is blocked by anything solid in the sim's Rapier
+          // world. The e2e reads the player's interactions (latest last) from #app[data-interactions].
+          interaction: {
+            sight: new RapierSightWorld(physics),
+            bodiesOf: (entity) => physicsBodiesOf(world, entity),
+            publish: (event) => {
+              interactions.push({
+                tick: world.tick,
+                verb: event.verb,
+                spawn: world.get(event.target, SceneSpawnComponent)?.id ?? null,
+              });
+              root.dataset['interactions'] = JSON.stringify(interactions.slice(-10));
+            },
           },
         });
         focus.entity = player.entity; // bodies near the player never get forced to sleep

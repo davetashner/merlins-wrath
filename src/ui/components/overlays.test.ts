@@ -119,6 +119,9 @@ describe('glyph prompt', () => {
     prompt.setGlyph(UI_INTENT_GLYPHS.gamepad.back);
     prompt.setGlyph('B');
     expect(prompt.element.querySelector('kbd')?.textContent).toBe('B');
+    prompt.setAction('Back');
+    prompt.setAction('Close');
+    expect(prompt.element.textContent).toBe('BClose');
   });
 
   it('has a glyph for every intent on both devices', () => {

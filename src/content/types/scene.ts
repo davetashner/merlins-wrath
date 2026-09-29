@@ -9,6 +9,7 @@
 
 import { z } from 'zod';
 import { contentId, ref } from '../schema.ts';
+import { interactableSchema } from './interaction.ts';
 import { KIT_PURPOSES, vec3Schema } from './kit.ts';
 
 /** Placements snap to this fraction of a grid cell. */
@@ -48,6 +49,9 @@ export const sceneSpawnSchema = z.strictObject({
   yaw,
   prop: ref('testprop').optional().describe('Prop to spawn; without one the spawn is a marker.'),
   tags: z.array(z.string().min(1)).default([]).describe('Free-form tags for systems and tools.'),
+  interact: interactableSchema
+    .optional()
+    .describe('Makes the spawned entity interactable: its affordances (mw-e02.5).'),
 });
 
 const cameraSchema = z.strictObject({

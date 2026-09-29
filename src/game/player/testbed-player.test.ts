@@ -6,7 +6,11 @@ import {
   CharacterController,
   FakeCollisionWorld,
   hashWorld,
+  interacted,
+  PlacementComponent,
   PlayerLook,
+  RapierSightWorld,
+  registerWorldProperties,
   spawnCharacter,
   RapierCollisionWorld,
   RapierPhysics,
@@ -14,6 +18,7 @@ import {
   SKIN,
   World,
   type ActionFrame,
+  type Interaction,
 } from '@sim/index';
 import { ActionSampler } from '../input';
 import { createGameLoop, FakeFrames, type SceneBinding, type Transform } from '../loop';
@@ -78,9 +83,11 @@ type Extra = Partial<TestbedPlayerOptions<Box, ActionFrame>>;
  * The testbed loaded headlessly as the game loads it (static colliders in the sim's Rapier world,
  * the controller querying it), with the player wired to a sampler and a fake-frame loop.
  */
-function testbed(extra: Extra = {}) {
+function testbed(options: Extra | ((physics: RapierPhysics) => Extra) = {}) {
   const physics = new RapierPhysics(RAPIER);
+  const extra = typeof options === 'function' ? options(physics) : options;
   const world = registerSceneComponents(new World<ActionFrame>({ seed: 1, physics }));
+  if (extra.interaction !== undefined) registerWorldProperties(world).register(PlacementComponent);
   const sampler = new ActionSampler();
   const frames = new FakeFrames();
   const { loop, sync } = createGameLoop<ActionFrame>({
@@ -392,6 +399,62 @@ describe('testbed orbit camera (mw-e02.4)', () => {
     player.frame({ alpha: 1, timeMs: 400 });
     player.frame();
     expect(camera.at.z).toBeLessThan(-1);
+  });
+});
+
+describe('testbed player interaction (mw-e02.5)', () => {
+  const pressE = (sampler: ActionSampler, run: (seconds: number) => void) => {
+    sampler.down('KeyE');
+    run(0.1);
+    sampler.up('KeyE');
+    run(0.1);
+  };
+
+  it('AC-6: facing the testbed lever at spawn, Interact pulls it and the prompt names it', () => {
+    const pulled: Interaction[] = [];
+    const { player, sampler, run, world } = testbed((physics) => ({
+      interaction: {
+        sight: new RapierSightWorld(physics),
+        bodiesOf: () => [],
+        publish: (event) => pulled.push(event),
+      },
+    }));
+    run(0.1);
+    expect(player.prompt()).toMatchObject({ verb: 'pull', label: 'Pull lever', available: true });
+    pressE(sampler, run);
+    expect(pulled).toHaveLength(1);
+    expect(pulled[0]).toMatchObject({ actor: player.entity, verb: 'pull', affordance: 0 });
+    expect(world.isAlive(pulled[0]?.target ?? 0)).toBe(true);
+    player.dispose();
+    expect(player.prompt()).toBeUndefined();
+  });
+
+  it('stops publishing once disposed', () => {
+    const pulled: Interaction[] = [];
+    const rig = testbed({ interaction: { publish: (event) => pulled.push(event) } });
+    rig.run(0.1);
+    pressE(rig.sampler, rig.run);
+    expect(pulled).toHaveLength(1);
+    // Other actors' interactions are not the player's.
+    rig.world.events.emit(interacted, { actor: 999, target: 1, verb: 'pull', affordance: 0 });
+    rig.run(0.05);
+    expect(pulled).toHaveLength(1);
+    rig.player.dispose();
+    pressE(rig.sampler, rig.run);
+    expect(pulled).toHaveLength(1);
+  });
+
+  it('interacts without publishing when nobody listens', () => {
+    const rig = testbed({ interaction: {} });
+    rig.run(0.1);
+    expect(rig.player.prompt()?.verb).toBe('pull');
+    rig.player.dispose();
+  });
+
+  it('has no prompt without interaction', () => {
+    const { player, run } = testbed();
+    run(0.1);
+    expect(player.prompt()).toBeUndefined();
   });
 });
 

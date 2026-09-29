@@ -52,6 +52,7 @@ export * from './facts';
 export * from './field';
 export * from './geom';
 export * from './input';
+export * from './interaction';
 export * from './light';
 export * as simMath from './math';
 export * from './physics';

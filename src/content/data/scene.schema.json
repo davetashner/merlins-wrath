@@ -215,6 +215,132 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          "interact": {
+            "description": "Makes the spawned entity interactable: its affordances (mw-e02.5).",
+            "type": "object",
+            "properties": {
+              "affordances": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "verb": {
+                      "type": "string",
+                      "enum": [
+                        "use",
+                        "open",
+                        "close",
+                        "pull",
+                        "press",
+                        "pick-up",
+                        "read",
+                        "search",
+                        "hide",
+                        "climb",
+                        "talk",
+                        "push",
+                        "unlock",
+                        "pick-lock",
+                        "light",
+                        "extinguish"
+                      ],
+                      "description": "What Interact does."
+                    },
+                    "label": {
+                      "description": "Prompt text; defaults to the verb (e.g. \"Pull\").",
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hold": {
+                      "description": "Seconds Interact must be held; 0 or omitted fires on press.",
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 10
+                    },
+                    "requires": {
+                      "description": "Every one must hold for the actor to use it (else shown greyed with the reason).",
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "capability": {
+                                "type": "string",
+                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                "description": "Capability the actor needs (class, skill)."
+                              }
+                            },
+                            "required": [
+                              "capability"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "item": {
+                                "type": "string",
+                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                "description": "Item id the actor must carry (a key)."
+                              }
+                            },
+                            "required": [
+                              "item"
+                            ],
+                            "additionalProperties": false
+                          }
+                        ]
+                      }
+                    },
+                    "reason": {
+                      "description": "Shown while unavailable, e.g. \"Locked — needs Iron Key\".",
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "verb"
+                  ],
+                  "additionalProperties": false
+                },
+                "description": "In priority order: Interact uses the first one the actor can."
+              },
+              "range": {
+                "description": "Reach in metres; defaults to 2.5.",
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "anchor": {
+                "description": "Focus point relative to the entity, metres; defaults to [0, 1, 0].",
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "radius": {
+                "description": "Bounding radius of the focus point, metres.",
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "affordances"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [

@@ -19,8 +19,10 @@ import { installGamePhysics, playerFocus } from '@game/physics-objects';
 import { setupTestbedPlayer, type TransformReader } from '@game/player/index';
 import { SceneLoader } from '@game/scene/index';
 import {
+  physicsBodiesOf,
   RapierCollisionWorld,
   RapierPhysics,
+  RapierSightWorld,
   registerSceneComponents,
   World,
   type ActionFrame,
@@ -139,6 +141,10 @@ export function createTestbedWorld(
     binding: headless,
     camera: { position: { set: nothing }, lookAt: nothing, fov: 70, near: 0.1, aspect: 16 / 9 },
     moves: compileMoves(content.all('move')),
+    interaction: {
+      sight: new RapierSightWorld(physics),
+      bodiesOf: (entity) => physicsBodiesOf(world, entity),
+    },
   }).entity;
   return world;
 }

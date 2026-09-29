@@ -198,6 +198,16 @@
       "prop": "crate"
     },
     {
+      "id": "room-lever",
+      "at": [0, 0, 1],
+      "prop": "lever",
+      "interact": {
+        "affordances": [{ "verb": "pull", "label": "Pull lever" }],
+        "anchor": [0, 0.35, 0],
+        "radius": 0.35
+      }
+    },
+    {
       "id": "arena-plank",
       "at": [2, 0, 21],
       "yaw": 90,

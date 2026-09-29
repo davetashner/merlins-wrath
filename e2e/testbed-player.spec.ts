@@ -316,3 +316,26 @@ test('mw-e02.4: the mouse wheel zooms the orbit camera between 2 and 6 m', async
   await expect.poll(async () => (await orbitCamera(page)).zoom).toBe(6);
   expect(problems).toEqual([]);
 });
+
+// mw-e02.5 AC-6: the testbed's lever stands 2 m ahead of the player start, so the player faces it on
+// arrival. The page publishes the player's completed interactions on #app[data-interactions].
+test('mw-e02.5 AC-6: facing the lever, Interact pulls it and the prompt shows the bound key', async ({
+  page,
+}) => {
+  const problems = collectProblems(page);
+  await play(page);
+  const prompt = page.getByTestId('interact-prompt');
+  await expect(prompt).toBeVisible();
+  await expect(prompt.locator('kbd')).toHaveText('E');
+  await expect(prompt).toContainText('Pull lever');
+  await expect(prompt).toHaveAttribute('data-available', 'true');
+  expect(await page.locator('#app').getAttribute('data-interactions')).toBeNull();
+  await page.keyboard.press('KeyE');
+  await expect
+    .poll(async () => {
+      const json = await page.locator('#app').getAttribute('data-interactions');
+      return JSON.parse(json ?? '[]') as { verb: string; spawn: string | null }[];
+    })
+    .toEqual([expect.objectContaining({ verb: 'pull', spawn: 'room-lever' })]);
+  expect(problems).toEqual([]);
+});
