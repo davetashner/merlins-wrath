@@ -306,6 +306,21 @@ export {
   type SpellSchool,
   type SpellStimulusElement,
 } from './types/spell.ts';
+export {
+  HEX_COLOUR_PATTERN,
+  VFX_BLEND_MODES,
+  VFX_QUALITY_TIERS,
+  VFX_TEXTURE_PATTERN,
+  vfxEffectSchema,
+  vfxEmitterSchema,
+  type VfxBlendMode,
+  type VfxColourCurve,
+  type VfxEffectDef,
+  type VfxEffectDefInput,
+  type VfxEmitterDef,
+  type VfxQualityTier,
+  type VfxScalarCurve,
+} from './types/vfx-effect.ts';
 export { canonicalJson, fnv1a64 } from './hash.ts';
 export {
   toPropertyInit,

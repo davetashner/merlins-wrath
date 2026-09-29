@@ -1,0 +1,30 @@
+{
+  "id": "vfx-test-arcane-motes",
+  "notes": "Framework test effect (mw-e29.1): looping arcane-school motes (style bible §2.3 Arcane: circles and motes, steady) drifting in every direction around the origin. Tests spherical spawn and a 180° cone.",
+  "priority": 50,
+  "duration": 1.5,
+  "loop": true,
+  "emitters": [
+    {
+      "id": "motes",
+      "texture": "vfx-mote-01",
+      "blend": "additive",
+      "rate": 20,
+      "bursts": [{ "at": 0, "count": 6 }],
+      "lifetime": { "min": 1, "max": 1.5 },
+      "speed": { "min": 0.1, "max": 0.3 },
+      "coneDeg": 180,
+      "spawnRadius": 0.6,
+      "size": 0.08,
+      "color": [
+        { "t": 0, "color": "#D8C8FF" },
+        { "t": 1, "color": "#8B5CF6" }
+      ],
+      "alpha": [
+        { "t": 0, "v": 0 },
+        { "t": 0.3, "v": 1 },
+        { "t": 1, "v": 0 }
+      ]
+    }
+  ]
+}

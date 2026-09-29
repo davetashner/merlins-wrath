@@ -1,0 +1,28 @@
+{
+  "id": "vfx-test-stress",
+  "notes": "Framework perf effect (mw-e29.1 AC-7): a looping column of arcane-school motes sized to reserve exactly 40 particles, so the ?vfx=stress testbed's 50 of them fill the 2000-particle High cap.",
+  "priority": 50,
+  "duration": 1,
+  "loop": true,
+  "emitters": [
+    {
+      "id": "column",
+      "texture": "vfx-mote-01",
+      "blend": "additive",
+      "rate": 26,
+      "lifetime": { "min": 1, "max": 1.5 },
+      "speed": { "min": 0.8, "max": 1.6 },
+      "coneDeg": 25,
+      "spawnRadius": 0.2,
+      "gravity": 0.3,
+      "size": [
+        { "t": 0, "v": 0.18 },
+        { "t": 1, "v": 0.06 }
+      ],
+      "color": [
+        { "t": 0, "color": "#D8C8FF" },
+        { "t": 1, "color": "#8B5CF6" }
+      ]
+    }
+  ]
+}
