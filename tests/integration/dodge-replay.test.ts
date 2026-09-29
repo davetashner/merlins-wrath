@@ -43,6 +43,9 @@ function outcome(pressTick: number) {
   return { world, knight, started, hits, dodged, damage };
 }
 
+/** 100 replays take ~3 s alone but far longer on a loaded runner: allow a minute. */
+const REPLAY_TIMEOUT_MS = 60_000;
+
 const variants = [
   { file: 'dodge-on-time.json', scenario: dodgeOnTimeScenario },
   { file: 'dodge-early.json', scenario: dodgeEarlyScenario },
@@ -87,6 +90,7 @@ describe('dodge timing replays (mw-e04.8)', () => {
       }
       expect(finals.size).toBe(1);
     },
+    REPLAY_TIMEOUT_MS,
   );
 
   it('AC-5: the two goldens diverge exactly where the outcomes do', () => {
