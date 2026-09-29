@@ -1,3 +1,5 @@
+import wasm from 'vite-plugin-wasm';
+import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { DEFAULT_EXCLUDES, readExclusionGlobs } from './scripts/check-coverage-exclusions.ts';
 import { ContentCoverageReporter } from './scripts/content-coverage-reporter.ts';
@@ -6,14 +8,25 @@ import { readLayers, vitestThresholds } from './scripts/coverage-layers.ts';
 // One config for dev, build and tests: path aliases come from tsconfig.json `paths`,
 // so @sim/*, @content/*, @game/* … resolve identically in Vite, Vitest and tsc.
 export default defineConfig({
+  // Rapier's deterministic build (ADR-0001) imports its .wasm as an ES module; the plugin emits it
+  // as a separate asset fetched by the lazily imported physics chunk (mw-e00.19).
+  // Its typings declare `any`, hence the cast.
+  plugins: [wasm() as Plugin],
   resolve: {
     tsconfigPaths: true,
   },
   build: {
     target: 'es2023',
+    // three.js alone is ~530 kB minified (~130 kB gz) in one chunk; warn only above that (mw-e00.19).
+    chunkSizeWarningLimit: 600,
     rolldownOptions: {
-      // The game, plus dev testbed pages (mw-e28.1 audio) that e2e drives against the real build.
-      input: { main: 'index.html', 'testbed-audio': 'testbed/audio.html' },
+      // The game, plus dev testbed pages (mw-e28.1 audio, mw-e00.19 render) that e2e drives against
+      // the real build.
+      input: {
+        main: 'index.html',
+        'testbed-audio': 'testbed/audio.html',
+        'testbed-render': 'testbed/render.html',
+      },
     },
   },
   test: {

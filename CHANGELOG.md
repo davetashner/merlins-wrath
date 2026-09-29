@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- The game page now opens onto a 3D view (a placeholder scene) and loads physics in the background,
+  with a "Loading physics…" notice while it downloads. Browsers without WebGL 2 or WebAssembly get a
+  readable "this browser cannot run The Vesper Bell" screen instead of a blank page.
+
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.
 - An opt-in main theme player on the landing page: off by default, and nothing downloads until the

@@ -123,6 +123,14 @@ jobs:
           pactl load-module module-null-sink sink_name=ci_null
           pactl set-default-sink ci_null
       - run: pnpm e2e
+      # The renderer boot smoke's first-frame screenshot, kept on every run (mw-e00.19).
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: boot-smoke-screenshot
+          path: test-results/**/boot-frame.png
+          if-no-files-found: warn
+          retention-days: 14
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
