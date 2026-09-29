@@ -21,6 +21,7 @@ import { materialSchema } from './types/material.ts';
 import { moveSchema } from './types/move.ts';
 import { sceneSchema } from './types/scene.ts';
 import { senseSchema } from './types/sense.ts';
+import { shieldSchema } from './types/shield.ts';
 import { signalGraphSchema } from './types/signal-graph.ts';
 import { checkSocketTracks, socketTrackSchema } from './types/socket-track.ts';
 import { spellSchema } from './types/spell.ts';
@@ -44,6 +45,7 @@ export const contentTypes = {
   move: moveSchema,
   scene: sceneSchema,
   sense: senseSchema,
+  shield: shieldSchema,
   'signal-graph': signalGraphSchema,
   'socket-track': socketTrackSchema,
   spell: spellSchema,

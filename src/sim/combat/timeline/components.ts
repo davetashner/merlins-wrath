@@ -26,6 +26,17 @@ export interface BufferedAction {
   readonly age: number;
 }
 
+/**
+ * The chain hit an entity last finished, remembered while it stands idle: a request for that chain's
+ * root continues the chain until `idle` reaches the timeline's chain reset (CHAIN_RESET_TICKS).
+ */
+export interface ChainMemory {
+  /** Move id of the hit that completed. */
+  readonly move: string;
+  /** Idle local ticks since it completed: 0 on the tick it ended. */
+  readonly idle: number;
+}
+
 /** One entity's action timeline. */
 export interface ActionTimeline {
   /** The move in progress, or null when idle. */
@@ -43,6 +54,8 @@ export interface ActionTimeline {
   readonly scaleTicks: number | null;
   /** Fractional local time carried to the next tick, in 1/TIME_SCALE_STEPS of a tick. */
   readonly timeCarry: number;
+  /** The last completed chain hit, while the chain may still continue; null otherwise. */
+  readonly chain: ChainMemory | null;
 }
 
 /** Which move each abstract button starts, for entities driven by the tick's ActionFrame. */
@@ -69,6 +82,7 @@ const IDLE: ActionTimeline = Object.freeze({
   timeScale: 1,
   scaleTicks: null,
   timeCarry: 0,
+  chain: null,
 });
 
 /**

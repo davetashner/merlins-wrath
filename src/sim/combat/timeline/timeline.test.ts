@@ -29,6 +29,7 @@ import {
 } from './events';
 import {
   ACTION_BUFFER_TICKS,
+  CHAIN_RESET_TICKS,
   actionOf,
   actionTimelineSystem,
   activeHitbox,
@@ -314,11 +315,11 @@ describe('action timeline: input buffer and chains', () => {
   it('a request after the chain lapsed, or for another root, starts fresh', () => {
     const late = setup();
     pressAt(late, 0, 'light-1');
-    pressAt(late, 35, 'light-1');
-    late.stepTo(40);
+    pressAt(late, 34 + CHAIN_RESET_TICKS, 'light-1');
+    late.stepTo(70);
     expect(late.started.map((e) => [e.tick, e.move])).toEqual([
       [0, 'light-1'],
-      [35, 'light-1'],
+      [34 + CHAIN_RESET_TICKS, 'light-1'],
     ]);
     const other = setup();
     pressAt(other, 0, 'light-1');
@@ -328,6 +329,79 @@ describe('action timeline: input buffer and chains', () => {
       [0, 'light-1'],
       [34, 'heavy'],
     ]);
+  });
+
+  it('the chain waits 30 idle ticks past recovery: started on E + 29 it continues, on E + 30 it resets', () => {
+    expect(CHAIN_RESET_TICKS).toBe(30);
+    const kept = setup();
+    pressAt(kept, 0, 'light-1'); // ends on 34
+    pressAt(kept, 34 + 29, 'light-1');
+    kept.stepTo(70);
+    expect(kept.started.map((e) => [e.tick, e.move, e.chained])).toEqual([
+      [0, 'light-1', false],
+      [63, 'light-2', true],
+    ]);
+    const reset = setup();
+    pressAt(reset, 0, 'light-1');
+    pressAt(reset, 34 + 30, 'light-1');
+    reset.stepTo(70);
+    expect(reset.started.map((e) => [e.tick, e.move, e.chained])).toEqual([
+      [0, 'light-1', false],
+      [64, 'light-1', false],
+    ]);
+  });
+
+  it('only chain hits are remembered; an interrupt or another move forgets the chain', () => {
+    const s = setup();
+    pressAt(s, 0, 'heavy'); // no chainNext: nothing to remember
+    s.stepTo(51);
+    expect(s.world.get(s.knight, ActionTimelineComponent)?.chain).toBeNull();
+    pressAt(s, 51, 'light-1'); // ends on 85
+    s.stepTo(86);
+    expect(s.world.get(s.knight, ActionTimelineComponent)?.chain).toEqual({
+      move: 'light-1',
+      idle: 0,
+    });
+    interruptAction(s.world, s.knight);
+    expect(s.world.get(s.knight, ActionTimelineComponent)?.chain).toBeNull();
+    pressAt(s, 90, 'light-1');
+    s.stepTo(91);
+    expect(s.started.at(-1)).toMatchObject({ tick: 90, move: 'light-1', chained: false });
+    const other = setup();
+    pressAt(other, 0, 'light-1');
+    pressAt(other, 40, 'heavy'); // forgets light-1
+    pressAt(other, 40 + 50 + 1, 'light-1');
+    other.stepTo(100);
+    expect(other.started.map((e) => e.move)).toEqual(['light-1', 'heavy', 'light-1']);
+  });
+
+  it('a timeline without chain memory (older snapshots) and custom or bad chain resets', () => {
+    const s = setup();
+    const timeline = s.world.get(s.knight, ActionTimelineComponent);
+    if (timeline === undefined) throw new Error('no timeline');
+    const legacy = Object.fromEntries(Object.entries(timeline).filter(([key]) => key !== 'chain'));
+    s.world.set(s.knight, ActionTimelineComponent, legacy as unknown as typeof timeline);
+    requestMove(s.world, s.knight, 'light-1');
+    s.steps(1);
+    expect(s.started.map((e) => e.move)).toEqual(['light-1']);
+    const world = new World<ActionFrame>({ seed: 1 }).register(
+      ...ACTION_TIMELINE_COMPONENTS,
+      StaminaComponent,
+    );
+    world.addSystem(actionTimelineSystem({ moves: MOVES, chainResetTicks: 0 }));
+    const knight = world.spawn();
+    giveActionTimeline(world, knight);
+    world.step([]);
+    requestMove(world, knight, 'light-1');
+    for (let i = 0; i < 35; i++) world.step([]); // light-1 ends on tick 35
+    requestMove(world, knight, 'light-1'); // tick 36: one idle tick later, already reset
+    world.step([]);
+    expect(actionOf(world, knight)?.move).toBe('light-1');
+    for (const bad of [-1, 1.5]) {
+      expect(() => actionTimelineSystem({ moves: MOVES, chainResetTicks: bad })).toThrow(
+        RangeError,
+      );
+    }
   });
 
   it('a chain that loops back on itself still resolves', () => {
