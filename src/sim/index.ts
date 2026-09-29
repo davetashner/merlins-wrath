@@ -53,6 +53,7 @@ export * from './field';
 export * from './input';
 export * as simMath from './math';
 export * from './physics';
+export * from './player';
 export * from './properties';
 export * from './scene';
 export * from './stimulus';
