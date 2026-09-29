@@ -258,7 +258,7 @@ describe('signal graph content', () => {
       'nodes.2.seconds: Too small: expected number to be >0',
       'nodes.3.edge: Invalid option: expected one of "rising"|"falling"|"both"',
       expect.stringMatching(/^nodes\.4\.filter\.0\.property: Invalid option/),
-      'nodes.5.on: Unrecognized key: "material"',
+      'nodes.5.on: world property "material" is not allowed here',
     ]);
     expect(problems(graph([], []))).toEqual(['nodes: Too small: expected array to have >=1 items']);
     expect(problems({ ...graph([door()]), wires: [{ from: 'a.b.c', to: 'door' }] })).toEqual([

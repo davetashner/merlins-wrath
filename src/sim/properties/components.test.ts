@@ -127,6 +127,16 @@ describe('world property components', () => {
     expect(seen).toEqual([]);
   });
 
+  it('mw-e03.31: partial records compare by their fields, including which fields they have', () => {
+    const { w, id } = withEntity({ toughness: { blunt: 200 } });
+    const seen = recordChanges(w);
+    expect(setProperty(w, id, 'toughness', { blunt: 200 })).toBe(false);
+    expect(setProperty(w, id, 'toughness', { blunt: 200, slash: 800 })).toBe(true);
+    expect(setProperty(w, id, 'toughness', { blunt: 200 })).toBe(true);
+    w.events.flush();
+    expect(seen.map((change) => change.new)).toEqual([{ blunt: 200, slash: 800 }, { blunt: 200 }]);
+  });
+
   it('AC-2: inside a step, each changing write is delivered once after the writing system', () => {
     const { w, id } = withEntity({ temperature: 20, lightEmitter: { intensity: 5, radius: 2 } });
     const seen = recordChanges(w);

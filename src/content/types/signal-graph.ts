@@ -53,8 +53,10 @@ export const REGISTERED_KINDS: readonly string[] = ['delay', 'latch'];
 const fieldSchemas = worldPropertiesSchema.shape;
 type PropertyKey = keyof typeof fieldSchemas;
 
-/** Properties a predicate can compare: every one but the `lightEmitter` record. */
-const COMPARABLE = (Object.keys(fieldSchemas) as PropertyKey[]).filter((k) => k !== 'lightEmitter');
+/** Properties a predicate can compare: every one but the records (`lightEmitter`, `toughness`). */
+const COMPARABLE = (Object.keys(fieldSchemas) as PropertyKey[]).filter(
+  (k) => fieldSchemas[k].unwrap().type !== 'object',
+);
 
 /** A property's value kind: its field schema type (`material` is a ref, so an id string). */
 function valueKind(key: PropertyKey): 'number' | 'boolean' | 'string' {

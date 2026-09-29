@@ -2,7 +2,7 @@
   "$schema": "../material.schema.json",
   "id": "glenstone",
   "name": "Glenstone (dressed)",
-  "notes": "The valley's pale, honey-grey freestone (story bible §3.1), which cuts clean and carves fine: Priory walls, the Wendmouth quays, the Deepworks' old galleries, cut blocks. A freestone is a fine-grained limestone or sandstone, so it is lighter (2300 kg/m³) and a little softer (300 hp) than rough stone. Dressed faces are smooth, so climbing them needs skill or a tool (grade 3) and they are slightly less grippy (0.55). Rough, uncut glenstone rock can use the stone preset.",
+  "notes": "The valley's pale, honey-grey freestone (story bible §3.1), which cuts clean and carves fine: Priory walls, the Wendmouth quays, the Deepworks' old galleries, cut blocks. A freestone is a fine-grained limestone or sandstone, so it is lighter (2300 kg/m³) and a little softer (300 hp) than rough stone. Dressed faces are smooth, so climbing them needs skill or a tool (grade 3) and they are slightly less grippy (0.55). Rough, uncut glenstone rock can use the stone preset. Hard surface: arrows ricochet and rope arrows do not embed. (mw-e03.31)",
   "footstepLoudness": 0,
   "impactSound": "sfx-impact-stone",
   "properties": {
@@ -11,6 +11,8 @@
     "friction": 0.55,
     "soundDamping": 0.05,
     "opaque": true,
-    "climbable": 3
+    "climbable": 3,
+    "surfaceHardness": "hard",
+    "softAnchor": false
   }
 }

@@ -2,7 +2,7 @@
   "$schema": "../material.schema.json",
   "id": "paper",
   "name": "Paper",
-  "notes": "Paper, parchment and books: notes, scrolls, posters, screens. Ignites at 230 °C (the classic '451 °F') and flashes out in 8 s. Density 800 kg/m³ for a sheet stack, so it floats. Nearly no structure (5 hp). A little rustle underfoot (+1 dB). Burns away completely (mw-e03.5).",
+  "notes": "Paper, parchment and books: notes, scrolls, posters, screens. Ignites at 230 °C (the classic '451 °F') and flashes out in 8 s. Density 800 kg/m³ for a sheet stack, so it floats. Nearly no structure (5 hp). A little rustle underfoot (+1 dB). Burns away completely (mw-e03.5). Soft surface; not a rope-arrow anchor. (mw-e03.31)",
   "footstepLoudness": 1,
   "impactSound": "sfx-impact-cloth",
   "properties": {
@@ -13,7 +13,9 @@
     "hp": 5,
     "friction": 0.4,
     "soundDamping": 0.3,
-    "impactAbsorb": 0.2
+    "impactAbsorb": 0.2,
+    "surfaceHardness": "soft",
+    "softAnchor": false
   },
   "burnt": "destroyed"
 }

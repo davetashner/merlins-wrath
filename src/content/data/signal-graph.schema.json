@@ -260,7 +260,28 @@
                             "soundDamping",
                             "friction",
                             "impactAbsorb",
-                            "owner"
+                            "owner",
+                            "liquid",
+                            "flammableGas",
+                            "extinguishable",
+                            "waterSurface",
+                            "unstable",
+                            "suspended",
+                            "support",
+                            "breakable",
+                            "bashable",
+                            "cuttable",
+                            "shootable",
+                            "softAnchor",
+                            "surfaceHardness",
+                            "chargeActivated",
+                            "lightActivated",
+                            "hidden",
+                            "trapped",
+                            "trap",
+                            "container",
+                            "remains",
+                            "noiseMultiplier"
                           ],
                           "description": "World property to compare (absent = its default)."
                         },
@@ -481,7 +502,28 @@
                             "soundDamping",
                             "friction",
                             "impactAbsorb",
-                            "owner"
+                            "owner",
+                            "liquid",
+                            "flammableGas",
+                            "extinguishable",
+                            "waterSurface",
+                            "unstable",
+                            "suspended",
+                            "support",
+                            "breakable",
+                            "bashable",
+                            "cuttable",
+                            "shootable",
+                            "softAnchor",
+                            "surfaceHardness",
+                            "chargeActivated",
+                            "lightActivated",
+                            "hidden",
+                            "trapped",
+                            "trap",
+                            "container",
+                            "remains",
+                            "noiseMultiplier"
                           ],
                           "description": "World property to compare (absent = its default)."
                         },
@@ -1037,6 +1079,139 @@
                     "type": "string",
                     "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
                     "description": "Ownership tag (faction or owner id)."
+                  },
+                  "liquid": {
+                    "type": "boolean",
+                    "description": "A liquid: it pours, puddles and can have a water surface."
+                  },
+                  "flammableGas": {
+                    "type": "boolean",
+                    "description": "A gas that ignites (flares or explodes) when fire reaches it."
+                  },
+                  "extinguishable": {
+                    "type": "boolean",
+                    "description": "A fire or light source that water, force or an interaction puts out."
+                  },
+                  "waterSurface": {
+                    "type": "boolean",
+                    "description": "Top surface of a body of liquid: cold freezes it into walkable ice (needs a liquid material)."
+                  },
+                  "unstable": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000,
+                    "description": "Force of one push, blast or quake that topples it, J."
+                  },
+                  "suspended": {
+                    "type": "boolean",
+                    "description": "Hangs from its support; falls when the support breaks, burns or is cut."
+                  },
+                  "support": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "description": "Entity a suspended object hangs from (0 = none); set when the level spawns."
+                  },
+                  "breakable": {
+                    "type": "boolean",
+                    "description": "A single hit at or above its toughness for that kind of hit breaks it."
+                  },
+                  "toughness": {
+                    "type": "object",
+                    "properties": {
+                      "blunt": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000,
+                        "description": "Blunt hit energy that breaks it, J."
+                      },
+                      "slash": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000,
+                        "description": "Slash hit energy that breaks it, J."
+                      },
+                      "pierce": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000,
+                        "description": "Pierce hit energy that breaks it, J."
+                      },
+                      "force": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000,
+                        "description": "Force (blast, quake, boulder) energy that breaks it, J."
+                      }
+                    },
+                    "additionalProperties": false,
+                    "description": "Per kind of hit, the single-hit energy that breaks a breakable object; a kind left out never does."
+                  },
+                  "bashable": {
+                    "type": "boolean",
+                    "description": "A shield bash or kick shoves it (or breaks it when breakable)."
+                  },
+                  "cuttable": {
+                    "type": "boolean",
+                    "description": "Slash or pierce damage severs it."
+                  },
+                  "shootable": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000,
+                    "description": "Projectile impulse that fires its signal, N·s."
+                  },
+                  "softAnchor": {
+                    "type": "boolean",
+                    "description": "Rope arrows and hooks embed in it."
+                  },
+                  "surfaceHardness": {
+                    "type": "string",
+                    "enum": [
+                      "soft",
+                      "medium",
+                      "hard"
+                    ],
+                    "description": "Footstep loudness and whether arrows stick (soft, medium) or ricochet (hard)."
+                  },
+                  "chargeActivated": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000,
+                    "description": "Stored charge at which the mechanism fires."
+                  },
+                  "lightActivated": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000,
+                    "description": "Light level on it at which the mechanism fires."
+                  },
+                  "hidden": {
+                    "type": "boolean",
+                    "description": "Not perceivable or targetable until revealed."
+                  },
+                  "trapped": {
+                    "type": "boolean",
+                    "description": "Interacting with it triggers its trap unless disarmed first (needs a trap)."
+                  },
+                  "trap": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "description": "Trap definition id a trapped object triggers."
+                  },
+                  "container": {
+                    "type": "boolean",
+                    "description": "Holds items (contents live in the e18 container component)."
+                  },
+                  "remains": {
+                    "type": "boolean",
+                    "description": "Inert skeletal or corpse remains that summoning can raise."
+                  },
+                  "noiseMultiplier": {
+                    "type": "number",
+                    "minimum": 0.2,
+                    "maximum": 3,
+                    "description": "Multiplier on its wearer's noise; an actor's is the product of its equipment's."
                   }
                 },
                 "additionalProperties": false,
@@ -1197,6 +1372,139 @@
                     "type": "string",
                     "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
                     "description": "Ownership tag (faction or owner id)."
+                  },
+                  "liquid": {
+                    "type": "boolean",
+                    "description": "A liquid: it pours, puddles and can have a water surface."
+                  },
+                  "flammableGas": {
+                    "type": "boolean",
+                    "description": "A gas that ignites (flares or explodes) when fire reaches it."
+                  },
+                  "extinguishable": {
+                    "type": "boolean",
+                    "description": "A fire or light source that water, force or an interaction puts out."
+                  },
+                  "waterSurface": {
+                    "type": "boolean",
+                    "description": "Top surface of a body of liquid: cold freezes it into walkable ice (needs a liquid material)."
+                  },
+                  "unstable": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000,
+                    "description": "Force of one push, blast or quake that topples it, J."
+                  },
+                  "suspended": {
+                    "type": "boolean",
+                    "description": "Hangs from its support; falls when the support breaks, burns or is cut."
+                  },
+                  "support": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "description": "Entity a suspended object hangs from (0 = none); set when the level spawns."
+                  },
+                  "breakable": {
+                    "type": "boolean",
+                    "description": "A single hit at or above its toughness for that kind of hit breaks it."
+                  },
+                  "toughness": {
+                    "type": "object",
+                    "properties": {
+                      "blunt": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000,
+                        "description": "Blunt hit energy that breaks it, J."
+                      },
+                      "slash": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000,
+                        "description": "Slash hit energy that breaks it, J."
+                      },
+                      "pierce": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000,
+                        "description": "Pierce hit energy that breaks it, J."
+                      },
+                      "force": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000,
+                        "description": "Force (blast, quake, boulder) energy that breaks it, J."
+                      }
+                    },
+                    "additionalProperties": false,
+                    "description": "Per kind of hit, the single-hit energy that breaks a breakable object; a kind left out never does."
+                  },
+                  "bashable": {
+                    "type": "boolean",
+                    "description": "A shield bash or kick shoves it (or breaks it when breakable)."
+                  },
+                  "cuttable": {
+                    "type": "boolean",
+                    "description": "Slash or pierce damage severs it."
+                  },
+                  "shootable": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000,
+                    "description": "Projectile impulse that fires its signal, N·s."
+                  },
+                  "softAnchor": {
+                    "type": "boolean",
+                    "description": "Rope arrows and hooks embed in it."
+                  },
+                  "surfaceHardness": {
+                    "type": "string",
+                    "enum": [
+                      "soft",
+                      "medium",
+                      "hard"
+                    ],
+                    "description": "Footstep loudness and whether arrows stick (soft, medium) or ricochet (hard)."
+                  },
+                  "chargeActivated": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000,
+                    "description": "Stored charge at which the mechanism fires."
+                  },
+                  "lightActivated": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000,
+                    "description": "Light level on it at which the mechanism fires."
+                  },
+                  "hidden": {
+                    "type": "boolean",
+                    "description": "Not perceivable or targetable until revealed."
+                  },
+                  "trapped": {
+                    "type": "boolean",
+                    "description": "Interacting with it triggers its trap unless disarmed first (needs a trap)."
+                  },
+                  "trap": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "description": "Trap definition id a trapped object triggers."
+                  },
+                  "container": {
+                    "type": "boolean",
+                    "description": "Holds items (contents live in the e18 container component)."
+                  },
+                  "remains": {
+                    "type": "boolean",
+                    "description": "Inert skeletal or corpse remains that summoning can raise."
+                  },
+                  "noiseMultiplier": {
+                    "type": "number",
+                    "minimum": 0.2,
+                    "maximum": 3,
+                    "description": "Multiplier on its wearer's noise; an actor's is the product of its equipment's."
                   }
                 },
                 "additionalProperties": false

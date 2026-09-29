@@ -130,12 +130,20 @@ export function readProperty<K extends WorldPropertyKey>(
   );
 }
 
-/** Equality of two valid values of one property (so both are primitives or both flat records). */
+/**
+ * Equality of two valid values of one property (so both are primitives or both flat records). Valid
+ * records only hold known fields, so equal field counts plus equal left fields means equal records
+ * (partial records such as `toughness` may differ in which fields they have).
+ */
 function sameValue(a: unknown, b: unknown): boolean {
   if (typeof a !== 'object') return Object.is(a, b);
   const left = a as Readonly<Record<string, unknown>>;
   const right = b as Readonly<Record<string, unknown>>;
-  return Object.keys(left).every((field) => Object.is(left[field], right[field]));
+  const fields = Object.keys(left);
+  return (
+    fields.length === Object.keys(right).length &&
+    fields.every((field) => Object.is(left[field], right[field]))
+  );
 }
 
 /**

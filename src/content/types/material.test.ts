@@ -39,19 +39,26 @@ const REQUIRED_MATERIALS = [
   'wood',
 ];
 
+/** The properties every preset must declare (mw-e03.31). */
+const SURFACE = { surfaceHardness: 'medium', softAnchor: false } as const;
+
 const base = {
   id: 'fixture',
   name: 'Fixture',
   notes: 'Test material.',
   footstepLoudness: 0,
   impactSound: 'sfx-impact-wood',
-  properties: {},
+  properties: SURFACE,
 } satisfies MaterialDefInput;
 
 /** Messages (with their paths) for a preset with `properties`, or [] when it is valid. */
 function problems(properties: Record<string, unknown>, burnt?: string): string[] {
   const extra = burnt === undefined ? {} : { burnt };
-  const result = materialSchema.safeParse({ ...base, ...extra, properties });
+  const result = materialSchema.safeParse({
+    ...base,
+    ...extra,
+    properties: { ...SURFACE, ...properties },
+  });
   return result.success ? [] : result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
 }
 
@@ -106,7 +113,7 @@ describe('material presets', () => {
           ...base,
           id: 'wood',
           burnt: 'ash',
-          properties: { flammable: true, ignitionPoint: 300, fuel: 60 },
+          properties: { ...SURFACE, flammable: true, ignitionPoint: 300, fuel: 60 },
         }),
       },
     ];
@@ -165,11 +172,54 @@ describe('material presets', () => {
   });
 
   it('AC-1: object-level and live-state properties are not preset fields', () => {
-    for (const key of ['material', 'owner', 'burning', 'charge']) {
+    const objectLevel = [
+      'material',
+      'owner',
+      'burning',
+      'charge',
+      'hidden',
+      'trapped',
+      'trap',
+      'suspended',
+      'support',
+      'waterSurface',
+      'container',
+      'remains',
+      'chargeActivated',
+      'lightActivated',
+      'shootable',
+      'extinguishable',
+      'bashable',
+      'unstable',
+      'noiseMultiplier',
+    ];
+    for (const key of objectLevel) {
       expect(problems({ [key]: key === 'burning' ? true : 'x' })).toEqual([
         expect.stringContaining(`"${key}"`),
       ]);
     }
+  });
+
+  it('AC-6: every preset declares surfaceHardness and softAnchor (wood and earth anchor rope arrows)', () => {
+    const materials = loadGameContent().all('material');
+    const undeclared = materials.filter(
+      (m) =>
+        !Object.hasOwn(m.properties, 'surfaceHardness') ||
+        !Object.hasOwn(m.properties, 'softAnchor'),
+    );
+    expect(undeclared).toEqual([]);
+    const anchors = Object.fromEntries(
+      ['wood', 'earth', 'stone', 'iron', 'glass'].map((id) => [
+        id,
+        materials.find((m) => m.id === id)?.properties.softAnchor,
+      ]),
+    );
+    expect(anchors).toEqual({ wood: true, earth: true, stone: false, iron: false, glass: false });
+    const withoutSurface = materialSchema.safeParse({ ...base, properties: {} });
+    expect(withoutSurface.error?.issues.map((i) => i.path.join('.')).sort()).toEqual([
+      'properties.softAnchor',
+      'properties.surfaceHardness',
+    ]);
   });
 
   it('AC-1: footstep loudness and impact sound are range- and format-checked', () => {
@@ -210,6 +260,6 @@ describe('material presets', () => {
     const presets = materialPresets(content.all('material'));
     expect([...presets.keys()]).toEqual(REQUIRED_MATERIALS);
     expect(presets.get('wood')).toBe(content.get('material', 'wood').properties);
-    expect(presets.get('generic')).toEqual({});
+    expect(presets.get('generic')).toEqual(SURFACE);
   });
 });

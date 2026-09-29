@@ -170,8 +170,72 @@
           "minimum": 0,
           "maximum": 1,
           "description": "Fraction of impact energy it absorbs, 0 … 1."
+        },
+        "liquid": {
+          "type": "boolean",
+          "description": "A liquid: it pours, puddles and can have a water surface."
+        },
+        "flammableGas": {
+          "type": "boolean",
+          "description": "A gas that ignites (flares or explodes) when fire reaches it."
+        },
+        "breakable": {
+          "type": "boolean",
+          "description": "A single hit at or above its toughness for that kind of hit breaks it."
+        },
+        "toughness": {
+          "type": "object",
+          "properties": {
+            "blunt": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000,
+              "description": "Blunt hit energy that breaks it, J."
+            },
+            "slash": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000,
+              "description": "Slash hit energy that breaks it, J."
+            },
+            "pierce": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000,
+              "description": "Pierce hit energy that breaks it, J."
+            },
+            "force": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000,
+              "description": "Force (blast, quake, boulder) energy that breaks it, J."
+            }
+          },
+          "additionalProperties": false,
+          "description": "Per kind of hit, the single-hit energy that breaks a breakable object; a kind left out never does."
+        },
+        "cuttable": {
+          "type": "boolean",
+          "description": "Slash or pierce damage severs it."
+        },
+        "softAnchor": {
+          "type": "boolean",
+          "description": "Rope arrows and hooks embed in it."
+        },
+        "surfaceHardness": {
+          "type": "string",
+          "enum": [
+            "soft",
+            "medium",
+            "hard"
+          ],
+          "description": "Footstep loudness and whether arrows stick (soft, medium) or ricochet (hard)."
         }
       },
+      "required": [
+        "softAnchor",
+        "surfaceHardness"
+      ],
       "additionalProperties": false,
       "description": "World-property defaults for objects of this material; omitted ones take the global default."
     },

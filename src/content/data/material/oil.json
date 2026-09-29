@@ -2,7 +2,7 @@
   "$schema": "../material.schema.json",
   "id": "oil",
   "name": "Oil (lamp oil)",
-  "notes": "Lamp and cooking oil as a spilled puddle or a filled flask: the classic oil-slick fire starter. Ignites at 210 °C (bead note) and a puddle burns for 60 s. Density 900 kg/m³, so it floats on water and a burning slick can spread across it. Very slippery (0.1). Thickens only well below freezing (−20 °C). Muffled, slick footsteps (−2 dB). A burning puddle is consumed (mw-e03.5: destroyed).",
+  "notes": "Lamp and cooking oil as a spilled puddle or a filled flask: the classic oil-slick fire starter. Ignites at 210 °C (bead note) and a puddle burns for 60 s. Density 900 kg/m³, so it floats on water and a burning slick can spread across it. Very slippery (0.1). Thickens only well below freezing (−20 °C). Muffled, slick footsteps (−2 dB). A burning puddle is consumed (mw-e03.5: destroyed). A liquid (it pools, and a pool's top can be a waterSurface); soft surface. (mw-e03.31)",
   "footstepLoudness": -2,
   "impactSound": "sfx-impact-water",
   "properties": {
@@ -12,7 +12,10 @@
     "freezePoint": -20,
     "density": 900,
     "friction": 0.1,
-    "soundDamping": 0.1
+    "soundDamping": 0.1,
+    "liquid": true,
+    "surfaceHardness": "soft",
+    "softAnchor": false
   },
   "burnt": "destroyed"
 }
