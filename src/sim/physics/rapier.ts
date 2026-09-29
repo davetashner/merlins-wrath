@@ -110,10 +110,13 @@ export class RapierPhysics implements PhysicsPort {
   readonly engine: string;
   private world: Rapier.World;
   private readonly entries = new Map<ColliderHandle, Entry>();
+  /** Rapier collider handle → this port's handle (for query results). */
+  private readonly byRapierCollider = new Map<number, ColliderHandle>();
   private next = 1;
 
   constructor(
-    private readonly rapier: RapierModule,
+    /** The injected Rapier module (for building query shapes). */
+    readonly rapier: RapierModule,
     options: RapierPhysicsOptions = {},
   ) {
     this.engine = `rapier3d-deterministic@${rapier.version()}`;
@@ -147,6 +150,7 @@ export class RapierPhysics implements PhysicsPort {
     const collider = world.createCollider(desc, body);
     const handle = this.next++ as ColliderHandle;
     this.entries.set(handle, { collider: collider.handle, body: body?.handle });
+    this.byRapierCollider.set(collider.handle, handle);
     return handle;
   }
 
@@ -157,6 +161,7 @@ export class RapierPhysics implements PhysicsPort {
     world.removeCollider(world.getCollider(entry.collider), false);
     if (entry.body !== undefined) world.removeRigidBody(world.getRigidBody(entry.body));
     this.entries.delete(handle);
+    this.byRapierCollider.delete(entry.collider);
   }
 
   /** Colliders in the Rapier world (not just in this port's table). */
@@ -202,9 +207,39 @@ export class RapierPhysics implements PhysicsPort {
     this.world = world;
     this.next = data.next;
     this.entries.clear();
+    this.byRapierCollider.clear();
     for (const [handle, collider, body] of data.colliders) {
       this.entries.set(handle as ColliderHandle, { collider, body });
+      this.byRapierCollider.set(collider, handle as ColliderHandle);
     }
+  }
+
+  /**
+   * The Rapier world behind this port, for Rapier-specific queries (rapier-collision-world.ts).
+   * `restore` replaces it, so read it afresh for every query rather than keeping it.
+   */
+  get rapierWorld(): Rapier.World {
+    return this.world;
+  }
+
+  /**
+   * This port's handle for one of its colliders, by Rapier's collider handle.
+   * @throws RangeError for a collider this port did not add.
+   */
+  handleOf(rapierCollider: number): ColliderHandle {
+    const handle = this.byRapierCollider.get(rapierCollider);
+    if (handle === undefined) {
+      throw new RangeError(`Rapier collider ${String(rapierCollider)} was not added by this port`);
+    }
+    return handle;
+  }
+
+  /** Linear velocity of a collider, m/s: zero for a fixed one or a handle this port does not have. */
+  velocityOf(handle: ColliderHandle): Vec3 {
+    const body = this.entries.get(handle)?.body;
+    if (body === undefined) return { x: 0, y: 0, z: 0 };
+    const { x, y, z } = this.world.getRigidBody(body).linvel();
+    return { x, y, z };
   }
 
   /** Releases the Rapier world's WASM memory; the port is unusable afterwards. */

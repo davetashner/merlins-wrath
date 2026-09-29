@@ -10,6 +10,8 @@ src/content/data/*.schema.json
 # Written by pnpm replay:record / replay:rebless in a line-per-checkpoint layout that keeps re-bless diffs
 # reviewable (src/sim/replay/format.ts serializeReplay).
 tests/replays/*.json
+# Same layout, for replays whose scenario only Vitest can run (Rapier WASM, mw-e02.21).
+tests/integration/fixtures/*.replay.json
 
 # Hand-written prose, backlog data and assets: not reformatted by the code formatter.
 *.md
