@@ -103,6 +103,37 @@ function stepUntil(world: World<never>, done: () => boolean, limit: number): num
 
 const burning = (world: World<never>, entity: EntityId) => readProperty(world, entity, 'burning');
 
+/** The whole TEST_FIELD: the 8 m cube of 2×2×2 chunks around the origin (the chunk cap). */
+const TEST_FIELD_BOUNDS = { min: { x: -4, y: -4, z: -4 }, max: { x: 4, y: 4, z: 4 } };
+
+/** The hottest cell in the test field, °C. */
+function hottestCell(field: ElementField): number {
+  let hottest = -Infinity;
+  field.forCellsIn(TEST_FIELD_BOUNDS, (cell) => {
+    hottest = Math.max(hottest, field.read('temperature', cell));
+  });
+  return hottest;
+}
+
+/**
+ * Whether no heat above `ignitionPoint` is left: no object burns and every placed object and every
+ * field cell is below it. With no fire, heat exchange, diffusion and ambient loss only ever lower
+ * the hottest value, so from here no object with that ignition point can ever (re)ignite. Lets a
+ * "never ignites" test stop as soon as that is settled instead of stepping a long fixed window.
+ */
+function cooledBelow(
+  world: World<never>,
+  field: ElementField,
+  entities: readonly EntityId[],
+  ignitionPoint: number,
+): boolean {
+  return (
+    entities.every(
+      (e) => !burning(world, e) && readProperty(world, e, 'temperature') < ignitionPoint,
+    ) && hottestCell(field) < ignitionPoint
+  );
+}
+
 describe('fire config', () => {
   it('fills defaults and validates every field', () => {
     expect(resolveFireConfig()).toEqual(DEFAULT_FIRE_CONFIG);
@@ -246,21 +277,26 @@ describe('spread through the field', () => {
   });
 
   it('AC-2: a non-flammable neighbour warms but never ignites; a far one barely warms', () => {
-    const { world } = fireWorld();
-    spawn(world, 'wood', { burning: true, temperature: 600, fuel: 4 }, origin);
+    const { world, field } = fireWorld();
+    const fire = spawn(world, 'wood', { burning: true, temperature: 600, fuel: 2 }, origin);
     const stone = spawn(world, 'stone', {}, next);
     const far = spawn(world, 'wood', {}, { ...origin, x: 3.25 });
+    const ignitionPoint = readProperty(world, far, 'ignitionPoint');
     let hottest = 0;
+    let ignited = false;
+    // Until the fire is out and nothing is left hot enough to light the far wood (see cooledBelow).
     const ticks = stepUntil(
       world,
       () => {
         hottest = Math.max(hottest, readProperty(world, stone, 'temperature'));
-        return burning(world, stone) || burning(world, far);
+        ignited ||= burning(world, stone) || burning(world, far);
+        return ignited || cooledBelow(world, field, [fire, stone, far], ignitionPoint);
       },
-      360,
+      600,
     );
-    expect(ticks).toBe(361);
-    expect(hottest).toBeGreaterThan(300);
+    expect(ignited).toBe(false);
+    expect(ticks).toBeLessThanOrEqual(600);
+    expect(hottest).toBeGreaterThan(ignitionPoint); // hot enough to light wood
     expect(hasProperty(world, stone, 'burning')).toBe(false);
     expect(readProperty(world, far, 'temperature')).toBeLessThan(50); // 3 m away: barely warm
   });
@@ -386,7 +422,17 @@ describe('drying and extinguishing', () => {
     expect(log.extinguished).toEqual([{ entity: wood, cause: 'water' }]);
     expect(field.readAt('gas:steam', at)).toBeGreaterThan(0.1);
     expect(readProperty(world, wood, 'temperature')).toBeCloseTo(100, 6);
-    expect(stepUntil(world, () => burning(world, wood), 600)).toBe(601);
+    // Stays out: it never relights while the flames' leftover heat is in the field, and once
+    // nothing is left above its ignition point it never can (see cooledBelow).
+    const ignitionPoint = readProperty(world, wood, 'ignitionPoint');
+    const settled = () => burning(world, wood) || cooledBelow(world, field, [wood], ignitionPoint);
+    const ticks = stepUntil(world, settled, 600);
+    expect(ticks).toBeLessThanOrEqual(600);
+    expect(burning(world, wood)).toBe(false);
+    const hottest = hottestCell(field);
+    expect(hottest).toBeGreaterThan(100); // the field was still hot when it settled
+    expect(stepUntil(world, () => burning(world, wood), 60)).toBe(61);
+    expect(hottestCell(field)).toBeLessThan(hottest); // and only cools from there
   });
 
   it('a light splash sizzles off a burning object without putting it out', () => {

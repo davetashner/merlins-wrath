@@ -77,17 +77,22 @@ describe('installElementField', () => {
     expect(w.snapshot().components[ElementFieldComponent.name]).toHaveLength(1);
   });
 
-  it('AC-4: the same initial field stepped 1,000 ticks twice gives identical hashes', () => {
-    const a = world();
-    const b = world();
-    scene(a);
-    scene(b);
-    steps(a, 1000);
-    steps(b, 1000);
-    expect(hashWorld(a)).toBe(hashWorld(b));
-    expect(elementFieldOf(a).chunkCount).toBe(1);
-    expect(elementFieldOf(a).readAt('gas:smoke', v(2.75, 2.75, 2.75))).toBeGreaterThan(0);
-  });
+  // The AC fixes the length: 2,000 world ticks take ~1 s alone, several under a loaded coverage run.
+  it(
+    'AC-4: the same initial field stepped 1,000 ticks twice gives identical hashes',
+    { timeout: 20_000 },
+    () => {
+      const a = world();
+      const b = world();
+      scene(a);
+      scene(b);
+      steps(a, 1000);
+      steps(b, 1000);
+      expect(hashWorld(a)).toBe(hashWorld(b));
+      expect(elementFieldOf(a).chunkCount).toBe(1);
+      expect(elementFieldOf(a).readAt('gas:smoke', v(2.75, 2.75, 2.75))).toBeGreaterThan(0);
+    },
+  );
 
   it('AC-4: a snapshot restored mid-run continues to the same hash', () => {
     const a = world();
