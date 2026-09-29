@@ -1,0 +1,20 @@
+// Abstract player actions and per-tick ActionFrames (mw-e02.1). DOM handling lives in src/game/input.
+export {
+  ACTION_FRAME_COMMAND,
+  ACTIONS,
+  actionButton,
+  actionFrame,
+  actionFrameOf,
+  actionVector,
+  BUTTON_ACTIONS,
+  IDLE_ACTION_FRAME,
+  isActionFrame,
+  type ActionButton,
+  type ActionContext,
+  type ActionDef,
+  type ActionFrame,
+  type ActionFrameParts,
+  type ActionId,
+  type ActionVector,
+  type ButtonAction,
+} from './action-frame';
