@@ -1,15 +1,48 @@
-// Scene overlay text (mw-e00.21): the on-screen scene name and build SHA, the debug-camera hint, and
-// the error shown when ?scene= names a scene that does not exist. Pure text; src/main.ts puts it in
-// the DOM.
+// Scene overlay text (mw-e00.21): the on-screen scene name and build SHA, the controls and
+// debug-camera hints, and the error shown when ?scene= names a scene that does not exist. Pure text;
+// src/main.ts puts it in the DOM.
 
 /** The corner label, e.g. `Greybox testbed (testbed) · build 1a2b3c4`. */
 export function sceneLabel(scene: { readonly id: string; readonly name: string }, sha: string) {
   return `${scene.name} (${scene.id}) · build ${sha}`;
 }
 
-/** How to take control of the player (mw-e02.23). */
-export const PLAYER_CONTROLS_HINT =
-  'Click to play: WASD move, mouse look, wheel zoom, Space jump, Shift sprint, C crouch, Esc release';
+/** The labels the controls hint names, in the current bindings (src/game/input's inputGlyph). */
+export interface ControlsHintLabels {
+  readonly move: string;
+  readonly jump: string;
+  readonly sprint: string;
+  readonly crouch: string;
+}
+
+/**
+ * How to control the player (mw-e02.23), for the device the player last used (mw-e02.9 AC-5): the
+ * keyboard + mouse wording (click to take the pointer), or the controller's, which needs no click.
+ */
+export function playerControlsHint(
+  device: 'keyboardMouse' | 'gamepad',
+  labels: ControlsHintLabels,
+): string {
+  const { move, jump, sprint, crouch } = labels;
+  return device === 'gamepad'
+    ? `Controller: ${move} move, right stick look, ${jump} jump, ${sprint} sprint (toggle), ${crouch} crouch`
+    : `Click to play: ${move} move, mouse look, wheel zoom, ${jump} jump, ${sprint} sprint, ${crouch} crouch, Esc release`;
+}
+
+/** The keyboard + mouse hint in the default bindings. */
+export const PLAYER_CONTROLS_HINT = playerControlsHint('keyboardMouse', {
+  move: 'WASD',
+  jump: 'Space',
+  sprint: 'Shift',
+  crouch: 'C',
+});
+
+/**
+ * Shown after the controller disconnects (mw-e02.9 AC-4). The frame taps the pause action; the pause
+ * screen that answers it is mw-e01.3.
+ */
+export const GAMEPAD_DISCONNECTED_HINT =
+  'Controller disconnected: reconnect it, or click to play with keyboard and mouse';
 
 /** Hint for the debug fly camera. */
 export const DEBUG_CAMERA_HINT =

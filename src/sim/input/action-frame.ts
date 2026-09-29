@@ -59,7 +59,10 @@ export interface ActionButton extends ButtonState {
   readonly released: boolean;
 }
 
-/** A 2D vector. `move`: x right, y forward, length ≤ 1. `look`: mouse counts, x right, y up. */
+/**
+ * A 2D vector. `move`: x right, y forward, length ≤ 1. `look`: mouse counts, x right, y up.
+ * `lookStick`: right-stick deflection, x right, y up, length ≤ 1.
+ */
 export interface ActionVector {
   readonly x: number;
   readonly y: number;
@@ -74,6 +77,11 @@ export type ActionFrame = {
   readonly move: ActionVector;
   /** Look delta since the previous tick, raw mouse counts (sensitivity is applied downstream). */
   readonly look: ActionVector;
+  /**
+   * Analog look this tick (mw-e02.9): the right stick's raw deflection, quantised by `stickVector`.
+   * A rate, not a delta: the sim applies the look deadzone, response curve and turn rates.
+   */
+  readonly lookStick: ActionVector;
 } & Readonly<Record<ButtonAction, ActionButton>>;
 
 const button = (pressed: boolean, held: boolean, released: boolean): ActionButton =>
@@ -97,6 +105,8 @@ export function actionButton(pressed: boolean, held: boolean, released: boolean)
 export interface ActionFrameParts {
   readonly move: ActionVector;
   readonly look: ActionVector;
+  /** Defaults to centred. */
+  readonly lookStick?: ActionVector;
   readonly buttons: (action: ButtonAction) => ActionButton;
 }
 
@@ -108,12 +118,48 @@ export function actionVector(x: number, y: number): ActionVector {
   return Object.freeze({ x: x + 0, y: y + 0 });
 }
 
+/**
+ * The analog resolution of every stick value in an ActionFrame: thousandths of full deflection.
+ *
+ * Replays store frames as JSON and must replay bit for bit. `stickVector` rounds each axis to the
+ * nearest k / 1000 (k an integer, computed as `Math.round(v * 1000) / 1000`, which IEEE-754 makes
+ * the double closest to k / 1000 on every engine), so a value is short in JSON (`0.575`) and
+ * parses back to the same double. 1/1000 is finer than a pad's hardware (typically 8–16 bit axes,
+ * reported after the browser's own filtering), so rounding is not felt.
+ */
+export const STICK_QUANTUM = 1 / 1000;
+const STICK_STEPS = 1000;
+
+/**
+ * A stick vector quantised to STICK_QUANTUM per axis, with length ≤ 1: a longer input is scaled
+ * back onto the unit circle, and when rounding to the nearest step would push the length past 1,
+ * both axes round towards zero instead. Non-finite axes read 0.
+ */
+export function stickVector(x: number, y: number): ActionVector {
+  let fx = Number.isFinite(x) ? x : 0;
+  let fy = Number.isFinite(y) ? y : 0;
+  // Many pads report a square-ish range (both axes near 1 on a diagonal): scale back to the circle.
+  const length = Math.sqrt(fx * fx + fy * fy);
+  if (length > 1) {
+    fx /= length;
+    fy /= length;
+  }
+  let qx = Math.round(fx * STICK_STEPS);
+  let qy = Math.round(fy * STICK_STEPS);
+  if (qx * qx + qy * qy > STICK_STEPS * STICK_STEPS) {
+    qx = Math.trunc(fx * STICK_STEPS);
+    qy = Math.trunc(fy * STICK_STEPS);
+  }
+  return actionVector(qx / STICK_STEPS, qy / STICK_STEPS);
+}
+
 /** Builds a frozen ActionFrame. */
 export function actionFrame(parts: ActionFrameParts): ActionFrame {
   const frame: Record<string, unknown> = {
     kind: ACTION_FRAME_COMMAND,
     move: parts.move,
     look: parts.look,
+    lookStick: parts.lookStick ?? ZERO,
   };
   for (const action of BUTTON_ACTIONS) frame[action] = parts.buttons(action);
   return Object.freeze(frame) as ActionFrame;
@@ -121,7 +167,7 @@ export function actionFrame(parts: ActionFrameParts): ActionFrame {
 
 const UP = actionButton(false, false, false);
 
-/** No input: stick centred, no look, every button up. */
+/** No input: sticks centred, no look, every button up. */
 export const IDLE_ACTION_FRAME: ActionFrame = actionFrame({
   move: ZERO,
   look: ZERO,

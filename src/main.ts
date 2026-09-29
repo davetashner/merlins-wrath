@@ -1,6 +1,6 @@
 import { loadGameContent, PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
 import { layers } from '@game/index';
-import { ActionSampler } from '@game/input/index';
+import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
 import { browserFrameSources, createGameLoop, object3DBinding } from '@game/loop/index';
 import { bootPhysics } from '@game/physics-loader';
 import { attachPlayerInput, setupTestbedPlayer, type TestbedPlayer } from '@game/player/index';
@@ -23,7 +23,8 @@ import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
 import {
   DEBUG_CAMERA_HINT,
-  PLAYER_CONTROLS_HINT,
+  GAMEPAD_DISCONNECTED_HINT,
+  playerControlsHint,
   sceneErrorMessage,
   sceneLabel,
 } from '@ui/scene-hud';
@@ -153,13 +154,48 @@ function startRenderer(root: HTMLElement): void {
   hud.append(label, controls, hint);
   root.append(hud);
 
-  // Keyboard + mouse → one ActionFrame per sim tick (mw-e02.1); a click on the canvas takes control
-  // (pointer lock) of the player, once there is one (mw-e02.23).
+  // Keyboard + mouse and gamepad → one ActionFrame per sim tick (mw-e02.1, mw-e02.9); a click on the
+  // canvas takes control (pointer lock) of the player, once there is one (mw-e02.23). A gamepad needs
+  // no click: the sampler polls it every tick while the page has focus.
   const sampler = new ActionSampler();
+  // The controls hint follows the device last used (mw-e02.9 AC-5); a disconnect says so (AC-4).
+  let shown: InputDevice | 'gone' | undefined;
+  let padGone = false;
+  const showControls = (): void => {
+    if (player === undefined) return;
+    const device = sampler.lastDevice;
+    const gone = padGone && device === 'gamepad';
+    if ((gone ? 'gone' : device) === shown) return;
+    shown = gone ? 'gone' : device;
+    root.dataset['inputDevice'] = device;
+    const bindings = { keyboardMouse: sampler.bindings, gamepad: sampler.padBindings };
+    const glyph = (action: 'move' | 'jump' | 'sprint' | 'crouch') =>
+      inputGlyph(action, device, bindings);
+    controls.textContent = gone
+      ? GAMEPAD_DISCONNECTED_HINT
+      : playerControlsHint(device, {
+          move: glyph('move'),
+          jump: glyph('jump'),
+          sprint: glyph('sprint'),
+          crouch: glyph('crouch'),
+        });
+  };
   const playerInput = attachPlayerInput(sampler, {
     window: globalThis.window,
     document: globalThis.document,
     element: view.canvas,
+    gamepad: {
+      navigator: globalThis.navigator,
+      hasFocus: () => document.hasFocus(),
+      onConnect: () => {
+        padGone = false;
+        root.dataset['gamepad'] = 'connected';
+      },
+      onDisconnect: () => {
+        padGone = true;
+        root.dataset['gamepad'] = 'disconnected';
+      },
+    },
   });
   let player: TestbedPlayer | undefined;
 
@@ -192,6 +228,7 @@ function startRenderer(root: HTMLElement): void {
         if (debugCamera.update(timeMs - (lastFrameMs ?? timeMs))) writeCameraData();
         lastFrameMs = timeMs;
         player?.frame(frame);
+        showControls();
         view.renderFrame(timeMs);
       },
     });
@@ -253,7 +290,7 @@ function startRenderer(root: HTMLElement): void {
           },
           { passive: false },
         );
-        controls.textContent = PLAYER_CONTROLS_HINT;
+        showControls();
       }
       label.textContent = sceneLabel(scene, __BUILD_SHA__);
       root.dataset['scene'] = scene.id;

@@ -1,16 +1,23 @@
-// Remappable key and mouse bindings (mw-e02.1). A Bindings value maps every bindable action to up to
-// MAX_SLOTS input codes: KeyboardEvent.code for keys ("KeyW", "Space") and "Mouse<button>" for mouse
-// buttons. Bindings are immutable; `rebind` returns a new set or a conflict and never half-applies.
-// `serializeBindings` / `deserializeBindings` are the seam the settings store (mw-e02.22) persists
-// through: plain JSON out, validated and conflict-checked on the way back in.
+// Remappable key, mouse and gamepad bindings (mw-e02.1, mw-e02.9). A Bindings value maps every
+// bindable action to up to MAX_SLOTS input codes: KeyboardEvent.code for keys ("KeyW", "Space"),
+// "Mouse<button>" for mouse buttons and "Pad<button>" for gamepad buttons (gamepad.ts). Keyboard +
+// mouse and gamepad each have their own Bindings set, remapped with the same functions and the same
+// conflict rules; both are live at once. Bindings are immutable; `rebind` returns a new set or a
+// conflict and never half-applies. `serializeBindings` / `deserializeBindings` are the seam the
+// settings store (mw-e02.22) persists through: plain JSON out, validated and conflict-checked on the
+// way back in.
 
 import { ACTIONS, BUTTON_ACTIONS, type ActionContext, type ButtonAction } from '@sim/index';
+import { isPadCode } from './gamepad';
 
 /** The four directions of the move vector, bound like buttons. */
 export const MOVE_DIRECTIONS = ['moveForward', 'moveBack', 'moveLeft', 'moveRight'] as const;
 export type MoveDirection = (typeof MOVE_DIRECTIONS)[number];
 
-/** Anything a key or mouse button can be bound to. Look always comes from mouse movement. */
+/**
+ * Anything a key, mouse or pad button can be bound to. Look always comes from mouse movement and
+ * the right stick; the left stick always moves (it adds to the move directions, see mergeMove).
+ */
 export type BindableAction = MoveDirection | ButtonAction;
 
 /** Every bindable action: move directions first, then buttons in registry order. */
@@ -22,7 +29,7 @@ export const BINDABLE_ACTIONS: readonly BindableAction[] = Object.freeze([
 /** Codes per action (primary, secondary). */
 export const MAX_SLOTS = 2;
 
-/** An input code: KeyboardEvent.code, or `Mouse<n>` for MouseEvent.button n. */
+/** An input code: KeyboardEvent.code, `Mouse<n>` for MouseEvent.button n, or a PadCode. */
 export type InputCode = string;
 
 /** The code for a mouse button (0 left, 1 middle, 2 right, 3 back, 4 forward). */
@@ -52,6 +59,33 @@ export const DEFAULT_BINDINGS: Bindings = freezeBindings({
   ability4: ['Digit4'],
   inventory: ['KeyI'],
   pause: ['Escape', 'KeyP'],
+});
+
+/**
+ * Default gamepad layout (Xbox labels; standard mapping), after common action-RPG conventions. The
+ * left stick moves and the right stick looks; neither is a binding. D-pad Up/Right/Down/Left are
+ * abilities 1–4 like the number row, doubling Y, RB and LB for 1–3 so a thumb on the face buttons
+ * or on the d-pad reaches them. See docs/design/controls.md for the table.
+ */
+export const DEFAULT_PAD_BINDINGS: Bindings = freezeBindings({
+  moveForward: [],
+  moveBack: [],
+  moveLeft: [],
+  moveRight: [],
+  jump: ['PadA'],
+  sprint: ['PadLS'],
+  crouch: ['PadB'],
+  interact: ['PadX'],
+  lockOn: ['PadRS'],
+  cycleTarget: [],
+  primaryAttack: ['PadRT'],
+  secondaryAttack: ['PadLT'],
+  ability1: ['PadY', 'PadUp'],
+  ability2: ['PadRB', 'PadRight'],
+  ability3: ['PadLB', 'PadDown'],
+  ability4: ['PadLeft'],
+  inventory: ['PadView'],
+  pause: ['PadMenu'],
 });
 
 function freezeBindings(bindings: Bindings): Bindings {
@@ -147,23 +181,38 @@ export function actionsByCode(
   return map;
 }
 
-/** The persisted form of a bindings set (JSON). */
+/**
+ * The persisted form of the bindings (JSON). Version 2 (mw-e02.9) adds `gamepad`; version 1 data
+ * (keyboard + mouse only) still reads, with the default pad layout.
+ */
 export interface BindingsData {
   readonly version: typeof BINDINGS_DATA_VERSION;
+  /** Keyboard + mouse codes per action. */
   readonly actions: Readonly<Partial<Record<BindableAction, readonly InputCode[]>>>;
+  /** Gamepad codes per action. */
+  readonly gamepad: Readonly<Partial<Record<BindableAction, readonly InputCode[]>>>;
 }
 
-export const BINDINGS_DATA_VERSION = 1;
+export const BINDINGS_DATA_VERSION = 2;
 
-/** Plain JSON for the settings store. */
-export function serializeBindings(bindings: Bindings): BindingsData {
+const plain = (bindings: Bindings): Partial<Record<BindableAction, InputCode[]>> => {
   const actions: Partial<Record<BindableAction, InputCode[]>> = {};
   for (const action of BINDABLE_ACTIONS) actions[action] = [...bindings[action]];
-  return { version: BINDINGS_DATA_VERSION, actions };
+  return actions;
+};
+
+/** Plain JSON for the settings store: the keyboard + mouse set and the gamepad set. */
+export function serializeBindings(
+  bindings: Bindings,
+  gamepad: Bindings = DEFAULT_PAD_BINDINGS,
+): BindingsData {
+  return { version: BINDINGS_DATA_VERSION, actions: plain(bindings), gamepad: plain(gamepad) };
 }
 
 export interface DeserializedBindings {
+  /** Keyboard + mouse. */
   readonly bindings: Bindings;
+  readonly gamepad: Bindings;
   /** Problems found; entries they affect fall back to the defaults. Empty when the data was clean. */
   readonly issues: readonly string[];
 }
@@ -172,42 +221,36 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function validCodes(value: unknown): value is InputCode[] {
+function validCodes(value: unknown, pad: boolean): value is InputCode[] {
   return (
     Array.isArray(value) &&
     value.length <= MAX_SLOTS &&
-    value.every((code) => typeof code === 'string' && code !== '') &&
+    value.every((code) => typeof code === 'string' && code !== '' && isPadCode(code) === pad) &&
     new Set(value).size === value.length
   );
 }
 
-/**
- * Reads persisted bindings. Unknown actions are ignored and missing or malformed ones keep their
- * default codes, each noted in `issues`. If the result would contain a conflict, or the data is not
- * a version-1 bindings object at all, the defaults are returned whole.
- */
-export function deserializeBindings(
-  data: unknown,
-  defaults: Bindings = DEFAULT_BINDINGS,
-): DeserializedBindings {
-  if (!isRecord(data) || data['version'] !== BINDINGS_DATA_VERSION || !isRecord(data['actions'])) {
-    return { bindings: defaults, issues: ['not version 1 bindings data; using defaults'] };
-  }
-  const stored = data['actions'];
+/** Reads one device's set; `label` prefixes its issues. Conflicts fall back to `defaults` whole. */
+function readSet(
+  stored: Record<string, unknown>,
+  defaults: Bindings,
+  pad: boolean,
+  label: string,
+): { bindings: Bindings; issues: string[] } {
   const issues: string[] = [];
   const merged: Partial<Record<BindableAction, readonly InputCode[]>> = {};
   for (const action of BINDABLE_ACTIONS) {
     const codes = stored[action];
-    if (validCodes(codes)) {
+    if (validCodes(codes, pad)) {
       merged[action] = codes;
     } else {
-      if (codes !== undefined) issues.push(`${action}: invalid codes; using defaults`);
+      if (codes !== undefined) issues.push(`${label}${action}: invalid codes; using defaults`);
       merged[action] = defaults[action];
     }
   }
   for (const key of Object.keys(stored)) {
     if (!(BINDABLE_ACTIONS as readonly string[]).includes(key)) {
-      issues.push(`${key}: unknown action ignored`);
+      issues.push(`${label}${key}: unknown action ignored`);
     }
   }
   const bindings = freezeBindings(merged as Bindings);
@@ -216,8 +259,47 @@ export function deserializeBindings(
     const list = conflicts.map((c) => `${c.code} (${c.actions.join(', ')})`).join('; ');
     return {
       bindings: defaults,
-      issues: [...issues, `conflicting bindings ${list}; using defaults`],
+      issues: [...issues, `${label}conflicting bindings ${list}; using defaults`],
     };
   }
   return { bindings, issues };
+}
+
+/**
+ * Reads persisted bindings. Unknown actions are ignored and missing or malformed ones keep their
+ * default codes, each noted in `issues` (keyboard + mouse sets take no pad codes, gamepad sets only
+ * pad codes). If a set would contain a conflict, or is missing, that set's defaults are used whole;
+ * if the data is not version-1 or version-2 bindings at all, every default is. Version 1 predates
+ * gamepads: its pad set is the default, silently.
+ */
+export function deserializeBindings(
+  data: unknown,
+  defaults: Bindings = DEFAULT_BINDINGS,
+  padDefaults: Bindings = DEFAULT_PAD_BINDINGS,
+): DeserializedBindings {
+  const version = isRecord(data) ? data['version'] : undefined;
+  if (
+    !isRecord(data) ||
+    (version !== 1 && version !== BINDINGS_DATA_VERSION) ||
+    !isRecord(data['actions'])
+  ) {
+    return {
+      bindings: defaults,
+      gamepad: padDefaults,
+      issues: ['not version 1 or 2 bindings data; using defaults'],
+    };
+  }
+  const keyboard = readSet(data['actions'], defaults, false, '');
+  const storedPad = data['gamepad'];
+  const pad =
+    version === 1
+      ? { bindings: padDefaults, issues: [] }
+      : isRecord(storedPad)
+        ? readSet(storedPad, padDefaults, true, 'gamepad ')
+        : { bindings: padDefaults, issues: ['gamepad: missing; using defaults'] };
+  return {
+    bindings: keyboard.bindings,
+    gamepad: pad.bindings,
+    issues: [...keyboard.issues, ...pad.issues],
+  };
 }

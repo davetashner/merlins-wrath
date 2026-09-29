@@ -182,7 +182,7 @@ Think small world with surprising density, rather than enormous map.
 
 Desktop browser is the MVP target.
 
-Keyboard + mouse comes first, gamepad second. Mobile comes after the MVP establishes that the game itself is fun.
+Keyboard + mouse and gamepad are equal first-class inputs for the MVP. Mobile comes after the MVP establishes that the game itself is fun.
 
 Technical decisions should favor:
 

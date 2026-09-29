@@ -9,6 +9,8 @@ export {
   BUTTON_ACTIONS,
   IDLE_ACTION_FRAME,
   isActionFrame,
+  STICK_QUANTUM,
+  stickVector,
   type ActionButton,
   type ActionContext,
   type ActionDef,

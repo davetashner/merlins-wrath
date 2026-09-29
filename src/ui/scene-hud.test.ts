@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEBUG_CAMERA_HINT,
+  GAMEPAD_DISCONNECTED_HINT,
   PLAYER_CONTROLS_HINT,
+  playerControlsHint,
   sceneErrorMessage,
   sceneLabel,
 } from './scene-hud';
@@ -15,7 +17,20 @@ describe('scene overlay text (mw-e00.21)', () => {
   });
 
   it('tells the player how to take control (mw-e02.23)', () => {
-    expect(PLAYER_CONTROLS_HINT).toMatch(/^Click to play: WASD move, .*Space jump/);
+    expect(PLAYER_CONTROLS_HINT).toBe(
+      'Click to play: WASD move, mouse look, wheel zoom, Space jump, Shift sprint, C crouch, Esc release',
+    );
+  });
+
+  it('AC-5 (mw-e02.9): names the controller buttons once the pad was used last', () => {
+    const labels = { move: 'Left stick', jump: 'A', sprint: 'LS', crouch: 'B' };
+    expect(playerControlsHint('gamepad', labels)).toBe(
+      'Controller: Left stick move, right stick look, A jump, LS sprint (toggle), B crouch',
+    );
+    expect(playerControlsHint('keyboardMouse', { ...labels, move: 'ESDF' })).toMatch(
+      /^Click to play: ESDF move, mouse look, wheel zoom, A jump/,
+    );
+    expect(GAMEPAD_DISCONNECTED_HINT).toMatch(/^Controller disconnected/);
   });
 
   it('AC-4: the unknown-scene error names the request and links every available scene', () => {
