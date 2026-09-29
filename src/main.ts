@@ -8,9 +8,15 @@ import { readSceneTransform, resolveSceneRequest, SceneLoader } from '@game/scen
 import { openSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { createRenderBootstrap } from '@render/bootstrap/index';
+import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { createPlayerCapsule } from '@render/player/index';
 import {
+  DAMAGE_COMPONENTS,
+  HIT_VOLUME_COMPONENTS,
+  hitVolumeSystem,
+  noAllies,
+  PlacementComponent,
   playerStart,
   RapierCollisionWorld,
   registerSceneComponents,
@@ -218,6 +224,14 @@ function startRenderer(root: HTMLElement): void {
   // out of the initial bundle.
   const startWorld = (physics: RapierPhysics): void => {
     const world = registerSceneComponents(new World<ActionFrame>({ seed: BOOT_SEED, physics }));
+    // Swept hitboxes and region-tagged hurtboxes (mw-e04.2). No faction table is loaded yet, so
+    // nobody counts as an ally; ?hitboxes draws what the system tests each tick.
+    world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS, PlacementComponent);
+    world.addSystem(hitVolumeSystem({ isAlly: noAllies }));
+    const hitOverlay = createHitVolumeOverlay();
+    hitOverlay.enabled = new URLSearchParams(location.search).has('hitboxes');
+    view.scene.add(hitOverlay.object);
+    root.dataset['hitboxOverlay'] = hitOverlay.enabled ? 'on' : 'off';
     let lastFrameMs: number | undefined;
     const { loop, sync } = createGameLoop({
       world,
@@ -228,6 +242,7 @@ function startRenderer(root: HTMLElement): void {
         if (debugCamera.update(timeMs - (lastFrameMs ?? timeMs))) writeCameraData();
         lastFrameMs = timeMs;
         player?.frame(frame);
+        hitOverlay.sync(world);
         showControls();
         view.renderFrame(timeMs);
       },

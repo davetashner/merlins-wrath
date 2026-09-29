@@ -383,6 +383,10 @@
             "thrust"
           ],
           "description": "Swing motion: horizontal, vertical or thrust."
+        },
+        "friendlyFire": {
+          "description": "The volume also strikes the attacker’s allies (e04.2), so creatures can be tricked into hitting each other; absent = false (allies are ignored).",
+          "type": "boolean"
         }
       },
       "required": [

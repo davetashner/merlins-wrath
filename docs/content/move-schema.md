@@ -56,6 +56,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `hitbox.shape.halfExtents.z` | number > 0 | required |  |
 | `hitbox.reach` | `"close"` \| `"short"` \| `"medium"` \| `"long"` | required | Reach class for AI spacing. |
 | `hitbox.swing` | `"horizontal"` \| `"vertical"` \| `"thrust"` | required | Swing motion: horizontal, vertical or thrust. |
+| `hitbox.friendlyFire` | boolean | — | The volume also strikes the attacker’s allies (e04.2), so creatures can be tricked into hitting each other; absent = false (allies are ignored). |
 | `flags` | object | `{}` | Defence-related flags and tick windows. |
 | `flags.parryable` | boolean | `true` | A parry in its window deflects it (e04.12). Only meaningful with a hitbox. |
 | `flags.unblockable` | boolean | `false` | Passes through shields (grabs, some slams); otherwise a hitting move is blockable. |
