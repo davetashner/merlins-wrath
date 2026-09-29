@@ -1,0 +1,50 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "roll-attack",
+  "notes": "Roll attack (mw-e04.8): the attack a roll's recovery cancels into from roll tick 28. The bead fixes only when it starts; its numbers are placeholders until the owner tunes feel: a quick thrust, 10/4/20 ticks, 14 stamina, 16 slash, 12 poise, staminaDamage 10, dodge cancel from recovery tick 8.",
+  "verb": "attack",
+  "frames": {
+    "startup": 10,
+    "active": 4,
+    "recovery": 20
+  },
+  "staminaCost": 14,
+  "cancelWindows": [
+    {
+      "into": "dodge",
+      "from": 22,
+      "to": 33
+    }
+  ],
+  "damage": {
+    "amounts": {
+      "slash": 16
+    },
+    "poiseDamage": 12,
+    "staminaDamage": 10
+  },
+  "hitbox": {
+    "track": "knight-sword-roll-attack",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0.2,
+        "y": 1.1,
+        "z": 0.3
+      },
+      "to": {
+        "x": 0.1,
+        "y": 1.1,
+        "z": 1.5
+      },
+      "radius": 0.08
+    },
+    "reach": "medium",
+    "swing": "thrust"
+  },
+  "presentation": {
+    "anim": "anim-knight-roll-attack",
+    "audioCue": "sfx-knight-swing-light",
+    "vfxCue": "vfx-sword-trail-light"
+  }
+}

@@ -1,7 +1,7 @@
 {
   "$schema": "../move.schema.json",
   "id": "backstep",
-  "notes": "Backstep, the dodge with no direction held (mw-e04.8): 24 ticks, 12 stamina, i-frames ticks 2-7. Frames split as 2 startup, 6 active (the i-frames), 16 recovery.",
+  "notes": "Backstep, the dodge with no direction held (mw-e04.8): 24 ticks, 12 stamina, i-frames ticks 2-7. Frames split as 2 startup, 6 active (the i-frames), 16 recovery. The 1.2 m travel away from the facing is a placeholder until the owner tunes feel (not in the bead).",
   "verb": "dodge",
   "frames": {
     "startup": 2,
@@ -14,6 +14,10 @@
       "from": 2,
       "to": 7
     }
+  },
+  "motion": {
+    "distance": 1.2,
+    "direction": "backward"
   },
   "presentation": {
     "anim": "anim-knight-backstep",

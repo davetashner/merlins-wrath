@@ -45,7 +45,10 @@ interface MoveSpec {
   readonly verb?: MoveVerb;
   readonly frames: readonly [number, number, number];
   readonly cost?: number;
-  readonly windows?: readonly (TickRange & { readonly into: CancelTarget })[];
+  readonly windows?: readonly (TickRange & {
+    readonly into: CancelTarget;
+    readonly move?: string;
+  })[];
   readonly chainNext?: string;
   readonly hitbox?: boolean;
 }
@@ -72,7 +75,7 @@ function move({
     activeFrom: startup,
     recoveryFrom: startup + active,
     staminaCost: cost,
-    cancelWindows: windows,
+    cancelWindows: windows.map((w) => ({ ...w, move: w.move ?? null })),
     damage: null,
     hitbox: canHit
       ? {
@@ -91,6 +94,7 @@ function move({
     telegraphTick: 0,
     chainNext: chainNext ?? null,
     charge: null,
+    motion: null,
     presentation: { anim: `anim-${id}` },
   } satisfies RuntimeMove);
 }
@@ -391,6 +395,26 @@ describe('action timeline: cancel windows', () => {
       [0, 'roll', null],
       [28, 'heavy', 'roll'],
     ]);
+  });
+
+  it('a window naming a move starts that move for its kind of request (mw-e04.8 roll attack)', () => {
+    const rollAttack = move({ id: 'roll-attack', frames: [10, 4, 20], cost: 14 });
+    const roll2 = move({
+      ...{ id: 'roll', verb: 'dodge', frames: [2, 13, 21] as const, cost: 20 },
+      windows: [{ into: 'attack', from: 28, to: 35, move: 'roll-attack' }],
+    });
+    const s = setup({ moves: table(light1, light2, light3, heavy, roll2, rollAttack) });
+    pressAt(s, 0, 'roll');
+    pressAt(s, 26, 'light-1');
+    s.stepTo(40);
+    expect(s.started.map((e) => [e.tick, e.move, e.cancelled, e.chained])).toEqual([
+      [0, 'roll', null, false],
+      [28, 'roll-attack', 'roll', false],
+    ]);
+    // Idle again, the same request starts the requested move.
+    pressAt(s, 80, 'light-1');
+    s.steps(1);
+    expect(s.started.at(-1)?.move).toBe('light-1');
   });
 
   it('a cancel refused for stamina leaves the current move running', () => {

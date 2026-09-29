@@ -12,7 +12,7 @@
 //   TESTBED_PLAYER_RECORD=1 pnpm vitest run tests/integration/testbed-player.test.ts
 
 import { loadGameContent } from '@content/game-content';
-import { PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
+import { compileMoves, PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
 import { ActionSampler } from '@game/input/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
 import { installGamePhysics, playerFocus } from '@game/physics-objects';
@@ -39,7 +39,10 @@ export interface ScriptStep {
   readonly lookX?: number;
 }
 
-/** Ten seconds in the testbed: through the doorway, a jump, a turn, into a wall and back. */
+/**
+ * About ten seconds in the testbed: through the doorway, a jump, a turn, into a wall and back, then a
+ * roll and a backstep (mw-e04.8).
+ */
 export const TESTBED_SCRIPT: readonly ScriptStep[] = [
   { ticks: 30 },
   { ticks: 90, keys: ['KeyW'] }, // across the room towards the doorway
@@ -54,7 +57,10 @@ export const TESTBED_SCRIPT: readonly ScriptStep[] = [
   { ticks: 60 },
   { ticks: 20, lookX: -40 },
   { ticks: 90, keys: ['KeyS'] }, // back out towards the room
-  { ticks: 53 },
+  { ticks: 1, keys: ['KeyW', 'KeyR'] }, // roll forward, out of the corner the walk ended in
+  { ticks: 40 },
+  { ticks: 1, keys: ['KeyR'] }, // no direction held: backstep
+  { ticks: 40 },
 ];
 
 /**
@@ -132,6 +138,7 @@ export function createTestbedWorld(
     object: {},
     binding: headless,
     camera: { position: { set: nothing }, lookAt: nothing, fov: 70, near: 0.1, aspect: 16 / 9 },
+    moves: compileMoves(content.all('move')),
   }).entity;
   return world;
 }

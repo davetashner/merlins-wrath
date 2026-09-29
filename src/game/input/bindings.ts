@@ -48,6 +48,7 @@ export const DEFAULT_BINDINGS: Bindings = freezeBindings({
   jump: ['Space'],
   sprint: ['ShiftLeft'],
   crouch: ['KeyC'],
+  dodge: ['KeyR'],
   interact: ['KeyE'],
   lockOn: ['KeyQ', mouseCode(1)],
   cycleTarget: ['Tab'],
@@ -63,9 +64,10 @@ export const DEFAULT_BINDINGS: Bindings = freezeBindings({
 
 /**
  * Default gamepad layout (Xbox labels; standard mapping), after common action-RPG conventions. The
- * left stick moves and the right stick looks; neither is a binding. D-pad Up/Right/Down/Left are
- * abilities 1–4 like the number row, doubling Y, RB and LB for 1–3 so a thumb on the face buttons
- * or on the d-pad reaches them. See docs/design/controls.md for the table.
+ * left stick moves and the right stick looks; neither is a binding. B dodges (the souls-like roll
+ * button, mw-e04.8), so crouch sits on D-pad Down. D-pad Up/Right/Left are abilities 1, 2 and 4,
+ * doubling Y and RB for 1–2 so a thumb on the face buttons or on the d-pad reaches them; ability 3
+ * is LB. See docs/design/controls.md for the table.
  */
 export const DEFAULT_PAD_BINDINGS: Bindings = freezeBindings({
   moveForward: [],
@@ -74,7 +76,8 @@ export const DEFAULT_PAD_BINDINGS: Bindings = freezeBindings({
   moveRight: [],
   jump: ['PadA'],
   sprint: ['PadLS'],
-  crouch: ['PadB'],
+  crouch: ['PadDown'],
+  dodge: ['PadB'],
   interact: ['PadX'],
   lockOn: ['PadRS'],
   cycleTarget: [],
@@ -82,7 +85,7 @@ export const DEFAULT_PAD_BINDINGS: Bindings = freezeBindings({
   secondaryAttack: ['PadLT'],
   ability1: ['PadY', 'PadUp'],
   ability2: ['PadRB', 'PadRight'],
-  ability3: ['PadLB', 'PadDown'],
+  ability3: ['PadLB'],
   ability4: ['PadLeft'],
   inventory: ['PadView'],
   pause: ['PadMenu'],

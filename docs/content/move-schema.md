@@ -20,6 +20,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `cancelWindows[].into` | `"attack"` \| `"dodge"` \| `"block"` | required | What the move may be cancelled into. |
 | `cancelWindows[].from` | integer ≥ 0 | required | First tick (inclusive), counted from the move’s first startup tick. |
 | `cancelWindows[].to` | integer ≥ 0 | required | Last tick (inclusive); at least from, and inside the move. |
+| `cancelWindows[].move` | ref → move | — | The move a request of kind `into` starts instead when it cancels through this window, e.g. a roll’s attack window starts the roll attack (e04.8); absent = the requested move. |
 | `damage` | object | — | Damage packet template: what each hit applies through the damage model. Required with a hitbox. |
 | `damage.amounts` | map of `"slash"` \| `"pierce"` \| `"blunt"` \| `"fire"` \| `"frost"` \| `"shock"` \| `"arcane"` \| `"poison"` → number ≥ 0 | required | Damage points per damage type (before resistances); unlisted types deal 0. |
 | `damage.poiseDamage` | number ≥ 0 | `0` | Poise damage in points. |
@@ -76,6 +77,9 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `charge.minHoldTicks` | integer ≥ 0 | required | Hold ticks below which the uncharged move is used instead. |
 | `charge.fullHoldTicks` | integer > 0 | required | Hold ticks at which the charge is full; values lerp from the uncharged move. |
 | `charge.autoReleaseTicks` | integer > 0 | required | Hold ticks at which it releases on its own. |
+| `motion` | object | — | Root motion of a committed move, e.g. a roll’s 3.0 m (e04.8); absent = none. |
+| `motion.distance` | number ≥ 0 | required | Metres travelled, spread evenly over the active ticks; the character stands still (grounded) on the move’s other ticks. Walls stop it; ledges do not. |
+| `motion.direction` | `"input"` \| `"backward"` | required | "input": the direction held when the move was requested, relative to the camera or lock-on target (facing when none); "backward": away from the facing. |
 | `presentation` | object | required | Presentation ids: unknown ids warn (assets may lag) but never fail validation. |
 | `presentation.anim` | string | required | Animation clip id (style bible §15.1), e.g. "anim-knight-sword-light-1". |
 | `presentation.audioCue` | string | — | Audio cue id (audio bible §6) of the move’s sound, e.g. "sfx-knight-swing-light". |

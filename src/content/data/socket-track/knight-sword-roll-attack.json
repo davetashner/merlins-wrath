@@ -1,0 +1,27 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "knight-sword-roll-attack",
+  "notes": "Roll attack (move roll-attack, 4 active ticks): a straight thrust out of the roll, the blade driving forward from 0.45 m behind its rest pose to 0.2 m past it; no rotation. A placeholder arc until the owner tunes the roll attack (mw-e04.29).",
+  "keys": [
+    {
+      "position": { "x": 0.0, "y": 0.0, "z": -0.45 },
+      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
+    },
+    {
+      "position": { "x": 0.0, "y": 0.0, "z": -0.25 },
+      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
+    },
+    {
+      "position": { "x": 0.0, "y": 0.0, "z": -0.05 },
+      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
+    },
+    {
+      "position": { "x": 0.0, "y": 0.0, "z": 0.1 },
+      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
+    },
+    {
+      "position": { "x": 0.0, "y": 0.0, "z": 0.2 },
+      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
+    }
+  ]
+}

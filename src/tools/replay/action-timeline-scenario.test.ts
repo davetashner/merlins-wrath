@@ -19,16 +19,19 @@ describe('action timeline scenario (mw-e04.4)', () => {
       expect(shippedMoveTable().has(move)).toBe(true);
       markExercised(task, 'move', move);
     }
-    for (const move of ['sword-light-2', 'sword-light-3']) markExercised(task, 'move', move);
+    for (const move of ['sword-light-2', 'sword-light-3', 'dodge-roll']) {
+      markExercised(task, 'move', move);
+    }
   });
 
   it('expands the script into one frame per tick, each surviving the replay schema', () => {
     const log = actionTimelineLog();
     expect(log).toHaveLength(ACTION_TIMELINE_TICKS);
     expect(log.filter((f) => f.primaryAttack.pressed)).toHaveLength(3);
-    expect(log.filter((f) => f.ability1.pressed)).toHaveLength(1);
-    const press = pressFrame('ability1');
+    expect(log.filter((f) => f.dodge.pressed && f.move.y === 1)).toHaveLength(1);
+    const press = pressFrame('dodge');
     expect(actionFrameCommand.parse(JSON.parse(JSON.stringify(press)))).toEqual(press);
+    expect(pressFrame('primaryAttack').move).toEqual({ x: 0, y: 0 });
     expect(log[0]).toBe(IDLE_ACTION_FRAME);
   });
 

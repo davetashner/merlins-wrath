@@ -94,6 +94,12 @@
             "minimum": 0,
             "maximum": 9007199254740991,
             "description": "Last tick (inclusive); at least from, and inside the move."
+          },
+          "move": {
+            "description": "The move a request of kind `into` starts instead when it cancels through this window, e.g. a roll’s attack window starts the roll attack (e04.8); absent = the requested move.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "x-contentRef": "move"
           }
         },
         "required": [
@@ -527,6 +533,30 @@
       ],
       "additionalProperties": false,
       "description": "A charged move: its damage and stamina cost are the full-charge values, lerped from `from` by hold time (e04.13)."
+    },
+    "motion": {
+      "type": "object",
+      "properties": {
+        "distance": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Metres travelled, spread evenly over the active ticks; the character stands still (grounded) on the move’s other ticks. Walls stop it; ledges do not."
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "input",
+            "backward"
+          ],
+          "description": "\"input\": the direction held when the move was requested, relative to the camera or lock-on target (facing when none); \"backward\": away from the facing."
+        }
+      },
+      "required": [
+        "distance",
+        "direction"
+      ],
+      "additionalProperties": false,
+      "description": "Root motion of a committed move, e.g. a roll’s 3.0 m (e04.8); absent = none."
     },
     "presentation": {
       "type": "object",

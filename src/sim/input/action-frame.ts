@@ -26,6 +26,7 @@ export const ACTIONS = {
   jump: { kind: 'button', label: 'Jump', context: 'gameplay' },
   sprint: { kind: 'button', label: 'Sprint', context: 'gameplay' },
   crouch: { kind: 'button', label: 'Crouch', context: 'gameplay' },
+  dodge: { kind: 'button', label: 'Dodge', context: 'gameplay' },
   interact: { kind: 'button', label: 'Interact', context: 'gameplay' },
   lockOn: { kind: 'button', label: 'Lock on', context: 'gameplay' },
   cycleTarget: { kind: 'button', label: 'Cycle target', context: 'gameplay' },

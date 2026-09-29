@@ -8,7 +8,8 @@
 //  1. Stance: crouch while crouch is held; on release stand up only if the standing capsule fits.
 //  2. Horizontal velocity moves towards the input's target at a constant rate: run speed per
 //     accelTime speeding up, per decelTime slowing down; in the air only airControl of the
-//     acceleration applies and, with no input, momentum is kept.
+//     acceleration applies and, with no input, momentum is kept. A committed move's root motion (a
+//     dodge roll, `CharacterInput.motion`) sets the velocity outright instead.
 //  3. Jump: a press is buffered for jumpBufferMs; it fires when grounded, or up to coyoteMs after
 //     walking off a ledge (not after a jump). Launch speed √(2·g·apex) reaches jumpApex exactly.
 //  4. Gravity (exact for constant acceleration, capped at maxFallSpeed) while airborne.
@@ -75,6 +76,14 @@ export interface MovementActions {
 export interface CharacterInput {
   readonly actions: MovementActions;
   readonly cameraYaw: number;
+  /**
+   * Root motion of a committed move (a dodge roll, mw-e04.8): the horizontal velocity to travel at
+   * this tick, m/s. While set it replaces steering (no acceleration towards the move input, no sprint)
+   * and a jump press waits in the buffer; collisions, gravity and ground snapping apply as ever, so a
+   * wall stops it and a ledge drops it. In the air a zero motion keeps the momentum it has, so a roll
+   * off a ledge falls along its arc.
+   */
+  readonly motion?: Vec3;
 }
 
 const UP_BUTTON: ButtonState = { pressed: false, held: false };
@@ -231,11 +240,12 @@ function locomotion(
     actions.crouch.held || (state.crouched && !mover.roomToStand(state.position, standing));
   const capsule = capsuleOf({ ...state, crouched }, tuning);
 
-  // 2. Horizontal velocity.
+  // 2. Horizontal velocity (root motion, when a committed move supplies it, replaces steering).
+  const { motion } = input;
   const raw = actions.move;
   const deflection = Math.min(1, Math.sqrt(raw.x * raw.x + raw.y * raw.y));
   const moving = deflection > 0;
-  const sprinting = actions.sprint.held && !crouched && moving;
+  const sprinting = motion === undefined && actions.sprint.held && !crouched && moving;
   const top = crouched
     ? tuning.speeds.crouch
     : sprinting
@@ -249,7 +259,10 @@ function locomotion(
   const target = scale(wish, top * deflection);
   const current = flat(state.velocity);
   let horizontal = current;
-  if (state.grounded) {
+  if (motion !== undefined) {
+    const forced = flat(motion);
+    if (state.grounded || length(forced) > 0) horizontal = forced;
+  } else if (state.grounded) {
     const rate = length(target) >= length(current) ? params.accel : params.decel;
     horizontal = moveTowards(current, target, rate * dt);
   } else if (moving) {
@@ -263,7 +276,7 @@ function locomotion(
       ? state.jumpAge + 1
       : -1;
   const canJump = state.grounded || (!state.jumped && state.airTicks < params.coyoteTicks);
-  const jumping = jumpAge >= 0 && canJump;
+  const jumping = motion === undefined && jumpAge >= 0 && canJump;
   const onGround = state.grounded && !jumping;
 
   // 4. Vertical velocity and this tick's rise or fall.

@@ -1,4 +1,9 @@
-import { loadGameContent, PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
+import {
+  compileMoves,
+  loadGameContent,
+  PLAYER_CAMERA_ID,
+  PLAYER_CONTROLLER_ID,
+} from '@content/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
 import { browserFrameSources, createGameLoop, object3DBinding } from '@game/loop/index';
@@ -205,7 +210,7 @@ function startRenderer(root: HTMLElement): void {
     shown = gone ? 'gone' : device;
     root.dataset['inputDevice'] = device;
     const bindings = { keyboardMouse: sampler.bindings, gamepad: sampler.padBindings };
-    const glyph = (action: 'move' | 'jump' | 'sprint' | 'crouch') =>
+    const glyph = (action: 'move' | 'jump' | 'sprint' | 'crouch' | 'dodge') =>
       inputGlyph(action, device, bindings);
     controls.textContent = gone
       ? GAMEPAD_DISCONNECTED_HINT
@@ -214,6 +219,7 @@ function startRenderer(root: HTMLElement): void {
           jump: glyph('jump'),
           sprint: glyph('sprint'),
           crouch: glyph('crouch'),
+          dodge: glyph('dodge'),
         });
   };
   const playerInput = attachPlayerInput(sampler, {
@@ -373,6 +379,8 @@ function startRenderer(root: HTMLElement): void {
           tuning,
           cameraTuning,
           collision: new RapierCollisionWorld(physics),
+          // The knight's moves: the dodge roll and backstep are playable (mw-e04.8).
+          moves: compileMoves(content.all('move')),
           object: createPlayerCapsule(tuning.capsule),
           binding: (object, read) => {
             view.scene.add(object);

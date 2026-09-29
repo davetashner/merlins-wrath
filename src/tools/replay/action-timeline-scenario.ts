@@ -4,7 +4,8 @@
 // and tests/integration/action-timeline-replay.test.ts replays it 100 times.
 //
 // The input log is a 3-hit light chain (each follow-up buffered before the previous hit's recovery
-// ends) and a dodge buffered in light 3's recovery, cancelling it when its dodge window opens.
+// ends) and a dodge buffered in light 3's recovery, cancelling it when its dodge window opens. The
+// dodge is the knight's real dodge (mw-e04.8): the dodge action with forward held, i.e. the roll.
 //
 // Lives in tools, not src/sim/replay/scenarios, because it reads the moves from game content, which
 // the sim may import only as types. After an intended timeline or move-tuning change:
@@ -19,7 +20,12 @@ import {
   actionFrame,
   actionTimelineSystem,
   actionVector,
+  DodgeComponent,
+  dodgeInputSystem,
+  dodgeMotionSystem,
   giveActionInput,
+  giveDodge,
+  KNIGHT_DODGE,
   giveActionTimeline,
   giveStamina,
   IDLE_ACTION_FRAME,
@@ -33,12 +39,11 @@ import {
 import { actionFrameCommand } from './action-frame-command';
 
 /**
- * The buttons the golden binds. The light chain is the primary attack; the dodge sits on Ability 1
- * only for this recording — the knight's real dodge binding belongs to the dodge bead (e04.8).
+ * The buttons the golden binds to moves: the light chain is the primary attack. The dodge action is
+ * not a binding: the dodge rules pick the roll or the backstep (mw-e04.8).
  */
 export const ACTION_TIMELINE_BINDINGS: Readonly<Partial<Record<ButtonAction, string>>> = {
   primaryAttack: 'sword-light-1',
-  ability1: 'dodge-roll',
 };
 
 /** `[ticks, button pressed on the first of them]` stretches of the script; the rest are idle. */
@@ -47,7 +52,7 @@ export const ACTION_TIMELINE_SCRIPT: readonly (readonly [number, ButtonAction | 
   [28, 'primaryAttack'], // tick 10: light 1 (12/4/18, ends on 44)
   [34, 'primaryAttack'], // tick 38, 6 ticks before light 1 ends: light 2 on 44 (ends on 78)
   [31, 'primaryAttack'], // tick 72: light 3 on 78 (16/5/26; dodge window from 105)
-  [97, 'ability1'], // tick 103, in light 3's recovery: the roll cancels it on 105
+  [97, 'dodge'], // tick 103, forward held, in light 3's recovery: the roll cancels it on 105
 ];
 
 /** The script's length in ticks. */
@@ -56,10 +61,10 @@ export const ACTION_TIMELINE_TICKS = ACTION_TIMELINE_SCRIPT.reduce(
   0,
 );
 
-/** A frame with `button` pressed this tick (and nothing else). */
+/** A frame with `button` pressed this tick (and nothing else; a dodge also holds forward, to roll). */
 export function pressFrame(button: ButtonAction): ActionFrame {
   return actionFrame({
-    move: actionVector(0, 0),
+    move: button === 'dodge' ? actionVector(0, 1) : actionVector(0, 0),
     look: actionVector(0, 0),
     buttons: (b) => actionButton(b === button, b === button, false),
   });
@@ -82,7 +87,7 @@ export function shippedMoveTable(): MoveTable {
   return shippedMoves;
 }
 
-/** A world with one knight: stamina, an action timeline and the golden's bindings. */
+/** A world with one knight: stamina, an action timeline, the golden's bindings and the dodge. */
 export function createActionTimelineWorld({
   seed,
   hz,
@@ -93,12 +98,19 @@ export function createActionTimelineWorld({
   const world = new World<ActionFrame>({ seed, hz }).register(
     StaminaComponent,
     ...ACTION_TIMELINE_COMPONENTS,
+    DodgeComponent,
   );
-  world.addSystem(staminaSystem()).addSystem(actionTimelineSystem({ moves: shippedMoveTable() }));
+  const moves = shippedMoveTable();
+  world
+    .addSystem(staminaSystem())
+    .addSystem(dodgeInputSystem())
+    .addSystem(actionTimelineSystem({ moves }))
+    .addSystem(dodgeMotionSystem({ moves }));
   const knight = world.spawn();
   giveStamina(world, knight);
   giveActionTimeline(world, knight);
   giveActionInput(world, knight, ACTION_TIMELINE_BINDINGS);
+  giveDodge(world, knight, KNIGHT_DODGE);
   return world;
 }
 

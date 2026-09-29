@@ -13,6 +13,7 @@ export interface ControlsHintLabels {
   readonly jump: string;
   readonly sprint: string;
   readonly crouch: string;
+  readonly dodge: string;
 }
 
 /**
@@ -23,10 +24,10 @@ export function playerControlsHint(
   device: 'keyboardMouse' | 'gamepad',
   labels: ControlsHintLabels,
 ): string {
-  const { move, jump, sprint, crouch } = labels;
+  const { move, jump, sprint, crouch, dodge } = labels;
   return device === 'gamepad'
-    ? `Controller: ${move} move, right stick look, ${jump} jump, ${sprint} sprint (toggle), ${crouch} crouch`
-    : `Click to play: ${move} move, mouse look, wheel zoom, ${jump} jump, ${sprint} sprint, ${crouch} crouch, Esc release`;
+    ? `Controller: ${move} move, right stick look, ${jump} jump, ${sprint} sprint (toggle), ${crouch} crouch, ${dodge} dodge`
+    : `Click to play: ${move} move, mouse look, wheel zoom, ${jump} jump, ${sprint} sprint, ${crouch} crouch, ${dodge} dodge, Esc release`;
 }
 
 /** The keyboard + mouse hint in the default bindings. */
@@ -35,6 +36,7 @@ export const PLAYER_CONTROLS_HINT = playerControlsHint('keyboardMouse', {
   jump: 'Space',
   sprint: 'Shift',
   crouch: 'C',
+  dodge: 'R',
 });
 
 /**

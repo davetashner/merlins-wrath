@@ -58,3 +58,7 @@ check enforces this).
   visitor presses play.
 - The public backlog at [thevesperbell.com/backlog.html](https://thevesperbell.com/backlog.html),
   rebuilt on every merge, showing each bead's status and the pull requests that close it.
+- Dodge: press R (B on a controller) to roll 3 m in the direction you are holding, relative to the
+  camera, or to backstep with no direction held. A roll costs 20 stamina and a backstep 12; both
+  have short invulnerability windows that attacks pass straight through. On a controller, crouch
+  moves to D-pad Down.

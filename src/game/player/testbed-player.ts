@@ -11,7 +11,7 @@
 // (object3DBinding for Three.js). The sim steps only through the frame loop, as ever; nothing here
 // mutates the sim after setup (the camera's collision queries are read-only).
 
-import type { CameraTuning, ControllerTuning, Frozen } from '@content/index';
+import type { CameraTuning, ControllerTuning, Frozen, MoveTable } from '@content/index';
 import {
   CharacterController,
   installPlayer,
@@ -84,6 +84,11 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
   readonly publishCamera?: (readout: CameraReadout) => void;
   /** Mouse look, radians per count; defaults to the camera tuning's. */
   readonly sensitivity?: number;
+  /**
+   * The moves the player may perform (`compileMoves` of the game content): gives it stamina, an
+   * action timeline and the dodge roll and backstep (mw-e04.8). Absent = movement only.
+   */
+  readonly moves?: MoveTable;
 }
 
 export interface TestbedPlayer {
@@ -141,6 +146,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
       ...(options.sensitivity !== undefined && { sensitivity: options.sensitivity }),
     },
     pitch: toRadians(cameraTuning.pitch.initial),
+    ...(options.moves !== undefined && { combat: { moves: options.moves } }),
   });
   const orbit = new OrbitCamera(cameraTuning, collision);
 
