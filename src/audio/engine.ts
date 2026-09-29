@@ -53,6 +53,8 @@ export interface PlayOptions {
   readonly pitch?: number;
   /** Explicit variant index; default is round-robin per cue. */
   readonly variant?: number;
+  /** Voice priority (0–100) for this play, overriding the cue's; cue sheets set it per rule. */
+  readonly priority?: number;
 }
 
 export type SoundHandleState = 'pending' | 'playing' | 'stopped';
@@ -420,6 +422,7 @@ export class AudioEngine {
     const { ctx, graph } = rt;
     const { handle, def, options } = request;
     const position = def.spatial ? this.#initialPosition(options) : undefined;
+    const priority = options.priority ?? def.priority;
     const dist = position ? distance(position, this.#listener.position) : 0;
     // One-shots beyond the audible range are culled; loops keep playing (the source may approach).
     if (position && !def.loop && dist > MAX_DISTANCE) {
@@ -427,7 +430,7 @@ export class AudioEngine {
       return;
     }
     if (this.#voices.size >= this.#maxVoices) {
-      const victim = pickVictim(this.#voices, { priority: def.priority, distance: dist });
+      const victim = pickVictim(this.#voices, { priority, distance: dist });
       if (!victim) {
         handle.state = 'stopped';
         return;
@@ -467,7 +470,7 @@ export class AudioEngine {
       gain,
       panner,
       entity: position ? options.entity : undefined,
-      priority: def.priority,
+      priority,
       seq: this.#seq++,
       trim,
       position: position ?? this.#listener.position,

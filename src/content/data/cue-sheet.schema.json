@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Sheet id, e.g. \"combat\"."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the sheet covers and why, for owner review."
+    },
+    "rules": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "enum": [
+              "DamageApplied",
+              "PoiseBroken",
+              "Died",
+              "AttackTelegraph",
+              "AttackHit",
+              "AttackProjectileLaunched",
+              "AttackEnded",
+              "ActionRejected",
+              "StaminaExhausted",
+              "StaminaRecovered",
+              "fireIgnited",
+              "fireExtinguished",
+              "fireBurntOut",
+              "stimulusResolved",
+              "propertyChanged",
+              "factChanged",
+              "signalReceived",
+              "volumeEntered",
+              "volumeExited"
+            ],
+            "description": "The sim event that triggers the rule (see src/content/cue-events.ts for its facts)."
+          },
+          "match": {
+            "default": {},
+            "description": "Facts the event must have: a string fact equals the value, a list fact contains it, a boolean fact equals it. The most specific matching rule (most keys) wins.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "boolean"
+              ]
+            }
+          },
+          "layer": {
+            "default": "main",
+            "description": "Rules compete per layer: one event plays at most one rule per layer (e.g. \"impact\" and \"accent\").",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "cue": {
+            "type": "string",
+            "pattern": "^(?:\\{[a-zA-Z]+\\}|(?:sfx|amb|music)(?:-(?:[a-z0-9]+|\\{[a-zA-Z]+\\}))+)$",
+            "description": "Sound manifest cue id to play; `{fact}` segments are filled from string facts (a missing fact plays nothing)."
+          },
+          "at": {
+            "description": "Event anchor to play at (an entity to follow or a fixed position); default: the event’s first anchor.",
+            "type": "string"
+          },
+          "variants": {
+            "description": "Pick randomly among this many variants of the cue (never the same twice in a row); default: all the manifest has.",
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "pitchJitter": {
+            "default": 0,
+            "description": "Random playback-rate spread as a fraction: 0.05 = ±5%.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 0.5
+          },
+          "volumeJitterDb": {
+            "default": 0,
+            "description": "Random volume spread, ± dB.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 12
+          },
+          "volumeDb": {
+            "default": 0,
+            "description": "Fixed volume offset, dB.",
+            "type": "number",
+            "minimum": -60,
+            "maximum": 12
+          },
+          "volumeBy": {
+            "description": "Scale volume by a number fact (intensity: damage dealt, stimulus amount…).",
+            "type": "object",
+            "properties": {
+              "fact": {
+                "type": "string",
+                "minLength": 1,
+                "description": "A number fact of the event, e.g. \"total\"."
+              },
+              "min": {
+                "type": "number",
+                "description": "Fact value at (or below) which the cue plays at floorDb."
+              },
+              "max": {
+                "type": "number",
+                "description": "Fact value at (or above) which the cue plays at full volume."
+              },
+              "floorDb": {
+                "default": -12,
+                "description": "Volume offset at `min`, dB (≤ 0); linear in dB up to 0 at `max`.",
+                "type": "number",
+                "minimum": -60,
+                "maximum": 0
+              }
+            },
+            "required": [
+              "fact",
+              "min",
+              "max"
+            ],
+            "additionalProperties": false
+          },
+          "cooldownMs": {
+            "default": 0,
+            "description": "Minimum ms between two plays of this rule on the same anchor.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "priority": {
+            "description": "Voice priority for this play (0–100); default: the manifest cue’s priority.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "event",
+          "cue"
+        ],
+        "additionalProperties": false
+      },
+      "description": "The rules, most specific wins per event and layer."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "rules"
+  ],
+  "additionalProperties": false
+}

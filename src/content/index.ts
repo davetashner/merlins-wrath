@@ -66,6 +66,29 @@ export {
   type CreatureDefInput,
 } from './types/creature.ts';
 export {
+  CUE_EVENTS,
+  CUE_EVENT_NAMES,
+  CUE_FACT_KINDS,
+  CUE_PLACEHOLDER,
+  checkCueRule,
+  cueEventSpec,
+  cuePlaceholders,
+  cueRuleBaseFields,
+  type CueEventName,
+  type CueEventSpec,
+  type CueFactKind,
+  type CueRuleShape,
+} from './cue-events.ts';
+export {
+  CUE_DEDUPE_MS,
+  CUE_TEMPLATE_PATTERN,
+  cueRuleSchema,
+  cueSheetSchema,
+  type CueRuleDef,
+  type CueSheetDef,
+  type CueSheetDefInput,
+} from './types/cue-sheet.ts';
+export {
   FACT_KEY_PATTERN,
   FACT_PERSISTENCE,
   FACT_TEMPLATE_PATTERN,

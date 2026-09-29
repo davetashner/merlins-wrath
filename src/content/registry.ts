@@ -8,6 +8,7 @@ import { attackSchema } from './types/attack.ts';
 import { cameraSchema } from './types/camera.ts';
 import { controllerSchema } from './types/controller.ts';
 import { creatureSchema } from './types/creature.ts';
+import { cueSheetSchema } from './types/cue-sheet.ts';
 import { factSchema } from './types/fact.ts';
 import { factionSchema } from './types/faction.ts';
 import { kitSchema } from './types/kit.ts';
@@ -25,6 +26,7 @@ export const contentTypes = {
   camera: cameraSchema,
   controller: controllerSchema,
   creature: creatureSchema,
+  'cue-sheet': cueSheetSchema,
   fact: factSchema,
   faction: factionSchema,
   kit: kitSchema,
