@@ -29,7 +29,7 @@ import {
 const OBSERVERS = 24;
 /** The AC-6 budget, milliseconds per tick. */
 const BUDGET_MS = 0.3;
-const ON_CI = process.env.CI === 'true';
+const ON_CI = process.env['CI'] === 'true';
 
 function testbed() {
   const content = loadGameContent();
@@ -74,7 +74,9 @@ function bareRays() {
 }
 
 describe('line of sight', () => {
-  test('AC-6: 24 observers × 4 samples, batched, stays ≤ 0.3 ms per tick p95', async ({ bench }) => {
+  test('AC-6: 24 observers × 4 samples, batched, stays ≤ 0.3 ms per tick p95', async ({
+    bench,
+  }) => {
     const physics = testbed();
     expect(physics.count()).toBeGreaterThan(0);
     const los = new LineOfSight({ world: new RapierSightWorld(physics) });
