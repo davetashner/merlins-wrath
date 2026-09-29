@@ -1,0 +1,340 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Effect id, e.g. \"impact-sparks\"."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the effect shows and where it is used, for review."
+    },
+    "priority": {
+      "default": 50,
+      "description": "0–100: when the particle budget is full, lower-priority effects are culled first.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "duration": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Seconds the effect emits for; a looping effect repeats its bursts each period."
+    },
+    "loop": {
+      "default": false,
+      "description": "Emit until stopped instead of once.",
+      "type": "boolean"
+    },
+    "socket": {
+      "description": "Default socket when spawned on an entity (e.g. \"hand-r\"); default: its origin.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "lowRateScale": {
+      "default": 0.5,
+      "description": "Emission multiplier on the Low tier (rate and burst counts).",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "emitters": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Emitter id, unique within the effect, e.g. \"core\"."
+          },
+          "texture": {
+            "type": "string",
+            "pattern": "^vfx-[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Texture or flipbook asset id; placeholders are generated until the asset lands."
+          },
+          "flipbook": {
+            "description": "The texture is a grid of animation frames.",
+            "type": "object",
+            "properties": {
+              "cols": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 16,
+                "description": "Frame columns in the sheet (style bible: 4 or 8)."
+              },
+              "rows": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 16,
+                "description": "Frame rows in the sheet."
+              },
+              "fps": {
+                "description": "Frames per second, looping; default: play the sheet once over the particle’s life.",
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "cols",
+              "rows"
+            ],
+            "additionalProperties": false
+          },
+          "blend": {
+            "type": "string",
+            "enum": [
+              "additive",
+              "alpha"
+            ],
+            "description": "additive for glowing magic cores, alpha for smoke, dust and debris."
+          },
+          "rate": {
+            "default": 0,
+            "description": "Particles per second while the effect emits.",
+            "type": "number",
+            "minimum": 0
+          },
+          "bursts": {
+            "default": [],
+            "description": "One-off emissions at fixed times.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "at": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Seconds after the effect starts."
+                },
+                "count": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "description": "Particles emitted at once."
+                }
+              },
+              "required": [
+                "at",
+                "count"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "lifetime": {
+            "description": "Particle lifetime range, seconds.",
+            "type": "object",
+            "properties": {
+              "min": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Smallest particle lifetime, seconds (> 0)."
+              },
+              "max": {
+                "description": "Largest particle lifetime, seconds (> 0); default: min.",
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            },
+            "required": [
+              "min"
+            ],
+            "additionalProperties": false
+          },
+          "speed": {
+            "description": "Launch speed range, m/s.",
+            "type": "object",
+            "properties": {
+              "min": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Smallest launch speed, m/s."
+              },
+              "max": {
+                "description": "Largest launch speed, m/s; default: min.",
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "min"
+            ],
+            "additionalProperties": false
+          },
+          "coneDeg": {
+            "default": 0,
+            "description": "Half-angle of the launch cone around the effect’s up axis; 180 = any direction.",
+            "type": "number",
+            "minimum": 0,
+            "maximum": 180
+          },
+          "spawnRadius": {
+            "default": 0,
+            "description": "Particles start anywhere within this many metres of the effect’s origin.",
+            "type": "number",
+            "minimum": 0
+          },
+          "gravity": {
+            "default": 0,
+            "description": "Downward acceleration, m/s² (negative rises, like smoke).",
+            "type": "number"
+          },
+          "drag": {
+            "default": 0,
+            "description": "Velocity lost per second, as a fraction.",
+            "type": "number",
+            "minimum": 0
+          },
+          "size": {
+            "default": 0.2,
+            "description": "Particle size in metres over its life.",
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "t": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Point in the particle’s life, 0 = born, 1 = dies."
+                    },
+                    "v": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Value at t."
+                    }
+                  },
+                  "required": [
+                    "t",
+                    "v"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ]
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$"
+              },
+              {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "t": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Point in the particle’s life, 0 = born, 1 = dies."
+                    },
+                    "color": {
+                      "type": "string",
+                      "pattern": "^#[0-9A-Fa-f]{6}$",
+                      "description": "Colour at t."
+                    }
+                  },
+                  "required": [
+                    "t",
+                    "color"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ],
+            "description": "Particle colour over its life (`#FFFFFF` only in emissive cores)."
+          },
+          "alpha": {
+            "default": [
+              {
+                "t": 0,
+                "v": 1
+              },
+              {
+                "t": 1,
+                "v": 0
+              }
+            ],
+            "description": "Opacity over the particle’s life (default fades out).",
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "t": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Point in the particle’s life, 0 = born, 1 = dies."
+                    },
+                    "v": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Value at t."
+                    }
+                  },
+                  "required": [
+                    "t",
+                    "v"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            ]
+          },
+          "minTier": {
+            "default": "low",
+            "description": "Lowest quality tier the emitter runs on; \"high\" drops it on Low.",
+            "type": "string",
+            "enum": [
+              "low",
+              "high"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "texture",
+          "blend",
+          "lifetime",
+          "color"
+        ],
+        "additionalProperties": false
+      },
+      "description": "The particle emitters."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "duration",
+    "emitters"
+  ],
+  "additionalProperties": false
+}

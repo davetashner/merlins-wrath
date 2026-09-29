@@ -46,6 +46,9 @@ check enforces this).
   four-legged beast. Each one loops through standing, walking a circle, attacking and flinching from
   a hit. The game simulation drives their timing, so each attack's swing lands on the move's
   active frame.
+- Particle effects are in: sparks, flames, smoke and glowing motes, kept within a particle budget so a
+  busy fight can't tank the frame rate. Add `?vfx=demo` to the testbed URL to see twenty test effects
+  and a stats overlay (`?vfx` shows the overlay alone).
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.

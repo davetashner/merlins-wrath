@@ -23,6 +23,7 @@ import { senseSchema } from './types/sense.ts';
 import { signalGraphSchema } from './types/signal-graph.ts';
 import { spellSchema } from './types/spell.ts';
 import { testPropSchema } from './types/testprop.ts';
+import { vfxEffectSchema } from './types/vfx-effect.ts';
 
 /** Content type name → schema of one entry. */
 export const contentTypes = {
@@ -44,6 +45,7 @@ export const contentTypes = {
   'signal-graph': signalGraphSchema,
   spell: spellSchema,
   testprop: testPropSchema,
+  'vfx-effect': vfxEffectSchema,
 };
 
 /** Checks across entries, run on every load of the registered types (see loader.ts). */

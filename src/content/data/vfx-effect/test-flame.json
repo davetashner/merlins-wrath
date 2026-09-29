@@ -1,0 +1,43 @@
+{
+  "id": "test-flame",
+  "notes": "Framework test effect (mw-e29.1): a looping fire-school flame (style bible §2.3 Fire: rising, licking) from a 4×4 flipbook, with embers that only run on the High tier. Used by the testbed ?vfx demo and the framework tests.",
+  "priority": 40,
+  "duration": 1,
+  "loop": true,
+  "emitters": [
+    {
+      "id": "core",
+      "texture": "vfx-fire-flame-loop-4x4-01",
+      "flipbook": { "cols": 4, "rows": 4, "fps": 12 },
+      "blend": "additive",
+      "rate": 40,
+      "lifetime": { "min": 0.5, "max": 0.8 },
+      "speed": { "min": 0.8, "max": 1.4 },
+      "coneDeg": 12,
+      "spawnRadius": 0.15,
+      "gravity": -1,
+      "size": [
+        { "t": 0, "v": 0.45 },
+        { "t": 1, "v": 0.1 }
+      ],
+      "color": [
+        { "t": 0, "color": "#FFD36B" },
+        { "t": 0.6, "color": "#FF7A1A" },
+        { "t": 1, "color": "#C8331A" }
+      ]
+    },
+    {
+      "id": "embers",
+      "texture": "vfx-spark-01",
+      "blend": "additive",
+      "rate": 6,
+      "lifetime": { "min": 1, "max": 1.6 },
+      "speed": { "min": 1.2, "max": 2 },
+      "coneDeg": 25,
+      "gravity": -0.5,
+      "size": 0.04,
+      "color": "#FFD36B",
+      "minTier": "high"
+    }
+  ]
+}

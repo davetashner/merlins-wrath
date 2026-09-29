@@ -7,10 +7,12 @@ import { attachPlayerInput, setupTestbedPlayer, type TestbedPlayer } from '@game
 import { readSceneTransform, resolveSceneRequest, SceneLoader } from '@game/scene/index';
 import { openSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
+import { VfxSystem } from '@game/vfx/index';
 import { createRenderBootstrap } from '@render/bootstrap/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { createPlayerCapsule } from '@render/player/index';
+import { createVfxRenderer } from '@render/vfx/index';
 import {
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
@@ -28,6 +30,7 @@ import { compactProbe, setupAnimationDemo, type AnimDemo } from '@tools/anim-dem
 import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
+import { formatVfxStats, parseVfxParam, VfxDemo } from '@tools/vfx-demo/index';
 import {
   DEBUG_CAMERA_HINT,
   GAMEPAD_DISCONNECTED_HINT,
@@ -233,6 +236,36 @@ function startRenderer(root: HTMLElement): void {
     hitOverlay.enabled = new URLSearchParams(location.search).has('hitboxes');
     view.scene.add(hitOverlay.object);
     root.dataset['hitboxOverlay'] = hitOverlay.enabled ? 'on' : 'off';
+
+    const content = loadGameContent();
+
+    // VFX (mw-e29.1): effects from content, simulated each frame after the sim and the camera have
+    // moved, drawn by src/render/vfx. Presentation only: the system reads entity transforms and never
+    // writes to the sim. Sockets need skeletons, so entity effects emit from the entity's origin for
+    // now. `?vfx` shows the stats overlay; `?vfx=demo` / `?vfx=stress` spawn the test effects.
+    const vfx = new VfxSystem({
+      effects: content.all('vfx-effect'),
+      anchors: (entity) => readSceneTransform(world, entity),
+    });
+    const vfxView = createVfxRenderer(view.scene);
+    const vfxMode = parseVfxParam(location.search);
+    let vfxDemo: VfxDemo | undefined;
+    let vfxStats: HTMLElement | undefined;
+    let vfxStatsAgeMs = Infinity;
+    if (vfxMode !== undefined) {
+      vfxStats = document.createElement('pre');
+      vfxStats.dataset['testid'] = 'vfx-stats';
+      hud.append(vfxStats);
+    }
+    const showVfxStats = (elapsedMs: number): void => {
+      vfxStatsAgeMs += elapsedMs;
+      if (vfxStats === undefined || vfxStatsAgeMs < 250) return;
+      vfxStatsAgeMs = 0;
+      const stats = vfx.stats();
+      vfxStats.textContent = formatVfxStats(stats);
+      root.dataset['vfx'] = JSON.stringify(stats);
+    };
+
     let lastFrameMs: number | undefined;
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
     let animation: AnimDemo | undefined;
@@ -257,13 +290,16 @@ function startRenderer(root: HTMLElement): void {
           if (probe !== publishedProbe) root.dataset['animation'] = publishedProbe = probe;
         }
         showControls();
+        vfxDemo?.update(elapsedMs / 1000);
+        vfx.update(elapsedMs / 1000, camera.position);
+        vfxView.draw(vfx.batches, vfx.markers);
+        showVfxStats(elapsedMs);
         view.renderFrame(timeMs);
       },
     });
 
     // The scene loader fills the world from content (mw-e00.21); static colliders go into the
     // sim's Rapier world.
-    const content = loadGameContent();
     const scenes = new SceneLoader({
       world,
       sync,
@@ -330,6 +366,11 @@ function startRenderer(root: HTMLElement): void {
             return object3DBinding(object, read);
           },
         });
+      }
+      if (vfxMode === 'demo' || vfxMode === 'stress') {
+        const [x, y, z] = scene.camera.target;
+        const centre = playerStart(loaded.layout.spawns)?.position ?? { x, y, z };
+        vfxDemo = new VfxDemo(vfx, vfxMode, centre);
       }
       label.textContent = sceneLabel(scene, __BUILD_SHA__);
       root.dataset['scene'] = scene.id;

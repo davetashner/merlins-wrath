@@ -1,0 +1,28 @@
+{
+  "id": "test-sparks",
+  "notes": "Framework test effect (mw-e29.1): a one-shot burst of fire-school sparks (style bible §2.3 Fire) that fly out, fall and fade. Used by the testbed ?vfx demo and the framework tests; real impact effects come with the per-feature VFX beads.",
+  "priority": 60,
+  "duration": 0.6,
+  "emitters": [
+    {
+      "id": "sparks",
+      "texture": "vfx-spark-01",
+      "blend": "additive",
+      "bursts": [{ "at": 0, "count": 32 }],
+      "lifetime": { "min": 0.3, "max": 0.6 },
+      "speed": { "min": 3, "max": 6 },
+      "coneDeg": 60,
+      "gravity": 9.8,
+      "drag": 1.5,
+      "size": [
+        { "t": 0, "v": 0.08 },
+        { "t": 1, "v": 0.03 }
+      ],
+      "color": [
+        { "t": 0, "color": "#FFD36B" },
+        { "t": 0.5, "color": "#FF7A1A" },
+        { "t": 1, "color": "#C8331A" }
+      ]
+    }
+  ]
+}

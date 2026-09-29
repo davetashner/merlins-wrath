@@ -1,0 +1,35 @@
+{
+  "id": "test-smoke",
+  "notes": "Framework test effect (mw-e29.1): looping alpha-blended smoke in the fire school's smoke colour fading to day fog (style bible §2.3, §8: smoke sits in the world, not additive). Low priority, so it is culled first when the budget is full.",
+  "priority": 20,
+  "duration": 2,
+  "loop": true,
+  "lowRateScale": 0.4,
+  "emitters": [
+    {
+      "id": "puffs",
+      "texture": "vfx-smoke-puff-01",
+      "blend": "alpha",
+      "rate": 8,
+      "lifetime": { "min": 2, "max": 3 },
+      "speed": { "min": 0.4, "max": 0.7 },
+      "coneDeg": 20,
+      "spawnRadius": 0.2,
+      "gravity": -0.3,
+      "drag": 0.3,
+      "size": [
+        { "t": 0, "v": 0.3 },
+        { "t": 1, "v": 1.2 }
+      ],
+      "color": [
+        { "t": 0, "color": "#3A2A22" },
+        { "t": 1, "color": "#A7B3B8" }
+      ],
+      "alpha": [
+        { "t": 0, "v": 0 },
+        { "t": 0.2, "v": 0.5 },
+        { "t": 1, "v": 0 }
+      ]
+    }
+  ]
+}

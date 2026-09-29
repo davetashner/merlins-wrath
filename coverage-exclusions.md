@@ -20,7 +20,7 @@ approves the row, not just the code.
 | Path glob | Reason | Bead | Alternative verification |
 |---|---|---|---|
 | `src/main.ts` | Browser bootstrap: wires the layers into the page; no logic of its own. | mw-e00.1 | Playwright smoke `e2e/smoke.spec.ts` (page loads, zero console errors). |
-| `src/render/**` | Renderer-specific code (Three.js bootstrap, scene graph, materials, shaders, VFX) needs a GPU context. Pure helpers here (e.g. `bootstrap/sizing.ts`) are still unit tested. | mw-e00.19 | Playwright boot smoke `e2e/render-boot.spec.ts` (first frame ≤ 3 s, non-blank pixel sample + screenshot artifact, DPR-capped resize, dispose/recreate context count) and perf budgets (`mw-e32.1`). |
+| `src/render/**` | Renderer-specific code (Three.js bootstrap, scene graph, materials, shaders, VFX) needs a GPU context. Pure helpers here (e.g. `bootstrap/sizing.ts`) are still unit tested. | mw-e00.19 | Playwright boot smoke `e2e/render-boot.spec.ts` (first frame ≤ 3 s, non-blank pixel sample + screenshot artifact, DPR-capped resize, dispose/recreate context count) and perf budgets (`mw-e32.1`). VFX drawing (`src/render/vfx`, mw-e29.1): `e2e/vfx.spec.ts` (20 effects render, no console errors, screenshot sanity) and opt-in `e2e/vfx-perf.spec.ts`. |
 | `src/testbed/**` | Browser testbed page bootstraps (DOM buttons, rAF loop, real `AudioContext`, real WebGL renderer); the logic they call is unit tested in `src/audio` or verified in `src/render` e2e. | mw-e28.1 | Playwright `e2e/audio.spec.ts` in Chromium, Firefox and WebKit (context running, cue plays, zero console errors); `e2e/render-boot.spec.ts` AC-4 drives `testbed/render.html` (mw-e00.19). |
 
 ## Glue-layer gaps
