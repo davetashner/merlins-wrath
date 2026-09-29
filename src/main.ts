@@ -1,17 +1,32 @@
-import { loadGameContent } from '@content/index';
+import { loadGameContent, PLAYER_CONTROLLER_ID } from '@content/index';
 import { layers } from '@game/index';
+import { ActionSampler } from '@game/input/index';
 import { browserFrameSources, createGameLoop, object3DBinding } from '@game/loop/index';
 import { bootPhysics } from '@game/physics-loader';
+import { attachPlayerInput, setupTestbedPlayer, type TestbedPlayer } from '@game/player/index';
 import { readSceneTransform, resolveSceneRequest, SceneLoader } from '@game/scene/index';
 import { openSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { createRenderBootstrap } from '@render/bootstrap/index';
 import { createGreyboxView } from '@render/greybox/index';
-import { registerSceneComponents, World, type PhysicsPort } from '@sim/index';
+import { createPlayerCapsule } from '@render/player/index';
+import {
+  playerStart,
+  RapierCollisionWorld,
+  registerSceneComponents,
+  World,
+  type ActionFrame,
+  type RapierPhysics,
+} from '@sim/index';
 import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
-import { DEBUG_CAMERA_HINT, sceneErrorMessage, sceneLabel } from '@ui/scene-hud';
+import {
+  DEBUG_CAMERA_HINT,
+  PLAYER_CONTROLS_HINT,
+  sceneErrorMessage,
+  sceneLabel,
+} from '@ui/scene-hud';
 import {
   PHYSICS_FAILED_TEXT,
   PHYSICS_LOADING_TEXT,
@@ -133,8 +148,20 @@ function startRenderer(root: HTMLElement): void {
   const hint = document.createElement('p');
   hint.dataset['testid'] = 'debug-camera-hint';
   hint.textContent = DEBUG_CAMERA_HINT;
-  hud.append(label, hint);
+  const controls = document.createElement('p');
+  controls.dataset['testid'] = 'player-controls-hint';
+  hud.append(label, controls, hint);
   root.append(hud);
+
+  // Keyboard + mouse → one ActionFrame per sim tick (mw-e02.1); a click on the canvas takes control
+  // (pointer lock) of the player, once there is one (mw-e02.23).
+  const sampler = new ActionSampler();
+  const playerInput = attachPlayerInput(sampler, {
+    window: globalThis.window,
+    document: globalThis.document,
+    element: view.canvas,
+  });
+  let player: TestbedPlayer | undefined;
 
   bindDebugCameraInput(debugCamera, {
     keys: globalThis.window,
@@ -142,6 +169,9 @@ function startRenderer(root: HTMLElement): void {
     onToggle: (active) => {
       root.dataset['debugCamera'] = active ? 'on' : 'off';
       hint.textContent = active ? `${DEBUG_CAMERA_HINT} · ON` : DEBUG_CAMERA_HINT;
+      // The fly camera shares WASD: the player lets go of input and the camera while it flies.
+      playerInput.enabled = !active;
+      if (player) player.followCamera = !active;
       writeCameraData();
     },
   });
@@ -150,15 +180,17 @@ function startRenderer(root: HTMLElement): void {
   // Fixed-step sim on requestAnimationFrame (mw-e00.20). The sim owns its physics (mw-e03.35), so the
   // world starts once the physics module has loaded; the dynamic import keeps Rapier and its WASM
   // out of the initial bundle.
-  const startWorld = (physics: PhysicsPort): void => {
-    const world = registerSceneComponents(new World({ seed: BOOT_SEED, physics }));
+  const startWorld = (physics: RapierPhysics): void => {
+    const world = registerSceneComponents(new World<ActionFrame>({ seed: BOOT_SEED, physics }));
     let lastFrameMs: number | undefined;
     const { loop, sync } = createGameLoop({
       world,
       sources,
+      sampleCommands: sampler.sampleCommands,
       draw: ({ timeMs }) => {
         if (debugCamera.update(timeMs - (lastFrameMs ?? timeMs))) writeCameraData();
         lastFrameMs = timeMs;
+        player?.frame();
         view.renderFrame(timeMs);
       },
     });
@@ -177,9 +209,31 @@ function startRenderer(root: HTMLElement): void {
     const request = resolveSceneRequest(location.search, scenes.available());
     if (request.kind === 'scene') {
       const scene = content.get('scene', request.id);
-      scenes.load(scene.id);
+      const loaded = scenes.load(scene.id);
       camera.position.set(...scene.camera.position);
       camera.lookAt(...scene.camera.target);
+      // A controllable player (mw-e02.23) in scenes with a player start; it collides with the
+      // scene through the sim's Rapier world (mw-e02.21) and brings its own follow camera.
+      if (playerStart(loaded.layout.spawns) !== undefined) {
+        const tuning = content.get('controller', PLAYER_CONTROLLER_ID);
+        player = setupTestbedPlayer({
+          world,
+          scene: loaded,
+          sync,
+          tuning,
+          collision: new RapierCollisionWorld(physics),
+          object: createPlayerCapsule(tuning.capsule),
+          binding: (object, read) => {
+            view.scene.add(object);
+            return object3DBinding(object, read);
+          },
+          camera,
+          publish: (readout) => {
+            root.dataset['player'] = JSON.stringify(readout);
+          },
+        });
+        controls.textContent = PLAYER_CONTROLS_HINT;
+      }
       label.textContent = sceneLabel(scene, __BUILD_SHA__);
       root.dataset['scene'] = scene.id;
     } else {

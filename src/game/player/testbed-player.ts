@@ -1,7 +1,7 @@
 // A controllable player in a loaded scene (mw-e02.23): the glue from sampled ActionFrames to a
 // capsule on screen. It installs the player into the sim (spawn at the scene's player start, look and
-// controller systems; see src/sim/player), resolves collisions against the given CollisionWorld (by
-// default the in-memory one built from the scene's greybox colliders), binds a placeholder capsule to
+// controller systems; see src/sim/player), resolves collisions against the given CollisionWorld (the
+// game passes RapierCollisionWorld over the sim's physics, mw-e02.21), binds a placeholder capsule to
 // the player through render sync so it is interpolated like every other entity, and each drawn frame
 // points a fixed follow camera at the interpolated capsule and publishes a small read-only readout
 // (position, grounded, yaw) for the HUD and the Playwright e2e.
@@ -15,7 +15,6 @@ import {
   CharacterController,
   installPlayer,
   PlayerLook,
-  sceneCollisionWorld,
   type CollisionWorld,
   type EntityId,
   type LoadedScene,
@@ -52,8 +51,8 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
   readonly scene: LoadedScene;
   readonly sync: RenderSync;
   readonly tuning: Frozen<ControllerTuning>;
-  /** Collision for the controller; defaults to the scene's greybox colliders, in memory. */
-  readonly collision?: CollisionWorld;
+  /** Collision for the controller: RapierCollisionWorld over the world's physics in the game. */
+  readonly collision: CollisionWorld;
   /** The placeholder capsule; its origin is the player's feet and it faces −z. */
   readonly object: TObject;
   /** How `object` follows the player (object3DBinding for Three.js). */
@@ -68,7 +67,6 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
 
 export interface TestbedPlayer {
   readonly entity: EntityId;
-  readonly collision: CollisionWorld;
   /** Whether the follow camera drives the camera (off while the debug camera flies). */
   followCamera: boolean;
   /** Call once per drawn frame, after render sync and before drawing. */
@@ -95,10 +93,9 @@ export function setupTestbedPlayer<TObject, TCommand>(
 ): TestbedPlayer {
   const { world, scene, sync, camera, publish } = options;
   const rig = options.rig ?? DEFAULT_FOLLOW_RIG;
-  const collision = options.collision ?? sceneCollisionWorld(scene.layout);
   const entity = installPlayer(world, {
     spawns: scene.layout.spawns,
-    collision,
+    collision: options.collision,
     tuning: options.tuning,
     ...(options.sensitivity !== undefined && { sensitivity: options.sensitivity }),
   });
@@ -131,7 +128,6 @@ export function setupTestbedPlayer<TObject, TCommand>(
   let publishedTick = -1;
   const player: TestbedPlayer = {
     entity,
-    collision,
     followCamera: true,
     frame() {
       if (player.followCamera && shown !== undefined) {

@@ -1,9 +1,9 @@
+import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
 import { ActionSampler } from '@game/input/index';
 import { IDLE_ACTION_FRAME } from '@sim/index';
 import {
   actionFrameCommand,
-  createTestbedWorld,
   scriptedInput,
   TESTBED_SCRIPT,
   TESTBED_TICKS,
@@ -41,9 +41,11 @@ describe('testbed player scenario (mw-e02.23)', () => {
   });
 
   it('drives the log, then nothing once it runs out', () => {
-    const world = createTestbedWorld({ seed: 1, hz: 60 });
+    const scenario = testbedPlayerScenario(RAPIER);
+    const world = scenario.create({ seed: 1, hz: 60 });
     const ctx = (tick: number) => ({ tick, world, rng: world.random('driver') });
-    expect(testbedPlayerScenario.drive(ctx(0))).toHaveLength(1);
-    expect(testbedPlayerScenario.drive(ctx(TESTBED_TICKS))).toEqual([]);
+    expect(scenario.drive(ctx(0))).toHaveLength(1);
+    expect(scenario.drive(ctx(1))).toHaveLength(1);
+    expect(scenario.drive(ctx(TESTBED_TICKS))).toEqual([]);
   });
 });

@@ -11,7 +11,7 @@ import {
   type ActionFrame,
   type ButtonAction,
 } from '../input/action-frame';
-import { sceneCollisionWorld } from '../scene/collision';
+import { FakeCollisionWorld } from '../character/fake-collision-world';
 import { TEST_SCENE, testKit } from '../scene/fixtures';
 import { layoutScene, type SceneSpawnPlacement } from '../scene/layout';
 import { hashWorld } from '../snapshot';
@@ -42,6 +42,9 @@ const TUNING: Frozen<ControllerTuning> = {
 };
 
 const LAYOUT = layoutScene(TEST_SCENE, testKit);
+/** The test scene's solid parts, in memory. */
+const sceneCollisionWorld = () =>
+  new FakeCollisionWorld(LAYOUT.parts.flatMap((part) => part.collider ?? []));
 
 interface FrameSpec {
   move?: [number, number];
@@ -62,7 +65,7 @@ function setup(sensitivity?: number) {
   const world = new World<ActionFrame>({ seed: 3 });
   const player = installPlayer(world, {
     spawns: LAYOUT.spawns,
-    collision: sceneCollisionWorld(LAYOUT),
+    collision: sceneCollisionWorld(),
     tuning: TUNING,
     ...(sensitivity !== undefined && { sensitivity }),
   });
@@ -115,7 +118,7 @@ describe('player spawn (mw-e02.23)', () => {
     expect(() =>
       installPlayer(world, {
         spawns: [spawn(0, [])],
-        collision: sceneCollisionWorld(LAYOUT),
+        collision: sceneCollisionWorld(),
         tuning: TUNING,
       }),
     ).toThrow(NoPlayerStartError);

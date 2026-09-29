@@ -1,12 +1,15 @@
-// The testbed player golden replay (mw-e02.23 AC-4): the player walking the greybox testbed, built
-// through the same wiring the game boots (scene loader, setupTestbedPlayer, the greybox collision
-// fallback) and driven by ActionFrames sampled from a scripted key and mouse log by the real
-// ActionSampler. The golden (tests/replays/testbed-player.json) replays on every CI run, so a change
-// to the wiring, the testbed scene, the input mapping or the controller that moves the player fails
-// at the first diverging checkpoint.
+// The testbed player replay (mw-e02.23 AC-4): the player walking the greybox testbed, built through
+// the same wiring the game boots (the sim's Rapier physics, the scene loader, setupTestbedPlayer
+// with RapierCollisionWorld) and driven by ActionFrames sampled from a scripted key and mouse log by
+// the real ActionSampler. Its recording (tests/integration/fixtures/testbed-player.replay.json)
+// replays in tests/integration/testbed-player.test.ts on every CI run, so a change to the wiring, the
+// testbed scene, the input mapping, the controller or Rapier that moves the player fails at the first
+// diverging checkpoint.
 //
-// After an intended change: `pnpm replay:rebless`. After editing the script: `pnpm replay:record
-// testbed-player --force`.
+// Not a tests/replays golden: the replay CLI runs under plain Node, which cannot load Rapier's
+// non-compat WASM package (see tests/integration/character-course-rapier.test.ts), so the Rapier
+// module is passed in and the recording is re-made by the integration test:
+//   TESTBED_PLAYER_RECORD=1 pnpm vitest run tests/integration/testbed-player.test.ts
 
 import { z } from 'zod';
 import { loadGameContent } from '@content/game-content';
@@ -18,10 +21,12 @@ import { readSceneTransform, SceneLoader } from '@game/scene/index';
 import {
   ACTION_FRAME_COMMAND,
   BUTTON_ACTIONS,
-  InMemoryColliderSink,
+  RapierCollisionWorld,
+  RapierPhysics,
   registerSceneComponents,
   World,
   type ActionFrame,
+  type RapierModule,
   type ReplayScenario,
 } from '@sim/index';
 
@@ -106,20 +111,18 @@ const headless = (object: object, read: TransformReader): SceneBinding<object> =
 });
 
 /** The testbed with the player, wired as src/main.ts wires it, minus the renderer. */
-export function createTestbedWorld({
-  seed,
-  hz,
-}: {
-  readonly seed: number;
-  readonly hz: number;
-}): World<ActionFrame> {
+export function createTestbedWorld(
+  rapier: RapierModule,
+  { seed, hz }: { readonly seed: number; readonly hz: number },
+): World<ActionFrame> {
   const content = loadGameContent();
-  const world = registerSceneComponents(new World<ActionFrame>({ seed, hz }));
+  const physics = new RapierPhysics(rapier);
+  const world = registerSceneComponents(new World<ActionFrame>({ seed, hz, physics }));
   const sync = new RenderSync(world);
   const scenes = new SceneLoader({
     world,
     sync,
-    colliders: new InMemoryColliderSink(),
+    colliders: physics,
     content,
     objects: { staticGeometry: () => ({}), spawn: () => ({}) },
     binding: (object) => headless(object, readSceneTransform),
@@ -130,6 +133,7 @@ export function createTestbedWorld({
     scene,
     sync,
     tuning: content.get('controller', PLAYER_CONTROLLER_ID),
+    collision: new RapierCollisionWorld(physics),
     object: {},
     binding: headless,
     camera: { position: { set: nothing }, lookAt: nothing },
@@ -137,17 +141,19 @@ export function createTestbedWorld({
   return world;
 }
 
-let log: readonly ActionFrame[] | undefined;
-
-export const testbedPlayerScenario: ReplayScenario<ActionFrame> = {
-  name: 'testbed-player',
-  usesContent: true,
-  command: actionFrameCommand,
-  ticks: TESTBED_TICKS,
-  create: createTestbedWorld,
-  drive: ({ tick }) => {
-    log ??= testbedLog();
-    const frame = log[tick];
-    return frame === undefined ? [] : [frame];
-  },
-};
+/** The replay scenario, on the given Rapier module. */
+export function testbedPlayerScenario(rapier: RapierModule): ReplayScenario<ActionFrame> {
+  let log: readonly ActionFrame[] | undefined;
+  return {
+    name: 'testbed-player',
+    usesContent: true,
+    command: actionFrameCommand,
+    ticks: TESTBED_TICKS,
+    create: (options) => createTestbedWorld(rapier, options),
+    drive: ({ tick }) => {
+      log ??= testbedLog();
+      const frame = log[tick];
+      return frame === undefined ? [] : [frame];
+    },
+  };
+}

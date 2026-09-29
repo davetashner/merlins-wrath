@@ -26,6 +26,10 @@ check enforces this).
 - Scenes are now solid: level geometry is loaded into the game's physics simulation, which runs in
   lockstep with the rest of the game rules. The scene appears once physics has loaded, and if physics
   fails to load the page says so instead of breaking.
+- You can now walk around the testbed: click the view to take control of a placeholder capsule and
+  move it with WASD, turn with the mouse, jump with Space, sprint with Shift and crouch with C (Esc
+  lets go). Walls stop you, and a simple camera follows from behind. F2's fly camera still works and
+  hands control back when you turn it off.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.

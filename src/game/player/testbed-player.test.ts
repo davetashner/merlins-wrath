@@ -1,3 +1,4 @@
+import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it, vi } from 'vitest';
 import { loadGameContent, PLAYER_CONTROLLER_ID } from '@content/index';
 import {
@@ -6,7 +7,8 @@ import {
   FakeCollisionWorld,
   PlayerLook,
   spawnCharacter,
-  InMemoryColliderSink,
+  RapierCollisionWorld,
+  RapierPhysics,
   registerSceneComponents,
   SKIN,
   World,
@@ -64,9 +66,13 @@ function fakeCamera() {
 
 type Extra = Partial<TestbedPlayerOptions<Box, ActionFrame>>;
 
-/** The testbed loaded headlessly, with the player wired to a sampler and a fake-frame loop. */
+/**
+ * The testbed loaded headlessly as the game loads it (static colliders in the sim's Rapier world,
+ * the controller querying it), with the player wired to a sampler and a fake-frame loop.
+ */
 function testbed(extra: Extra = {}) {
-  const world = registerSceneComponents(new World<ActionFrame>({ seed: 1 }));
+  const physics = new RapierPhysics(RAPIER);
+  const world = registerSceneComponents(new World<ActionFrame>({ seed: 1, physics }));
   const sampler = new ActionSampler();
   const frames = new FakeFrames();
   const { loop, sync } = createGameLoop<ActionFrame>({
@@ -81,7 +87,7 @@ function testbed(extra: Extra = {}) {
   const loader = new SceneLoader({
     world,
     sync,
-    colliders: new InMemoryColliderSink(),
+    colliders: physics,
     content,
     objects: { staticGeometry: () => ({}), spawn: () => ({}) },
     binding: (object: Box) => binding(object, readSceneTransform),
@@ -94,6 +100,7 @@ function testbed(extra: Extra = {}) {
     scene,
     sync,
     tuning,
+    collision: new RapierCollisionWorld(physics),
     object: capsule,
     binding,
     camera,
@@ -226,14 +233,13 @@ describe('testbed player wiring (mw-e02.23)', () => {
     expect(publish.mock.calls).toHaveLength(ticks.length);
   });
 
-  it('uses the CollisionWorld it is given instead of the scene greybox', () => {
+  it('collides against whichever CollisionWorld it is given', () => {
     // A wall 1 m in front of the player that the testbed does not have.
     const collision = new FakeCollisionWorld([
       box({ x: -50, y: -1, z: -50 }, { x: 50, y: 0, z: 50 }),
       box({ x: -5, y: 0, z: -0.5 }, { x: 5, y: 3, z: 0 }),
     ]);
-    const { sampler, run, state, player } = testbed({ collision });
-    expect(player.collision).toBe(collision);
+    const { sampler, run, state } = testbed({ collision });
     sampler.down('KeyW');
     run(1);
     expect(state().position.z).toBeLessThan(-0.5);

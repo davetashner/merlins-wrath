@@ -1,10 +1,13 @@
-// mw-e02.23 AC-4: the player in the greybox testbed, through the game's own wiring (scene loader,
-// setupTestbedPlayer, the ActionSampler, the frame loop). The recorded input log
-// (tests/replays/testbed-player.json) replays twice to identical final state hashes, and live input
-// sampled on a 144 Hz display lands on the same hashes.
+// mw-e02.23 AC-4: the player in the greybox testbed, through the game's own wiring (the sim's Rapier
+// physics, scene loader, setupTestbedPlayer with RapierCollisionWorld, the ActionSampler, the frame
+// loop). The recorded input log (fixtures/testbed-player.replay.json) replays twice to identical
+// final state hashes, which cover the Rapier state too, and live input sampled on a 144 Hz and a
+// 60 Hz display lands on the same hash.
 //
-// After an intended change: `pnpm replay:rebless`. After editing the script in
-// src/tools/replay/testbed-player-scenario.ts: `pnpm replay:record testbed-player --force`.
+// Re-record after an intended change to the wiring, the testbed, the controller, the input script
+// (src/tools/replay/testbed-player-scenario.ts) or Rapier:
+//   TESTBED_PLAYER_RECORD=1 pnpm vitest run tests/integration/testbed-player.test.ts
+import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
 import { PLAYER_CONTROLLER_ID } from '@content/index';
 import { markExercised } from '@content/testing';
@@ -15,10 +18,11 @@ import {
   hashWorld,
   PlayerLook,
   playReplay,
+  recordScenario,
   type ActionFrame,
   type CharacterState,
 } from '@sim/index';
-import { currentContentHash, readReplay } from '@tools/replay/files';
+import { currentContentHash, readReplay, writeReplay } from '@tools/replay/files';
 import {
   createTestbedWorld,
   scriptedInput,
@@ -28,7 +32,9 @@ import {
   testbedPlayerScenario,
 } from '@tools/replay/testbed-player-scenario';
 
-const GOLDEN = 'tests/replays/testbed-player.json';
+const FIXTURE = 'tests/integration/fixtures/testbed-player.replay.json';
+const SEED = 1;
+const scenario = testbedPlayerScenario(RAPIER);
 
 /** The player's entity in a testbed world (the only one with a PlayerLook). */
 function playerOf(world: ReturnType<typeof createTestbedWorld>): number {
@@ -39,7 +45,7 @@ function playerOf(world: ReturnType<typeof createTestbedWorld>): number {
 
 /** Runs the scripted input live through a frame loop on a display of `hz`; returns the world. */
 function runLive(displayHz: number, seed: number) {
-  const world = createTestbedWorld({ seed, hz: 60 });
+  const world = createTestbedWorld(RAPIER, { seed, hz: 60 });
   const sampler = new ActionSampler();
   const drive = scriptedInput(TESTBED_SCRIPT, sampler);
   const frames = new FakeFrames(1000);
@@ -65,7 +71,7 @@ function runLive(displayHz: number, seed: number) {
 describe('testbed player (mw-e02.23)', () => {
   it('the script walks the testbed: doorway, jump, corridor wall, and back', ({ task }) => {
     markExercised(task, 'controller', PLAYER_CONTROLLER_ID);
-    const world = createTestbedWorld({ seed: 1, hz: 60 });
+    const world = createTestbedWorld(RAPIER, { seed: SEED, hz: 60 });
     const player = playerOf(world);
     const trace: CharacterState[] = testbedLog().map((frame) => {
       world.step([frame]);
@@ -88,12 +94,24 @@ describe('testbed player (mw-e02.23)', () => {
     task,
   }) => {
     markExercised(task, 'controller', PLAYER_CONTROLLER_ID);
-    const replay = readReplay(GOLDEN);
-    expect(replay.scenario).toBe(testbedPlayerScenario.name);
-    expect(replay.ticks).toBe(TESTBED_TICKS);
     const contentHash = currentContentHash();
-    const first = playReplay(replay, testbedPlayerScenario, { contentHash });
-    const second = playReplay(replay, testbedPlayerScenario, { contentHash });
+    if (process.env['TESTBED_PLAYER_RECORD'] === '1') {
+      writeReplay(
+        FIXTURE,
+        recordScenario(scenario, {
+          seed: SEED,
+          ticks: TESTBED_TICKS,
+          buildSha: 'local',
+          contentHash,
+          keepStates: false,
+        }),
+      );
+    }
+    const replay = readReplay(FIXTURE);
+    expect(replay.scenario).toBe(scenario.name);
+    expect(replay.ticks).toBe(TESTBED_TICKS);
+    const first = playReplay(replay, scenario, { contentHash });
+    const second = playReplay(replay, scenario, { contentHash });
     expect(first).toEqual({
       status: 'passed',
       finalHash: replay.finalHash,
@@ -107,7 +125,7 @@ describe('testbed player (mw-e02.23)', () => {
     task,
   }) => {
     markExercised(task, 'controller', PLAYER_CONTROLLER_ID);
-    const replay = readReplay(GOLDEN);
+    const replay = readReplay(FIXTURE);
     const at144 = runLive(144, replay.seed);
     const at60 = runLive(60, replay.seed);
     expect(at144.tick).toBe(TESTBED_TICKS);
