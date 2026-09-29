@@ -80,10 +80,10 @@ function traceCourse(): CharacterState[] {
 }
 
 describe('greybox traversal course on Rapier (mw-e02.21)', () => {
-  // Known gap (mw-e02.24): Rapier's edges are rounded, as the CollisionWorld contract allows, and
-  // the controller's step-up probe then lands on the 0.30 m step's edge with a non-walkable normal,
-  // so the player stops at the step. Flip to `it` when mw-e02.24 lands (and re-record the replay).
-  it.fails('runs every feature of the course, as it does on the in-memory fake', ({ task }) => {
+  // Rapier's edges are rounded, as the CollisionWorld contract allows, so the player rolls up onto
+  // the step and off the ledge where the fake's square edges pop; every feature still passes
+  // (mw-e02.24).
+  it('runs every feature of the course, as it does on the in-memory fake', ({ task }) => {
     markExercised(task, 'controller', PLAYER_CONTROLLER_ID);
     const trace = traceCourse();
     const at = (x: number) => trace.filter((s) => s.position.x > x - 0.5 && s.position.x < x + 0.5);
