@@ -38,6 +38,16 @@ export {
   type TargetStance,
 } from './types/attack.ts';
 export {
+  MAX_COYOTE_MS,
+  MAX_JUMP_BUFFER_MS,
+  PLAYER_CONTROLLER_ID,
+  controllerSchema,
+  controllerTuningSchema,
+  type ControllerDef,
+  type ControllerDefInput,
+  type ControllerTuning,
+} from './types/controller.ts';
+export {
   CREATURE_FAMILIES,
   CREATURE_SCHEMA_VERSION,
   PERSONALITY_TRAITS,

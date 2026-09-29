@@ -1,0 +1,18 @@
+{
+  "$schema": "../controller.schema.json",
+  "id": "player",
+  "name": "Player (all classes)",
+  "notes": "Starting numbers from mw-e02.2, tuned for tight, weighty third-person movement. Run 5.0 m/s matches a humanoid guard's run, so outpacing a chase takes sprint (7.5); crouch 2.2. Reaches run speed in 0.15 s and stops in 0.10 s so the player never feels on ice. Gravity 25 m/s² (about 2.5 g) gives a 1.2 m jump a quick 0.31 s rise: weight over floatiness. Air control 30% lets the player correct a jump without steering like a bird. Coyote 120 ms and jump buffer 150 ms forgive edge and landing timing; both are the design ceilings. Steps 0.35 m (stairs and kerbs, not waist-high crates) and walks 45° slopes. Capsule 0.35 m radius, 1.8 m tall standing (the humanoid agent size), 1.0 m crouched so the player fits under 1.2 m gaps. Per-class overrides arrive with mw-e02.3.",
+  "capsule": { "radius": 0.35, "height": 1.8, "crouchHeight": 1.0 },
+  "speeds": { "run": 5.0, "sprint": 7.5, "crouch": 2.2 },
+  "accelTime": 0.15,
+  "decelTime": 0.1,
+  "airControl": 0.3,
+  "gravity": 25,
+  "maxFallSpeed": 40,
+  "jumpApex": 1.2,
+  "coyoteMs": 120,
+  "jumpBufferMs": 150,
+  "stepHeight": 0.35,
+  "slopeLimit": 45
+}

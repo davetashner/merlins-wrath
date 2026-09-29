@@ -1,0 +1,156 @@
+// Character controller tuning (mw-e02.2): the numbers behind how the player moves. Feel is found by
+// iteration, so every speed, acceleration time, jump height and timing window the kinematic
+// controller (src/sim/character) reads lives here as data, not in code. One file per profile,
+// `src/content/data/controller/<id>.json`; the player uses `player`. Per-class overrides, live
+// editing and hot reload arrive with mw-e02.3.
+//
+// Units: metres, seconds, metres per second, metres per second squared, degrees; the two input
+// timing windows are whole milliseconds so the sim converts them to ticks with `ReadonlyClock.ticksFor`.
+
+import { z } from 'zod';
+import { contentId } from '../schema.ts';
+
+/** The longest coyote time the design allows (mw-e02.2: ≤ 120 ms). */
+export const MAX_COYOTE_MS = 120;
+/** The longest jump buffer the design allows (mw-e02.2: ≤ 150 ms). */
+export const MAX_JUMP_BUFFER_MS = 150;
+
+const metres = z.number().positive();
+const speed = z.number().positive().max(50);
+const seconds = z.number().positive().max(2);
+
+const capsuleSchema = z
+  .strictObject({
+    radius: metres.max(1).describe('Capsule radius, m.'),
+    height: metres
+      .max(4)
+      .describe('Standing capsule height, feet to crown, m; at least 2 × radius.'),
+    crouchHeight: metres
+      .max(4)
+      .describe(
+        'Crouched capsule height, m; at least 2 × radius and at most height. The feet stay put, the top lowers.',
+      ),
+  })
+  .describe('The player’s collision capsule (vertical, feet at the character position).');
+
+const speedsSchema = z
+  .strictObject({
+    run: speed.describe('Top speed with the move input fully deflected, m/s. Partial input walks.'),
+    sprint: speed.describe('Top speed while sprint is held, m/s; at least run.'),
+    crouch: speed.describe('Top speed while crouched, m/s; at most run.'),
+  })
+  .describe('Top ground speeds, m/s. Analog input scales them (half deflection = half speed).');
+
+/** Every tuning value the controller reads (a profile without its id, name and notes). */
+const tuningShape = {
+  capsule: capsuleSchema,
+  speeds: speedsSchema,
+  accelTime: seconds.describe('Time to reach run speed from rest on the ground, s.'),
+  decelTime: seconds.describe(
+    'Time to stop from run speed on the ground once input is released, s.',
+  ),
+  airControl: z
+    .number()
+    .min(0)
+    .max(1)
+    .describe(
+      'Share of ground acceleration available in the air, 0–1; with no input the player keeps momentum.',
+    ),
+  gravity: z.number().positive().max(100).describe('Downward acceleration, m/s².'),
+  maxFallSpeed: speed.describe('Terminal falling speed, m/s.'),
+  jumpApex: metres.max(5).describe('Jump height from standing, feet to feet, m.'),
+  coyoteMs: z
+    .int()
+    .min(0)
+    .max(MAX_COYOTE_MS)
+    .describe(
+      `After walking off a ledge a jump still works for this long, whole ms (≤ ${String(MAX_COYOTE_MS)}).`,
+    ),
+  jumpBufferMs: z
+    .int()
+    .min(0)
+    .max(MAX_JUMP_BUFFER_MS)
+    .describe(
+      `A jump pressed this long before landing fires on landing, whole ms (≤ ${String(MAX_JUMP_BUFFER_MS)}).`,
+    ),
+  stepHeight: z
+    .number()
+    .min(0)
+    .max(1)
+    .describe(
+      'Tallest step walked up without jumping, m; also how far the player snaps down to stay on stairs and ramps. Below crouchHeight.',
+    ),
+  slopeLimit: z
+    .number()
+    .gt(0)
+    .lt(90)
+    .describe('Steepest walkable slope, degrees; steeper ground is a wall the player slides off.'),
+};
+
+/**
+ * Runs a cross-field check only once every field passed its own bounds, so one bad value is reported
+ * once (the same guard as locomotion.ts).
+ */
+const whenValid = {
+  when: (payload: { issues: readonly unknown[] }) => payload.issues.length === 0,
+};
+
+type TuningFields = z.output<z.ZodObject<typeof tuningShape>>;
+
+/** Adds an issue for every inconsistency between fields, naming them. */
+function checkTuning(t: TuningFields, ctx: z.RefinementCtx): void {
+  const issue = (path: (string | number)[], message: string) => {
+    ctx.addIssue({ code: 'custom', path, message });
+  };
+  const { radius, height, crouchHeight } = t.capsule;
+  if (height < 2 * radius) {
+    issue(
+      ['capsule', 'height'],
+      `capsule.height (${String(height)} m) must be at least 2 × radius`,
+    );
+  }
+  if (crouchHeight < 2 * radius || crouchHeight > height) {
+    issue(
+      ['capsule', 'crouchHeight'],
+      `capsule.crouchHeight (${String(crouchHeight)} m) must be between 2 × radius and height`,
+    );
+  }
+  if (t.speeds.sprint < t.speeds.run) {
+    issue(['speeds', 'sprint'], 'speeds.sprint must not be lower than speeds.run');
+  }
+  if (t.speeds.crouch > t.speeds.run) {
+    issue(['speeds', 'crouch'], 'speeds.crouch must not be higher than speeds.run');
+  }
+  if (t.stepHeight >= crouchHeight) {
+    issue(['stepHeight'], 'stepHeight must be lower than capsule.crouchHeight');
+  }
+}
+
+/** Controller tuning without the entry fields: what the sim's controller reads. */
+export const controllerTuningSchema = z
+  .strictObject(tuningShape)
+  .superRefine(checkTuning, whenValid);
+
+/** Validated controller tuning (the sim reads it frozen). */
+export type ControllerTuning = z.output<typeof controllerTuningSchema>;
+
+/** One controller profile: `src/content/data/controller/<id>.json`. */
+export const controllerSchema = z
+  .strictObject({
+    id: contentId.describe('Profile id, e.g. "player".'),
+    name: z.string().min(1).describe('Display name (debug tools and docs).'),
+    notes: z
+      .string()
+      .min(1)
+      .describe('Why these values (feel targets, references), for owner review.'),
+    ...tuningShape,
+  })
+  .superRefine(checkTuning, whenValid);
+
+/** A controller profile as written in a data file. */
+export type ControllerDefInput = z.input<typeof controllerSchema>;
+/** A loaded controller profile. */
+export type ControllerDef = z.output<typeof controllerSchema>;
+
+/** Id of the profile the player character uses. */
+export const PLAYER_CONTROLLER_ID = 'player';

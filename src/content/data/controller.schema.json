@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Profile id, e.g. \"player\"."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (debug tools and docs)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why these values (feel targets, references), for owner review."
+    },
+    "capsule": {
+      "type": "object",
+      "properties": {
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "description": "Capsule radius, m."
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 4,
+          "description": "Standing capsule height, feet to crown, m; at least 2 × radius."
+        },
+        "crouchHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 4,
+          "description": "Crouched capsule height, m; at least 2 × radius and at most height. The feet stay put, the top lowers."
+        }
+      },
+      "required": [
+        "radius",
+        "height",
+        "crouchHeight"
+      ],
+      "additionalProperties": false,
+      "description": "The player’s collision capsule (vertical, feet at the character position)."
+    },
+    "speeds": {
+      "type": "object",
+      "properties": {
+        "run": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 50,
+          "description": "Top speed with the move input fully deflected, m/s. Partial input walks."
+        },
+        "sprint": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 50,
+          "description": "Top speed while sprint is held, m/s; at least run."
+        },
+        "crouch": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 50,
+          "description": "Top speed while crouched, m/s; at most run."
+        }
+      },
+      "required": [
+        "run",
+        "sprint",
+        "crouch"
+      ],
+      "additionalProperties": false,
+      "description": "Top ground speeds, m/s. Analog input scales them (half deflection = half speed)."
+    },
+    "accelTime": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 2,
+      "description": "Time to reach run speed from rest on the ground, s."
+    },
+    "decelTime": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 2,
+      "description": "Time to stop from run speed on the ground once input is released, s."
+    },
+    "airControl": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Share of ground acceleration available in the air, 0–1; with no input the player keeps momentum."
+    },
+    "gravity": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 100,
+      "description": "Downward acceleration, m/s²."
+    },
+    "maxFallSpeed": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 50,
+      "description": "Terminal falling speed, m/s."
+    },
+    "jumpApex": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 5,
+      "description": "Jump height from standing, feet to feet, m."
+    },
+    "coyoteMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 120,
+      "description": "After walking off a ledge a jump still works for this long, whole ms (≤ 120)."
+    },
+    "jumpBufferMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 150,
+      "description": "A jump pressed this long before landing fires on landing, whole ms (≤ 150)."
+    },
+    "stepHeight": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Tallest step walked up without jumping, m; also how far the player snaps down to stay on stairs and ramps. Below crouchHeight."
+    },
+    "slopeLimit": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 90,
+      "description": "Steepest walkable slope, degrees; steeper ground is a wall the player slides off."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "capsule",
+    "speeds",
+    "accelTime",
+    "decelTime",
+    "airControl",
+    "gravity",
+    "maxFallSpeed",
+    "jumpApex",
+    "coyoteMs",
+    "jumpBufferMs",
+    "stepHeight",
+    "slopeLimit"
+  ],
+  "additionalProperties": false
+}
