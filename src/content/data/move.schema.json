@@ -194,7 +194,7 @@
         "track": {
           "type": "string",
           "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-          "description": "Socket track id (e04.2) that animates the volume across the active ticks, e.g. \"knight-sword-arc-light-1\"."
+          "description": "Socket track (socket-track content, e04.26) that animates the volume across the active ticks, e.g. \"knight-sword-arc-light-1\"; it must exist and have at most active + 1 keys."
         },
         "shape": {
           "oneOf": [

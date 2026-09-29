@@ -31,7 +31,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `damage.impactForce` | number ≥ 0 | `0` | Peak impact force, N (breakables, knockdown). |
 | `damage.tags` | list of id | `[]` | Damage-packet tags every hit carries, e.g. "critical" (damage model tags). |
 | `hitbox` | object | — | Hit volume of a move that can hit; absent = it never hits (dodges, parries). |
-| `hitbox.track` | id | required | Socket track id (e04.2) that animates the volume across the active ticks, e.g. "knight-sword-arc-light-1". |
+| `hitbox.track` | id | required | Socket track (socket-track content, e04.26) that animates the volume across the active ticks, e.g. "knight-sword-arc-light-1"; it must exist and have at most active + 1 keys. |
 | `hitbox.shape` | object | required | Hit volume in the attacker’s frame at the track’s rest pose, metres, using the stimulus shape vocabulary: { kind: "sphere", center, radius }, { kind: "capsule", from, to, radius } or { kind: "box", center, halfExtents }. |
 | `hitbox.shape.kind` | `"sphere"` | required |  |
 | `hitbox.shape.center` | object | required | Centre, metres, attacker frame. |

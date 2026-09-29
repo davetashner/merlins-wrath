@@ -341,6 +341,23 @@ export function hitPacket(
   };
 }
 
+/** Socket tracks by id: the compiled `socket-track` content (`compileSocketTracks`, mw-e04.26). */
+export type SocketTrackLookup = ReadonlyMap<string, SocketTrack>;
+
+/**
+ * The socket track `move`'s hitbox names, from `tracks`. Throws when the move has no hitbox or the
+ * track is missing (content loading already rejects a move naming a missing track).
+ */
+export function moveTrack(move: RuntimeMove, tracks: SocketTrackLookup): SocketTrack {
+  const { hitbox } = move;
+  if (hitbox === null) throw new Error(`move "${move.id}" has no hitbox`);
+  const track = tracks.get(hitbox.track);
+  if (track === undefined) {
+    throw new Error(`move "${move.id}" names socket track "${hitbox.track}", which is not loaded`);
+  }
+  return track;
+}
+
 /**
  * The hitbox spec of `move` (its hit volume, active ticks and friendly fire) driven by `track`,
  * facing `aim`; its id defaults to the move id. Throws when the move has no hitbox.

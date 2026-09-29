@@ -134,7 +134,8 @@ const boxSchema = z.strictObject({
 const hitboxSchema = z
   .strictObject({
     track: contentId.describe(
-      'Socket track id (e04.2) that animates the volume across the active ticks, e.g. "knight-sword-arc-light-1".',
+      'Socket track (socket-track content, e04.26) that animates the volume across the active ' +
+        'ticks, e.g. "knight-sword-arc-light-1"; it must exist and have at most active + 1 keys.',
     ),
     shape: z
       .discriminatedUnion('kind', [sphereSchema, capsuleSchema, boxSchema])

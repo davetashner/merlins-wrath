@@ -1,6 +1,7 @@
 // The content-type registry (mw-e00.18): every content type the game loads, keyed by its folder
 // name under src/content/data/. Adding a content type = a schema module + one line here + a folder.
-// `contentChecks` are the checks across entries (fact references, mw-e27.2) every load runs.
+// `contentChecks` are the checks across entries every load runs: fact references (mw-e27.2),
+// animation (mw-e02.20) and socket tracks (mw-e04.26).
 
 import { checkAnimation } from './anim-checks.ts';
 import { checkFacts } from './fact-checks.ts';
@@ -21,6 +22,7 @@ import { moveSchema } from './types/move.ts';
 import { sceneSchema } from './types/scene.ts';
 import { senseSchema } from './types/sense.ts';
 import { signalGraphSchema } from './types/signal-graph.ts';
+import { checkSocketTracks, socketTrackSchema } from './types/socket-track.ts';
 import { spellSchema } from './types/spell.ts';
 import { testPropSchema } from './types/testprop.ts';
 import { vfxEffectSchema } from './types/vfx-effect.ts';
@@ -43,13 +45,18 @@ export const contentTypes = {
   scene: sceneSchema,
   sense: senseSchema,
   'signal-graph': signalGraphSchema,
+  'socket-track': socketTrackSchema,
   spell: spellSchema,
   testprop: testPropSchema,
   'vfx-effect': vfxEffectSchema,
 };
 
 /** Checks across entries, run on every load of the registered types (see loader.ts). */
-export const contentChecks: readonly ContentCheck[] = [checkFacts, checkAnimation];
+export const contentChecks: readonly ContentCheck[] = [
+  checkFacts,
+  checkAnimation,
+  checkSocketTracks,
+];
 
 export type ContentTypes = typeof contentTypes;
 /** A registered content type name (its folder under src/content/data/). */

@@ -1,0 +1,85 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "knight-sword-arc-light-3",
+  "notes": "Sword light 3 (move sword-light-3, 5 active ticks): the chain finisher, an overhead vertical chop about the right shoulder (0.35, 1.5, 0), from 75° raised to 30° lowered, drifting 8° inward (yaw +8° → 0°).",
+  "keys": [
+    {
+      "position": {
+        "x": 0.2051,
+        "y": 1.1118,
+        "z": 1.4835
+      },
+      "rotation": {
+        "x": -0.607279,
+        "y": 0.055342,
+        "z": 0.042465,
+        "w": 0.791421
+      }
+    },
+    {
+      "position": {
+        "x": 0.1375,
+        "y": 0.6183,
+        "z": 1.245
+      },
+      "rotation": {
+        "x": -0.453283,
+        "y": 0.049737,
+        "z": 0.025342,
+        "w": 0.889617
+      }
+    },
+    {
+      "position": {
+        "x": 0.0696,
+        "y": 0.242,
+        "z": 0.8434
+      },
+      "rotation": {
+        "x": -0.283766,
+        "y": 0.040151,
+        "z": 0.011893,
+        "w": 0.957979
+      }
+    },
+    {
+      "position": {
+        "x": 0.018,
+        "y": 0.0328,
+        "z": 0.3309
+      },
+      "rotation": {
+        "x": -0.104488,
+        "y": 0.027769,
+        "z": 0.002919,
+        "w": 0.994134
+      }
+    },
+    {
+      "position": {
+        "x": -0.0064,
+        "y": 0.0185,
+        "z": -0.2248
+      },
+      "rotation": {
+        "x": 0.078451,
+        "y": 0.013919,
+        "z": -0.001095,
+        "w": 0.99682
+      }
+    },
+    {
+      "position": {
+        "x": 0.0,
+        "y": 0.201,
+        "z": -0.75
+      },
+      "rotation": {
+        "x": 0.258819,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.965926
+      }
+    }
+  ]
+}

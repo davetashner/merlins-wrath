@@ -258,6 +258,19 @@ export {
   type TickRange,
 } from './types/move.ts';
 export {
+  SOCKET_ROTATION_TOLERANCE,
+  checkSocketTracks,
+  compileSocketTrack,
+  compileSocketTracks,
+  socketTrackSchema,
+  type RuntimeSocketPose,
+  type RuntimeSocketTrack,
+  type SocketTrackDef,
+  type SocketTrackDefInput,
+  type SocketTrackEntry,
+  type SocketTrackTable,
+} from './types/socket-track.ts';
+export {
   SPECIAL_SENSE_CHANNELS,
   SenseResolutionError,
   creatureSensesSchema,

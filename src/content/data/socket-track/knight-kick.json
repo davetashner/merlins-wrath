@@ -1,0 +1,59 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "knight-kick",
+  "notes": "Knight kick (move kick, 3 active ticks): the foot thrusts forward and up into its rest pose, from 0.35 m back and 0.1 m low to 0.05 m past it; no rotation.",
+  "keys": [
+    {
+      "position": {
+        "x": 0.0,
+        "y": -0.1,
+        "z": -0.35
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0.0,
+        "y": -0.03,
+        "z": -0.12
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.05
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+      }
+    }
+  ]
+}

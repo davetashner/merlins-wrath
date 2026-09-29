@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique track id, named by moves’ hitbox.track, e.g. \"knight-sword-arc-light-1\"."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The arc in words (moves, pivot, angles), for owner review."
+    },
+    "keys": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "additionalProperties": false,
+            "description": "Socket position in the attacker’s frame, metres (+z forward, +y up, +x right)."
+          },
+          "rotation": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              },
+              "w": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z",
+              "w"
+            ],
+            "additionalProperties": false,
+            "description": "Socket rotation in the attacker’s frame, a unit quaternion { x, y, z, w }."
+          }
+        },
+        "required": [
+          "position",
+          "rotation"
+        ],
+        "additionalProperties": false,
+        "description": "A socket pose; the move’s hit volume is placed on it."
+      },
+      "description": "Socket poses at tick resolution: key 0 before the first active tick, key k on active tick k. At most the move’s active ticks + 1; a shorter track holds its last key."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "keys"
+  ],
+  "additionalProperties": false
+}
