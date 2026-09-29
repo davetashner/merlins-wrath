@@ -80,7 +80,9 @@ describe('stepField diffusion', () => {
     field.add('temperature', c(0), 1000);
     field.add('gas:marsh-gas', c(1, 1, 1), 1);
     field.add('moisture', c(-2, -2, -2), 1);
-    run(field, 300);
+    // Fixed-point totals are exact, so a single count leaking through in any tick shows below; 100
+    // ticks fill the room wall to wall (8 chunks awake, slow under coverage: keep it short).
+    run(field, 100);
     for (const channel of ['temperature', 'gas:marsh-gas', 'moisture'] as const) {
       const initial = channel === 'temperature' ? 1000 : 1;
       let inside = 0;

@@ -216,7 +216,10 @@ describe('canonical encoding', () => {
     const long = 'x'.repeat(100_000); // 200 KB of code units: more than one doubling
     const bytes = encodeCanonical({ long, after: 1 });
     expect(bytes.length).toBe(1 + 4 + (4 + 10 + 9) + (4 + 8 + 1 + 4 + 200_000));
-    expect(encodeCanonical({ after: 1, long })).toEqual(bytes);
+    // Byte-for-byte, without toEqual's per-element diffing of a 200 KB array (slow under coverage).
+    const reordered = encodeCanonical({ after: 1, long });
+    expect(reordered.length).toBe(bytes.length);
+    expect(reordered.every((byte, i) => byte === bytes[i])).toBe(true);
   });
 
   it.each([
