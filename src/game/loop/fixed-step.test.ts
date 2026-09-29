@@ -3,6 +3,7 @@ import { FakeFrames } from './fake-frames';
 import {
   createFrameLoop,
   DEFAULT_MAX_STEPS_PER_FRAME,
+  MAX_TIME_SCALE,
   type FrameInfo,
   type FrameLoopOptions,
 } from './fixed-step';
@@ -164,6 +165,25 @@ describe('createFrameLoop', () => {
     expect(frames.pending).toBe(1);
     frames.frame(1000 / 60);
     expect(sim.steps).toHaveLength(1);
+  });
+
+  it('timeScale scales sim time per frame (2× runs twice the steps, 0 freezes) and is range-checked', () => {
+    const { frames, sim, loop } = setup();
+    loop.start();
+    expect(loop.timeScale).toBe(1);
+    loop.timeScale = 2;
+    for (let i = 0; i < 10; i++) frames.frame(1000 / 60);
+    expect(sim.steps).toHaveLength(20);
+    loop.timeScale = 0;
+    for (let i = 0; i < 10; i++) frames.frame(1000 / 60);
+    expect(sim.steps).toHaveLength(20);
+    loop.timeScale = 0.5;
+    for (let i = 0; i < 10; i++) frames.frame(1000 / 60);
+    expect(sim.steps).toHaveLength(25);
+    expect(() => (loop.timeScale = -1)).toThrow(RangeError);
+    expect(() => (loop.timeScale = MAX_TIME_SCALE + 1)).toThrow(/0–8/);
+    expect(() => (loop.timeScale = Number.NaN)).toThrow(RangeError);
+    expect(loop.timeScale).toBe(0.5);
   });
 
   it('samples per-tick commands once per tick, with the tick about to be stepped', () => {

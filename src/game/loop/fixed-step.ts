@@ -100,7 +100,16 @@ export interface FrameLoop {
   readonly paused: boolean;
   /** Interpolation alpha after the latest frame, in [0, 1). */
   readonly alpha: number;
+  /**
+   * Sim speed relative to real time (default 1; 0 freezes the sim, 2 runs it twice as fast), for the
+   * debug console's `timescale` (mw-e33.1). Only how many fixed steps a frame runs changes, never the
+   * step itself, so the sim stays deterministic. @throws RangeError outside 0–MAX_TIME_SCALE.
+   */
+  timeScale: number;
 }
+
+/** Fastest sim speed the frame loop accepts. */
+export const MAX_TIME_SCALE = 8;
 
 const NO_COMMANDS: readonly never[] = Object.freeze([]);
 
@@ -134,6 +143,7 @@ export function createFrameLoop<TCommand>(options: FrameLoopOptions<TCommand>): 
   let last = 0;
   let accumulator = 0;
   let alpha = 0;
+  let timeScale = 1;
 
   // A call, not the variable: onStep may stop the loop mid-frame, which narrowing can't see.
   const isRunning = (): boolean => running;
@@ -153,7 +163,7 @@ export function createFrameLoop<TCommand>(options: FrameLoopOptions<TCommand>): 
     const timeMs = now();
     const delta = Math.max(0, timeMs - last);
     last = timeMs;
-    accumulator = options.simPaused?.() === true ? 0 : accumulator + delta;
+    accumulator = options.simPaused?.() === true ? 0 : accumulator + delta * timeScale;
 
     let steps = 0;
     while (accumulator + EPSILON_MS >= stepMs && steps < maxSteps) {
@@ -221,6 +231,17 @@ export function createFrameLoop<TCommand>(options: FrameLoopOptions<TCommand>): 
     },
     get alpha() {
       return alpha;
+    },
+    get timeScale() {
+      return timeScale;
+    },
+    set timeScale(value: number) {
+      if (!(value >= 0 && value <= MAX_TIME_SCALE)) {
+        throw new RangeError(
+          `time scale must be 0–${String(MAX_TIME_SCALE)}, got ${String(value)}`,
+        );
+      }
+      timeScale = value;
     },
   };
 }

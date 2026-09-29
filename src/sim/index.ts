@@ -46,6 +46,7 @@ export {
   type WorldOptions,
   type WorldSnapshot,
 } from './core/world';
+export * from './debug';
 export * from './elements';
 export * from './factions';
 export * from './facts';

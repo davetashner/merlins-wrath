@@ -54,6 +54,10 @@ check enforces this).
 - Look at an object and press Interact (E, or X on a controller) to use it: a prompt under the view
   names what you can do and shows the key to press. Things you can't use yet stay listed, greyed, with
   the reason ("Locked — needs Iron Key"). The testbed room has a lever to try it on.
+- A developer console: press the backtick key (`` ` ``) in a dev build, or add `?debug=1` to the URL
+  of a playtest build, to type commands such as `spawn testprop-crate 3`, `god`, `noclip`,
+  `tp player-start`, `timescale 0.5`, `scene kit-gallery` and `help`. Tab completes, Up/Down recall
+  earlier commands, and Esc closes it. Without the flag nothing loads.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.
