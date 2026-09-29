@@ -39,6 +39,9 @@ check enforces this).
   click is needed to start. Keyboard and mouse still work alongside it, and the on-screen controls
   hint switches to controller buttons when you pick the pad up. Pulling the controller out lets go of
   everything it was holding.
+- Add `?hitboxes` to the URL to draw the combat hit volumes as wireframes: each swing's sweep from
+  its last pose to its current one, and every body's hit zones coloured by region (weak point, head,
+  torso, limb; armored ones in grey). Nothing swings in the testbed yet; knight attacks bring it to life.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.

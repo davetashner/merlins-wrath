@@ -145,6 +145,13 @@ const hitboxSchema = z
       ),
     reach: z.enum(REACH_CLASSES).describe('Reach class for AI spacing.'),
     swing: z.enum(SWING_KINDS).describe('Swing motion: horizontal, vertical or thrust.'),
+    friendlyFire: z
+      .boolean()
+      .optional()
+      .describe(
+        'The volume also strikes the attacker’s allies (e04.2), so creatures can be tricked into ' +
+          'hitting each other; absent = false (allies are ignored).',
+      ),
   })
   .describe('Hit volume of a move that can hit; absent = it never hits (dodges, parries).');
 

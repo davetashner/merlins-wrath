@@ -50,6 +50,7 @@ export * from './elements';
 export * from './factions';
 export * from './facts';
 export * from './field';
+export * from './geom';
 export * from './input';
 export * from './light';
 export * as simMath from './math';
