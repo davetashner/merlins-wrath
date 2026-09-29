@@ -313,6 +313,33 @@ describe('AudioEngine voices', () => {
     expect(ctx.playing).toHaveLength(48);
   });
 
+  it('a per-play priority overrides the cue’s, both for stealing and for being stolen', async () => {
+    const { engine, ctx } = setup();
+    // 47 parries at the default 50, one footstep raised to 90 by its caller (a cue sheet rule).
+    await fill(
+      engine,
+      Array.from({ length: 47 }, () => ({ cue: 'sfx-knight-parry', x: 5 })),
+    );
+    engine.play('sfx-foot-stone-walk', { position: { x: 30, y: 0, z: 0 }, priority: 90 });
+    await settle();
+    expect(engine.stats().voices).toBe(48);
+    // The raised footstep is the farthest voice but outranks the bellow (80), so a parry is stolen.
+    const bellow = engine.play('sfx-creature-horn-bellow', {
+      position: { x: 1, y: 0, z: 0 },
+      priority: 80,
+    });
+    await settle();
+    expect(bellow?.state).toBe('playing');
+    expect(ctx.sources[47]?.stoppedAt).toBeUndefined();
+    // Lowered below everything playing, even the closest request is rejected.
+    const quiet = engine.play('sfx-foot-stone-walk', {
+      position: { x: 0, y: 0, z: 0 },
+      priority: 10,
+    });
+    await settle();
+    expect(quiet?.state).toBe('stopped');
+  });
+
   it('at equal priority a strictly closer request steals the farthest voice; a farther one is rejected', async () => {
     const { engine, ctx } = setup();
     await fill(engine, [

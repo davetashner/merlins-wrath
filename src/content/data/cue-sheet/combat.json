@@ -1,0 +1,62 @@
+{
+  "id": "combat",
+  "notes": "Initial combat cue rules (mw-e28.3): the generic layer every hit, stagger, death, telegraph and refused action falls back to. A hit plays the struck material's impact set (sfx-impact-<class>, from the material's impactSound), louder the more damage it dealt; a critical, riposte or backstab adds an accent. Specific sound sets (the blade × material matrix, parry and block cues, whooshes) belong to e28.4 and add more specific rules on top; final assets arrive through the placeholder pack (e28.2) and the SFX asset groups.",
+  "rules": [
+    {
+      "event": "DamageApplied",
+      "layer": "impact",
+      "cue": "sfx-impact-{target}",
+      "variants": 4,
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": { "fact": "total", "min": 0, "max": 40, "floorDb": -9 },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": { "immune": true },
+      "layer": "impact",
+      "cue": "sfx-combat-glance",
+      "pitchJitter": 0.05,
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": { "tags": "critical" },
+      "layer": "accent",
+      "cue": "sfx-combat-critical",
+      "pitchJitter": 0.03,
+      "priority": 70
+    },
+    {
+      "event": "PoiseBroken",
+      "cue": "sfx-combat-stagger",
+      "pitchJitter": 0.05,
+      "priority": 65
+    },
+    {
+      "event": "Died",
+      "cue": "sfx-combat-death-{target}",
+      "pitchJitter": 0.04,
+      "priority": 70
+    },
+    {
+      "event": "AttackTelegraph",
+      "cue": "sfx-telegraph-{telegraph}",
+      "priority": 80
+    },
+    {
+      "event": "ActionRejected",
+      "match": { "reason": "stamina" },
+      "cue": "sfx-combat-stamina-wheeze",
+      "cooldownMs": 400,
+      "priority": 55
+    },
+    {
+      "event": "StaminaExhausted",
+      "cue": "sfx-combat-exhausted",
+      "cooldownMs": 1000,
+      "priority": 55
+    }
+  ]
+}
