@@ -1,0 +1,25 @@
+{
+  "id": "fixture-fire-wall",
+  "name": "Fixture Fire Wall",
+  "school": "fire",
+  "tier": 2,
+  "next": [],
+  "cost": { "mana": 30 },
+  "castTime": 1,
+  "cooldown": 8,
+  "delivery": { "kind": "summonPoint", "range": 12, "lineOfSight": true },
+  "effects": [
+    {
+      "op": "spawnVolume",
+      "shape": { "kind": "line", "length": 6, "width": 0.5, "height": 2 },
+      "element": "heat",
+      "intensity": 200,
+      "duration": 10,
+      "falloff": "none"
+    }
+  ],
+  "tags": ["fire", "control"],
+  "vfxCue": "vfx-spell-fire-fixture-fire-wall",
+  "sfxCue": "sfx-spell-fire-fixture-fire-wall-cast",
+  "flags": { "tooUseful": false, "castWhileMoving": false }
+}

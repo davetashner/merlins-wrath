@@ -43,3 +43,45 @@ export function loadFixtureContent(): GameContent {
     contentChecks,
   );
 }
+
+// Fixture spells (mw-e06.1): one small spell per delivery kind, together using every effect op, for the
+// spell pipeline's tests (e06.2+) — never shipped, and not spells a player learns (mw-e08 owns those).
+const spellFiles = import.meta.glob<string>('./fixtures/spells/*/*.json', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+});
+
+/** Where the fixture spell files live, relative to the repo root. */
+export const SPELL_FIXTURE_ROOT = 'src/content/fixtures/spells';
+
+/** The fixture spell ids. */
+export const FIXTURE_SPELL_IDS = [
+  'fixture-bolt',
+  'fixture-fire-wall',
+  'fixture-gust',
+  'fixture-raise',
+  'fixture-ray',
+  'fixture-shift',
+  'fixture-ward',
+] as const;
+
+/** Every fixture spell file, with repo-relative paths. */
+export function spellFixtureSources(): ContentSource[] {
+  return Object.entries(spellFiles).map(([path, text]) => ({
+    path: `${SPELL_FIXTURE_ROOT}/${path.slice('./fixtures/spells/'.length)}`,
+    text,
+  }));
+}
+
+/**
+ * The game's content, the fixture creatures and the fixture spells (which summon and transform into
+ * fixture creatures), loaded and validated together. Throws a ContentLoadError listing every problem.
+ */
+export function loadSpellFixtureContent(): GameContent {
+  return loadContent(
+    contentTypes,
+    [...gameContentSources(), ...fixtureContentSources(), ...spellFixtureSources()],
+    contentChecks,
+  );
+}

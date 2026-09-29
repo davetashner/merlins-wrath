@@ -244,6 +244,29 @@ export {
   type SignalGraphEntryInput,
   type SignalGraphNode,
 } from './types/signal-graph.ts';
+export {
+  AOE_ORIGINS,
+  DISPLACE_MODES,
+  FORCE_MODES,
+  LIGHT_ATTACHMENTS,
+  MAX_SPELL_TIER,
+  NOISE_PHASES,
+  SPELL_DELIVERIES,
+  SPELL_EFFECT_OPS,
+  SPELL_SCHEMA_VERSION,
+  SPELL_SCHOOLS,
+  SPELL_STIMULUS_ELEMENTS,
+  spellSchema,
+  type SpellDefinition,
+  type SpellDefinitionInput,
+  type SpellDelivery,
+  type SpellDeliveryKind,
+  type SpellEffect,
+  type SpellEffectOpName,
+  type SpellEntry,
+  type SpellSchool,
+  type SpellStimulusElement,
+} from './types/spell.ts';
 export { canonicalJson, fnv1a64 } from './hash.ts';
 export {
   toPropertyInit,

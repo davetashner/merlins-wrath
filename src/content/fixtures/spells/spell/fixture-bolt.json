@@ -1,0 +1,37 @@
+{
+  "id": "fixture-bolt",
+  "name": "Fixture Bolt",
+  "school": "fire",
+  "tier": 1,
+  "next": ["fixture-fire-wall"],
+  "cost": { "mana": 15 },
+  "castTime": 0.4,
+  "cooldown": 1,
+  "delivery": { "kind": "projectile", "speed": 25, "maxRange": 40, "radius": 0.2, "gravity": 0 },
+  "effects": [
+    {
+      "op": "damage",
+      "amounts": { "fire": 20 },
+      "poiseDamage": 10,
+      "staminaDamage": 0,
+      "impulse": { "x": 0, "y": 0, "z": 0 },
+      "impactForce": 0,
+      "tags": []
+    },
+    {
+      "op": "stimulus",
+      "element": "heat",
+      "intensity": 300,
+      "radius": 1,
+      "duration": 0,
+      "falloff": "linear"
+    },
+    { "op": "light", "intensity": 80, "radius": 6, "duration": 0, "attach": "delivery" },
+    { "op": "noise", "phase": "impact", "loudness": 15 }
+  ],
+  "tags": ["fire", "ranged"],
+  "vfxCue": "vfx-spell-fire-fixture-bolt",
+  "sfxCue": "sfx-spell-fire-fixture-bolt-cast",
+  "bookId": "fixture-book-of-embers",
+  "flags": { "tooUseful": false, "castWhileMoving": false }
+}

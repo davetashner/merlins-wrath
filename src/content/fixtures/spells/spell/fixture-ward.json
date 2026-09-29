@@ -1,0 +1,16 @@
+{
+  "id": "fixture-ward",
+  "name": "Fixture Ward",
+  "school": "arcane",
+  "tier": 1,
+  "next": [],
+  "cost": { "mana": 10 },
+  "castTime": 0.5,
+  "cooldown": 4,
+  "delivery": { "kind": "self" },
+  "effects": [{ "op": "status", "status": "warded", "duration": 10, "stacks": 1 }],
+  "tags": ["defence"],
+  "vfxCue": "vfx-spell-arcane-fixture-ward",
+  "sfxCue": "sfx-spell-arcane-fixture-ward-cast",
+  "flags": { "tooUseful": false, "castWhileMoving": true }
+}

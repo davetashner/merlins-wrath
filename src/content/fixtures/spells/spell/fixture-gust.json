@@ -1,0 +1,33 @@
+{
+  "id": "fixture-gust",
+  "name": "Fixture Gust",
+  "school": "storm",
+  "tier": 1,
+  "next": [],
+  "cost": { "mana": 12 },
+  "castTime": 0.3,
+  "cooldown": 3,
+  "delivery": {
+    "kind": "aoe",
+    "shape": { "kind": "cone", "length": 8, "angle": 60 },
+    "origin": "caster",
+    "range": 0,
+    "lineOfSight": true
+  },
+  "effects": [
+    { "op": "force", "mode": "push", "impulse": 400, "duration": 0 },
+    {
+      "op": "stimulus",
+      "element": "force",
+      "intensity": 400,
+      "radius": 0,
+      "duration": 0,
+      "falloff": "linear"
+    },
+    { "op": "noise", "phase": "release", "loudness": 20 }
+  ],
+  "tags": ["storm", "control"],
+  "vfxCue": "vfx-spell-storm-fixture-gust",
+  "sfxCue": "sfx-spell-storm-fixture-gust-cast",
+  "flags": { "tooUseful": true, "castWhileMoving": false }
+}

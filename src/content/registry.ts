@@ -18,6 +18,7 @@ import { moveSchema } from './types/move.ts';
 import { sceneSchema } from './types/scene.ts';
 import { senseSchema } from './types/sense.ts';
 import { signalGraphSchema } from './types/signal-graph.ts';
+import { spellSchema } from './types/spell.ts';
 import { testPropSchema } from './types/testprop.ts';
 
 /** Content type name → schema of one entry. */
@@ -36,6 +37,7 @@ export const contentTypes = {
   scene: sceneSchema,
   sense: senseSchema,
   'signal-graph': signalGraphSchema,
+  spell: spellSchema,
   testprop: testPropSchema,
 };
 
