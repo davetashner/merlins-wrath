@@ -1,0 +1,181 @@
+import { readdirSync } from 'node:fs';
+import { expect, test, type Page } from '@playwright/test';
+
+// mw-e00.21: greybox scenes, the ?scene= picker and the debug fly camera, against the production
+// build (Chromium).
+
+// Driver performance notices from the GPU process are not our errors (see e2e/render-boot.spec.ts).
+const DRIVER_PERF_NOTICE = /^\[\.WebGL-[^\]]+\]GL Driver Message \([^)]*\bPerformance\b/;
+
+/** Every scene id in the content (one JSON file per scene). */
+const SCENES = readdirSync('src/content/data/scene')
+  .filter((file) => file.endsWith('.json'))
+  .map((file) => file.slice(0, -'.json'.length))
+  .sort();
+
+/** Console errors/warnings and uncaught exceptions raised by our own code. */
+function collectProblems(page: Page): string[] {
+  const problems: string[] = [];
+  page.on('console', (msg) => {
+    if (msg.type() !== 'error' && msg.type() !== 'warning') return;
+    if (DRIVER_PERF_NOTICE.test(msg.text())) return;
+    problems.push(`${msg.type()}: ${msg.text()}`);
+  });
+  page.on('pageerror', (err) => problems.push(`pageerror: ${err.message}`));
+  return problems;
+}
+
+/** Resolves after the page has rendered two more animation frames. */
+async function nextFrames(page: Page): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            resolve();
+          });
+        });
+      }),
+  );
+}
+
+interface CameraData {
+  position: number[];
+  quaternion: number[];
+}
+
+/**
+ * q and -q are the same rotation: flip the sign so the first non-zero of w, x, y, z is positive, so
+ * equal rotations compare equal.
+ */
+function canonical(q: number[]): number[] {
+  const [x = 0, y = 0, z = 0, w = 0] = q;
+  const lead = [w, x, y, z].find((n) => n !== 0) ?? 0;
+  return lead < 0 ? q.map((n) => (n === 0 ? 0 : -n)) : q;
+}
+
+async function cameraData(page: Page): Promise<CameraData> {
+  const json = await page.locator('#app').getAttribute('data-camera');
+  return JSON.parse(json ?? 'null') as CameraData;
+}
+
+/** Number of distinct colours on a coarse grid of the canvas (overlay text hidden). */
+async function distinctColours(page: Page, name: string): Promise<number> {
+  await page.addStyleTag({ content: '#app > :not(canvas) { visibility: hidden; }' });
+  await nextFrames(page);
+  const shot = await page.getByTestId('game-canvas').screenshot();
+  await test.info().attach(name, { body: shot, contentType: 'image/png' });
+  return page.evaluate(async (png) => {
+    const bitmap = await createImageBitmap(
+      await (await fetch(`data:image/png;base64,${png}`)).blob(),
+    );
+    const sample = new OffscreenCanvas(64, 36);
+    const ctx = sample.getContext('2d');
+    if (!ctx) throw new Error('no 2d context');
+    ctx.drawImage(bitmap, 0, 0, 64, 36);
+    const { data } = ctx.getImageData(0, 0, 64, 36);
+    const colours = new Set<number>();
+    for (let i = 0; i < data.length; i += 4) {
+      colours.add(((data[i] ?? 0) << 16) | ((data[i + 1] ?? 0) << 8) | (data[i + 2] ?? 0));
+    }
+    return colours.size;
+  }, shot.toString('base64'));
+}
+
+test('AC-1: ?scene=testbed renders the room → corridor → arena with zero console errors within 5 s', async ({
+  page,
+}) => {
+  const problems = collectProblems(page);
+  const started = Date.now();
+  await page.goto('/?scene=testbed');
+  const app = page.locator('#app');
+  await expect(app).toHaveAttribute('data-scene', 'testbed', { timeout: 5_000 });
+  await expect(app).toHaveAttribute('data-first-frame-ms', /^\d+$/, { timeout: 5_000 });
+  expect(Date.now() - started).toBeLessThan(5_000);
+  await expect(page.getByTestId('scene-label')).toHaveText(
+    /^Greybox testbed \(testbed\) · build ([0-9a-f]{7}|unknown)$/,
+  );
+  expect(await distinctColours(page, 'testbed')).toBeGreaterThan(16);
+  expect(problems).toEqual([]);
+});
+
+test('the default scene (no ?scene=) is the testbed', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#app')).toHaveAttribute('data-scene', 'testbed');
+});
+
+for (const scene of SCENES) {
+  test(`scene "${scene}" loads and renders with zero console errors`, async ({ page }) => {
+    const problems = collectProblems(page);
+    await page.goto(`/?scene=${scene}`);
+    await expect(page.locator('#app')).toHaveAttribute('data-scene', scene, { timeout: 5_000 });
+    await expect(page.getByTestId('scene-label')).toContainText(`(${scene}) · build `);
+    await expect(page.getByTestId('scene-error')).toHaveCount(0);
+    expect(await distinctColours(page, scene)).toBeGreaterThan(8);
+    expect(problems).toEqual([]);
+  });
+}
+
+test('AC-4: ?scene=does-not-exist shows an error listing the available scenes and keeps running', async ({
+  page,
+}) => {
+  const problems = collectProblems(page);
+  await page.goto('/?scene=does-not-exist');
+  const error = page.getByTestId('scene-error');
+  await expect(error).toBeVisible();
+  await expect(error.getByRole('heading')).toHaveText('No scene called "does-not-exist"');
+  await expect(error.getByRole('link')).toHaveText(SCENES);
+  const app = page.locator('#app');
+  await expect(app).toHaveAttribute('data-scene-error', 'does-not-exist');
+  await expect(app).toHaveAttribute('data-first-frame-ms', /^\d+$/);
+  await expect(page.getByTestId('game-canvas')).toBeVisible();
+  // Still alive: the loop keeps drawing, and the links pick a real scene.
+  await nextFrames(page);
+  await error.getByRole('link', { name: 'testbed' }).click();
+  await expect(app).toHaveAttribute('data-scene', 'testbed');
+  expect(problems).toEqual([]);
+});
+
+test('AC-5: with the debug camera on, WASD and mouse input move it; toggling off restores the prior camera', async ({
+  page,
+}) => {
+  const problems = collectProblems(page);
+  await page.goto('/?scene=testbed');
+  const app = page.locator('#app');
+  await expect(app).toHaveAttribute('data-scene', 'testbed');
+  await nextFrames(page);
+  const prior = await cameraData(page);
+
+  await page.keyboard.press('F2');
+  await expect(app).toHaveAttribute('data-debug-camera', 'on');
+  await expect(page.getByTestId('debug-camera-hint')).toContainText('ON');
+
+  await page.keyboard.down('KeyW');
+  await page.keyboard.down('KeyD');
+  await expect.poll(async () => (await cameraData(page)).position).not.toEqual(prior.position);
+  await page.waitForTimeout(250);
+  await page.keyboard.up('KeyW');
+  await page.keyboard.up('KeyD');
+  const flown = await cameraData(page);
+  expect(canonical(flown.quaternion)).toEqual(canonical(prior.quaternion)); // keys only move
+
+  const box = await page.getByTestId('game-canvas').boundingBox();
+  if (box === null) throw new Error('no canvas');
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + 120, cy + 40, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(async () => (await cameraData(page)).quaternion).not.toEqual(flown.quaternion);
+
+  await page.keyboard.press('F2');
+  await expect(app).toHaveAttribute('data-debug-camera', 'off');
+  expect(await cameraData(page)).toEqual(prior);
+  // Off again: movement keys do nothing.
+  await page.keyboard.down('KeyW');
+  await page.waitForTimeout(200);
+  await page.keyboard.up('KeyW');
+  expect(await cameraData(page)).toEqual(prior);
+  expect(problems).toEqual([]);
+});

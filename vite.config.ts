@@ -1,9 +1,24 @@
+import { execFileSync } from 'node:child_process';
 import wasm from 'vite-plugin-wasm';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { DEFAULT_EXCLUDES, readExclusionGlobs } from './scripts/check-coverage-exclusions.ts';
 import { ContentCoverageReporter } from './scripts/content-coverage-reporter.ts';
 import { readLayers, vitestThresholds } from './scripts/coverage-layers.ts';
+
+/**
+ * Short commit SHA shown on screen with the scene name (mw-e00.21): CI's GITHUB_SHA, else the local
+ * checkout's HEAD, else "unknown" (e.g. a source tarball without git).
+ */
+function buildSha(): string {
+  const ci = process.env['GITHUB_SHA'];
+  if (ci !== undefined && ci !== '') return ci.slice(0, 7);
+  try {
+    return execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { encoding: 'utf8' }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
 
 // One config for dev, build and tests: path aliases come from tsconfig.json `paths`,
 // so @sim/*, @content/*, @game/* … resolve identically in Vite, Vitest and tsc.
@@ -12,6 +27,9 @@ export default defineConfig({
   // as a separate asset fetched by the lazily imported physics chunk (mw-e00.19).
   // Its typings declare `any`, hence the cast.
   plugins: [wasm() as Plugin],
+  define: {
+    __BUILD_SHA__: JSON.stringify(buildSha()),
+  },
   resolve: {
     tsconfigPaths: true,
   },

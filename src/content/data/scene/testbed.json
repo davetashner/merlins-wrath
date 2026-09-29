@@ -1,0 +1,195 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "testbed",
+  "name": "Greybox testbed",
+  "description": "The default scene: a room, a corridor with a hazard strip, and an arena with pillars, a ramp and platforms.",
+  "grid": 1,
+  "camera": {
+    "position": [-14, 20, -14],
+    "target": [0, 0, 10]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 0],
+      "scale": [5, 1, 5]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, -5],
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-5, 0, 0],
+      "yaw": 90,
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [5, 0, 0],
+      "yaw": 90,
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-3, 0, 5],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [0, 0, 5]
+    },
+    {
+      "piece": "wall",
+      "at": [3, 0, 5],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "crate",
+      "at": [-3.5, 0, -3.5]
+    },
+    {
+      "piece": "crate",
+      "at": [-2.5, 0, -3.5]
+    },
+    {
+      "piece": "crate",
+      "at": [-3.5, 1, -3.5]
+    },
+    {
+      "piece": "platform",
+      "at": [3, 0, -3]
+    },
+    {
+      "piece": "stairs",
+      "at": [3, 0, -1],
+      "yaw": 180
+    },
+    {
+      "piece": "floor",
+      "at": [0, 0, 10],
+      "scale": [1, 1, 5]
+    },
+    {
+      "piece": "wall",
+      "at": [-1, 0, 10],
+      "yaw": 90,
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [1, 0, 10],
+      "yaw": 90,
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "platform",
+      "at": [0, 0, 11],
+      "scale": [1, 0.05, 0.5],
+      "purpose": "hazard"
+    },
+    {
+      "piece": "floor",
+      "at": [0, 0, 23],
+      "scale": [8, 1, 8]
+    },
+    {
+      "piece": "wall",
+      "at": [-4.5, 0, 15],
+      "scale": [3.5, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [0, 0, 15]
+    },
+    {
+      "piece": "wall",
+      "at": [4.5, 0, 15],
+      "scale": [3.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 31],
+      "scale": [8, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-8, 0, 23],
+      "yaw": 90,
+      "scale": [8, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [8, 0, 23],
+      "yaw": 90,
+      "scale": [8, 1, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-4, 0, 19]
+    },
+    {
+      "piece": "pillar",
+      "at": [4, 0, 19]
+    },
+    {
+      "piece": "pillar",
+      "at": [-4, 0, 27]
+    },
+    {
+      "piece": "pillar",
+      "at": [4, 0, 27]
+    },
+    {
+      "piece": "ramp",
+      "at": [0, 0, 26.5]
+    },
+    {
+      "piece": "platform",
+      "at": [0, 0, 29],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "platform",
+      "at": [6, 0, 29],
+      "scale": [1, 2, 1]
+    },
+    {
+      "piece": "platform",
+      "at": [-5, 0, 23],
+      "scale": [1, 0.05, 1],
+      "purpose": "hazard"
+    },
+    {
+      "piece": "crate",
+      "at": [5.5, 0, 21.5]
+    },
+    {
+      "piece": "crate",
+      "at": [6.5, 0, 21.5]
+    },
+    {
+      "piece": "crate",
+      "at": [5.5, 0, 22.5]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, -2],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "loose-crate",
+      "at": [-1, 0, -2],
+      "prop": "crate"
+    },
+    {
+      "id": "arena-plank",
+      "at": [2, 0, 21],
+      "yaw": 90,
+      "prop": "plank"
+    }
+  ]
+}

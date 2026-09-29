@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Scene id; also the ?scene= URL value."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name shown on screen."
+    },
+    "description": {
+      "default": "",
+      "description": "What the scene is for.",
+      "type": "string"
+    },
+    "grid": {
+      "default": 1,
+      "description": "Size of one grid cell in metres.",
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "camera": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "Camera position in metres."
+        },
+        "target": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "Point the camera looks at, metres."
+        }
+      },
+      "required": [
+        "position",
+        "target"
+      ],
+      "additionalProperties": false,
+      "description": "Where the view camera starts."
+    },
+    "placements": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "piece": {
+            "description": "Id of the kit piece.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "x-contentRef": "kit"
+          },
+          "at": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Position in grid cells (x, y, z), snapped to SCENE_SNAP_STEP."
+          },
+          "yaw": {
+            "default": 0,
+            "description": "Rotation about +y in degrees: 0, 90, 180 or 270.",
+            "type": "number",
+            "enum": [
+              0,
+              90,
+              180,
+              270
+            ]
+          },
+          "scale": {
+            "default": [
+              1,
+              1,
+              1
+            ],
+            "description": "Stretch along the piece’s own x, y, z (e.g. a 2 m floor tile scaled 5× is 10 m).",
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "purpose": {
+            "description": "Overrides the piece’s purpose (colour code).",
+            "type": "string",
+            "enum": [
+              "walkable",
+              "blocking",
+              "climbable",
+              "interactive",
+              "hazard"
+            ]
+          }
+        },
+        "required": [
+          "piece",
+          "at"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Kit pieces in the scene."
+    },
+    "spawns": {
+      "description": "Entity spawns: markers and props.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Name of the spawn, unique in the scene (e.g. player-start)."
+          },
+          "at": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Position in grid cells (x, y, z), snapped to SCENE_SNAP_STEP."
+          },
+          "yaw": {
+            "default": 0,
+            "description": "Rotation about +y in degrees: 0, 90, 180 or 270.",
+            "type": "number",
+            "enum": [
+              0,
+              90,
+              180,
+              270
+            ]
+          },
+          "prop": {
+            "description": "Prop to spawn; without one the spawn is a marker.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "x-contentRef": "testprop"
+          },
+          "tags": {
+            "default": [],
+            "description": "Free-form tags for systems and tools.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "id",
+          "at"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "camera",
+    "placements"
+  ],
+  "additionalProperties": false
+}

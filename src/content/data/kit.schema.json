@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name in tools and debug overlays."
+    },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "walkable",
+        "blocking",
+        "climbable",
+        "interactive",
+        "hazard"
+      ],
+      "description": "Default purpose (greybox colour); a scene placement may override it."
+    },
+    "parts": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "shape": {
+            "default": "box",
+            "description": "box, or wedge (a ramp rising towards +z).",
+            "type": "string",
+            "enum": [
+              "box",
+              "wedge"
+            ]
+          },
+          "size": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Size of the part along x, y, z in metres (before placement scale)."
+          },
+          "offset": {
+            "default": [
+              0,
+              0,
+              0
+            ],
+            "description": "Centre of the part relative to the piece's origin (floor, footprint centre), metres.",
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "collider": {
+            "default": true,
+            "description": "Whether the part is solid (gets a static collider).",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "size"
+        ],
+        "additionalProperties": false
+      },
+      "description": "The shapes the piece is made of."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "purpose",
+    "parts"
+  ],
+  "additionalProperties": false
+}

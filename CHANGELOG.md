@@ -19,6 +19,10 @@ check enforces this).
 - The game now runs its simulation at a fixed 60 steps per second under the 3D view, with smooth
   motion at any display refresh rate. It pauses while the tab is hidden and resumes without a
   fast-forward burst when you come back.
+- The game now opens onto a greybox testbed (a room, a corridor and an arena) built from a colour-coded
+  level kit, instead of the placeholder scene. Add `?scene=<name>` to the URL to open another scene;
+  an unknown name shows the list of scenes to pick from. The scene name and build are shown in the
+  corner, and F2 toggles a free-fly debug camera (WASD, Q/E, Shift, drag to look).
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.
