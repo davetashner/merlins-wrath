@@ -8,7 +8,6 @@ import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
 import { creatureSchema, HIT_REACTION_DEFAULTS, type CreatureDefInput } from '@content/index';
 import {
-  ACTION_TIMELINE_COMPONENTS,
   CharacterController,
   combatantFromCreature,
   DAMAGE_COMPONENTS,
@@ -26,7 +25,6 @@ import {
   reactionProfileFromCreature,
   SKIN,
   spawnCharacter,
-  StaminaComponent,
   type CharacterState,
   type EntityId,
   type HitReactionInfo,
@@ -73,7 +71,8 @@ function must<T>(value: T | undefined): T {
 
 function shove() {
   const world = createTestbedWorld(RAPIER, { seed: 1, hz: 60 });
-  world.register(...DAMAGE_COMPONENTS, ...ACTION_TIMELINE_COMPONENTS, StaminaComponent);
+  // The testbed's player already registers the action timeline and stamina components.
+  world.register(...DAMAGE_COMPONENTS);
   world.register(HitReactionComponent, ...HIT_VOLUME_COMPONENTS);
   const damage = new DamageModel();
   installHitReactions(world, { moves: new Map(), damage, pushers: [pushCharacter] });

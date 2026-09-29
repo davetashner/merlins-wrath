@@ -1,5 +1,5 @@
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
-import type { CancelTarget, MoveTable, RuntimeMove, TickRange } from '@content/index';
+import type { MoveTable, RuntimeMove, TickRange } from '@content/index';
 import { describe, expect, it } from 'vitest';
 import { CharacterController, spawnCharacter } from '../../character/system';
 import type { EntityId } from '../../core/component';
@@ -84,7 +84,7 @@ function move({ id, frames, hyperarmor }: MoveSpec): RuntimeMove {
     activeFrom: startup,
     recoveryFrom: startup + active,
     staminaCost: 0,
-    cancelWindows: [] as readonly (TickRange & { readonly into: CancelTarget })[],
+    cancelWindows: [],
     damage: null,
     hitbox: null,
     parryable: false,
@@ -96,6 +96,7 @@ function move({ id, frames, hyperarmor }: MoveSpec): RuntimeMove {
     telegraphTick: 0,
     chainNext: null,
     charge: null,
+    motion: null,
     presentation: { anim: `anim-${id}` },
   } satisfies RuntimeMove);
 }
