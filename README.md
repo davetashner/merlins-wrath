@@ -86,7 +86,12 @@ versioned JSON file: the scenario, seed and tick rate, the run-length encoded si
 `World.step` on each tick, and a state hash (plus snapshot) every 60 ticks. Every `tests/replays/*.json`
 runs in CI (`expectReplay` from `src/tools/replay/expect-replay.ts`); a failure names the first diverging
 checkpoint and the entity/component/field that differs, and says when the content hash changed instead.
-Scenarios (the code that builds the world a replay drives) register in `src/sim/replay/scenarios/`.
+Scenarios (the code that builds the world a replay drives) register in `src/sim/replay/scenarios/`; scenarios that need
+game content register in `src/tools/replay/scenarios.ts`. The character controller goldens (mw-e02.7:
+`character-basic`, `character-course`, `character-stress`, from `src/tools/replay/character-scenarios.ts`)
+lock movement: after an intended controller or tuning change run `pnpm replay:rebless`, which rewrites
+each changed golden and prints its first changed checkpoint and field; after editing an input log run
+`pnpm replay:record <name> --force`.
 
 **Secrets** never go in the repo. The `secrets` CI job (`.github/workflows/security.yml`) runs gitleaks over
 every PR's commits and the full history on main, and GitHub push protection is on. Locally,

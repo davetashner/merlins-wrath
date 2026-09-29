@@ -22,6 +22,8 @@ export interface ReplayScenario<TInput> {
   readonly name: string;
   /** Whether outcomes depend on game content (then replays record and check the content hash). */
   readonly usesContent: boolean;
+  /** Length of its input script in ticks: pnpm replay:record's default (else 3600). */
+  readonly ticks?: number;
   /** Validates one command read back from a replay file. */
   readonly command: z.ZodType<TInput>;
   /** Builds a fresh world at tick 0 for this seed and tick rate. */

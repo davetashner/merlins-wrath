@@ -10,7 +10,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { parseArgs } from 'node:util';
-import { reblessReplay, recordScenario, replayScenarios, type Replay } from '@sim/index';
+import { diffSnapshots, reblessReplay, recordScenario, type Replay } from '@sim/index';
 import {
   currentContentHash,
   GOLDEN_REPLAY_DIR,
@@ -19,6 +19,7 @@ import {
   writeReplay,
   type ScenarioRegistry,
 } from './files';
+import { goldenScenarios } from './scenarios';
 
 export interface CliIo {
   /** Repo root: default paths resolve against it. */
@@ -53,13 +54,13 @@ export const defaultIo = (cwd: string): CliIo => ({
   },
   buildSha: () => gitSha(cwd),
   contentHash: currentContentHash,
-  scenarios: replayScenarios,
+  scenarios: goldenScenarios,
 });
 
 export const USAGE = `Usage:
   pnpm replay:record <scenario> [--seed N] [--ticks N] [--every N] [--no-states] [--out FILE] [--force]
       Record a scenario's input script into a golden replay (default ${GOLDEN_REPLAY_DIR}/<scenario>.json,
-      seed 1, 3600 ticks, a checkpoint every 60 ticks with full states).
+      seed 1, the scenario's script length or 3600 ticks, a checkpoint every 60 ticks with full states).
   pnpm replay:rebless [FILE...]
       Re-record golden replays (default: all of ${GOLDEN_REPLAY_DIR}/*.json) after an intended change.`;
 
@@ -110,7 +111,7 @@ function record(args: readonly string[], io: CliIo): number {
   }
   const replay = recordScenario(scenario, {
     seed: count(values.seed, 'seed', 1, 0),
-    ticks: count(values.ticks, 'ticks', 3600, 0),
+    ticks: count(values.ticks, 'ticks', scenario.ticks ?? 3600, 0),
     checkpointInterval: count(values.every, 'every', 60, 1),
     keepStates: values['no-states'] !== true,
     buildSha: io.buildSha(),
@@ -124,13 +125,22 @@ function record(args: readonly string[], io: CliIo): number {
   return 0;
 }
 
+/** A snapshot value as the rebless report prints it. */
+const show = (value: unknown): string => (value === undefined ? '(absent)' : JSON.stringify(value));
+
 /** What re-blessing changed, or undefined when every hash still matches. */
 function changes(before: Replay, after: Replay): string | undefined {
-  const moved = after.checkpoints.find(
+  const at = after.checkpoints.findIndex(
     (checkpoint, i) => checkpoint.hash !== before.checkpoints[i]?.hash,
   );
+  const moved = after.checkpoints[at];
   if (moved !== undefined) {
-    return `outcomes changed from checkpoint tick ${String(moved.tick)} (final hash ${before.finalHash} → ${after.finalHash})`;
+    const was = before.checkpoints[at]?.state;
+    const difference = was && moved.state && diffSnapshots(was, moved.state);
+    const field = difference
+      ? `; first difference ${difference.path}: ${show(difference.a)} → ${show(difference.b)}`
+      : '';
+    return `outcomes changed from checkpoint tick ${String(moved.tick)}${field} (final hash ${before.finalHash} → ${after.finalHash})`;
   }
   if (after.contentHash !== before.contentHash) return 'content hash updated; outcomes unchanged';
   return undefined;

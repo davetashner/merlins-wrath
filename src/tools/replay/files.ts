@@ -5,13 +5,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { loadGameContent } from '@content/game-content';
-import {
-  parseReplay,
-  replayScenarios,
-  serializeReplay,
-  type Replay,
-  type ReplayScenario,
-} from '@sim/index';
+import { parseReplay, serializeReplay, type Replay, type ReplayScenario } from '@sim/index';
+import { goldenScenarios } from './scenarios';
 
 /** Where golden replays live, relative to the repo root; every file here runs in CI. */
 export const GOLDEN_REPLAY_DIR = 'tests/replays';
@@ -44,7 +39,7 @@ export function writeReplay(path: string, replay: Replay): void {
 /** The registered scenario a replay names. */
 export function scenarioOf(
   replay: Replay,
-  scenarios: ScenarioRegistry = replayScenarios,
+  scenarios: ScenarioRegistry = goldenScenarios,
 ): ReplayScenario<unknown> {
   const scenario = scenarios[replay.scenario];
   if (scenario === undefined) {

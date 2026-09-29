@@ -98,6 +98,13 @@ describe('pnpm replay:record', () => {
     expect(main([...args, '--force'], io())).toBe(0);
   });
 
+  it("defaults --ticks to the scenario's own script length", () => {
+    expect(
+      main(['record', 'short'], io({ short: { ...coreScenario, name: 'short', ticks: 90 } })),
+    ).toBe(0);
+    expect(readReplay(join(dir, 'tests/replays/short.json')).ticks).toBe(90);
+  });
+
   it('rejects bad arguments with usage', () => {
     const cases: [string[], string][] = [
       [['record'], 'record takes one scenario name'],
@@ -159,11 +166,39 @@ describe('pnpm replay:rebless', () => {
     expect(main(['rebless'], io({ core: changedAt(70) }))).toBe(0);
     expect(lines).toHaveLength(2);
     expect(lines[0]).toMatch(
-      /^reblessed tests\/replays\/a\.json: outcomes changed from checkpoint tick 120 \(final hash \w{8} → \w{8}\)$/,
+      /^reblessed tests\/replays\/a\.json: outcomes changed from checkpoint tick 120; first difference components\.Position\[\d+\]\.x: -?[\d.]+ → -?[\d.]+ \(final hash \w{8} → \w{8}\)$/,
     );
-    expect(lines[1]).toMatch(/^reblessed tests\/replays\/b\.json: /);
+    // Without recorded states there is no field to name.
+    expect(lines[1]).toMatch(
+      /^reblessed tests\/replays\/b\.json: outcomes changed from checkpoint tick 120 \(final hash \w{8} → \w{8}\)$/,
+    );
     const b = parseReplay(JSON.parse(readFileSync(join(dir, 'tests/replays/b.json'), 'utf8')));
     expect(b.checkpoints[0]?.state).toBeUndefined();
+  });
+
+  it('names a component that disappeared as absent', () => {
+    record('a.json');
+    const { Health } = coreComponents;
+    const loses: ReplayScenario<CoreCommand> = {
+      ...coreScenario,
+      create(options) {
+        const world = coreScenario.create(options);
+        world.addSystem({
+          name: 'lose-health',
+          run({ tick }) {
+            if (tick !== 70) return;
+            const [first] = world.query(Health).ids();
+            if (first !== undefined) world.remove(first, Health);
+          },
+        });
+        return world;
+      },
+    };
+    lines = [];
+    expect(main(['rebless'], io({ core: loses }))).toBe(0);
+    expect(lines[0]).toMatch(
+      /first difference components\.Health\[\d+\]: \{"hp":\d+\} → \(absent\)/,
+    );
   });
 
   it('refreshes only the content hash when outcomes are unchanged', () => {
@@ -210,6 +245,7 @@ describe('defaultIo', () => {
     expect(real.buildSha()).toMatch(/^[0-9a-f]{12}$/);
     expect(real.contentHash()).toMatch(/^[0-9a-f]{16}$/);
     expect(real.scenarios['core']).toBe(coreScenario);
+    expect(real.scenarios['character-basic']?.name).toBe('character-basic');
     vi.restoreAllMocks();
   });
 
