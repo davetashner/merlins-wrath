@@ -1,0 +1,72 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "knight-shield-bash",
+  "notes": "Shield bash (move shield-bash, 4 active ticks): the shield shoves straight forward, 0.5 m from 0.2 m behind its rest pose to 0.3 m ahead, decelerating; no rotation.",
+  "keys": [
+    {
+      "position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": -0.2
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.05
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.2
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.27
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.3
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+      }
+    }
+  ]
+}

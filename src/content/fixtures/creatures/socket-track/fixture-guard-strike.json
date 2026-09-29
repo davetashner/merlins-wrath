@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../data/socket-track.schema.json",
+  "id": "fixture-guard-strike",
+  "notes": "Frozen test fixture (mw-e04.26), not bestiary content: fixture-guard-strike's straight thrust holds its rest pose for the whole active window (one identity key), so hit tests stay easy to reason about.",
+  "keys": [
+    {
+      "position": { "x": 0, "y": 0, "z": 0 },
+      "rotation": { "x": 0, "y": 0, "z": 0, "w": 1 }
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "knight-sword-arc-light-1",
+  "notes": "Sword light 1 (move sword-light-1, 4 active ticks): a descending diagonal slash from upper right to lower left about the chest pivot (0, 1.5, 0), yaw +55° → −55° while the blade drops from 25° raised to 12° lowered, matching the clip anim-knight-sword-light-1 (chest twists right → left as the right arm comes down). Key 0 is the pose before the first active tick.",
+  "keys": [
+    {
+      "position": {
+        "x": 0.5193,
+        "y": 0.1405,
+        "z": 0.3636
+      },
+      "rotation": {
+        "x": -0.191984,
+        "y": 0.450803,
+        "z": 0.099941,
+        "w": 0.865985
+      }
+    },
+    {
+      "position": {
+        "x": 0.1793,
+        "y": 0.0511,
+        "z": 0.3444
+      },
+      "rotation": {
+        "x": -0.126786,
+        "y": 0.235652,
+        "z": 0.031024,
+        "w": 0.963032
+      }
+    },
+    {
+      "position": {
+        "x": 0.0,
+        "y": 0.0057,
+        "z": 0.1307
+      },
+      "rotation": {
+        "x": -0.043619,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 0.999048
+      }
+    },
+    {
+      "position": {
+        "x": 0.0483,
+        "y": 0.0037,
+        "z": -0.0928
+      },
+      "rotation": {
+        "x": 0.033899,
+        "y": -0.237541,
+        "z": 0.008295,
+        "w": 0.97075
+      }
+    },
+    {
+      "position": {
+        "x": 0.2555,
+        "y": 0.0328,
+        "z": -0.1789
+      },
+      "rotation": {
+        "x": 0.092718,
+        "y": -0.459219,
+        "z": 0.048266,
+        "w": 0.882152
+      }
+    }
+  ]
+}

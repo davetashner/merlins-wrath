@@ -29,13 +29,14 @@ const senses = (id: string) => resolveSenses(creature(id).senses, content);
 const nav = (id: string) => deriveNavAgent(resolveLocomotion(creature(id).locomotion, content));
 
 describe('creature fixtures', () => {
-  it('reads the fixture files from their own root: one per fixture id, plus the guard strike', () => {
+  it('reads the fixture files from their own root: one per fixture id, plus the guard strike and its track', () => {
     const sources = [...fixtureContentSources()].sort((a, b) => (a.path < b.path ? -1 : 1));
     expect(sources).toEqual(readContentSources(FIXTURE_CONTENT_ROOT));
     expect(sources.map((s) => s.path)).toEqual([
       `${FIXTURE_CONTENT_ROOT}/attack/fixture-guard-strike.json`,
       ...FIXTURE_CREATURE_IDS.map((id) => `${FIXTURE_CONTENT_ROOT}/creature/${id}.json`),
       `${FIXTURE_CONTENT_ROOT}/move/fixture-guard-strike.json`,
+      `${FIXTURE_CONTENT_ROOT}/socket-track/fixture-guard-strike.json`,
     ]);
   });
 

@@ -1,10 +1,10 @@
 // mw-e04.2 AC-6: the greybox testbed with the hit-volume overlay enabled. A training dummy swings
-// (its move from content, driven by a socket track) at a target while the game's own loop runs on a
+// (its move and socket track from content) at a target while the game's own loop runs on a
 // 144 Hz display; on every rendered frame the overlay's wireframes are exactly the shapes the sim
 // tested on its latest tick (equal hashes), and each wireframe sits where its shape is.
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
-import { compileMove, loadGameContent } from '@content/index';
+import { compileMove, compileSocketTracks, loadGameContent } from '@content/index';
 import { markExercised } from '@content/testing';
 import { createGameLoop, FakeFrames } from '@game/loop/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
@@ -19,33 +19,17 @@ import {
   HitboxHit,
   hitVolumeDebug,
   hitVolumeSystem,
+  moveTrack,
   noAllies,
   openHitbox,
   placeEntity,
-  simMath,
   type GeomShape,
   type HitboxHitInfo,
-  type Pose,
-  type SocketTrack,
 } from '@sim/index';
 import { createTestbedWorld } from '@tools/replay/testbed-player-scenario';
 import type { Mesh } from 'three';
 
 const DUMMY_MOVE = 'training-dummy-swing';
-
-/** A 100° horizontal arc over the move's active ticks (key 0 before the first). */
-function arcTrack(active: number): SocketTrack {
-  const total = (100 * Math.PI) / 180;
-  const keys: Pose[] = [];
-  for (let k = 0; k <= active; k++) {
-    const angle = -total / 2 + (k * total) / active;
-    keys.push({
-      position: { x: 0, y: 0, z: 0 },
-      rotation: { x: 0, y: simMath.sin(angle / 2), z: 0, w: simMath.cos(angle / 2) },
-    });
-  }
-  return { id: 'dummy-swing-arc', keys };
-}
 
 /** Where a drawn wireframe's transform puts the shape's centre. */
 function centreOf(shape: GeomShape) {
@@ -69,6 +53,8 @@ describe('hit-volume overlay (mw-e04.2)', () => {
     const content = loadGameContent();
     markExercised(task, 'move', DUMMY_MOVE);
     const move = compileMove(content.get('move', DUMMY_MOVE));
+    const track = moveTrack(move, compileSocketTracks(content.all('socket-track')));
+    markExercised(task, 'socket-track', track.id);
 
     const world = createTestbedWorld(RAPIER, { seed: 1, hz: 60 });
     world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS); // placements: the testbed has them
@@ -133,11 +119,7 @@ describe('hit-volume overlay (mw-e04.2)', () => {
       draw: () => {
         if (!opened) {
           // The swing's first active tick is the next one.
-          openHitbox(
-            world,
-            dummy,
-            hitboxFromMove(move, arcTrack(move.active), { x: 0, y: 0, z: 1 }),
-          );
+          openHitbox(world, dummy, hitboxFromMove(move, track, { x: 0, y: 0, z: 1 }));
           opened = true;
         }
         overlay.sync(world);

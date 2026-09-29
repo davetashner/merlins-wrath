@@ -20,8 +20,8 @@ stable.
   which uses the `humanoid` baseline; the hound and sentinel do not borrow the Briar Wolf or any other
   bestiary profile.
 - **Capsules only**: `placeholder-capsule` mesh, `placeholder` SFX.
-- **Attacks** (mw-e12.5): only `fixture-guard` attacks, with `fixture-guard-strike` (`attack/` and its
-  `move/` here): melee, 18/4/14 ticks, telegraph `fixture-guard-strike-windup`, range 0–1.8 m, 2 s
+- **Attacks** (mw-e12.5): only `fixture-guard` attacks, with `fixture-guard-strike` (`attack/`, its
+  `move/` and its `socket-track/` here, a single identity key): melee, 18/4/14 ticks, telegraph `fixture-guard-strike-windup`, range 0–1.8 m, 2 s
   cooldown, and two packets per hit (18 slash + 15 poise from the move, then 4 blunt). The hound and
   sentinel have none.
 - **Never shipped.** Files live under `src/content/fixtures/creatures/<type>/`, outside the game's

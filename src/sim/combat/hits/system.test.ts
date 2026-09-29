@@ -43,6 +43,7 @@ import {
   hitVolumeDebug,
   hitVolumeSystem,
   hurtboxShapes,
+  moveTrack,
   noAllies,
   sameFaction,
   type HitVolumeOptions,
@@ -606,5 +607,16 @@ describe('hit volumes (mw-e04.2)', () => {
     });
     const dodge = { id: 'roll', hitbox: null } as unknown as RuntimeMove;
     expect(() => hitboxFromMove(dodge, STILL, FORWARD)).toThrow(/no hitbox/);
+  });
+
+  it('moveTrack looks up the socket track a move names (mw-e04.26)', () => {
+    const move = { id: 'swipe', hitbox: { track: 'still' } } as unknown as RuntimeMove;
+    const tracks = new Map([[STILL.id, STILL]]);
+    expect(moveTrack(move, tracks)).toBe(STILL);
+    expect(() => moveTrack(move, new Map())).toThrow(
+      'move "swipe" names socket track "still", which is not loaded',
+    );
+    const dodge = { id: 'roll', hitbox: null } as unknown as RuntimeMove;
+    expect(() => moveTrack(dodge, tracks)).toThrow(/no hitbox/);
   });
 });

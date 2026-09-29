@@ -1,0 +1,72 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "knight-sword-arc-light-2",
+  "notes": "Sword light 2 (move sword-light-2, 4 active ticks): the backhand return, a flat slash from left to right about the chest pivot (0, 1.5, 0), yaw −55° → +55°, rising slightly (5° lowered → 5° raised).",
+  "keys": [
+    {
+      "position": {
+        "x": 0.1071,
+        "y": 0.0057,
+        "z": -0.075
+      },
+      "rotation": {
+        "x": 0.038691,
+        "y": -0.461309,
+        "z": 0.020141,
+        "w": 0.886167
+      }
+    },
+    {
+      "position": {
+        "x": 0.0302,
+        "y": 0.0014,
+        "z": -0.058
+      },
+      "rotation": {
+        "x": 0.02119,
+        "y": -0.237629,
+        "z": 0.005185,
+        "w": 0.971111
+      }
+    },
+    {
+      "position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0.0302,
+        "y": 0.0014,
+        "z": 0.058
+      },
+      "rotation": {
+        "x": -0.02119,
+        "y": 0.237629,
+        "z": 0.005185,
+        "w": 0.971111
+      }
+    },
+    {
+      "position": {
+        "x": 0.1071,
+        "y": 0.0057,
+        "z": 0.075
+      },
+      "rotation": {
+        "x": -0.038691,
+        "y": 0.461309,
+        "z": 0.020141,
+        "w": 0.886167
+      }
+    }
+  ]
+}
