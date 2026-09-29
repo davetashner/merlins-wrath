@@ -56,6 +56,7 @@ export * from './physics';
 export * from './player';
 export * from './properties';
 export * from './scene';
+export * from './sight';
 export * from './stimulus';
 export * from './signals';
 export { EmptyChoiceError, Rng, type RngState, type Weighted } from './rng';
