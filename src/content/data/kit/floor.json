@@ -1,0 +1,12 @@
+{
+  "$schema": "../kit.schema.json",
+  "id": "floor",
+  "name": "Floor tile (2\u00d72 m)",
+  "purpose": "walkable",
+  "parts": [
+    {
+      "size": [2, 0.2, 2],
+      "offset": [0, -0.1, 0]
+    }
+  ]
+}

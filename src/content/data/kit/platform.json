@@ -1,0 +1,12 @@
+{
+  "$schema": "../kit.schema.json",
+  "id": "platform",
+  "name": "Platform (2\u00d72 m, 1 m high)",
+  "purpose": "climbable",
+  "parts": [
+    {
+      "size": [2, 1, 2],
+      "offset": [0, 0.5, 0]
+    }
+  ]
+}

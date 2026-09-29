@@ -9,9 +9,11 @@ import { controllerSchema } from './types/controller.ts';
 import { creatureSchema } from './types/creature.ts';
 import { factSchema } from './types/fact.ts';
 import { factionSchema } from './types/faction.ts';
+import { kitSchema } from './types/kit.ts';
 import { locomotionSchema } from './types/locomotion.ts';
 import { materialSchema } from './types/material.ts';
 import { moveSchema } from './types/move.ts';
+import { sceneSchema } from './types/scene.ts';
 import { senseSchema } from './types/sense.ts';
 import { signalGraphSchema } from './types/signal-graph.ts';
 import { testPropSchema } from './types/testprop.ts';
@@ -23,9 +25,11 @@ export const contentTypes = {
   creature: creatureSchema,
   fact: factSchema,
   faction: factionSchema,
+  kit: kitSchema,
   locomotion: locomotionSchema,
   material: materialSchema,
   move: moveSchema,
+  scene: sceneSchema,
   sense: senseSchema,
   'signal-graph': signalGraphSchema,
   testprop: testPropSchema,

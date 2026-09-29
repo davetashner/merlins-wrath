@@ -1,0 +1,12 @@
+{
+  "$schema": "../kit.schema.json",
+  "id": "crate",
+  "name": "Crate (1 m cube)",
+  "purpose": "interactive",
+  "parts": [
+    {
+      "size": [1, 1, 1],
+      "offset": [0, 0.5, 0]
+    }
+  ]
+}

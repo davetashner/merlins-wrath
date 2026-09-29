@@ -1,0 +1,24 @@
+{
+  "$schema": "../kit.schema.json",
+  "id": "stairs",
+  "name": "Stairs (4 steps, rise 1 m over 2 m)",
+  "purpose": "walkable",
+  "parts": [
+    {
+      "size": [2, 0.25, 0.5],
+      "offset": [0, 0.125, -0.75]
+    },
+    {
+      "size": [2, 0.5, 0.5],
+      "offset": [0, 0.25, -0.25]
+    },
+    {
+      "size": [2, 0.75, 0.5],
+      "offset": [0, 0.375, 0.25]
+    },
+    {
+      "size": [2, 1, 0.5],
+      "offset": [0, 0.5, 0.75]
+    }
+  ]
+}

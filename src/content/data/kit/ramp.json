@@ -1,0 +1,13 @@
+{
+  "$schema": "../kit.schema.json",
+  "id": "ramp",
+  "name": "Ramp (rises 1 m over 3 m)",
+  "purpose": "walkable",
+  "parts": [
+    {
+      "shape": "wedge",
+      "size": [2, 1, 3],
+      "offset": [0, 0.5, 0]
+    }
+  ]
+}

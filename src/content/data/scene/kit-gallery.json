@@ -1,0 +1,69 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "kit-gallery",
+  "name": "Kit gallery",
+  "description": "Every kit piece in a row, plus the purpose colours, for checking the kit.",
+  "grid": 1,
+  "camera": {
+    "position": [0, 8, -14],
+    "target": [0, 0, 1]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 0],
+      "scale": [16, 1, 5]
+    },
+    {
+      "piece": "floor",
+      "at": [-14, 0.25, 0],
+      "purpose": "walkable"
+    },
+    {
+      "piece": "wall",
+      "at": [-10, 0, 0]
+    },
+    {
+      "piece": "ramp",
+      "at": [-6, 0, 0]
+    },
+    {
+      "piece": "stairs",
+      "at": [-2, 0, 0]
+    },
+    {
+      "piece": "pillar",
+      "at": [2, 0, 0]
+    },
+    {
+      "piece": "doorway",
+      "at": [6, 0, 0]
+    },
+    {
+      "piece": "platform",
+      "at": [10, 0, 0]
+    },
+    {
+      "piece": "crate",
+      "at": [14, 0, 0]
+    },
+    {
+      "piece": "platform",
+      "at": [14, 0, 4],
+      "scale": [1, 0.05, 1],
+      "purpose": "hazard"
+    },
+    {
+      "piece": "platform",
+      "at": [10, 0, 4],
+      "purpose": "interactive"
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, -4],
+      "tags": ["player-start"]
+    }
+  ]
+}

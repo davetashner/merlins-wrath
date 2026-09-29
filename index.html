@@ -29,6 +29,33 @@
         z-index: 1;
         margin: 1rem 1.5rem;
       }
+      #app > [data-testid='scene-hud'] {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        margin: 0.75rem 1rem;
+        font:
+          12px/1.4 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        color: #c9c4b6;
+        text-shadow: 0 1px 2px #000;
+        pointer-events: none;
+      }
+      [data-testid='scene-hud'] p {
+        margin: 0;
+      }
+      [data-testid='scene-error'] {
+        max-width: 40rem;
+        padding: 1rem 1.25rem;
+        background: #1b1f2bee;
+        border: 1px solid #c4462f;
+        line-height: 1.5;
+      }
+      [data-testid='scene-error'] a {
+        color: #9cc2f0;
+      }
       [data-testid='unsupported-browser'] {
         max-width: 40rem;
         line-height: 1.5;

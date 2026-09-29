@@ -21,6 +21,11 @@ export interface RenderBootstrapOptions {
    * `renderFrame` (the game's frame loop does, after stepping the sim; mw-e00.20). Default true.
    */
   readonly animationLoop?: boolean;
+  /**
+   * When false, the scene starts empty instead of holding the mw-e00.19 placeholder (the game loads
+   * a greybox scene into it; mw-e00.21). Default true.
+   */
+  readonly placeholderScene?: boolean;
 }
 
 export interface RenderBootstrap {
@@ -61,7 +66,10 @@ export function createRenderBootstrap(options: RenderBootstrapOptions): RenderBo
 
   const scene = new Scene();
   const camera = new PerspectiveCamera(55, 1, 0.1, 200);
-  const boot = populateBootScene(scene, camera);
+  const boot =
+    (options.placeholderScene ?? true)
+      ? populateBootScene(scene, camera)
+      : { update: () => undefined };
 
   // Resize is checked every frame (CSS size, DPR and render scale), which also catches a window
   // moving to a monitor with a different devicePixelRatio, where no resize event fires.

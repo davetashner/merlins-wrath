@@ -17,8 +17,8 @@ export type ContentSchemas = Readonly<Record<string, z.ZodType<{ readonly id: st
 /** Recursively readonly view of loaded content (the catalogue is deeply frozen at runtime). */
 export type Frozen<T> = T extends ContentRef
   ? T
-  : T extends readonly (infer U)[]
-    ? readonly Frozen<U>[]
+  : T extends readonly unknown[]
+    ? { readonly [K in keyof T]: Frozen<T[K]> } // keeps tuples tuples
     : T extends object
       ? { readonly [K in keyof T]: Frozen<T[K]> }
       : T;

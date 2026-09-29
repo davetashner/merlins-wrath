@@ -84,6 +84,30 @@ export {
   type FactionDefInput,
 } from './types/faction.ts';
 export {
+  KIT_PURPOSES,
+  KIT_SHAPES,
+  kitPartSchema,
+  kitSchema,
+  vec3Schema,
+  type KitDef,
+  type KitDefInput,
+  type KitPartDef,
+  type KitPurpose,
+  type KitShape,
+} from './types/kit.ts';
+export {
+  SCENE_SNAP_STEP,
+  SCENE_YAWS,
+  scenePlacementSchema,
+  sceneSchema,
+  sceneSpawnSchema,
+  type SceneDef,
+  type SceneDefInput,
+  type ScenePlacementDef,
+  type SceneSpawnDef,
+  type SceneYaw,
+} from './types/scene.ts';
+export {
   DAMAGE_TYPES,
   MAX_RESISTANCE,
   poiseRegenSchema,
