@@ -34,6 +34,11 @@ check enforces this).
   or down (−70° to +60°), and use the wheel to zoom between 2 and 6 m. It sits over the right
   shoulder, pulls in instantly instead of clipping into walls and pillars, and eases back out once the
   way is clear. The testbed's corridor now has pillars to squeeze past.
+- You can now play with a controller (Xbox layout; PlayStation pads work too). The left stick moves
+  and the right stick looks around. A jumps, B crouches and a left-stick click toggles sprint, and no
+  click is needed to start. Keyboard and mouse still work alongside it, and the on-screen controls
+  hint switches to controller buttons when you pick the pad up. Pulling the controller out lets go of
+  everything it was holding.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.

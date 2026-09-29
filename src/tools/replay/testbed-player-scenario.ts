@@ -38,6 +38,7 @@ export const actionFrameCommand = z.strictObject({
   kind: z.literal(ACTION_FRAME_COMMAND),
   move: vector,
   look: vector,
+  lookStick: vector,
   ...Object.fromEntries(BUTTON_ACTIONS.map((action) => [action, button])),
 }) as unknown as z.ZodType<ActionFrame>;
 

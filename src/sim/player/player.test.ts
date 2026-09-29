@@ -7,6 +7,7 @@ import {
   actionFrame,
   actionButton,
   actionVector,
+  stickVector,
   IDLE_ACTION_FRAME,
   type ActionFrame,
   type ButtonAction,
@@ -55,6 +56,7 @@ interface FrameSpec {
   move?: [number, number];
   look?: number;
   lookY?: number;
+  stick?: [number, number];
   pressed?: ButtonAction[];
   held?: ButtonAction[];
 }
@@ -63,12 +65,14 @@ function frame({
   move = [0, 0],
   look = 0,
   lookY = 0,
+  stick = [0, 0],
   pressed = [],
   held = [],
 }: FrameSpec): ActionFrame {
   return actionFrame({
     move: actionVector(move[0], move[1]),
     look: actionVector(look, lookY),
+    lookStick: stickVector(stick[0], stick[1]),
     buttons: (action) => actionButton(pressed.includes(action), held.includes(action), false),
   });
 }
@@ -344,5 +348,38 @@ describe('device-agnostic look (mw-e02.4, ready for mw-e02.9)', () => {
   it('mouse and stick add up in one tick', () => {
     const turn = lookTurn({ mouse: { x: 10, y: 0 }, stick: { x: -1, y: 0 } }, settings, 0.1);
     expect(turn.yaw).toBeCloseTo(-0.1 + 0.4, 12);
+  });
+});
+
+describe('right-stick look through the ActionFrame (mw-e02.9)', () => {
+  it('a held right stick turns the player at the look rate, tick after tick', () => {
+    const { world, yaw, pitch } = setup();
+    const start = yaw() ?? 0;
+    const { yawRate } = DEFAULT_LOOK_SETTINGS.stick;
+    // Full right for 30 ticks (half a second): 240°/s → 120° to the right.
+    for (let i = 0; i < 30; i++) world.step([frame({ stick: [1, 0] })]);
+    expect(wrapYaw((yaw() ?? 0) - start)).toBeCloseTo(wrapYaw(-yawRate * 0.5), 9);
+    expect(pitch()).toBe(0);
+    // Up looks up.
+    world.step([frame({ stick: [0, 1] })]);
+    expect(pitch()).toBeCloseTo(DEFAULT_LOOK_SETTINGS.stick.pitchRate / 60, 12);
+  });
+
+  it('a right stick inside the look deadzone leaves the view alone', () => {
+    const { world, yaw } = setup();
+    const start = yaw();
+    world.step([frame({ stick: [0.1, -0.1] })]);
+    expect(yaw()).toBe(start);
+  });
+
+  it('stick look replays to the same hash', () => {
+    const run = () => {
+      const { world } = setup();
+      for (let i = 0; i < 60; i++) {
+        world.step([frame({ move: [0, 1], stick: [((i % 9) - 4) / 4.1, ((i % 5) - 2) / 3] })]);
+      }
+      return hashWorld(world);
+    };
+    expect(run()).toBe(run());
   });
 });

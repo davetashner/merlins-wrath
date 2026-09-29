@@ -5,6 +5,7 @@ import {
   BINDINGS_DATA_VERSION,
   contextOf,
   DEFAULT_BINDINGS,
+  DEFAULT_PAD_BINDINGS,
   deserializeBindings,
   findConflicts,
   MAX_SLOTS,
@@ -140,10 +141,11 @@ describe('serialise / deserialise (the settings-store seam, mw-e02.22)', () => {
     expect(Object.isFrozen(bindings)).toBe(true);
   });
 
-  it('falls back to the defaults for data that is not version-1 bindings', () => {
-    for (const data of [null, 'x', [], { version: 2, actions: {} }, { version: 1 }]) {
-      const { bindings, issues } = deserializeBindings(data);
+  it('falls back to the defaults for data that is not version-1 or version-2 bindings', () => {
+    for (const data of [null, 'x', [], { version: 3, actions: {} }, { version: 1 }]) {
+      const { bindings, gamepad, issues } = deserializeBindings(data);
       expect(bindings).toBe(DEFAULT_BINDINGS);
+      expect(gamepad).toBe(DEFAULT_PAD_BINDINGS);
       expect(issues).toHaveLength(1);
     }
   });
@@ -159,6 +161,7 @@ describe('serialise / deserialise (the settings-store seam, mw-e02.22)', () => {
         lockOn: [''],
         dance: ['KeyZ'],
       },
+      gamepad: serializeBindings(DEFAULT_BINDINGS).gamepad,
     });
     expect(bindings.jump).toEqual(['KeyF']);
     expect(bindings.sprint).toEqual(DEFAULT_BINDINGS.sprint);
@@ -182,5 +185,78 @@ describe('serialise / deserialise (the settings-store seam, mw-e02.22)', () => {
     });
     expect(bindings).toBe(DEFAULT_BINDINGS);
     expect(issues).toEqual(['conflicting bindings KeyE (jump, interact); using defaults']);
+  });
+});
+
+describe('gamepad bindings (mw-e02.9)', () => {
+  it('the default Xbox layout binds every button action but cycle target, with no conflicts', () => {
+    expect(findConflicts(DEFAULT_PAD_BINDINGS)).toEqual([]);
+    expect(DEFAULT_PAD_BINDINGS.jump).toEqual(['PadA']);
+    expect(DEFAULT_PAD_BINDINGS.crouch).toEqual(['PadB']);
+    expect(DEFAULT_PAD_BINDINGS.interact).toEqual(['PadX']);
+    expect(DEFAULT_PAD_BINDINGS.primaryAttack).toEqual(['PadRT']);
+    expect(DEFAULT_PAD_BINDINGS.secondaryAttack).toEqual(['PadLT']);
+    expect(DEFAULT_PAD_BINDINGS.sprint).toEqual(['PadLS']);
+    expect(DEFAULT_PAD_BINDINGS.lockOn).toEqual(['PadRS']);
+    expect(DEFAULT_PAD_BINDINGS.pause).toEqual(['PadMenu']);
+    expect(DEFAULT_PAD_BINDINGS.inventory).toEqual(['PadView']);
+    expect(DEFAULT_PAD_BINDINGS.ability1).toEqual(['PadY', 'PadUp']);
+    const unbound = BINDABLE_ACTIONS.filter((action) => DEFAULT_PAD_BINDINGS[action].length === 0);
+    expect(unbound).toEqual(['moveForward', 'moveBack', 'moveLeft', 'moveRight', 'cycleTarget']);
+    for (const action of BINDABLE_ACTIONS) {
+      expect(DEFAULT_PAD_BINDINGS[action].length).toBeLessThanOrEqual(MAX_SLOTS);
+    }
+  });
+
+  it('rebinding a pad button follows the keyboard conflict rules', () => {
+    const taken = rebind(DEFAULT_PAD_BINDINGS, 'jump', 'PadB');
+    expect(taken).toEqual({ ok: false, conflict: { code: 'PadB', actions: ['jump', 'crouch'] } });
+    const global = rebind(DEFAULT_PAD_BINDINGS, 'jump', 'PadMenu');
+    expect(global.ok).toBe(false);
+    const cycle = rebound(DEFAULT_PAD_BINDINGS, 'cycleTarget', 'PadGuide');
+    expect(cycle.cycleTarget).toEqual(['PadGuide']);
+  });
+
+  it('round-trips both devices through JSON (version 2)', () => {
+    const keys = rebound(DEFAULT_BINDINGS, 'jump', 'KeyF');
+    const pad = rebound(unbind(DEFAULT_PAD_BINDINGS, 'ability1'), 'jump', 'PadY', 1);
+    const data = JSON.parse(JSON.stringify(serializeBindings(keys, pad))) as unknown;
+    expect(data).toMatchObject({ version: BINDINGS_DATA_VERSION });
+    const { bindings, gamepad, issues } = deserializeBindings(data);
+    expect(issues).toEqual([]);
+    expect(bindings).toEqual(keys);
+    expect(gamepad).toEqual(pad);
+    expect(gamepad.jump).toEqual(['PadA', 'PadY']);
+    expect(serializeBindings(keys).gamepad).toEqual(
+      serializeBindings(keys, DEFAULT_PAD_BINDINGS).gamepad,
+    );
+  });
+
+  it('version 1 data (from before gamepads) reads with the default pad layout', () => {
+    const v1 = { version: 1, actions: { jump: ['KeyF'] }, gamepad: { jump: ['PadB'] } };
+    const { bindings, gamepad, issues } = deserializeBindings(v1);
+    expect(issues).toEqual([]);
+    expect(bindings.jump).toEqual(['KeyF']);
+    expect(gamepad).toBe(DEFAULT_PAD_BINDINGS);
+  });
+
+  it('keeps each device to its own codes, and falls back per device', () => {
+    const { bindings, gamepad, issues } = deserializeBindings({
+      version: 2,
+      actions: { jump: ['PadA'] },
+      gamepad: { jump: ['Space'], crouch: ['PadY'], wave: ['PadB'] },
+    });
+    expect(bindings.jump).toEqual(DEFAULT_BINDINGS.jump);
+    expect(gamepad).toBe(DEFAULT_PAD_BINDINGS);
+    expect(issues).toEqual([
+      'jump: invalid codes; using defaults',
+      'gamepad jump: invalid codes; using defaults',
+      'gamepad wave: unknown action ignored',
+      'gamepad conflicting bindings PadY (crouch, ability1); using defaults',
+    ]);
+    const missing = deserializeBindings({ version: 2, actions: {} });
+    expect(missing.bindings).toEqual(DEFAULT_BINDINGS);
+    expect(missing.gamepad).toBe(DEFAULT_PAD_BINDINGS);
+    expect(missing.issues).toEqual(['gamepad: missing; using defaults']);
   });
 });

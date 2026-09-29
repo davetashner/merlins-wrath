@@ -1,10 +1,10 @@
 // The player in the sim (mw-e02.23): the character the ActionFrames drive. Installing the player adds
 // one entity at the scene's player-start spawn with a CharacterController and a PlayerLook, and two
-// systems run each tick in this order: mouse look turns the player's view yaw, then the character
-// controller moves it with the tick's ActionFrame and that yaw.
+// systems run each tick in this order: look (mouse and right stick) turns the player's view yaw, then
+// the character controller moves it with the tick's ActionFrame and that yaw.
 //
 // The view yaw and pitch live in the sim (not in the camera) so a replay of ActionFrames alone
-// reproduces every turn: the recorded look deltas are the only source of both. Pitch does not move
+// reproduces every turn: the recorded look input (mouse counts, stick deflection) is their only source. Pitch does not move
 // the player today, but aiming will (bow, spells: mw-e05.3, mw-e06.15), so it is clamped here once,
 // as a rule, rather than in the camera. The orbit camera (src/game/camera, mw-e02.4) only reads them.
 
@@ -64,9 +64,8 @@ export function playerStart(
 }
 
 /**
- * How an analog stick turns the view (rate-based: a held deflection turns at a steady speed). No
- * gamepad feeds it yet (mw-e02.9); `lookTurn` already maps a stick, so it can without touching the
- * camera or the look state.
+ * How an analog stick turns the view (rate-based: a held deflection turns at a steady speed). The
+ * gamepad's right stick feeds it through the ActionFrame's `lookStick` (mw-e02.9).
  */
 export interface StickLookSettings {
   /** Deflection at or below this (0–1, radial) is ignored. */
@@ -158,8 +157,8 @@ export function clampPitch(
 }
 
 /**
- * Turns every PlayerLook by the tick's look input (see `lookTurn`); pitch stops at the limits. The
- * ActionFrame carries mouse counts today; mw-e02.9 adds a stick vector and passes it here too.
+ * Turns every PlayerLook by the tick's look input (see `lookTurn`): the ActionFrame's mouse counts
+ * and right-stick deflection together. Pitch stops at the limits.
  */
 export function playerLookSystem<TInput>(
   settings: LookSettings = DEFAULT_LOOK_SETTINGS,
@@ -169,7 +168,7 @@ export function playerLookSystem<TInput>(
     run({ world, inputs, clock }) {
       const frame = actionFrameOf(inputs);
       if (frame === undefined) return;
-      const turn = lookTurn({ mouse: frame.look }, settings, 1 / clock.hz);
+      const turn = lookTurn({ mouse: frame.look, stick: frame.lookStick }, settings, 1 / clock.hz);
       if (turn.yaw === 0 && turn.pitch === 0) return;
       world.query(PlayerLook).forEach((id, current) => {
         world.set(id, PlayerLook, {

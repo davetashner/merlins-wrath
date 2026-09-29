@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ActionSampler } from '../input';
+import { fakePad } from '../input/fake-gamepad';
 import { attachPlayerInput } from './pointer-lock';
 
 /** A fake page: window and document as real EventTargets, and a canvas that locks when asked. */
@@ -76,5 +77,41 @@ describe('attachPlayerInput (mw-e02.23)', () => {
     page.input.detach();
     page.click();
     expect(page.element.requestPointerLock).not.toHaveBeenCalled();
+  });
+});
+
+describe('attachPlayerInput with a gamepad (mw-e02.9)', () => {
+  function padPage() {
+    const window = new EventTarget();
+    const document = Object.assign(new EventTarget(), { pointerLockElement: null });
+    const element = Object.assign(new EventTarget(), { requestPointerLock: vi.fn() });
+    let pads = [fakePad({ pressed: ['PadA'] })];
+    const sampler = new ActionSampler();
+    const input = attachPlayerInput(sampler, {
+      window,
+      document,
+      element,
+      gamepad: { navigator: { getGamepads: () => pads }, hasFocus: () => true },
+    });
+    return { sampler, input, unplug: () => (pads = []) };
+  }
+
+  it('the pad plays without a click or pointer lock', () => {
+    const page = padPage();
+    expect(page.input.locked).toBe(false);
+    expect(page.sampler.sample().jump.pressed).toBe(true);
+  });
+
+  it('disabling (the debug fly camera) idles the pad; detach stops polling it', () => {
+    const page = padPage();
+    page.sampler.sample();
+    page.input.enabled = false;
+    expect(page.sampler.sample().jump.released).toBe(true);
+    page.input.enabled = true;
+    expect(page.sampler.sample().jump.pressed).toBe(true);
+    page.input.detach();
+    expect(page.sampler.sample().jump.released).toBe(true);
+    page.unplug();
+    expect(page.sampler.sample().pause.pressed).toBe(false);
   });
 });
