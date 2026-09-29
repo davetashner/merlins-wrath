@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
+    <title>Render testbed — The Vesper Bell</title>
+    <style>
+      #stage {
+        width: 480px;
+        height: 270px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Render testbed</h1>
+      <p>Creates the renderer, draws a frame and disposes it, five times over.</p>
+      <button id="recreate" type="button">Recreate renderer ×5</button>
+      <output id="status" data-state="idle" data-cycles="0"></output>
+      <div id="stage"></div>
+    </main>
+    <script type="module" src="/src/testbed/render.ts"></script>
+  </body>
+</html>

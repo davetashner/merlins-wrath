@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
     <title>The Vesper Bell</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0b0d14;
+        color: #e8e4d8;
+        font-family: system-ui, sans-serif;
+      }
+      #app {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+      }
+      #app > canvas {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+      }
+      #app > :not(canvas) {
+        position: relative;
+        z-index: 1;
+        margin: 1rem 1.5rem;
+      }
+      [data-testid='unsupported-browser'] {
+        max-width: 40rem;
+        line-height: 1.5;
+      }
+    </style>
   </head>
   <body>
     <main id="app"><h1>The Vesper Bell</h1></main>
