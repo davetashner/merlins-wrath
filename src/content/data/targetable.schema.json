@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (debug tools and docs)."
+    },
+    "points": {
+      "minItems": 1,
+      "maxItems": 8,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Name of the point, unique on the profile (e.g. \"chest\")."
+          },
+          "at": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Offset from the entity’s origin, metres (x, y, z)."
+          }
+        },
+        "required": [
+          "id",
+          "at"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Lock points; the first is the main one (the lock and HUD marker sit there)."
+    },
+    "priority": {
+      "default": 0,
+      "description": "Pick preference: higher is picked over a lower one at a similar angle and distance (a bell is lower than a foe).",
+      "type": "integer",
+      "minimum": -10,
+      "maximum": 10
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "points"
+  ],
+  "additionalProperties": false
+}

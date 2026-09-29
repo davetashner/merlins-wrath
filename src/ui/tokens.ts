@@ -39,6 +39,7 @@ export const UI_TOKENS: Readonly<Record<string, string>> = Object.freeze({
   'ui-color-health': PALETTE.ember,
   'ui-color-stamina': PALETTE.leaf,
   'ui-color-bar-trail': PALETTE.hearth,
+  'ui-color-lock': PALETTE.wayfinder,
   // Type (style bible §9.1; the fonts are self-hosted by mw-e37, system fallbacks until then).
   'ui-font-body': "'Alegreya Sans', 'Atkinson Hyperlegible', system-ui, sans-serif",
   'ui-font-heading': "'Cinzel', Georgia, serif",
@@ -234,6 +235,26 @@ ${tokens}
 .vb-meter-trail { background: var(--ui-color-bar-trail); }
 .vb-meter-fill { background: var(--ui-color-health); }
 .vb-meter[data-kind='stamina'] .vb-meter-fill { background: var(--ui-color-stamina); }
+.vb-lock-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.75em;
+  height: 1.75em;
+  margin: -0.875em 0 0 -0.875em;
+  border: 3px solid var(--ui-color-lock);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--ui-color-hud-shadow), inset 0 0 0 1px var(--ui-color-hud-shadow);
+  transition: opacity ${MOTION};
+}
+.vb-lock-marker::after {
+  content: '';
+  position: absolute;
+  inset: 40%;
+  border-radius: 50%;
+  background: var(--ui-color-lock);
+}
+.vb-lock-marker[hidden] { display: none; }
 .vb-slot {
   position: relative;
   width: 3em;

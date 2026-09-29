@@ -14,6 +14,7 @@ export * from './gallery';
 export * from './hud';
 export * from './input';
 export * from './interact-prompt';
+export * from './lock-marker';
 export * from './screens';
 export * from './testing/overflow';
 export * from './tokens';

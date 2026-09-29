@@ -192,7 +192,14 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
       const group = new Group();
       group.name = `spawn:${spawn.id}`;
       let mesh: Mesh;
-      if (spawn.prop === undefined) {
+      if (spawn.targetable !== undefined && spawn.prop === undefined) {
+        // A lock-on target (mw-e02.16): a training-dummy post with a crossbar, about 1.8 m tall.
+        const post = new BoxGeometry(0.3, 1.8, 0.3).translate(0, 0.9, 0);
+        const arms = new BoxGeometry(1.1, 0.2, 0.2).translate(0, 1.3, 0);
+        mesh = new Mesh(mergeGeometries([post, arms]), gridMaterial(PURPOSE_COLOURS.interactive));
+        post.dispose();
+        arms.dispose();
+      } else if (spawn.prop === undefined) {
         // A marker: a flat cone lying down, pointing the way the spawn faces (+z at yaw 0).
         mesh = new Mesh(
           new ConeGeometry(0.3, 0.8, 12),

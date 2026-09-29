@@ -3,7 +3,7 @@
   "snapshotEncoding": 1,
   "scenario": "testbed-player",
   "buildSha": "local",
-  "contentHash": "c9c5e53682506be9",
+  "contentHash": "5fade001ddf5e6b1",
   "seed": 1,
   "stepHz": 60,
   "ticks": 784,
@@ -46,21 +46,21 @@
     [39,[{"kind":"input.actions","move":{"x":0,"y":1},"look":{"x":0,"y":0},"lookStick":{"x":0,"y":0},"jump":{"pressed":false,"held":false,"released":false},"sprint":{"pressed":false,"held":false,"released":false},"crouch":{"pressed":false,"held":false,"released":false},"dodge":{"pressed":false,"held":false,"released":false},"interact":{"pressed":false,"held":false,"released":false},"lockOn":{"pressed":false,"held":false,"released":false},"cycleTarget":{"pressed":false,"held":false,"released":false},"primaryAttack":{"pressed":false,"held":false,"released":false},"secondaryAttack":{"pressed":false,"held":true,"released":false},"ability1":{"pressed":false,"held":false,"released":false},"ability2":{"pressed":false,"held":false,"released":false},"ability3":{"pressed":false,"held":false,"released":false},"ability4":{"pressed":false,"held":false,"released":false},"inventory":{"pressed":false,"held":false,"released":false},"pause":{"pressed":false,"held":false,"released":false}}]]
   ],
   "checkpoints": [
-    {"tick":0,"hash":"8386142c"},
-    {"tick":60,"hash":"cd2ecbb1"},
-    {"tick":120,"hash":"3a77f86d"},
-    {"tick":180,"hash":"a0d30a7a"},
-    {"tick":240,"hash":"24e189c3"},
-    {"tick":300,"hash":"7ba5fb9f"},
-    {"tick":360,"hash":"f56027f6"},
-    {"tick":420,"hash":"f141fa76"},
-    {"tick":480,"hash":"9caa4835"},
-    {"tick":540,"hash":"36de1b6c"},
-    {"tick":600,"hash":"3109271d"},
-    {"tick":660,"hash":"e7dbcf0b"},
-    {"tick":720,"hash":"025f4f9a"},
-    {"tick":780,"hash":"6900df87"},
-    {"tick":784,"hash":"41f4e95e"}
+    {"tick":0,"hash":"6d42ab5f"},
+    {"tick":60,"hash":"b5f4ec42"},
+    {"tick":120,"hash":"3ef4b60d"},
+    {"tick":180,"hash":"e842020e"},
+    {"tick":240,"hash":"e43dc301"},
+    {"tick":300,"hash":"b3609436"},
+    {"tick":360,"hash":"8ef8278e"},
+    {"tick":420,"hash":"35393c20"},
+    {"tick":480,"hash":"0eef5769"},
+    {"tick":540,"hash":"faef32d9"},
+    {"tick":600,"hash":"f642433c"},
+    {"tick":660,"hash":"85d9c64b"},
+    {"tick":720,"hash":"161d1dbb"},
+    {"tick":780,"hash":"d2d2ee94"},
+    {"tick":784,"hash":"75a33201"}
   ],
-  "finalHash": "41f4e95e"
+  "finalHash": "75a33201"
 }

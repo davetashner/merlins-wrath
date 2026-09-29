@@ -85,6 +85,8 @@ export interface SceneSpawnSpec {
   readonly tags: readonly string[];
   /** Makes the spawned entity interactable (mw-e02.5). */
   readonly interact?: InteractableSpec | undefined;
+  /** Makes the spawned entity a lock-on target with this profile (mw-e02.16). */
+  readonly targetable?: { readonly id: string } | undefined;
 }
 
 /** A scene as the layout needs it; `GameEntry<'scene'>` satisfies it. */
@@ -145,6 +147,8 @@ export interface SceneSpawnPlacement {
   readonly tags: readonly string[];
   /** Its affordances, when the spawn is interactable (see src/sim/interaction). */
   readonly interact?: InteractableSpec | undefined;
+  /** Its lock-on target profile, when it is targetable (see src/sim/targeting). */
+  readonly targetable?: string | undefined;
 }
 
 export interface SceneLayout {
@@ -285,6 +289,7 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       prop: spawn.prop?.id,
       tags: Object.freeze([...spawn.tags]),
       interact: spawn.interact,
+      targetable: spawn.targetable?.id,
     }),
   );
   return Object.freeze({

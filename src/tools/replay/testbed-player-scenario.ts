@@ -1,6 +1,7 @@
 // The testbed player replay (mw-e02.23 AC-4): the player walking the greybox testbed, built through
 // the same wiring the game boots (the sim's Rapier physics with physics objects and the scene's
-// movable props (mw-e03.39), the scene loader, setupTestbedPlayer with RapierCollisionWorld) and driven by ActionFrames sampled from a scripted key and mouse log by
+// movable props (mw-e03.39), the scene loader, setupTestbedPlayer with RapierCollisionWorld and lock-on
+// over RapierSightWorld (mw-e02.16)) and driven by ActionFrames sampled from a scripted key and mouse log by
 // the real ActionSampler. Its recording (tests/integration/fixtures/testbed-player.replay.json)
 // replays in tests/integration/testbed-player.test.ts on every CI run, so a change to the wiring, the
 // testbed scene, the input mapping, the controller or Rapier that moves the player fails at the first
@@ -12,7 +13,7 @@
 //   TESTBED_PLAYER_RECORD=1 pnpm vitest run tests/integration/testbed-player.test.ts
 
 import { loadGameContent } from '@content/game-content';
-import { PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
+import { PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID, PLAYER_LOCK_ON_ID } from '@content/index';
 import {
   installSandboxRules,
   prepareTestbedCombat,
@@ -26,6 +27,7 @@ import { installGamePhysics, playerFocus } from '@game/physics-objects';
 import { setupTestbedPlayer, type TransformReader } from '@game/player/index';
 import { SceneLoader } from '@game/scene/index';
 import {
+  LineOfSight,
   physicsBodiesOf,
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
@@ -193,6 +195,12 @@ export function createGameWorld<TInput>(
     },
     moves: combat.moves,
     melee: combat.melee,
+    // No damage model here, so nothing is ever defeated (src/main.ts passes zeroHealth).
+    lockOn: {
+      tuning: content.get('lock-on', PLAYER_LOCK_ON_ID),
+      sight: new LineOfSight({ world: new RapierSightWorld(physics) }),
+      profile: (id) => content.get('targetable', id),
+    },
   }).entity;
   focus.entity = player;
   const combatants = startTestbedCombat(world, combat, scene.layout.spawns, player);

@@ -22,6 +22,7 @@ import { environmentDamageSchema } from './types/environment-damage.ts';
 import { factSchema } from './types/fact.ts';
 import { factionSchema } from './types/faction.ts';
 import { kitSchema } from './types/kit.ts';
+import { lockOnSchema } from './types/lock-on.ts';
 import { locomotionSchema } from './types/locomotion.ts';
 import { materialSchema } from './types/material.ts';
 import { moveSchema } from './types/move.ts';
@@ -33,6 +34,7 @@ import { shieldSchema } from './types/shield.ts';
 import { signalGraphSchema } from './types/signal-graph.ts';
 import { checkSocketTracks, socketTrackSchema } from './types/socket-track.ts';
 import { spellSchema } from './types/spell.ts';
+import { targetableSchema } from './types/targetable.ts';
 import { testPropSchema } from './types/testprop.ts';
 import { vfxEffectSchema } from './types/vfx-effect.ts';
 
@@ -51,6 +53,7 @@ export const contentTypes = {
   fact: factSchema,
   faction: factionSchema,
   kit: kitSchema,
+  'lock-on': lockOnSchema,
   locomotion: locomotionSchema,
   material: materialSchema,
   move: moveSchema,
@@ -62,6 +65,7 @@ export const contentTypes = {
   'signal-graph': signalGraphSchema,
   'socket-track': socketTrackSchema,
   spell: spellSchema,
+  targetable: targetableSchema,
   testprop: testPropSchema,
   'vfx-effect': vfxEffectSchema,
 };

@@ -1,0 +1,30 @@
+// Lock-on (mw-e02.16): targetables, the lock component and the lock-on system.
+export {
+  giveTargetable,
+  LockOnComponent,
+  NO_LOCK,
+  TargetableComponent,
+  targetableOf,
+  type LockOn,
+  type Targetable,
+} from './components';
+export {
+  bearing,
+  flickDirection,
+  installLockOn,
+  lockOnParams,
+  lockOnSystem,
+  lookAtRest,
+  sceneTargetPosition,
+  Targeting,
+  turnTowards,
+  viewForward,
+  zeroHealth,
+  type CycleDirection,
+  type DefeatedCheck,
+  type LockOnOptions,
+  type LockOnParams,
+  type Sighting,
+  type TargetLocator,
+  type Viewpoint,
+} from './lock-on';

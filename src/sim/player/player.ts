@@ -26,6 +26,9 @@
 // reproduces every turn: the recorded look input (mouse counts, stick deflection) is their only source. Pitch does not move
 // the player today, but aiming will (bow, spells: mw-e05.3, mw-e06.15), so it is clamped here once,
 // as a rule, rather than in the camera. The orbit camera (src/game/camera, mw-e02.4) only reads them.
+//
+// While the player has a ViewAnchor (lock-on, mw-e02.16, src/sim/targeting) the lock-on system owns
+// the view: look input does not turn it, and the controller strafes around the anchor point.
 
 import type { ControllerTuning, Frozen, MoveTable, RuntimeShield } from '@content/index';
 import { SKIN } from '../character/controller';
@@ -68,6 +71,7 @@ import {
 } from '../input/action-frame';
 import { cos, pow, sin } from '../math';
 import type { SceneSpawnPlacement } from '../scene/layout';
+import type { Vec3 } from '../stimulus/shapes';
 
 /** The tag that marks a scene's player spawn. */
 export const PLAYER_START_TAG = 'player-start';
@@ -85,6 +89,17 @@ export interface PlayerLook {
 }
 
 export const PlayerLook = defineComponent<PlayerLook>('player.look');
+
+/**
+ * The point the player's view and movement are anchored on (a locked target, mw-e02.16): look input
+ * is ignored and movement strafes around it. Written by the lock-on system; absent otherwise.
+ */
+export interface ViewAnchor {
+  /** World position, metres. */
+  readonly point: Vec3;
+}
+
+export const ViewAnchor = defineComponent<ViewAnchor>('player.anchor');
 
 const TAU = 2 * Math.PI;
 
@@ -204,7 +219,8 @@ export function clampPitch(
 
 /**
  * Turns every PlayerLook by the tick's look input (see `lookTurn`): the ActionFrame's mouse counts
- * and right-stick deflection together. Pitch stops at the limits.
+ * and right-stick deflection together. Pitch stops at the limits. Anchored views (ViewAnchor, which
+ * the world must have registered) do not turn.
  */
 export function playerLookSystem<TInput>(
   settings: LookSettings = DEFAULT_LOOK_SETTINGS,
@@ -217,6 +233,7 @@ export function playerLookSystem<TInput>(
       const turn = lookTurn({ mouse: frame.look, stick: frame.lookStick }, settings, 1 / clock.hz);
       if (turn.yaw === 0 && turn.pitch === 0) return;
       world.query(PlayerLook).forEach((id, current) => {
+        if (world.has(id, ViewAnchor)) return;
         world.set(id, PlayerLook, {
           yaw: wrapYaw(current.yaw + turn.yaw),
           pitch: clampPitch(current.pitch + turn.pitch, settings),
@@ -259,7 +276,7 @@ export function yawForward(yaw: number): { readonly x: number; readonly y: 0; re
   return { x: -sin(yaw) + 0, y: 0, z: -cos(yaw) + 0 };
 }
 
-/** The player's facing for dodge input: its look yaw (the camera), until lock-on exists. */
+/** The player's facing for dodge input: its look yaw (the camera; it faces the target while locked on). */
 const lookFacing: DodgeFacing & FacingRule = (world, entity) => {
   const look = world.get(entity, PlayerLook);
   return look === undefined ? undefined : yawForward(look.yaw);
@@ -322,7 +339,7 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
   }
   const look: LookSettings = { ...DEFAULT_LOOK_SETTINGS, ...options.look };
   const { combat } = options;
-  world.register(CharacterController, CharacterLocomotion, PlayerLook);
+  world.register(CharacterController, CharacterLocomotion, PlayerLook, ViewAnchor);
   world.addSystem(playerLookSystem(look));
   const melee = combat?.melee;
   if (combat !== undefined) {
@@ -355,9 +372,13 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
             ? frame
             : restrainMovement(frame, locomotionScale(world, entity, combat.moves));
         const motion = combat && world.get(entity, DodgeComponent)?.velocity;
-        return motion == null
-          ? { actions, cameraYaw: look.yaw }
-          : { actions, cameraYaw: look.yaw, motion };
+        const anchor = world.get(entity, ViewAnchor);
+        return {
+          actions,
+          cameraYaw: look.yaw,
+          ...(motion != null && { motion }),
+          ...(anchor !== undefined && { strafeAround: anchor.point }),
+        };
       },
       noclip: (entity) => hasCheat(world, entity, 'noclip'),
     }),

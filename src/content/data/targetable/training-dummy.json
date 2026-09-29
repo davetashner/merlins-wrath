@@ -1,0 +1,11 @@
+{
+  "$schema": "../targetable.schema.json",
+  "id": "training-dummy",
+  "name": "Training dummy",
+  "points": [
+    { "id": "chest", "at": [0, 1.3, 0] },
+    { "id": "head", "at": [0, 1.7, 0] },
+    { "id": "base", "at": [0, 0.4, 0] }
+  ],
+  "priority": 0
+}

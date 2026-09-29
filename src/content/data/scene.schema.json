@@ -678,6 +678,12 @@
               "affordances"
             ],
             "additionalProperties": false
+          },
+          "targetable": {
+            "description": "Makes the spawned entity a lock-on target with this profile (mw-e02.16).",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "x-contentRef": "targetable"
           }
         },
         "required": [

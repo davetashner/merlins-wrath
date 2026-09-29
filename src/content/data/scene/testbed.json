@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "testbed",
   "name": "Greybox testbed",
-  "description": "The default scene: a room, a narrow corridor with pillars and a hazard strip, and an arena with pillars, a ramp and platforms.",
+  "description": "The default scene: a room, a narrow corridor with pillars and a hazard strip, and an arena with pillars, a ramp, platforms and three training dummies to lock on to.",
   "grid": 1,
   "camera": {
     "position": [-14, 20, -14],
@@ -217,6 +217,24 @@
       "at": [2, 0, 21],
       "yaw": 90,
       "prop": "plank"
+    },
+    {
+      "id": "dummy-left",
+      "at": [3, 0, 23],
+      "yaw": 180,
+      "targetable": "training-dummy"
+    },
+    {
+      "id": "dummy-centre",
+      "at": [0, 0, 24],
+      "yaw": 180,
+      "targetable": "training-dummy"
+    },
+    {
+      "id": "dummy-right",
+      "at": [-3, 0, 23],
+      "yaw": 180,
+      "targetable": "training-dummy"
     }
   ]
 }

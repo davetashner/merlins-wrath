@@ -9,6 +9,7 @@ import {
   materialPresets,
   PLAYER_CAMERA_ID,
   PLAYER_CONTROLLER_ID,
+  PLAYER_LOCK_ON_ID,
 } from '@content/index';
 import {
   bindSandboxDummies,
@@ -43,6 +44,7 @@ import { createUiGameBridge } from '@game/ui/index';
 import {
   attachPlayerInput,
   interactPromptModel,
+  lockMarkerModel,
   setupTestbedPlayer,
   type TestbedPlayer,
 } from '@game/player/index';
@@ -60,7 +62,7 @@ import { createSandboxDummy, createTrainingDummy } from '@render/combat/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
-import { createPlayerBody } from '@render/player/index';
+import { createPlayerBody, projectToNdc } from '@render/player/index';
 import { createVfxRenderer } from '@render/vfx/index';
 import {
   AttackerDummyComponent,
@@ -69,6 +71,7 @@ import {
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
   installDebugCommands,
+  LineOfSight,
   physicsBodiesOf,
   PhysicsObjectComponent,
   playerStart,
@@ -78,6 +81,7 @@ import {
   SceneSpawnComponent,
   testPropSpawners,
   World,
+  zeroHealth,
   type ActionFrame,
   type DebugCommand,
   type DifficultyCommand,
@@ -95,7 +99,7 @@ import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
 import { formatVfxStats, parseVfxParam, VfxDemo } from '@tools/vfx-demo/index';
-import { InteractPrompt, UiRoot } from '@ui/index';
+import { InteractPrompt, LockMarker, UiRoot } from '@ui/index';
 import {
   DEBUG_CAMERA_HINT,
   GAMEPAD_DISCONNECTED_HINT,
@@ -257,6 +261,9 @@ function startRenderer(root: HTMLElement): void {
     sampleCommands: sampler.sampleCommands,
     drain: () => sampler.sample(),
   });
+  // The lock-on marker (mw-e02.16) rides the HUD layer over the locked target's lock point.
+  const lockMarker = new LockMarker();
+  ui.hud.append(lockMarker.element);
   ui.subscribe(({ capturesInput }) => {
     root.dataset['uiCapture'] = String(capturesInput);
     if (capturesInput && document.pointerLockElement !== null) document.exitPointerLock();
@@ -473,6 +480,14 @@ function startRenderer(root: HTMLElement): void {
           if (readout !== publishedDummy) root.dataset['dummy'] = publishedDummy = readout;
         }
         sandboxHud?.frame();
+        lockMarker.update(
+          lockMarkerModel(
+            player?.lockTarget(),
+            (point) => projectToNdc(camera, point),
+            root.clientWidth,
+            root.clientHeight,
+          ),
+        );
         hitOverlay.sync(world);
         if (animation !== undefined) {
           animation.driver.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
@@ -559,6 +574,13 @@ function startRenderer(root: HTMLElement): void {
             return object3DBinding(object, read);
           },
           camera,
+          // Lock-on (mw-e02.16): the scene's targetable spawns, seen through the sim's physics.
+          lockOn: {
+            tuning: content.get('lock-on', PLAYER_LOCK_ON_ID),
+            sight: new LineOfSight({ world: new RapierSightWorld(physics) }),
+            profile: (id) => content.get('targetable', id),
+            defeated: zeroHealth,
+          },
           publish: (readout) => {
             root.dataset['player'] = JSON.stringify(readout);
           },

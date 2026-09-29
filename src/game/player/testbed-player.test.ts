@@ -5,6 +5,7 @@ import {
   loadGameContent,
   PLAYER_CAMERA_ID,
   PLAYER_CONTROLLER_ID,
+  PLAYER_LOCK_ON_ID,
 } from '@content/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
 import {
@@ -16,10 +17,12 @@ import {
   FakeCollisionWorld,
   hashWorld,
   interacted,
+  LineOfSight,
   PlacementComponent,
   PlayerLook,
   RapierSightWorld,
   registerWorldProperties,
+  sceneTargetPosition,
   spawnCharacter,
   RapierCollisionWorld,
   RapierPhysics,
@@ -43,6 +46,7 @@ import {
   yawRotation,
   type CameraReadout,
   type PlayerReadout,
+  type TestbedLockOn,
   type TestbedPlayerOptions,
   type TransformReader,
 } from './testbed-player';
@@ -147,7 +151,28 @@ function testbed(options: Extra | ((physics: RapierPhysics) => Extra) = {}) {
     if (readout === undefined) throw new Error('no player');
     return readout;
   };
-  return { world, sync, sampler, player, capsule, camera, run, state, loop, frames, physics };
+  return {
+    world,
+    sync,
+    sampler,
+    player,
+    capsule,
+    camera,
+    run,
+    state,
+    loop,
+    frames,
+    physics,
+    scene,
+  };
+}
+
+/** Taps a key for one tick. */
+function tap(sampler: ActionSampler, run: (seconds: number) => void, code: string): void {
+  sampler.down(code);
+  run(1 / 60);
+  sampler.up(code);
+  run(1 / 60);
 }
 
 describe('testbed player with sword and shield (mw-e04.6)', () => {
@@ -652,6 +677,98 @@ describe('testbed player animation (mw-e02.6)', () => {
     const { run } = testbed({ animation: { controller, apply: () => undefined, lower } });
     run(0.1);
     expect(lower).toHaveBeenCalledWith(0);
+  });
+});
+
+describe('testbed lock-on (mw-e02.16)', () => {
+  /** The testbed with lock-on, the player walked through the corridor into the arena doorway. */
+  function inArena(lockOn: Partial<TestbedLockOn> = {}) {
+    const rig = testbed((physics) => ({
+      lockOn: {
+        tuning: content.get('lock-on', PLAYER_LOCK_ON_ID),
+        sight: new LineOfSight({ world: new RapierSightWorld(physics) }),
+        profile: (id: string) => content.get('targetable', id),
+        ...lockOn,
+      },
+    }));
+    const dummy = (id: string) => {
+      const found = rig.scene.spawns.find(({ spawn }) => spawn.id === id);
+      if (found === undefined) throw new Error(`no ${id}`);
+      return found.entity;
+    };
+    rig.sampler.down('KeyW');
+    rig.run(3.3);
+    rig.sampler.up('KeyW');
+    rig.run(0.3);
+    expect(rig.state().position.z).toBeGreaterThan(15);
+    return {
+      ...rig,
+      left: dummy('dummy-left'),
+      centre: dummy('dummy-centre'),
+      right: dummy('dummy-right'),
+    };
+  }
+
+  /** The horizontal angle between the camera's view and the direction from it to `point`. */
+  const offAxis = (camera: ReturnType<typeof fakeCamera>, point: { x: number; z: number }) => {
+    const look = Math.atan2(camera.target.x - camera.at.x, camera.target.z - camera.at.z);
+    const to = Math.atan2(point.x - camera.at.x, point.z - camera.at.z);
+    return Math.abs(Math.atan2(Math.sin(to - look), Math.cos(to - look)));
+  };
+
+  it('Q locks the dummy ahead; the camera frames it; Tab cycles right; Q releases', () => {
+    const { sampler, run, state, player, camera, left, centre, right } = inArena();
+    expect(state().lock).toBeNull();
+    expect(player.lockTarget()).toBeUndefined();
+    tap(sampler, run, 'KeyQ');
+    expect(state().lock).toBe(centre);
+    expect(player.lockTarget()).toEqual({ entity: centre, point: { x: 0, y: 1.3, z: 24 } });
+    tap(sampler, run, 'Tab');
+    expect(state().lock).toBe(right); // x = −3: the player's right, facing +z
+    run(1);
+    expect(offAxis(camera, { x: -3, z: 23 })).toBeLessThan(toRadians(10));
+    tap(sampler, run, 'Tab');
+    expect(state().lock).toBe(left); // wrapped round
+    tap(sampler, run, 'KeyQ');
+    expect(state().lock).toBeNull();
+    expect(player.lockTarget()).toBeUndefined();
+  });
+
+  it('the player strafes around the locked dummy with A/D', () => {
+    const { sampler, run, state } = inArena();
+    tap(sampler, run, 'KeyQ');
+    run(0.5);
+    const distance = () => Math.hypot(state().position.x, state().position.z - 24);
+    const before = distance();
+    sampler.down('KeyD');
+    run(1);
+    sampler.up('KeyD');
+    expect(Math.abs(distance() - before) / before).toBeLessThan(0.05);
+    expect(state().position.x).toBeLessThan(-2); // moved round to the player's right
+  });
+
+  it('passes a custom locator and defeated check through to the sim', () => {
+    const defeated = new Set<number>();
+    const { sampler, run, state, centre } = inArena({
+      locate: sceneTargetPosition,
+      defeated: (_world, id) => defeated.has(id),
+    });
+    defeated.add(centre);
+    tap(sampler, run, 'KeyQ');
+    // The centre dummy is ahead but defeated, so the lock goes to another one.
+    expect(state().lock).not.toBe(centre);
+    expect(state().lock).not.toBeNull();
+  });
+
+  it('a debug-camera round trip cuts straight back to the framing', () => {
+    const { sampler, run, player, camera } = inArena();
+    tap(sampler, run, 'KeyQ');
+    tap(sampler, run, 'Tab');
+    player.drivesCamera = false;
+    run(0.1);
+    player.drivesCamera = true;
+    run(1 / 60);
+    expect(offAxis(camera, { x: -3, z: 23 })).toBeLessThan(toRadians(10));
   });
 });
 

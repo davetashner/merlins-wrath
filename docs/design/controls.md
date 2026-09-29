@@ -21,7 +21,7 @@ B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT
 | Interact         | X                                  | E                        |
 | Sprint           | LS click (toggle)                  | Left Shift (hold)        |
 | Lock on          | RS click                           | Q, middle click          |
-| Cycle target     | (unbound; lock-on bead)            | Tab                      |
+| Cycle target     | RS flick left/right (while locked) | Tab (right); fast mouse swipe left/right |
 | Primary attack   | RT                                 | Left click               |
 | Secondary / block | LT                                | Right click              |
 | Ability 1        | Y, D-pad Up                        | 1                        |
@@ -36,14 +36,30 @@ mirrors the number row (abilities 1, 2 and 4), and Y, RB and LB reach abilities 
 the thumb off the face buttons or the stick. On the keyboard, R dodges: F stays free (it is the
 remapping example) and Ctrl or Alt would trip browser shortcuts (Ctrl+W closes the tab).
 
-**Dodge.** A dodge with a direction held rolls that way (relative to the camera, or to the lock-on
-target once lock-on exists); with no direction held it backsteps. Timing and i-frames:
-`src/content/data/move/dodge-roll.json` and `backstep.json`; the rules: `src/sim/combat/dodge`. Cycle target has no pad default: flicking the right stick
-while locked on is the usual convention and belongs to the lock-on work.
+**Dodge.** A dodge with a direction held rolls that way (relative to the camera; while locked on
+the view faces the target, so relative to it); with no direction held it backsteps. Timing and i-frames:
+`src/content/data/move/dodge-roll.json` and `backstep.json`; the rules: `src/sim/combat/dodge`. Cycle target has no pad button: flicking the right stick sideways
+while locked on cycles instead (see Lock-on below), the usual convention.
 
 **Sprint toggle.** On the pad, clicking the left stick latches sprint on; it stays on until the stick
 comes back to centre or is clicked again (`GamepadSettings.sprintToggle`, default on). Off, sprint is
 held like the Shift key.
+
+## Lock-on
+
+Lock on (RS click, Q or middle click) picks the target nearest the centre of the view, weighted by
+distance, and presses again to release (mw-e02.16; rules in `src/sim/targeting/lock-on.ts`, numbers in
+`src/content/data/lock-on/player.json`). While locked:
+
+- the player faces the target and moves relative to it: left/right circle it at the same distance,
+  forward/back close in or back off;
+- look input no longer turns the view; the camera frames the player and the target together;
+- **cycling** moves the lock to the next target to the right (clockwise around the player, wrapping):
+  Tab on the keyboard. Flicking the right stick past 70% sideways, or swiping the mouse 40 counts
+  sideways within one tick, cycles in that direction; the stick (below 30%) or mouse (5 counts or less)
+  must come back to rest before the next flick counts. The pad's cycle-target binding stays empty;
+- the lock breaks beyond 25 m or after 1 s out of sight, and passes to the next target within 10 m
+  when the locked one dies.
 
 ## Sticks
 

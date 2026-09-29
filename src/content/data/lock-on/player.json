@@ -1,0 +1,18 @@
+{
+  "$schema": "../lock-on.schema.json",
+  "id": "player",
+  "name": "Player lock-on",
+  "notes": "Starting numbers from mw-e02.16. Pick within 20 m and 60° of the camera forward, break beyond 25 m or after 1.0 s out of sight (the bead's rules); a target that dies hands the lock to the best other target within 10 m. Sight lines start at 1.5 m (the camera pivot height) and a lock point counts as seen when half its sight line is clear, so glass and foliage do not break the lock but a wall does. Picking weighs angle against distance 2:1 (distanceWeight 0.5): a target straight ahead at 20 m beats one 30° off at 5 m by a small margin, which reads as 'the one I am looking at'. Priority is worth a quarter of the cone per point. The player turns to face the target at 720°/s (a quarter turn in 0.125 s, snappy without popping). Flicks: the right stick past 70% sideways, re-armed below 30% (common action-game values); a mouse swipe of 40 counts in one tick (about 2400 counts/s, a deliberate flick, not aiming drift), re-armed at 5 or less. Framing: the camera aims halfway between the player's head and the target's chest, 10° further down so the player stays in frame, easing in and out over 0.2 s. All are owner-tunable defaults, flagged for feel review.",
+  "selectRange": 20,
+  "coneAngle": 60,
+  "breakRange": 25,
+  "lostSightMs": 1000,
+  "switchRange": 10,
+  "eyeHeight": 1.5,
+  "minVisibility": 0.5,
+  "distanceWeight": 0.5,
+  "priorityWeight": 0.25,
+  "turnRate": 720,
+  "flick": { "stickThreshold": 0.7, "stickRest": 0.3, "mouseCounts": 40, "mouseRest": 5 },
+  "framing": { "time": 0.2, "targetWeight": 0.5, "pitchOffset": -10 }
+}

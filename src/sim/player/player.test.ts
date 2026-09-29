@@ -25,6 +25,7 @@ import {
   PLAYER_LOOK_SENSITIVITY,
   PlayerLook,
   playerLookSystem,
+  ViewAnchor,
   playerStart,
   spawnYaw,
   stickResponse,
@@ -141,7 +142,7 @@ describe('player spawn (mw-e02.23)', () => {
       }),
     ).toThrow(NoPlayerStartError);
     expect(world.entityCount).toBe(0);
-    expect(() => world.register(CharacterController, PlayerLook)).not.toThrow();
+    expect(() => world.register(CharacterController, PlayerLook, ViewAnchor)).not.toThrow();
   });
 
   it('an idle player does not move from its spawn', () => {
@@ -211,7 +212,7 @@ describe('ActionFrames drive the player (mw-e02.23)', () => {
   });
 
   it('the look system can run on its own, with the default sensitivity', () => {
-    const world = new World<ActionFrame>({ seed: 1 }).register(PlayerLook);
+    const world = new World<ActionFrame>({ seed: 1 }).register(PlayerLook, ViewAnchor);
     world.addSystem(playerLookSystem());
     const id = world.spawn();
     world.add(id, PlayerLook, { yaw: 0, pitch: 0 });

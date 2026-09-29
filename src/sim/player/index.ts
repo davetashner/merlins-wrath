@@ -16,6 +16,7 @@ export {
   restrainMovement,
   spawnYaw,
   stickResponse,
+  ViewAnchor,
   wrapYaw,
   yawForward,
   type LookInput,

@@ -21,33 +21,52 @@
 // Renderer-agnostic: the caller supplies the body object and how an object follows its entity
 // (object3DBinding for Three.js). The sim steps only through the frame loop, as ever; nothing here
 // mutates the sim after setup (the camera's collision queries are read-only).
+//
+// With `lockOn` (mw-e02.16) the player also gets lock-on (src/sim/targeting): the scene's targetable
+// spawns become lock targets, and while locked the orbit camera frames the player and target together
+// (LockFraming, presentation only). `lockTarget()` tells the HUD where the lock marker goes.
 
-import type { CameraTuning, ControllerTuning, Frozen, MoveTable } from '@content/index';
+import type {
+  CameraTuning,
+  ControllerTuning,
+  Frozen,
+  LockOnTuning,
+  MoveTable,
+  TargetableDef,
+} from '@content/index';
 import type { AnimationController, Pose } from '@render/animation/index';
 import {
   addInteractor,
   addSceneInteractables,
   ActionTimelineComponent,
   CharacterController,
+  giveTargetable,
   installInteraction,
+  installLockOn,
   installPlayer,
   interacted,
   interactionPrompt,
+  LockOnComponent,
   PlayerLook,
+  ViewAnchor,
   type BodyId,
   staminaOf,
   type PlayerMeleeOptions,
   type CollisionWorld,
+  type DefeatedCheck,
   type EntityId,
   type Interaction,
   type InteractionPrompt,
   type InteractorKit,
+  type LineOfSight,
   type LoadedScene,
   type SightWorld,
+  type TargetLocator,
   type World,
 } from '@sim/index';
 import {
   applyOrbitPose,
+  LockFraming,
   lookSettings,
   nearPlaneClear,
   OrbitCamera,
@@ -79,6 +98,29 @@ export interface PlayerReadout {
   readonly pitch: number;
   /** Combat state, when the player has moves (mw-e04.6): the e2e reads the chain from it. */
   readonly combat?: PlayerCombatReadout;
+  /** The locked target's entity, or null; present only when the player has lock-on. */
+  readonly lock?: EntityId | null;
+}
+
+/** Lock-on for the player (mw-e02.16). */
+export interface TestbedLockOn {
+  /** Lock-on tuning (content `lock-on`, `player`). */
+  readonly tuning: Frozen<LockOnTuning>;
+  /** Line of sight to lock points: LineOfSight over the sim's physics (RapierSightWorld). */
+  readonly sight: Pick<LineOfSight, 'ray'>;
+  /** The targetable profile a scene spawn names (content `targetable`). */
+  readonly profile: (id: string) => Frozen<TargetableDef> | undefined;
+  /** Where targets are; defaults to their scene position. */
+  readonly locate?: TargetLocator;
+  /** Which targets are defeated (zeroHealth where the damage model is registered). */
+  readonly defeated?: DefeatedCheck;
+}
+
+/** The locked target and its main lock point, for the HUD marker. */
+export interface LockTarget {
+  readonly entity: EntityId;
+  /** World metres. */
+  readonly point: Vec3;
 }
 
 /** The player's combat state in a readout. */
@@ -175,6 +217,8 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
   readonly melee?: PlayerMeleeOptions;
   /** Animates the body from the sim (mw-e02.6); absent = a still body. */
   readonly animation?: PlayerAnimationView;
+  /** Gives the player lock-on (mw-e02.16); absent = none. */
+  readonly lockOn?: TestbedLockOn;
 }
 
 export interface TestbedPlayer {
@@ -191,6 +235,8 @@ export interface TestbedPlayer {
   readout(): PlayerReadout | undefined;
   /** What the Interact prompt shows now; undefined with nothing in focus or no interaction. */
   prompt(): InteractionPrompt | undefined;
+  /** The locked target as of the last tick, or undefined when not locked (or no lock-on). */
+  lockTarget(): LockTarget | undefined;
   /** Unbinds the body and removes the player (its systems stay; they find no player). */
   dispose(): void;
 }
@@ -295,6 +341,29 @@ export function setupTestbedPlayer<TObject, TCommand>(
     }
   }
   const hasMoves = options.moves !== undefined;
+  const { lockOn } = options;
+  let framing: LockFraming | undefined;
+  if (lockOn !== undefined) {
+    installLockOn(world, entity, {
+      tuning: lockOn.tuning,
+      sight: lockOn.sight,
+      ...(lockOn.locate !== undefined && { locate: lockOn.locate }),
+      ...(lockOn.defeated !== undefined && { defeated: lockOn.defeated }),
+    });
+    for (const { entity: target, spawn } of scene.spawns) {
+      const profile = spawn.targetable === undefined ? undefined : lockOn.profile(spawn.targetable);
+      if (profile !== undefined) giveTargetable(world, target, profile);
+    }
+    framing = new LockFraming(lockOn.tuning.framing, { min: look.minPitch, max: look.maxPitch });
+  }
+
+  const lockTarget = (): LockTarget | undefined => {
+    const target = lockOn && world.get(entity, LockOnComponent)?.target;
+    const anchor = world.get(entity, ViewAnchor);
+    return target == null || anchor === undefined
+      ? undefined
+      : { entity: target, point: anchor.point };
+  };
 
   // Remember the interpolated transform render sync last applied: the camera follows exactly what
   // is drawn.
@@ -328,6 +397,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
           blocking: pool?.blocking ?? false,
         },
       }),
+      ...(lockOn !== undefined && { lock: world.get(entity, LockOnComponent)?.target ?? null }),
     };
   };
 
@@ -363,18 +433,16 @@ export function setupTestbedPlayer<TObject, TCommand>(
     if (shown === undefined || state === undefined || look === undefined) return;
     const height = state.crouched ? tuning.capsule.crouchHeight : tuning.capsule.height;
     // Coming back from the debug camera is a cut: no recovery from wherever it last was.
-    if (!drove) orbit.cut();
+    if (!drove) {
+      orbit.cut();
+      framing?.cut();
+    }
     drove = true;
-    const pose = orbit.update(
-      {
-        feet: shown.position,
-        yaw: yawOf(shown.rotation),
-        pitch: drawnPitch(look.pitch, alpha),
-        height,
-      },
-      camera,
-      dt,
-    );
+    const feet = shown.position;
+    const simView = { yaw: yawOf(shown.rotation), pitch: drawnPitch(look.pitch, alpha) };
+    const pivot = { x: feet.x, y: feet.y + cameraTuning.pivotHeight, z: feet.z };
+    const view = framing?.update(simView, pivot, lockTarget()?.point, dt) ?? simView;
+    const pose = orbit.update({ feet, ...view, height }, camera, dt);
     applyOrbitPose(camera, pose);
     if (publishCamera === undefined) return;
     counts.frames += 1;
@@ -419,6 +487,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
       if (interaction === undefined || !world.isAlive(entity)) return undefined;
       return interactionPrompt(world, entity);
     },
+    lockTarget,
     dispose() {
       unsubscribe?.();
       body?.driver.remove(entity);

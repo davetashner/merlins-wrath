@@ -73,6 +73,11 @@ check enforces this).
   earlier commands, and Esc closes it. Without the flag nothing loads.
 - Crates and other movable props spawned from the developer console are now physics objects like the
   scene's own: `spawn testprop-crate 3` drops three wooden crates that fall, stack and tumble.
+- Lock-on: press Q (middle click, or the right-stick click) to lock on to the target nearest the
+  centre of the view, shown by a gold ring. While locked you face it and circle it with A/D, and the
+  camera frames you both. Tab, a quick mouse swipe or a right-stick flick switches to the next target
+  left or right; the lock breaks beyond 25 m or after a second out of sight. The testbed arena has
+  three training dummies to practise on.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.
