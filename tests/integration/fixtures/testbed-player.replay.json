@@ -3,7 +3,7 @@
   "snapshotEncoding": 1,
   "scenario": "testbed-player",
   "buildSha": "local",
-  "contentHash": "015b3a7e3f57f24a",
+  "contentHash": "bb961101c81ac3ec",
   "seed": 1,
   "stepHz": 60,
   "ticks": 600,

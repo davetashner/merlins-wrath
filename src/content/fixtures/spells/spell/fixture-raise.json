@@ -1,0 +1,25 @@
+{
+  "id": "fixture-raise",
+  "name": "Fixture Raise",
+  "school": "necromancy",
+  "tier": 1,
+  "next": [],
+  "cost": { "mana": 40 },
+  "castTime": 1.5,
+  "cooldown": 20,
+  "delivery": { "kind": "summonPoint", "range": 8, "lineOfSight": true },
+  "effects": [
+    {
+      "op": "summon",
+      "creature": "fixture-guard",
+      "duration": 60,
+      "count": 1,
+      "maxActive": 2,
+      "consumes": { "property": "remains", "radius": 3, "count": 1 }
+    }
+  ],
+  "tags": ["necromancy", "summon"],
+  "vfxCue": "vfx-spell-necromancy-fixture-raise",
+  "sfxCue": "sfx-spell-necromancy-fixture-raise-cast",
+  "flags": { "tooUseful": false, "castWhileMoving": false }
+}

@@ -1,0 +1,1032 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique spell id, e.g. \"ember\". Stable once shipped (saves)."
+    },
+    "schemaVersion": {
+      "default": 1,
+      "description": "SpellDefinition schema version, for future migrations.",
+      "type": "number",
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name, e.g. \"Ember\"."
+    },
+    "school": {
+      "type": "string",
+      "enum": [
+        "fire",
+        "frost",
+        "storm",
+        "arcane",
+        "illusion",
+        "alteration",
+        "conjuration",
+        "necromancy",
+        "nature",
+        "light",
+        "shadow",
+        "gravity",
+        "time",
+        "somnomancy"
+      ],
+      "description": "School of magic."
+    },
+    "tier": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Step in its verb chain: 1 is a first verb, higher tiers follow on from it."
+    },
+    "next": {
+      "description": "Follow-on verbs this spell leads to (unlock rules: e07.8).",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+        "x-contentRef": "spell"
+      }
+    },
+    "cost": {
+      "type": "object",
+      "properties": {
+        "mana": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Mana spent when the cast releases."
+        }
+      },
+      "required": [
+        "mana"
+      ],
+      "additionalProperties": false,
+      "description": "What a cast costs."
+    },
+    "castTime": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Wind-up seconds before release; 0 = instant."
+    },
+    "channel": {
+      "description": "Present for channelled spells (held after release, e06.4).",
+      "type": "object",
+      "properties": {
+        "interval": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Seconds between channel ticks; effects apply each tick."
+        },
+        "manaPerSecond": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Mana drained per second while channelled."
+        },
+        "maxDuration": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Longest it can be channelled, seconds."
+        }
+      },
+      "required": [
+        "interval",
+        "manaPerSecond",
+        "maxDuration"
+      ],
+      "additionalProperties": false
+    },
+    "cooldown": {
+      "default": 0,
+      "description": "Seconds after release before it can be cast again.",
+      "type": "number",
+      "minimum": 0
+    },
+    "delivery": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "self"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false,
+          "description": "Affects the caster only."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "touch"
+            },
+            "reach": {
+              "default": 1.5,
+              "description": "How far from the caster it can touch, metres.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false,
+          "description": "Affects what the caster touches in front of them."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "projectile"
+            },
+            "speed": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Flight speed, metres per second."
+            },
+            "maxRange": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Distance after which it fizzles, metres."
+            },
+            "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Collision radius, metres."
+            },
+            "gravity": {
+              "default": 0,
+              "description": "Downward acceleration, m/s²; 0 flies straight, 9.81 arcs like a stone.",
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "kind",
+            "speed",
+            "maxRange",
+            "radius"
+          ],
+          "additionalProperties": false,
+          "description": "A physical projectile that flies and hits (e06.6)."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "aoe"
+            },
+            "shape": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "sphere"
+                    },
+                    "radius": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "description": "Radius, metres."
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "radius"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "cone"
+                    },
+                    "length": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "description": "Reach along the aim direction, metres."
+                    },
+                    "angle": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "maximum": 180,
+                      "description": "Full opening angle, degrees (at most 180)."
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "length",
+                    "angle"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "line"
+                    },
+                    "length": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "description": "Length along the aim direction, metres."
+                    },
+                    "width": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "description": "Width, metres."
+                    },
+                    "height": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "description": "Height, metres (a wall of fire is tall; a trail of frost is not)."
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "length",
+                    "width",
+                    "height"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "const": "decal"
+                    },
+                    "radius": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "description": "Radius of the ground patch, metres."
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "radius"
+                  ],
+                  "additionalProperties": false
+                }
+              ],
+              "description": "Area shape: sphere, cone, line (wall) or ground decal."
+            },
+            "origin": {
+              "default": "caster",
+              "description": "Centred on the caster or the aim point.",
+              "type": "string",
+              "enum": [
+                "caster",
+                "aim"
+              ]
+            },
+            "range": {
+              "default": 0,
+              "description": "Farthest aim point from the caster, metres (0 for caster-centred areas).",
+              "type": "number",
+              "minimum": 0
+            },
+            "lineOfSight": {
+              "default": false,
+              "description": "Only targets with line of sight to the centre are affected.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "shape"
+          ],
+          "additionalProperties": false,
+          "description": "An instant area of effect (e06.7); persistent areas are spawnVolume ops."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "beam"
+            },
+            "length": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Beam reach, metres."
+            },
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Beam width, metres."
+            },
+            "maxBounces": {
+              "default": 0,
+              "description": "Reflections off reflective surfaces before it stops (0–8).",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 8
+            }
+          },
+          "required": [
+            "kind",
+            "length",
+            "width"
+          ],
+          "additionalProperties": false,
+          "description": "A continuous ray that may reflect off reflective surfaces (e06.7)."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "summonPoint"
+            },
+            "range": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Farthest point from the caster it can be placed at, metres."
+            },
+            "lineOfSight": {
+              "default": true,
+              "description": "The point must be visible from the caster.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "range"
+          ],
+          "additionalProperties": false,
+          "description": "A chosen point on the ground where summons and volumes appear."
+        }
+      ],
+      "description": "How the spell reaches its targets; effect ops apply to what it reaches."
+    },
+    "effects": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "amounts": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "enum": [
+                    "slash",
+                    "pierce",
+                    "blunt",
+                    "fire",
+                    "frost",
+                    "shock",
+                    "arcane",
+                    "poison"
+                  ]
+                },
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "description": "Damage points per damage type (before resistances); unlisted types deal 0."
+              },
+              "poiseDamage": {
+                "default": 0,
+                "description": "Poise damage in points.",
+                "type": "number",
+                "minimum": 0
+              },
+              "staminaDamage": {
+                "default": 0,
+                "description": "Stamina drained from a blocker, in points (before shield stability).",
+                "type": "number",
+                "minimum": 0
+              },
+              "impulse": {
+                "description": "Knockback impulse, N·s, in the attacker’s frame (+z forward, +y up).",
+                "default": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                },
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "z": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y",
+                  "z"
+                ],
+                "additionalProperties": false
+              },
+              "impactForce": {
+                "default": 0,
+                "description": "Peak impact force, N (breakables, knockdown).",
+                "type": "number",
+                "minimum": 0
+              },
+              "tags": {
+                "description": "Damage-packet tags every hit carries, e.g. \"critical\" (damage model tags).",
+                "default": [],
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                }
+              },
+              "op": {
+                "type": "string",
+                "const": "damage"
+              }
+            },
+            "required": [
+              "amounts",
+              "op"
+            ],
+            "additionalProperties": false,
+            "description": "Deals a damage packet through the damage model (same template as a move’s)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "stimulus"
+              },
+              "element": {
+                "type": "string",
+                "enum": [
+                  "heat",
+                  "cold",
+                  "water",
+                  "charge",
+                  "force",
+                  "gas",
+                  "light",
+                  "blunt",
+                  "slash",
+                  "pierce"
+                ],
+                "description": "Stimulus element (stimulus API)."
+              },
+              "intensity": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Total amount at full falloff, in the element’s unit (°C, wetness, N·s, J…)."
+              },
+              "radius": {
+                "default": 0,
+                "description": "Sphere radius around each hit point, metres; 0 = the delivery’s own contact/shape.",
+                "type": "number",
+                "minimum": 0
+              },
+              "duration": {
+                "default": 0,
+                "description": "Seconds to spread the intensity over; 0 = at once.",
+                "type": "number",
+                "minimum": 0
+              },
+              "falloff": {
+                "default": "linear",
+                "description": "Intensity falloff inside the shape (stimulus API): linear to the rim, or none.",
+                "type": "string",
+                "enum": [
+                  "linear",
+                  "none"
+                ]
+              },
+              "gas": {
+                "description": "Gas type id; required for (and only for) element \"gas\".",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              }
+            },
+            "required": [
+              "op",
+              "element",
+              "intensity"
+            ],
+            "additionalProperties": false,
+            "description": "Emits a world stimulus; properties decide what burns, freezes or conducts (e06.5)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "force"
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "push",
+                  "pull",
+                  "impulse",
+                  "lift"
+                ],
+                "description": "push away, pull toward, directed impulse or sustained lift."
+              },
+              "impulse": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Impulse, N·s (per second for a sustained lift)."
+              },
+              "duration": {
+                "default": 0,
+                "description": "Seconds a sustained force lasts; 0 = one impulse.",
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "op",
+              "mode",
+              "impulse"
+            ],
+            "additionalProperties": false,
+            "description": "Pushes, pulls or lifts what it reaches, scaled by weight (e06.8)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "status"
+              },
+              "status": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "Status id, e.g. \"rooted\" (status definitions: e06.9)."
+              },
+              "duration": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Seconds the status lasts."
+              },
+              "stacks": {
+                "default": 1,
+                "description": "Stacks applied.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 99
+              }
+            },
+            "required": [
+              "op",
+              "status",
+              "duration"
+            ],
+            "additionalProperties": false,
+            "description": "Applies a status (rooted, slowed, levitating, …)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "summon"
+              },
+              "creature": {
+                "description": "Creature summoned.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "creature"
+              },
+              "duration": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Seconds before it is dismissed."
+              },
+              "count": {
+                "default": 1,
+                "description": "How many one cast summons.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10
+              },
+              "maxActive": {
+                "default": 1,
+                "description": "Most alive per caster; summoning more dismisses the oldest.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 20
+              },
+              "consumes": {
+                "description": "World material the summon needs and uses up (e.g. property \"remains\").",
+                "type": "object",
+                "properties": {
+                  "property": {
+                    "type": "string",
+                    "description": "A canonical world property key (docs/design/world-properties.md)."
+                  },
+                  "radius": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Search radius around the summon point, metres."
+                  },
+                  "count": {
+                    "default": 1,
+                    "description": "Entities with the property consumed.",
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10
+                  }
+                },
+                "required": [
+                  "property",
+                  "radius"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "op",
+              "creature",
+              "duration"
+            ],
+            "additionalProperties": false,
+            "description": "Summons a temporary creature (e06.10)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "transform"
+              },
+              "into": {
+                "description": "Creature form the target takes.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "creature"
+              },
+              "duration": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Seconds before it changes back."
+              }
+            },
+            "required": [
+              "op",
+              "into",
+              "duration"
+            ],
+            "additionalProperties": false,
+            "description": "Temporarily turns a creature into another (e06.11)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "displace"
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "teleport",
+                  "swap",
+                  "dash"
+                ],
+                "description": "teleport to the aim point, swap with the target, or dash."
+              },
+              "distance": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Farthest displacement, metres."
+              },
+              "lineOfSight": {
+                "default": true,
+                "description": "The destination must be visible.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "op",
+              "mode",
+              "distance"
+            ],
+            "additionalProperties": false,
+            "description": "Moves the caster or target with safe placement (e06.12)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "spawnVolume"
+              },
+              "shape": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "sphere"
+                      },
+                      "radius": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "description": "Radius, metres."
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "radius"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "cone"
+                      },
+                      "length": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "description": "Reach along the aim direction, metres."
+                      },
+                      "angle": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "maximum": 180,
+                        "description": "Full opening angle, degrees (at most 180)."
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "length",
+                      "angle"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "line"
+                      },
+                      "length": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "description": "Length along the aim direction, metres."
+                      },
+                      "width": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "description": "Width, metres."
+                      },
+                      "height": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "description": "Height, metres (a wall of fire is tall; a trail of frost is not)."
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "length",
+                      "width",
+                      "height"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "const": "decal"
+                      },
+                      "radius": {
+                        "type": "number",
+                        "exclusiveMinimum": 0,
+                        "description": "Radius of the ground patch, metres."
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "radius"
+                    ],
+                    "additionalProperties": false
+                  }
+                ],
+                "description": "Area shape: sphere, cone, line (wall) or ground decal."
+              },
+              "element": {
+                "type": "string",
+                "enum": [
+                  "heat",
+                  "cold",
+                  "water",
+                  "charge",
+                  "force",
+                  "gas",
+                  "light",
+                  "blunt",
+                  "slash",
+                  "pierce"
+                ],
+                "description": "Stimulus element the volume emits while it lasts."
+              },
+              "intensity": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Amount per second at full falloff, in the element’s unit."
+              },
+              "duration": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Seconds the volume lasts."
+              },
+              "falloff": {
+                "default": "linear",
+                "description": "Intensity falloff inside the shape (stimulus API): linear to the rim, or none.",
+                "type": "string",
+                "enum": [
+                  "linear",
+                  "none"
+                ]
+              },
+              "gas": {
+                "description": "Gas type id; required for (and only for) element \"gas\".",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              }
+            },
+            "required": [
+              "op",
+              "shape",
+              "element",
+              "intensity",
+              "duration"
+            ],
+            "additionalProperties": false,
+            "description": "Leaves a persistent stimulus volume (fire wall, ice sheet, cloud) (e06.5, e06.7)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "light"
+              },
+              "intensity": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Light output (a torch is about 100)."
+              },
+              "radius": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Reach, metres."
+              },
+              "duration": {
+                "default": 0,
+                "description": "Seconds it shines; 0 = a flash.",
+                "type": "number",
+                "minimum": 0
+              },
+              "attach": {
+                "default": "delivery",
+                "description": "Follows the caster, the delivery (projectile, beam) or stays at the hit point.",
+                "type": "string",
+                "enum": [
+                  "caster",
+                  "delivery",
+                  "point"
+                ]
+              }
+            },
+            "required": [
+              "op",
+              "intensity",
+              "radius"
+            ],
+            "additionalProperties": false,
+            "description": "Adds light to the light field that stealth and AI perceive (e06.14)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "noise"
+              },
+              "phase": {
+                "type": "string",
+                "enum": [
+                  "windup",
+                  "release",
+                  "impact"
+                ],
+                "description": "Cast phase it sounds in."
+              },
+              "loudness": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Hearing radius, metres, before sound propagation attenuates it."
+              }
+            },
+            "required": [
+              "op",
+              "phase",
+              "loudness"
+            ],
+            "additionalProperties": false,
+            "description": "Makes a sound that stealth and AI hear (e06.14)."
+          }
+        ],
+        "description": "One effect op; ops apply in list order."
+      },
+      "description": "Effect ops, applied in order to what it reaches."
+    },
+    "tags": {
+      "description": "Free tags for queries and dispel rules, e.g. \"fire\", \"control\".",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
+    },
+    "vfxCue": {
+      "type": "string",
+      "pattern": "^vfx-[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "VFX cue id (style bible §15.1)."
+    },
+    "sfxCue": {
+      "type": "string",
+      "pattern": "^sfx-[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Audio cue id (audio bible §6), without the round-robin number."
+    },
+    "bookId": {
+      "description": "Book that teaches it (book items: e07.1); absent for spells no book teaches.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "flags": {
+      "description": "Design flags.",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "tooUseful": {
+          "default": false,
+          "description": "Deliberately powerful: protected from balance nerfs (constitution §4).",
+          "type": "boolean"
+        },
+        "castWhileMoving": {
+          "default": false,
+          "description": "Moving does not interrupt its wind-up or channel (e06.4).",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "school",
+    "tier",
+    "cost",
+    "castTime",
+    "delivery",
+    "effects",
+    "vfxCue",
+    "sfxCue"
+  ],
+  "additionalProperties": false
+}

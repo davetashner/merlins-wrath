@@ -1,0 +1,19 @@
+{
+  "id": "fixture-shift",
+  "name": "Fixture Shift",
+  "school": "alteration",
+  "tier": 1,
+  "next": [],
+  "cost": { "mana": 25 },
+  "castTime": 0,
+  "cooldown": 6,
+  "delivery": { "kind": "touch", "reach": 1.5 },
+  "effects": [
+    { "op": "transform", "into": "fixture-hound", "duration": 15 },
+    { "op": "displace", "mode": "swap", "distance": 1.5, "lineOfSight": true }
+  ],
+  "tags": ["alteration"],
+  "vfxCue": "vfx-spell-alteration-fixture-shift",
+  "sfxCue": "sfx-spell-alteration-fixture-shift-cast",
+  "flags": { "tooUseful": true, "castWhileMoving": true }
+}
