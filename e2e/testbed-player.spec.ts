@@ -81,9 +81,35 @@ test('AC-1: holding W for 1 s moves the player capsule at least 4 m forward, wit
   const problems = collectProblems(page);
   await play(page);
   const before = await player(page);
-  await page.keyboard.down('KeyW');
-  await page.waitForTimeout(1_000);
-  await page.keyboard.up('KeyW');
+  // "1 s" is sim time (60 ticks), not wall time: a slow runner can take well over a second to run
+  // 60 ticks. So W goes down, and comes up on the first animation frame whose published tick shows
+  // 60 ticks since the press. The events are real DOM key events through the game's own listeners;
+  // the frame loop runs at most 5 ticks a frame, so W may stay down a few ticks longer.
+  const ticksHeld = await page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        const app = document.querySelector<HTMLElement>('#app');
+        const tick = () =>
+          (JSON.parse(app?.dataset['player'] ?? '{"tick":0}') as { tick: number }).tick;
+        const key = (type: string) => {
+          window.dispatchEvent(new KeyboardEvent(type, { code: 'KeyW', key: 'w' }));
+        };
+        const pressedAt = tick();
+        key('keydown');
+        const watch = () => {
+          const held = tick() - pressedAt;
+          if (held >= 60) {
+            key('keyup');
+            resolve(held);
+          } else {
+            requestAnimationFrame(watch);
+          }
+        };
+        requestAnimationFrame(watch);
+      }),
+  );
+  expect(ticksHeld).toBeGreaterThanOrEqual(60);
+  expect(ticksHeld).toBeLessThanOrEqual(66);
   const after = await waitTicks(page, 15); // coast to a stop
   // The player starts facing +z (into the room, towards the doorway).
   expect(after.position.z - before.position.z).toBeGreaterThanOrEqual(4);
@@ -111,38 +137,44 @@ test('AC-2: walking into the testbed wall stops the capsule in front of it', asy
 test('AC-3: Space leaves the ground and lands again within 1 s', async ({ page }) => {
   const problems = collectProblems(page);
   await play(page);
-  // Sample data-player on every animation frame, in the page, so no frame of the jump is missed.
-  const sampling = page.evaluate(
+  // As in AC-1, "1 s" is 60 sim ticks. Space is tapped from inside the page and data-player is
+  // sampled on every animation frame for 90 ticks after the press, so no frame of the jump is missed
+  // however slowly the runner draws.
+  const samples = await page.evaluate(
     () =>
-      new Promise<{ ms: number; y: number; grounded: boolean }[]>((resolve) => {
+      new Promise<{ ticks: number; y: number; grounded: boolean }[]>((resolve) => {
         const app = document.querySelector<HTMLElement>('#app');
-        const samples: { ms: number; y: number; grounded: boolean }[] = [];
-        const start = performance.now();
-        const read = () => {
-          const data = JSON.parse(app?.dataset['player'] ?? 'null') as {
+        const read = () =>
+          JSON.parse(app?.dataset['player'] ?? 'null') as {
+            tick: number;
             position: { y: number };
             grounded: boolean;
           };
+        const pressedAt = read().tick;
+        for (const type of ['keydown', 'keyup']) {
+          window.dispatchEvent(new KeyboardEvent(type, { code: 'Space', key: ' ' }));
+        }
+        const samples: { ticks: number; y: number; grounded: boolean }[] = [];
+        const sample = () => {
+          const data = read();
           samples.push({
-            ms: performance.now() - start,
+            ticks: data.tick - pressedAt,
             y: data.position.y,
             grounded: data.grounded,
           });
-          if (performance.now() - start < 1_500) requestAnimationFrame(read);
+          if (data.tick - pressedAt < 90) requestAnimationFrame(sample);
           else resolve(samples);
         };
-        requestAnimationFrame(read);
+        requestAnimationFrame(sample);
       }),
   );
-  await page.keyboard.press('Space');
-  const samples = await sampling; // times are from before the press
   const offset = samples.findIndex((s) => !s.grounded);
   expect(offset).toBeGreaterThanOrEqual(0); // left the ground
   const air = samples.slice(offset);
   expect(Math.max(...air.map((s) => s.y))).toBeGreaterThan(0.5);
   const landed = air.find((s) => s.grounded);
   expect(landed).toBeDefined();
-  expect(landed?.ms ?? Infinity).toBeLessThanOrEqual(1_000);
+  expect(landed?.ticks ?? Infinity).toBeLessThanOrEqual(60);
   expect(problems).toEqual([]);
 });
 
