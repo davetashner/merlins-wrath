@@ -94,6 +94,12 @@ for (const deviceScaleFactor of [1, 3]) {
     test('AC-2: after resizing 1280×720 → 1920×1080 the drawing buffer is viewport × min(dpr, cap)', async ({
       page,
     }) => {
+      // At DPR 3 the capped buffer is 3840×2160. CI runners have no GPU, so Chromium renders with
+      // SwiftShader on the CPU, and since the testbed's follow camera (mw-e02.23) fills the whole
+      // frame with lit, shadowed geometry (the old overview camera left about three quarters of it
+      // background), each frame there takes about 2.5 s. The test waits for six frames or so, which
+      // no longer fits the default 30 s. Real GPUs draw the same view in about 3 ms (e2e/perf.spec.ts).
+      test.slow(deviceScaleFactor > 1, 'software-rendered 4K frames on GPU-less CI runners');
       const problems = collectProblems(page);
       await page.goto('/');
       await expect(page.locator('#app')).toHaveAttribute('data-first-frame-ms', /^\d+$/);

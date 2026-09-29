@@ -82,7 +82,7 @@ describe('scene loader glue (mw-e00.21)', () => {
     ]);
     expect(sync.size).toBe(4);
     expect(built[0]?.transform?.position).toEqual({ x: 0, y: 0, z: 0 });
-    expect(built[1]?.transform?.position).toEqual({ x: 0, y: 0, z: -2 });
+    expect(built[1]?.transform?.position).toEqual({ x: 0, y: 0, z: -1 });
   });
 
   it('AC-2: unloading leaves zero scene entities, zero colliders and zero render objects', () => {

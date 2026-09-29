@@ -177,7 +177,7 @@
   "spawns": [
     {
       "id": "player-start",
-      "at": [0, 0, -2],
+      "at": [0, 0, -1],
       "tags": ["player-start"]
     },
     {

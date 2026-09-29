@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { DEBUG_CAMERA_HINT, sceneErrorMessage, sceneLabel } from './scene-hud';
+import {
+  DEBUG_CAMERA_HINT,
+  PLAYER_CONTROLS_HINT,
+  sceneErrorMessage,
+  sceneLabel,
+} from './scene-hud';
 
 describe('scene overlay text (mw-e00.21)', () => {
   it('labels the scene with its name, id and the build SHA', () => {
@@ -7,6 +12,10 @@ describe('scene overlay text (mw-e00.21)', () => {
       'Greybox testbed (testbed) · build 1a2b3c4',
     );
     expect(DEBUG_CAMERA_HINT).toMatch(/^F2: fly camera/);
+  });
+
+  it('tells the player how to take control (mw-e02.23)', () => {
+    expect(PLAYER_CONTROLS_HINT).toMatch(/^Click to play: WASD move, .*Space jump/);
   });
 
   it('AC-4: the unknown-scene error names the request and links every available scene', () => {
