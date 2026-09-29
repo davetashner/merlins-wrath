@@ -2,7 +2,7 @@ import type { ControllerTuning, Frozen } from '@content/index';
 import { describe, expect, it } from 'vitest';
 import { SimClock } from '../clock';
 import type { Vec3 } from '../stimulus/shapes';
-import type { CollisionHit, CollisionWorld } from './collision-world';
+import type { Capsule, CollisionHit, CollisionWorld } from './collision-world';
 import {
   capsuleOf,
   controllerParams,
@@ -115,6 +115,83 @@ function onFloor(feet = v(0, 0, 0), extra: readonly GreyboxShape[] = []): Rig {
   rig.step(IDLE_INPUT, 3);
   expect(rig.state.grounded).toBe(true);
   return rig;
+}
+
+/**
+ * A CollisionWorld of boxes whose edges and corners are rounded, as on Rapier (the exact capsule
+ * Minkowski sum), where the fake's are square. Test-only and numerical: a sweep finds the first
+ * travel at which the capsule's vertical core comes within its radius of a box, by ternary search
+ * and bisection on that (convex) distance. Rays, overlaps and velocities come from the fake.
+ */
+class RoundedBoxWorld implements CollisionWorld {
+  private readonly square: FakeCollisionWorld;
+
+  constructor(private readonly boxes: readonly GreyboxShape[]) {
+    this.square = new FakeCollisionWorld(boxes);
+  }
+
+  /** The closest points of the core (vertical, from `base` up `core`) and box `b`, and their gap. */
+  private static closest(base: Vec3, core: number, b: GreyboxShape) {
+    const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
+    const x = clamp(base.x, b.min.x, b.max.x);
+    const z = clamp(base.z, b.min.z, b.max.z);
+    // The core's nearest height to the box's y range, and the box's nearest height to that.
+    const coreY = clamp(b.max.y, base.y, base.y + core);
+    const boxY = clamp(coreY, b.min.y, b.max.y);
+    const on = v(base.x, coreY, base.z);
+    const at = v(x, boxY, z);
+    const gap = Math.sqrt((on.x - at.x) ** 2 + (on.y - at.y) ** 2 + (on.z - at.z) ** 2);
+    return { on, at, gap };
+  }
+
+  sweepCapsule(capsule: Capsule, feet: Vec3, d: Vec3, maxDistance: number) {
+    const { radius } = capsule;
+    const core = capsule.height - 2 * radius;
+    const baseAt = (s: number) => v(feet.x + d.x * s, feet.y + radius + d.y * s, feet.z + d.z * s);
+    let best: CollisionHit | undefined;
+    this.boxes.forEach((b, index) => {
+      const gap = (s: number) => RoundedBoxWorld.closest(baseAt(s), core, b).gap;
+      let s: number;
+      if (gap(0) <= radius + 1e-9) {
+        if (!(gap(1e-6) < gap(0))) return; // touching and moving away or along
+        s = 0;
+      } else {
+        let lo = 0;
+        let hi = maxDistance;
+        for (let i = 0; i < 100; i++) {
+          const a = lo + (hi - lo) / 3;
+          const c = hi - (hi - lo) / 3;
+          if (gap(a) <= gap(c)) hi = c;
+          else lo = a;
+        }
+        if (gap(hi) > radius) return;
+        lo = 0;
+        for (let i = 0; i < 100; i++) {
+          const mid = (lo + hi) / 2;
+          if (gap(mid) <= radius) hi = mid;
+          else lo = mid;
+        }
+        s = lo;
+      }
+      if (best !== undefined && s >= best.distance) return;
+      const { on, at, gap: g } = RoundedBoxWorld.closest(baseAt(s), core, b);
+      const normal = v((on.x - at.x) / g, (on.y - at.y) / g, (on.z - at.z) / g);
+      best = { distance: s, normal, point: at, body: index + 1 };
+    });
+    return best;
+  }
+
+  raycast(origin: Vec3, direction: Vec3, maxDistance: number) {
+    return this.square.raycast(origin, direction, maxDistance);
+  }
+
+  overlapCapsule(capsule: Capsule, feet: Vec3) {
+    return this.square.overlapCapsule(capsule, feet);
+  }
+
+  bodyVelocity() {
+    return v(0, 0, 0);
+  }
 }
 
 describe('controller params', () => {
@@ -332,6 +409,107 @@ describe('steps and ground snapping', () => {
     ]);
     rig.step(EAST, 60);
     expect(rig.state.position.x).toBeCloseTo(2 - 0.35 - SKIN, 6);
+  });
+});
+
+describe('rounded edges (mw-e02.24)', () => {
+  /** A rig on a floor with rounded-edge collision, running east at a step from standing. */
+  function roundedRun(stepTop: number, ticks = 80) {
+    const shapes = [FLOOR, box(v(2, 0, -5), v(6, stepTop, 5))];
+    const rig = new Rig(shapes, v(-4, 0, 0), [], new RoundedBoxWorld(shapes));
+    rig.step(IDLE_INPUT, 3);
+    rig.step(EAST, 20); // up to speed
+    const xs: number[] = [];
+    for (let i = 0; i < ticks; i++) xs.push(rig.step(EAST).position.x);
+    const speeds = xs.slice(1).map((x, i) => (x - must(xs[i])) * HZ);
+    return { rig, minSpeed: Math.min(...speeds) };
+  }
+
+  it('reports tilted normals at edges, where the fake reports the face (the regression setup)', () => {
+    const shapes = [box(v(2, 0, -5), v(6, 0.3, 5))];
+    const capsule = { radius: 0.35, height: 1.8 };
+    // Feet level with the step's top, the axis 0.25 m short of its edge: sweeping down meets it.
+    const feet = v(2 - 0.25, 0.4, 0);
+    const rounded = must(new RoundedBoxWorld(shapes).sweepCapsule(capsule, feet, v(0, -1, 0), 1));
+    const square = must(new FakeCollisionWorld(shapes).sweepCapsule(capsule, feet, v(0, -1, 0), 1));
+    expect(square.normal).toEqual(v(0, 1, 0));
+    expect(rounded.normal.y).toBeLessThan(Math.SQRT1_2); // steeper than the 45° slope limit
+    expect(rounded.point.x).toBeCloseTo(2, 6);
+    expect(rounded.point.y).toBeCloseTo(0.3, 6);
+  });
+
+  it('AC-1: walks up a 0.30 m step with rounded edges losing no more than 10% speed', () => {
+    const { rig, minSpeed } = roundedRun(0.3);
+    expect(minSpeed).toBeGreaterThanOrEqual(4.5);
+    const onTop = rig.trace.filter((s) => s.position.x > 2.2);
+    expect(onTop.length).toBeGreaterThan(10);
+    expect(onTop.every((s) => s.grounded && s.position.y > 0.29)).toBe(true);
+    expect(onTop.every((s) => s.groundNormal.y === 1)).toBe(true);
+  });
+
+  it('AC-1: is still blocked by a 0.40 m step with rounded edges', () => {
+    const { rig } = roundedRun(0.4);
+    expect(rig.state.position.x).toBeCloseTo(2 - 0.35 - SKIN, 3);
+    expect(Math.max(...rig.trace.map((s) => s.position.y))).toBeLessThan(0.02);
+    expect(rig.trace.every((s) => s.grounded)).toBe(true);
+    expect(hspeed(rig.state)).toBeLessThan(0.6);
+  });
+
+  it('rolls off a rounded edge still grounded, then snaps down (no pop on the way)', () => {
+    const shapes = [FLOOR, box(v(2, 0, -5), v(6, 0.3, 5))];
+    const rig = new Rig(shapes, v(3, 0.3, 0), [], new RoundedBoxWorld(shapes));
+    rig.until(EAST, (s) => s.position.x > 7);
+    expect(rig.trace.every((s) => s.grounded)).toBe(true);
+    const ys = rig.trace.map((s) => s.position.y);
+    expect(ys.slice(1).every((y, i) => y <= must(ys[i]) + 1e-9)).toBe(true); // only ever down
+    const rolling = rig.trace.filter((s) => s.position.y > 0.02 && s.position.y < 0.3);
+    expect(rolling.length).toBeGreaterThan(1); // eased down over several ticks, not dropped
+    expect(rig.state.position.y).toBeCloseTo(SKIN, 6);
+  });
+
+  it('finds no ground at an edge whose face beyond is too steep to stand on', () => {
+    // A sweep meeting an edge, and a ray down beyond it meeting a 50° face.
+    const edge: CollisionHit = {
+      distance: 0.2,
+      normal: v(-0.8, 0.6, 0),
+      point: v(0.28, 0.15, 0),
+      body: 1,
+    };
+    const steep: CollisionHit = { ...edge, distance: 0.1, normal: v(-0.766, 0.643, 0) };
+    const world: CollisionWorld = {
+      sweepCapsule: (_capsule, _feet, direction) => (direction.y < 0 ? edge : undefined),
+      raycast: () => steep,
+      overlapCapsule: () => false,
+      bodyVelocity: () => v(0, 0, 0),
+    };
+    const next = stepCharacter(initialCharacterState(v(0, 0, 0)), IDLE_INPUT, {
+      world,
+      tuning: TUNING,
+      params,
+    });
+    expect(next.grounded).toBe(false);
+  });
+
+  it('finds no ground on a contact that does not face upwards', () => {
+    const side: CollisionHit = {
+      distance: 0.2,
+      normal: v(-1, 0, 0),
+      point: v(0.35, 0.3, 0),
+      body: 1,
+    };
+    const flat: CollisionHit = { ...side, distance: 0.01, normal: v(0, 1, 0) };
+    const world: CollisionWorld = {
+      sweepCapsule: (_capsule, _feet, direction) => (direction.y < 0 ? side : undefined),
+      raycast: () => flat,
+      overlapCapsule: () => false,
+      bodyVelocity: () => v(0, 0, 0),
+    };
+    const next = stepCharacter(initialCharacterState(v(0, 0, 0)), IDLE_INPUT, {
+      world,
+      tuning: TUNING,
+      params,
+    });
+    expect(next.grounded).toBe(false);
   });
 });
 

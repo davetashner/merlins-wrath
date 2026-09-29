@@ -19,6 +19,15 @@
 //  7. Ground check: the capsule is swept down from stepHeight above its feet (lifting it out of
 //     ground that rose into it) to just below them, or to stepHeight below while it stays on the
 //     ground (snapping it down stairs and ramps); walkable ground there grounds it, SKIN above.
+//
+// Rounded edges: a CollisionWorld may round box edges (Rapier does; the fake's are square, and the
+// contract pins only face contacts). A capsule sweeping down onto a rounded edge meets it with a
+// normal between the two faces, often steeper than the slope limit. So a steep, upward-facing
+// contact still supports the capsule when a short ray down at the rim of its footprint, on the
+// contact's side, finds a walkable face there, as a square edge would (Mover.support). The capsule
+// rests where it met the edge, so it rolls smoothly up onto steps and off ledges. The ray finds the
+// face itself, so steep slopes stay steep, and a step onto an edge must top out within stepHeight
+// of the feet, so walls a little taller than a step stay walls.
 
 import type { ControllerTuning, Frozen } from '@content/index';
 import type { ReadonlyClock } from '../clock';
@@ -290,9 +299,10 @@ function locomotion(
     const reach = lift + (onGround ? tuning.stepHeight : 0) + 2 * SKIN;
     const from = add(position, vec(0, lift, 0));
     const hit = world.sweepCapsule(capsule, from, DOWN, reach);
-    if (hit !== undefined && mover.walkable(hit.normal)) {
+    const support = hit === undefined ? undefined : mover.support(hit, from, capsule);
+    if (hit !== undefined && support !== undefined) {
       position = add(from, scale(DOWN, hit.distance - SKIN));
-      ground = { normal: hit.normal, body: hit.body };
+      ground = { normal: support.normal, body: hit.body };
       velocity = vec(velocity.x, 0, velocity.z);
     }
   }
@@ -337,6 +347,31 @@ class Mover {
   /** Ground with this normal can be stood on. */
   walkable(n: Vec3): boolean {
     return n.y + SLOPE_EPS >= this.params.minGroundY;
+  }
+
+  /**
+   * Whether a capsule swept down from `from` can stand where it met `hit`: the ground normal, or
+   * undefined when it cannot. A walkable contact is the ground itself (`top` undefined). A steeper
+   * contact facing upwards may be a rounded edge: a ray down at the rim of the capsule's footprint
+   * on the contact's side, from the height of its lower sphere's centre to just below its feet,
+   * finds the face beside the edge. When that face is walkable the capsule stands on the edge, with
+   * that face's normal as its ground and `top` its height. A steep face stays steep: the ray meets
+   * that same face.
+   */
+  support(
+    hit: CollisionHit,
+    from: Vec3,
+    capsule: Capsule,
+  ): { normal: Vec3; top: number | undefined } | undefined {
+    const n = hit.normal;
+    if (this.walkable(n)) return { normal: n, top: undefined };
+    if (n.y <= 0) return undefined;
+    const { radius } = capsule;
+    const feet = add(from, scale(DOWN, hit.distance));
+    const rim = add(feet, scale(normalize(flat(n)), SKIN - radius));
+    const face = this.world.raycast(add(rim, vec(0, radius, 0)), DOWN, radius + SKIN);
+    if (face === undefined || !this.walkable(face.normal)) return undefined;
+    return { normal: face.normal, top: face.point.y };
   }
 
   /** Whether the standing capsule fits at `feet` (lifted and slimmed by the skin, so contact is fine). */
@@ -401,7 +436,9 @@ class Mover {
 
   /**
    * Tries to climb a step: up by at most stepHeight, forward by `ahead`, then down onto walkable
-   * ground. Returns the new feet position, or undefined when there is no step to stand on.
+   * ground. Returns the new feet position, or undefined when there is no step to stand on. Landing
+   * on a rounded edge (see `support`) counts only when the face beyond it is at most stepHeight
+   * above the feet: the raised capsule can reach over the edge of a wall a little taller than that.
    */
   private stepUp(from: Vec3, ahead: Vec3, capsule: Capsule): Vec3 | undefined {
     const distance = length(ahead);
@@ -416,7 +453,10 @@ class Mover {
     if (advance < MIN_MOVE) return undefined;
     const forward = add(raised, scale(direction, advance));
     const landing = this.world.sweepCapsule(capsule, forward, DOWN, rise + SKIN);
-    if (landing === undefined || !this.walkable(landing.normal)) return undefined;
+    if (landing === undefined) return undefined;
+    const support = this.support(landing, forward, capsule);
+    if (support === undefined) return undefined;
+    if (support.top !== undefined && support.top - from.y > stepHeight) return undefined;
     return add(forward, scale(DOWN, Math.max(0, landing.distance - SKIN)));
   }
 }
