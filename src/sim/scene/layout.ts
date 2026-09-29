@@ -112,7 +112,7 @@ export interface SceneSpawnPlacement {
   readonly prop: string | undefined;
   readonly tags: readonly string[];
   /** Its affordances, when the spawn is interactable (see src/sim/interaction). */
-  readonly interact: InteractableSpec | undefined;
+  readonly interact?: InteractableSpec | undefined;
 }
 
 export interface SceneLayout {
