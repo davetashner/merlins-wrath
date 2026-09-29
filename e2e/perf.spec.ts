@@ -8,7 +8,9 @@ import { expect, test } from '@playwright/test';
 // The browser runs uncapped (vsync and the frame-rate limit off, as in the ADR-0001 benchmark), so
 // the frame interval is real CPU + GPU throughput rather than the display refresh (8.33 ms at 120 Hz
 // would fail an 8 ms budget by itself). Budget: frame interval p95 ≤ 8 ms; the main-thread work per
-// frame is logged alongside. VESPER_PERF_SECONDS sets the sampling time (default 20 s).
+// frame is logged alongside. VESPER_PERF_SECONDS sets the sampling time (default 20 s). The viewport is
+// 1280×720 at DPR 2, a 2560×1440 drawing buffer (High, 1440p-equivalent); VESPER_PERF_CHANNEL=chrome uses installed Chrome, the
+// contract's reference browser, instead of Playwright's bundled Chromium.
 
 const SECONDS = Number(process.env['VESPER_PERF_SECONDS'] ?? '20');
 const BUDGET_MS = 8;
@@ -20,6 +22,8 @@ interface Report {
 
 test.skip(process.env['VESPER_PERF'] !== '1', 'set VESPER_PERF=1 (and run headed) to measure');
 test.use({
+  ...(process.env['VESPER_PERF_CHANNEL'] ? { channel: process.env['VESPER_PERF_CHANNEL'] } : {}),
+  deviceScaleFactor: 2,
   launchOptions: { args: ['--disable-gpu-vsync', '--disable-frame-rate-limit'] },
 });
 
