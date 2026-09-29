@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^anim-[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Clip id (style bible §15.1), e.g. \"anim-knight-sword-light-1\"."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the clip shows and where it comes from."
+    },
+    "rig": {
+      "description": "The rig (animation graph) whose skeleton the clip animates.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "x-contentRef": "anim-graph"
+    },
+    "duration": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "description": "Clip length, seconds."
+    },
+    "loop": {
+      "default": false,
+      "description": "Loops (locomotion) or plays once and holds.",
+      "type": "boolean"
+    },
+    "additive": {
+      "default": false,
+      "description": "Rotations are offsets added on top of lower layers (hit reactions).",
+      "type": "boolean"
+    },
+    "tracks": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "t": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Seconds from the clip start."
+            },
+            "rot": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "items": false,
+              "minItems": 3,
+              "maxItems": 3,
+              "description": "Local rotation from the rest pose, Euler degrees [x, y, z] (XYZ order)."
+            }
+          },
+          "required": [
+            "t",
+            "rot"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "description": "Rotation keys per bone name; bones without a track keep their rest rotation."
+    },
+    "root": {
+      "description": "Root translation found in the source clip. Never applied (clips play in place); kept as a velocity reference.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Seconds from the clip start."
+          },
+          "pos": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Root translation in the source clip, metres."
+          }
+        },
+        "required": [
+          "t",
+          "pos"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "markers": {
+      "description": "Alignment markers; the first hit marker is warped onto the move’s first active tick.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "footstep",
+              "hit",
+              "release",
+              "cast"
+            ],
+            "description": "footstep, hit, release or cast."
+          },
+          "t": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Seconds from the clip start."
+          }
+        },
+        "required": [
+          "kind",
+          "t"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "rig",
+    "duration",
+    "tracks"
+  ],
+  "additionalProperties": false
+}

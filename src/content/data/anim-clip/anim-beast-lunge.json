@@ -1,0 +1,109 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-beast-lunge",
+  "rig": "greybox-beast",
+  "duration": 0.7,
+  "notes": "Grey-box placeholder (mw-e02.20): a rear-back and snapping lunge for creature attack moves without their own clip; the hit marker (0.3 s) is warped onto the move\u2019s first active tick.",
+  "tracks": {
+    "neck": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [-35, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [25, 0, 0]
+      },
+      {
+        "t": 0.45,
+        "rot": [15, 0, 0]
+      },
+      {
+        "t": 0.7,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "head": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [-10, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [15, 0, 0]
+      },
+      {
+        "t": 0.7,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "jaw": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [35, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.7,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "leg-fl": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [-20, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [25, 0, 0]
+      },
+      {
+        "t": 0.7,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "leg-fr": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [-20, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [25, 0, 0]
+      },
+      {
+        "t": 0.7,
+        "rot": [0, 0, 0]
+      }
+    ]
+  },
+  "markers": [
+    {
+      "kind": "hit",
+      "t": 0.3
+    }
+  ]
+}

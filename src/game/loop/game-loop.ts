@@ -18,6 +18,8 @@ export interface GameLoopOptions<TCommand> {
   /** Draws the frame once render sync has updated the scene. */
   readonly draw: (frame: FrameInfo) => void;
   readonly sampleCommands?: CommandSampler<TCommand>;
+  /** Called after every sim step, once render sync has captured it (e.g. animation, mw-e02.20). */
+  readonly onStep?: (tick: number) => void;
   readonly maxStepsPerFrame?: number;
   /** Where dropped-time reports go; defaults to `droppedTimeLogger()` for this build. */
   readonly warn?: FrameLoopOptions<TCommand>['warn'];
@@ -57,8 +59,9 @@ export function createGameLoop<TCommand>(options: GameLoopOptions<TCommand>): Ga
     ...(sampleCommands && { sampleCommands }),
     ...(maxStepsPerFrame !== undefined && { maxStepsPerFrame }),
     warn,
-    onStep: () => {
+    onStep: (tick) => {
       sync.capture();
+      options.onStep?.(tick);
     },
     render: (frame) => {
       sync.render(frame.alpha);

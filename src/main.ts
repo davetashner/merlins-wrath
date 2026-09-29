@@ -24,6 +24,7 @@ import {
   type ActionFrame,
   type RapierPhysics,
 } from '@sim/index';
+import { compactProbe, setupAnimationDemo, type AnimDemo } from '@tools/anim-demo/setup';
 import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
@@ -233,16 +234,28 @@ function startRenderer(root: HTMLElement): void {
     view.scene.add(hitOverlay.object);
     root.dataset['hitboxOverlay'] = hitOverlay.enabled ? 'on' : 'off';
     let lastFrameMs: number | undefined;
+    // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
+    let animation: AnimDemo | undefined;
+    let publishedProbe = '';
     const { loop, sync } = createGameLoop({
       world,
       sources,
       sampleCommands: sampler.sampleCommands,
+      onStep: () => {
+        animation?.driver.capture();
+      },
       draw: (frame) => {
         const { timeMs } = frame;
-        if (debugCamera.update(timeMs - (lastFrameMs ?? timeMs))) writeCameraData();
+        const elapsedMs = timeMs - (lastFrameMs ?? timeMs);
+        if (debugCamera.update(elapsedMs)) writeCameraData();
         lastFrameMs = timeMs;
         player?.frame(frame);
         hitOverlay.sync(world);
+        if (animation !== undefined) {
+          animation.driver.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
+          const probe = JSON.stringify(compactProbe(animation.driver.probe()));
+          if (probe !== publishedProbe) root.dataset['animation'] = publishedProbe = probe;
+        }
         showControls();
         view.renderFrame(timeMs);
       },
@@ -306,6 +319,17 @@ function startRenderer(root: HTMLElement): void {
           { passive: false },
         );
         showControls();
+      }
+      if (scene.id === 'testbed') {
+        animation = setupAnimationDemo({
+          world,
+          sync,
+          content,
+          binding: (object, read) => {
+            view.scene.add(object);
+            return object3DBinding(object, read);
+          },
+        });
       }
       label.textContent = sceneLabel(scene, __BUILD_SHA__);
       root.dataset['scene'] = scene.id;

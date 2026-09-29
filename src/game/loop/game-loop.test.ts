@@ -46,6 +46,23 @@ describe('createGameLoop', () => {
     expect(xs.at(-1)).toBeCloseTo(3, 10);
   });
 
+  it('calls onStep after every step, once render sync has captured it', () => {
+    const world = new World<string>({ seed: 1 });
+    const fake = new FakeFrames();
+    const order: string[] = [];
+    const { loop, sync } = createGameLoop({
+      world,
+      sources: sources(fake),
+      draw: () => order.push('draw'),
+      onStep: (tick) => order.push(`step ${String(tick)}`),
+    });
+    const capture = vi.spyOn(sync, 'capture').mockImplementation(() => order.push('capture'));
+    loop.start();
+    fake.frame(2.5 * (1000 / 60));
+    expect(order).toEqual(['capture', 'step 1', 'capture', 'step 2', 'draw']);
+    capture.mockRestore();
+  });
+
   it('passes the step cap and warning hook through', () => {
     const world = new World({ seed: 1 });
     const fake = new FakeFrames();
