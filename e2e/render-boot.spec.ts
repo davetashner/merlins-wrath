@@ -95,7 +95,7 @@ for (const deviceScaleFactor of [1, 3]) {
       page,
     }) => {
       // At DPR 3 the capped buffer is 3840×2160. CI runners have no GPU, so Chromium renders with
-      // SwiftShader on the CPU, and since the testbed's follow camera (mw-e02.23) fills the whole
+      // SwiftShader on the CPU, and since the testbed's player camera (mw-e02.23, mw-e02.4) fills the whole
       // frame with lit, shadowed geometry (the old overview camera left about three quarters of it
       // background), each frame there takes about 2.5 s. The test waits for six frames or so, which
       // no longer fits the default 30 s. Real GPUs draw the same view in about 3 ms (e2e/perf.spec.ts).

@@ -1,6 +1,9 @@
-// The player in the sim (mw-e02.23): spawn, mouse-look yaw and ActionFrame → controller wiring.
+// The player in the sim (mw-e02.23): spawn, mouse-look yaw and pitch and ActionFrame → controller wiring.
 export {
+  clampPitch,
+  DEFAULT_LOOK_SETTINGS,
   installPlayer,
+  lookTurn,
   NoPlayerStartError,
   PLAYER_LOOK_SENSITIVITY,
   PLAYER_START_TAG,
@@ -8,6 +11,11 @@ export {
   playerLookSystem,
   playerStart,
   spawnYaw,
+  stickResponse,
   wrapYaw,
+  type LookInput,
+  type LookSettings,
+  type LookTurn,
   type PlayerOptions,
+  type StickLookSettings,
 } from './player';

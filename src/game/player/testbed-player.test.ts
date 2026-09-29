@@ -1,10 +1,11 @@
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it, vi } from 'vitest';
-import { loadGameContent, PLAYER_CONTROLLER_ID } from '@content/index';
+import { loadGameContent, PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
 import {
   box,
   CharacterController,
   FakeCollisionWorld,
+  hashWorld,
   PlayerLook,
   spawnCharacter,
   RapierCollisionWorld,
@@ -17,10 +18,13 @@ import {
 import { ActionSampler } from '../input';
 import { createGameLoop, FakeFrames, type SceneBinding, type Transform } from '../loop';
 import { readSceneTransform, SceneLoader } from '../scene';
-import { followCameraPose } from './follow-camera';
+import { lookForward, toRadians } from '../camera';
 import {
   readPlayerTransform,
   setupTestbedPlayer,
+  yawOf,
+  yawRotation,
+  type CameraReadout,
   type PlayerReadout,
   type TestbedPlayerOptions,
   type TransformReader,
@@ -28,6 +32,7 @@ import {
 
 const content = loadGameContent();
 const tuning = content.get('controller', PLAYER_CONTROLLER_ID);
+const cameraTuning = content.get('camera', PLAYER_CAMERA_ID);
 
 /** A headless scene object: remembers the last transform applied and whether it was disposed. */
 interface Box {
@@ -50,6 +55,9 @@ function binding(object: Box, read: TransformReader): SceneBinding<Box> {
 
 function fakeCamera() {
   const camera = {
+    fov: 70,
+    near: 0.1,
+    aspect: 16 / 9,
     at: { x: 0, y: 0, z: 0 },
     target: { x: 0, y: 0, z: 0 },
     position: {
@@ -79,8 +87,8 @@ function testbed(extra: Extra = {}) {
     world,
     sources: { now: frames.now, scheduler: frames, visibility: frames },
     sampleCommands: sampler.sampleCommands,
-    draw: () => {
-      player.frame();
+    draw: (frame) => {
+      player.frame(frame);
     },
     warn: () => undefined,
   });
@@ -100,6 +108,7 @@ function testbed(extra: Extra = {}) {
     scene,
     sync,
     tuning,
+    cameraTuning,
     collision: new RapierCollisionWorld(physics),
     object: capsule,
     binding,
@@ -116,7 +125,7 @@ function testbed(extra: Extra = {}) {
     if (readout === undefined) throw new Error('no player');
     return readout;
   };
-  return { world, sync, sampler, player, capsule, camera, run, state, loop, frames };
+  return { world, sync, sampler, player, capsule, camera, run, state, loop, frames, physics };
 }
 
 describe('testbed player wiring (mw-e02.23)', () => {
@@ -127,6 +136,7 @@ describe('testbed player wiring (mw-e02.23)', () => {
       position: { x: 0, y: SKIN, z: -1 },
       grounded: false,
       yaw: Math.round(Math.PI * 1e4) / 1e4,
+      pitch: Math.round(toRadians(cameraTuning.pitch.initial) * 1e4) / 1e4,
     });
   });
 
@@ -136,15 +146,18 @@ describe('testbed player wiring (mw-e02.23)', () => {
     expect(capsule.transform?.position).toEqual({ x: 0, y: SKIN, z: -1 });
   });
 
-  it('places the follow camera behind and above the player before the first frame', () => {
+  it('places the orbit camera behind, above and over the shoulder before the first frame', () => {
     const { camera } = testbed();
-    const pose = followCameraPose({ x: 0, y: SKIN, z: -1 }, Math.PI);
-    expect(camera.at.x).toBeCloseTo(pose.position.x, 9);
-    expect(camera.at.y).toBeCloseTo(pose.position.y, 9);
-    expect(camera.at.z).toBeCloseTo(pose.position.z, 9);
-    expect(camera.at.z).toBeLessThan(-1); // behind: the player faces +z
+    // The player faces +z, so behind is −z and its right is −x.
+    expect(camera.at.z).toBeLessThan(-1 - 2);
     expect(camera.at.z).toBeGreaterThan(-4.9); // still inside the room
-    expect(camera.target).toEqual({ x: 0, y: SKIN + 1.5, z: -1 });
+    expect(camera.at.y).toBeGreaterThan(SKIN + cameraTuning.pivotHeight); // looking down on it
+    expect(camera.at.x).toBeCloseTo(-cameraTuning.shoulder, 6);
+    // It looks along the view direction: pitched down 15°, towards +z.
+    const forward = lookForward(Math.PI, toRadians(cameraTuning.pitch.initial));
+    expect(camera.target.x - camera.at.x).toBeCloseTo(forward.x, 6);
+    expect(camera.target.y - camera.at.y).toBeCloseTo(forward.y, 6);
+    expect(camera.target.z - camera.at.z).toBeCloseTo(forward.z, 6);
   });
 
   it('holding W for 1 s moves the player at least 4 m forward (+z), and the camera follows', () => {
@@ -158,7 +171,7 @@ describe('testbed player wiring (mw-e02.23)', () => {
     const after = state().position;
     expect(after.z - before.z).toBeGreaterThanOrEqual(4);
     expect(Math.abs(after.x - before.x)).toBeLessThan(1e-3);
-    expect(camera.target.z).toBeCloseTo(after.z, 3);
+    expect(camera.at.z).toBeLessThan(after.z - 2); // still behind it
   });
 
   it('the back wall stops the player: it rests in front of it and never passes through', () => {
@@ -209,14 +222,15 @@ describe('testbed player wiring (mw-e02.23)', () => {
     expect(camera.at.x).toBeGreaterThan(state().position.x + 3);
   });
 
-  it('leaves the camera alone while the follow camera is off (debug camera)', () => {
+  it('leaves the camera alone while the orbit camera is off (debug camera)', () => {
     const { sampler, run, camera, player } = testbed();
-    player.followCamera = false;
+    player.drivesCamera = false;
+    expect(player.drivesCamera).toBe(false);
     const parked = camera.at;
     sampler.down('KeyW');
     run(0.5);
     expect(camera.at).toBe(parked);
-    player.followCamera = true;
+    player.drivesCamera = true;
     run(1 / 60);
     expect(camera.at).not.toBe(parked);
   });
@@ -257,6 +271,134 @@ describe('testbed player wiring (mw-e02.23)', () => {
     expect(publish).toHaveBeenCalledTimes(1);
     player.dispose(); // twice is harmless
     loop.stop();
+  });
+});
+
+describe('testbed orbit camera (mw-e02.4)', () => {
+  it('mouse up and down pitch the view within the limits, and the camera follows', () => {
+    const { sampler, run, state, camera } = testbed({ sensitivity: 0.01 });
+    const startY = camera.at.y;
+    sampler.look(0, 1000); // mouse down a long way: look down, camera up
+    run(0.1);
+    expect(state().pitch).toBeCloseTo(toRadians(cameraTuning.pitch.min), 4);
+    expect(camera.at.y).toBeGreaterThan(startY);
+    sampler.look(0, -1000);
+    run(0.1);
+    expect(state().pitch).toBeCloseTo(toRadians(cameraTuning.pitch.max), 4);
+  });
+
+  it('interpolates the pitch between sim steps', () => {
+    const { sampler, run, frames, camera } = testbed({ sensitivity: 0.01 });
+    run(0.1);
+    const level = camera.at.y;
+    sampler.look(0, -20); // mouse up: look up 0.2 rad on the next tick, so the camera drops
+    frames.frame(1000 / 60); // the tick runs; drawn at the start of its interval (alpha 0)
+    const stepped = camera.at.y;
+    frames.frame(1000 / 120); // half a step on: part way there
+    const halfway = camera.at.y;
+    frames.frame(1000 / 120); // the next tick: all the way
+    const final = camera.at.y;
+    expect(final).toBeLessThan(level - 0.3);
+    expect(halfway).toBeLessThan(level - 0.1);
+    expect(halfway).toBeGreaterThan(final + 0.1);
+    expect(Math.abs(stepped - level)).toBeLessThan(Math.abs(halfway - level));
+  });
+
+  it('AC-4: at camera yaw 90° the player moves along the camera forward vector', () => {
+    const { sampler, run, state, camera } = testbed({ sensitivity: Math.PI / 2 / 100 });
+    sampler.look(-100, 0); // a quarter turn left: from yaw π to 3π/2 ≡ −π/2
+    run(1 / 60);
+    sampler.look(-200, 0); // half a turn more: yaw π/2
+    run(0.2);
+    expect(state().yaw).toBeCloseTo(Math.PI / 2, 3);
+    const before = state().position;
+    sampler.down('KeyW');
+    run(0.5);
+    const after = state().position;
+    const moved = { x: after.x - before.x, z: after.z - before.z };
+    // The camera's horizontal forward, from where it is and where it looks.
+    const look = { x: camera.target.x - camera.at.x, z: camera.target.z - camera.at.z };
+    const length = Math.hypot(look.x, look.z);
+    expect(look.x / length).toBeCloseTo(-1, 6);
+    expect(Math.hypot(moved.x, moved.z)).toBeGreaterThan(1);
+    expect(moved.x / Math.hypot(moved.x, moved.z)).toBeCloseTo(look.x / length, 6);
+    expect(moved.z / Math.hypot(moved.x, moved.z)).toBeCloseTo(look.z / length, 6);
+  });
+
+  it('publishes the camera every frame it drives; the near plane never clips walking into a wall', () => {
+    const publishCamera = vi.fn<(readout: CameraReadout) => void>();
+    const { sampler, run, player } = testbed({ publishCamera });
+    sampler.down('KeyS'); // back into the room's back wall: the camera is squeezed against it
+    run(2);
+    const last = publishCamera.mock.calls.at(-1)?.[0];
+    expect(last?.frames).toBe(121); // setup plus 120 frames
+    expect(last?.clipped).toBe(0);
+    expect(last?.pulledIn).toBeGreaterThan(30);
+    expect(last?.boom).toBeLessThan(last?.zoom ?? 0);
+    expect(last?.position.z).toBeGreaterThanOrEqual(-4.9 + 0.2);
+    player.drivesCamera = false;
+    run(0.1);
+    expect(publishCamera).toHaveBeenCalledTimes(121);
+  });
+
+  it('the wheel zooms within 2–6 m', () => {
+    const publishCamera = vi.fn<(readout: CameraReadout) => void>();
+    const { run, player } = testbed({ publishCamera });
+    const zoom = () => publishCamera.mock.calls.at(-1)?.[0].zoom;
+    expect(zoom()).toBe(cameraTuning.distance.initial);
+    player.zoom(-1);
+    run(1 / 60);
+    expect(zoom()).toBe(cameraTuning.distance.initial - cameraTuning.distance.step);
+    player.zoom(100);
+    run(1 / 60);
+    expect(zoom()).toBe(cameraTuning.distance.max);
+  });
+
+  it('the camera never changes the sim: same inputs, same hash, with or without it drawing', () => {
+    const drive = (drawCamera: boolean) => {
+      const { sampler, run, world, player } = testbed();
+      player.drivesCamera = drawCamera;
+      sampler.down('KeyS');
+      sampler.look(40, 5);
+      run(1);
+      return hashWorld(world);
+    };
+    expect(drive(true)).toBe(drive(false));
+  });
+
+  it('counts a frame whose near plane the probe finds inside geometry', () => {
+    const publishCamera = vi.fn<(readout: CameraReadout) => void>();
+    // Everything overlaps: the probe must report every frame as clipped.
+    const solid = new FakeCollisionWorld([box({ x: -50, y: -1, z: -50 }, { x: 50, y: 0, z: 50 })]);
+    solid.overlapCapsule = () => true;
+    const { run } = testbed({ publishCamera, collision: solid });
+    run(0.1);
+    const last = publishCamera.mock.calls.at(-1)?.[0];
+    expect(last?.clipped).toBe(last?.frames);
+  });
+
+  it('crouching lowers the orbit pivot', () => {
+    const { sampler, run, camera } = testbed();
+    run(0.2);
+    const standing = camera.at.y;
+    sampler.down('KeyC');
+    run(0.2);
+    expect(camera.at.y).toBeLessThan(standing - 0.3);
+  });
+
+  it('frames before any timestamp, or with the clock going back, recover nothing', () => {
+    const { player, camera } = testbed();
+    player.frame({ alpha: 1, timeMs: 500 });
+    player.frame({ alpha: 1, timeMs: 400 });
+    player.frame();
+    expect(camera.at.z).toBeLessThan(-1);
+  });
+});
+
+describe('yaw helpers', () => {
+  it('round-trips a yaw through its rotation', () => {
+    for (const yaw of [0, 1, -2.5, Math.PI - 1e-9])
+      expect(yawOf(yawRotation(yaw))).toBeCloseTo(yaw, 9);
   });
 });
 

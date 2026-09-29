@@ -11,8 +11,10 @@
 // overlapping a collider is only blocked while moving further into it.
 //
 // Edges and corners are rounded here (the exact capsule Minkowski sum), where the fake's are square;
-// the contract pins only face contacts, so both pass it. The controller's step-up currently relies on
-// square edges and stops at steps on Rapier (known gap, mw-e02.24).
+// the contract pins only face contacts, so both pass it.
+//
+// A capsule of height 2 × radius has a zero-length core: a sphere. The orbit camera (mw-e02.4) sweeps
+// and overlaps spheres that way, read-only, between sim steps.
 //
 // Queries see the colliders as of the physics port's last step: the World steps physics at the
 // start of every tick, so colliders added between ticks are there for that tick's systems. Rapier

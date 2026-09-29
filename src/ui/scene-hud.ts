@@ -9,7 +9,7 @@ export function sceneLabel(scene: { readonly id: string; readonly name: string }
 
 /** How to take control of the player (mw-e02.23). */
 export const PLAYER_CONTROLS_HINT =
-  'Click to play: WASD move, mouse turn, Space jump, Shift sprint, C crouch, Esc release';
+  'Click to play: WASD move, mouse look, wheel zoom, Space jump, Shift sprint, C crouch, Esc release';
 
 /** Hint for the debug fly camera. */
 export const DEBUG_CAMERA_HINT =

@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "testbed",
   "name": "Greybox testbed",
-  "description": "The default scene: a room, a corridor with a hazard strip, and an arena with pillars, a ramp and platforms.",
+  "description": "The default scene: a room, a narrow corridor with pillars and a hazard strip, and an arena with pillars, a ramp and platforms.",
   "grid": 1,
   "camera": {
     "position": [-14, 20, -14],
@@ -88,6 +88,18 @@
       "at": [0, 0, 11],
       "scale": [1, 0.05, 0.5],
       "purpose": "hazard"
+    },
+    {
+      "piece": "pillar",
+      "at": [-0.75, 0, 7.5]
+    },
+    {
+      "piece": "pillar",
+      "at": [0.75, 0, 9.5]
+    },
+    {
+      "piece": "pillar",
+      "at": [-0.75, 0, 13]
     },
     {
       "piece": "floor",

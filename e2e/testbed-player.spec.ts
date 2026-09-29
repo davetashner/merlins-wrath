@@ -2,7 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 // mw-e02.23: a controllable player capsule in ?scene=testbed, against the production build
 // (Chromium). The page publishes the player's sim state on #app[data-player] (JSON: tick, feet
-// position, grounded, yaw) after every sim tick a frame shows; the tests only read it.
+// position, grounded, yaw, pitch) after every sim tick a frame shows, and the orbit camera's
+// (mw-e02.4) on #app[data-orbit-camera] after every frame it draws; the tests only read them.
 //
 // Input counts only while the pointer is locked to the canvas, and headless Chromium refuses pointer
 // lock, so an init script stands in for the browser's lock: requestPointerLock locks at once and
@@ -22,6 +23,22 @@ interface PlayerData {
   position: { x: number; y: number; z: number };
   grounded: boolean;
   yaw: number;
+  pitch: number;
+}
+
+/** #app[data-orbit-camera] (mw-e02.4): the orbit camera's running counts and this frame's boom. */
+interface OrbitCameraData {
+  frames: number;
+  clipped: number;
+  pulledIn: number;
+  boom: number;
+  zoom: number;
+  position: { x: number; y: number; z: number };
+}
+
+async function orbitCamera(page: Page): Promise<OrbitCameraData> {
+  const json = await page.locator('#app').getAttribute('data-orbit-camera');
+  return JSON.parse(json ?? 'null') as OrbitCameraData;
 }
 
 /** Console errors/warnings and uncaught exceptions raised by our own code. */
@@ -198,5 +215,82 @@ test('the debug camera (F2) takes WASD from the player, and hands it back', asyn
   await page.waitForTimeout(300);
   await page.keyboard.up('KeyW');
   expect((await waitTicks(page, 5)).position.z).toBeGreaterThan(parked.position.z + 0.5);
+  expect(problems).toEqual([]);
+});
+
+// mw-e02.4 AC-5: the bot walks the narrow corridor (1.8 m wide, pillars narrowing it to 1.35 m) out
+// into the arena while swinging the mouse left and right and up and down, so the orbit camera's boom
+// keeps swinging into the corridor walls, the pillars and the floor. The page's clipping probe tests
+// every frame the orbit camera draws: the sphere around the near plane must overlap no collider
+// (the colliders are the drawn greybox geometry). Driving happens inside the page on animation frames,
+// paced by the published sim tick, so a slow software-rendered runner walks the same route.
+test('AC-5: walking the narrow corridor with pillars, no frame puts the near plane inside geometry, and no console errors', async ({
+  page,
+}) => {
+  const problems = collectProblems(page);
+  await play(page);
+  const start = await orbitCamera(page);
+  expect(start.clipped).toBe(0);
+  const walk = await page.evaluate(
+    () =>
+      new Promise<{ ticks: number; z: number }>((resolve) => {
+        const app = document.querySelector<HTMLElement>('#app');
+        const read = () =>
+          JSON.parse(app?.dataset['player'] ?? 'null') as {
+            tick: number;
+            position: { z: number };
+          };
+        const key = (type: string) => {
+          window.dispatchEvent(new KeyboardEvent(type, { code: 'KeyW', key: 'w' }));
+        };
+        const startTick = read().tick;
+        let lastTick = startTick;
+        key('keydown');
+        const step = () => {
+          const { tick, position } = read();
+          const ticks = tick - startTick;
+          if (position.z > 18 || ticks > 480) {
+            key('keyup');
+            resolve({ ticks, z: position.z });
+            return;
+          }
+          // A slow sway: about ±25° of yaw and ±15° of pitch, zero on average so the walk stays on
+          // course. Mouse counts per elapsed tick, so the sway is the same at any frame rate.
+          const elapsed = tick - lastTick;
+          lastTick = tick;
+          if (elapsed > 0) {
+            const movementX = Math.round(12 * Math.cos(ticks / 12) * elapsed);
+            const movementY = Math.round(8 * Math.sin(ticks / 9) * elapsed);
+            window.dispatchEvent(new MouseEvent('mousemove', { movementX, movementY }));
+          }
+          requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }),
+  );
+  // It got through the corridor (z 5 → 15) and into the arena.
+  expect(walk.z).toBeGreaterThan(15);
+  const camera = await orbitCamera(page);
+  test.info().annotations.push({
+    type: 'orbit camera',
+    description: `${String(walk.ticks)} ticks, ${JSON.stringify(camera)}`,
+  });
+  expect(camera.frames - start.frames).toBeGreaterThanOrEqual(20);
+  // Collision did work on the way (the probe is not passing vacuously)...
+  expect(camera.pulledIn).toBeGreaterThan(0);
+  // ...and no drawn frame had the near plane inside a wall, pillar or floor.
+  expect(camera.clipped).toBe(0);
+  expect(problems).toEqual([]);
+});
+
+test('mw-e02.4: the mouse wheel zooms the orbit camera between 2 and 6 m', async ({ page }) => {
+  const problems = collectProblems(page);
+  await play(page);
+  expect((await orbitCamera(page)).zoom).toBe(3.5);
+  const canvas = page.getByTestId('game-canvas');
+  await canvas.dispatchEvent('wheel', { deltaY: -100 });
+  await expect.poll(async () => (await orbitCamera(page)).zoom).toBe(3);
+  for (let i = 0; i < 12; i++) await canvas.dispatchEvent('wheel', { deltaY: 100 });
+  await expect.poll(async () => (await orbitCamera(page)).zoom).toBe(6);
   expect(problems).toEqual([]);
 });
