@@ -48,6 +48,18 @@ export default defineConfig({
     },
   },
   test: {
+    // Sim physics tests run the real deterministic Rapier build (mw-e03.35). Its package has only a
+    // `module` field (no `main`/`exports`), which Vitest's server-side resolver ignores, so point the
+    // bare specifier at the ES entry and let Vite transform the package (inline) instead of handing it
+    // to Node: vite-plugin-wasm above then loads its .wasm, exactly as in the browser build. No
+    // -compat package is needed, so tests and game run the same engine binary.
+    alias: [
+      {
+        find: /^@dimforge\/rapier3d-deterministic$/,
+        replacement: '@dimforge/rapier3d-deterministic/rapier.js',
+      },
+    ],
+    server: { deps: { inline: [/@dimforge\/rapier3d-deterministic/] } },
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts', 'scripts/**/*.test.ts'],
     environment: 'node',
     // The content reporter records which content entries passing tests exercised (mw-e00.18).

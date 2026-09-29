@@ -289,6 +289,15 @@ How it fits the §2 rules:
 - *Layer lint:* `eslint/layers.js` restricts imports between `src/` layers, not npm packages. Importing
   `@dimforge/rapier3d-deterministic-compat` from `src/sim` needs no rule change. It is worth adding a rule
   that only the physics port may import it.
+- *As built (mw-e03.35):* the port is `src/sim/physics/port.ts` (`PhysicsPort`: static and moving
+  colliders, `step(dt)`, plain-data `snapshot()`/`restore()`), implemented by `RapierPhysics` in
+  `src/sim/physics/rapier.ts`. The World owns it, steps it before its systems every tick and puts its
+  state (Rapier's snapshot as base64) in every `WorldSnapshot`, so the state hash covers physics. The
+  sim only imports Rapier's types; `src/game/physics-loader.ts` loads the non-compat package and
+  injects it, and an ESLint rule forbids value imports of `@dimforge/*` in non-test sim code. Vitest
+  loads the same non-compat build through `vite-plugin-wasm` (a test-only alias points the bare
+  specifier at the package's ES entry, since it has no `main`/`exports`), so no `-compat` package is
+  used anywhere.
 - *Replays and saves:* restoring from a Rapier snapshot continues bit-identically, so save/load and replay
   checkpoints can store physics state exactly (350 KB per 200 bodies before compression).
 

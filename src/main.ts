@@ -1,13 +1,13 @@
 import { loadGameContent } from '@content/index';
 import { layers } from '@game/index';
 import { browserFrameSources, createGameLoop, object3DBinding } from '@game/loop/index';
-import { loadPhysics } from '@game/physics-loader';
+import { bootPhysics } from '@game/physics-loader';
 import { readSceneTransform, resolveSceneRequest, SceneLoader } from '@game/scene/index';
 import { openSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { createRenderBootstrap } from '@render/bootstrap/index';
 import { createGreyboxView } from '@render/greybox/index';
-import { InMemoryColliderSink, registerSceneComponents, World } from '@sim/index';
+import { registerSceneComponents, World, type PhysicsPort } from '@sim/index';
 import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
@@ -126,20 +126,6 @@ function startRenderer(root: HTMLElement): void {
     },
   });
 
-  // Fixed-step sim on requestAnimationFrame (mw-e00.20); entities bind to scene objects through the
-  // loop's sync. The scene loader fills the world from content (mw-e00.21).
-  const world = registerSceneComponents(new World({ seed: BOOT_SEED }));
-  let lastFrameMs: number | undefined;
-  const { loop, sync } = createGameLoop({
-    world,
-    sources,
-    draw: ({ timeMs }) => {
-      if (debugCamera.update(timeMs - (lastFrameMs ?? timeMs))) writeCameraData();
-      lastFrameMs = timeMs;
-      view.renderFrame(timeMs);
-    },
-  });
-
   const hud = document.createElement('div');
   hud.dataset['testid'] = 'scene-hud';
   const label = document.createElement('p');
@@ -161,54 +147,73 @@ function startRenderer(root: HTMLElement): void {
   });
   root.dataset['debugCamera'] = 'off';
 
-  const content = loadGameContent();
-  const scenes = new SceneLoader({
-    world,
-    sync,
-    // Static colliders go to the sim's physics port once mw-e03.10 lands; until then they are kept
-    // in memory so loading and unloading are still checked.
-    colliders: new InMemoryColliderSink(),
-    content,
-    objects: createGreyboxView(view.renderer, view.scene),
-    binding: (object) => object3DBinding(object, readSceneTransform),
-  });
-  const request = resolveSceneRequest(location.search, scenes.available());
-  if (request.kind === 'scene') {
-    const scene = content.get('scene', request.id);
-    scenes.load(scene.id);
-    camera.position.set(...scene.camera.position);
-    camera.lookAt(...scene.camera.target);
-    label.textContent = sceneLabel(scene, __BUILD_SHA__);
-    root.dataset['scene'] = scene.id;
-  } else {
-    label.textContent = `No scene · build ${__BUILD_SHA__}`;
-    showSceneError(root, request.requested, request.available);
-  }
-  writeCameraData();
-  loop.start();
+  // Fixed-step sim on requestAnimationFrame (mw-e00.20). The sim owns its physics (mw-e03.35), so the
+  // world starts once the physics module has loaded; the dynamic import keeps Rapier and its WASM
+  // out of the initial bundle.
+  const startWorld = (physics: PhysicsPort): void => {
+    const world = registerSceneComponents(new World({ seed: BOOT_SEED, physics }));
+    let lastFrameMs: number | undefined;
+    const { loop, sync } = createGameLoop({
+      world,
+      sources,
+      draw: ({ timeMs }) => {
+        if (debugCamera.update(timeMs - (lastFrameMs ?? timeMs))) writeCameraData();
+        lastFrameMs = timeMs;
+        view.renderFrame(timeMs);
+      },
+    });
+
+    // The scene loader fills the world from content (mw-e00.21); static colliders go into the
+    // sim's Rapier world.
+    const content = loadGameContent();
+    const scenes = new SceneLoader({
+      world,
+      sync,
+      colliders: physics,
+      content,
+      objects: createGreyboxView(view.renderer, view.scene),
+      binding: (object) => object3DBinding(object, readSceneTransform),
+    });
+    const request = resolveSceneRequest(location.search, scenes.available());
+    if (request.kind === 'scene') {
+      const scene = content.get('scene', request.id);
+      scenes.load(scene.id);
+      camera.position.set(...scene.camera.position);
+      camera.lookAt(...scene.camera.target);
+      label.textContent = sceneLabel(scene, __BUILD_SHA__);
+      root.dataset['scene'] = scene.id;
+    } else {
+      label.textContent = `No scene · build ${__BUILD_SHA__}`;
+      showSceneError(root, request.requested, request.available);
+    }
+    // Debug attribute (mw-e03.35 AC-4): colliders registered in the physics world.
+    root.dataset['colliders'] = String(physics.count());
+    writeCameraData();
+    loop.start();
+  };
 
   const status = document.createElement('p');
   status.setAttribute('role', 'status');
   status.dataset['testid'] = 'physics-status';
   root.append(status);
-  // The dynamic import keeps Rapier and its WASM out of the initial bundle.
-  loadPhysics(
+  void bootPhysics(
     () => import('@dimforge/rapier3d-deterministic'),
     (state) => {
       root.dataset['physics'] = state;
       status.textContent = state === 'loading' ? PHYSICS_LOADING_TEXT : '';
     },
-  ).then(
-    (physics) => {
-      root.dataset['physicsVersion'] = physics.version();
-      status.remove();
-    },
-    (error: unknown) => {
+  ).then((boot) => {
+    if (!boot.ok) {
+      // No physics, no sim (AC-5): say so instead of failing with an uncaught exception.
       status.setAttribute('role', 'alert');
       status.textContent = PHYSICS_FAILED_TEXT;
-      console.error(error);
-    },
-  );
+      console.error(boot.error);
+      return;
+    }
+    root.dataset['physicsVersion'] = boot.module.version();
+    status.remove();
+    startWorld(boot.physics);
+  });
 }
 
 // ?scene= named a scene that does not exist (mw-e00.21 AC-4): say so and link the real ones. The

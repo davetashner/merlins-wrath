@@ -67,6 +67,7 @@ const snapshotSchema = z.object({
   entities: z.array(count),
   components: z.record(z.string(), z.array(z.tuple([count, z.json()]))),
   rng: z.record(z.string(), z.object({ seed: z.number(), state: z.array(z.number()) })),
+  physics: z.object({ engine: z.string(), data: z.json() }).exactOptional(),
 });
 
 const checkpointSchema = z.object({

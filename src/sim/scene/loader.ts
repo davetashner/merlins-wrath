@@ -41,10 +41,13 @@ export interface ScenePiece {
   readonly max: Vec3;
 }
 
-/** A spawn point: its name in the scene, the prop it spawns (if any) and its tags. */
+/**
+ * A spawn point: its name in the scene, the prop it spawns (absent for a marker) and its tags. `prop`
+ * is left out rather than undefined, so the component stays canonically encodable (state hashes).
+ */
 export interface SceneSpawn {
   readonly id: string;
-  readonly prop: string | undefined;
+  readonly prop?: string;
   readonly tags: readonly string[];
 }
 
@@ -133,7 +136,11 @@ export function loadScene<T>(
     world.add(
       entity,
       SceneSpawnComponent,
-      Object.freeze({ id: spawn.id, prop: spawn.prop, tags: spawn.tags }),
+      Object.freeze({
+        id: spawn.id,
+        ...(spawn.prop !== undefined && { prop: spawn.prop }),
+        tags: spawn.tags,
+      }),
     );
     return Object.freeze({ entity, spawn });
   });

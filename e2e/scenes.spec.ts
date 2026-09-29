@@ -99,6 +99,20 @@ test('AC-1: ?scene=testbed renders the room → corridor → arena with zero con
   expect(problems).toEqual([]);
 });
 
+test('mw-e03.35 AC-4: ?scene=testbed registers its static colliders in the Rapier world with zero console errors', async ({
+  page,
+}) => {
+  const problems = collectProblems(page);
+  await page.goto('/?scene=testbed');
+  const app = page.locator('#app');
+  await expect(app).toHaveAttribute('data-scene', 'testbed', { timeout: 5_000 });
+  await expect(app).toHaveAttribute('data-physics', 'ready');
+  const colliders = Number(await app.getAttribute('data-colliders'));
+  expect(colliders).toBeGreaterThan(0);
+  await nextFrames(page);
+  expect(problems).toEqual([]);
+});
+
 test('the default scene (no ?scene=) is the testbed', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#app')).toHaveAttribute('data-scene', 'testbed');

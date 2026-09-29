@@ -11,9 +11,9 @@
 // scene loader never sets `velocity`. Kit pieces only turn in quarter turns, so every part is
 // axis-aligned and these two shapes describe the whole kit.
 //
-// The sim-owned Rapier port (mw-e03.10) implements `StaticColliderSink` by creating fixed colliders
-// from these descriptors; until it lands, the game uses `InMemoryColliderSink`, which is also what the
-// scene tests count against.
+// The sim-owned physics port (port.ts; RapierPhysics in rapier.ts, mw-e03.35) implements
+// `StaticColliderSink` by creating fixed colliders from these descriptors, and the game hands it to
+// the scene loader. `InMemoryColliderSink` just keeps the descriptors, for engine-free tests.
 
 import type { GreyboxShape } from '../character/greybox';
 
@@ -23,7 +23,7 @@ export type StaticColliderDesc = GreyboxShape;
 /** Opaque handle to one added collider; only meaningful to the sink that issued it. */
 export type ColliderHandle = number & { readonly __brand: 'ColliderHandle' };
 
-/** Where static level geometry goes. Implemented by the physics port (mw-e03.10). */
+/** Where static level geometry goes. Implemented by the physics port (mw-e03.35). */
 export interface StaticColliderSink {
   /** Adds one fixed collider and returns its handle. */
   add(desc: StaticColliderDesc): ColliderHandle;
@@ -33,7 +33,7 @@ export interface StaticColliderSink {
   count(): number;
 }
 
-/** A sink that just keeps the descriptors: for tests, and for the game until mw-e03.10 lands. */
+/** A sink that just keeps the descriptors, for engine-free tests. */
 export class InMemoryColliderSink implements StaticColliderSink {
   private readonly colliders = new Map<ColliderHandle, StaticColliderDesc>();
   private next = 1;
