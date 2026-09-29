@@ -413,6 +413,8 @@ function startRenderer(root: HTMLElement): void {
           world,
           sync,
           content,
+          // The player's combat (mw-e04.8) already runs the action timeline.
+          sharedTimeline: player !== undefined,
           binding: (object, read) => {
             view.scene.add(object);
             return object3DBinding(object, read);
