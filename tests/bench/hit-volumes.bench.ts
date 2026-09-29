@@ -1,6 +1,6 @@
 // mw-e04.2 AC-7: the hit query (one run of the hit-volume system) with 24 active hitboxes and 40
 // hurtboxes stays ≤ 0.5 ms per tick p95. Measured in Node as a whole World.step() with only that
-// system attached (tinybench reports p99, which is stricter than p95). Twenty-four attackers stand in
+// system attached; p95 is read from the retained samples. Twenty-four attackers stand in
 // a ring around twenty targets (a torso and a head each: 40 hurtboxes) and swing sword arcs through
 // the crowd without end: each swing reopens as soon as its 4 active ticks are spent, so every tick
 // sweeps all 24 capsules, most bounds overlap something, and the one-hit registry resets per swing.
@@ -118,7 +118,12 @@ describe('hit volumes', () => {
     const result = await bench('hit-volume system: 24 hitboxes × 40 hurtboxes', tick).run({
       warmupIterations: 1000,
       time: 1000,
+      retainSamples: true,
     });
-    expect(result.latency.p99).toBeLessThanOrEqual(0.5); // milliseconds
+    // The AC's p95, read from the sorted samples (tinybench's summary stops at p75 and p99).
+    const { samples } = result.latency;
+    if (samples === undefined) throw new Error('bench samples were not retained');
+    const p95 = samples[Math.ceil(0.95 * samples.length) - 1] ?? Infinity;
+    expect(p95).toBeLessThanOrEqual(0.5); // milliseconds
   });
 });
