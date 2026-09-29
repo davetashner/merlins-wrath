@@ -37,6 +37,44 @@
       "type": "string",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
       "x-contentRef": "testprop"
+    },
+    "body": {
+      "description": "Makes the prop a movable physics object; without one it stays put.",
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "Box size along x, y, z in metres; the spawn point is the middle of its base."
+        },
+        "material": {
+          "description": "Material preset (world properties) of the body.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "x-contentRef": "material"
+        }
+      },
+      "required": [
+        "size",
+        "material"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

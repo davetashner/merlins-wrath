@@ -28,6 +28,7 @@ import {
   MIN_BODY_MASS,
   physicsBudgetExceeded,
   physicsImpact,
+  PhysicsColliderComponent,
   PhysicsObjectComponent,
   removePhysicsObject,
   rigidBodiesOf,
@@ -385,6 +386,86 @@ describe('physics objects (mw-e03.10)', () => {
     const bare = new World<never>({ seed: 1 });
     expect(() => rigidBodiesOf(bare)).toThrow('this world has no rigid-body physics');
     expect(() => installPhysicsObjects(bare)).toThrow('this world has no rigid-body physics');
+  });
+});
+
+describe('destroying a physics object (mw-e03.41)', () => {
+  /** Drops a crate, lets it fall for a while, gets rid of it with `discard`, then runs on. */
+  function run(discard: (world: World<never>, crate: EntityId) => void, midStep = false): string {
+    const { world, physics } = setup();
+    const crate = spawnObject(world, v(0, 2, 0));
+    spawnObject(world, v(1, 1, 0)); // a neighbour that stays
+    const colliders = physics.count();
+    steps(world, 20);
+    if (midStep) {
+      world.addSystem({
+        name: 'discard',
+        run: ({ tick }) => {
+          if (tick === 20) discard(world, crate);
+        },
+      });
+    } else {
+      discard(world, crate);
+    }
+    steps(world, midStep ? 1 : 0);
+    expect(physics.count()).toBe(colliders - 1);
+    expect(world.isAlive(crate)).toBe(false);
+    steps(world, 40);
+    return hashWorld(world);
+  }
+
+  it('AC-1: destroying the entity takes its body out of the physics world, between or during steps', () => {
+    const destroy = (world: World<never>, crate: EntityId): void => {
+      world.destroy(crate);
+    };
+    const { world, physics } = setup();
+    const crate = spawnObject(world, v(0, 1, 0));
+    const colliders = physics.count();
+    world.destroy(crate);
+    expect(physics.count()).toBe(colliders - 1);
+    world.step(); // the physics world steps without the removed body
+    expect(run(destroy)).not.toBe('');
+    expect(run(destroy, true)).not.toBe('');
+  });
+
+  it('AC-2: the state hash is deterministic and matches removing the body by hand first', () => {
+    const destroy = (world: World<never>, crate: EntityId): void => {
+      world.destroy(crate);
+    };
+    const removeThenDestroy = (world: World<never>, crate: EntityId): void => {
+      removePhysicsObject(world, crate);
+      world.destroy(crate);
+    };
+    expect(run(destroy)).toBe(run(destroy));
+    expect(run(destroy)).toBe(run(removeThenDestroy));
+    expect(run(destroy, true)).toBe(run(removeThenDestroy, true));
+  });
+});
+
+describe('bound colliders', () => {
+  it('an entity owns several colliders: impacts name it on each, and friction reaches them all', () => {
+    const { world, physics, impacts } = setup({}, false);
+    const pillar = world.spawn();
+    addProperties(world, pillar, STONE);
+    const left = physics.add(box(v(-3, 0, -1), v(-1, 1, 1)));
+    const right = physics.add(box(v(1, 0, -1), v(3, 1, 1)));
+    bindCollider(world, pillar, left);
+    bindCollider(world, pillar, right);
+    expect(world.get(pillar, PhysicsColliderComponent)).toEqual({ colliders: [left, right] });
+    spawnObject(world, v(-2, 3, 0));
+    spawnObject(world, v(2, 3, 0));
+    steps(world, 90);
+    expect(impacts.filter((i) => i.other === pillar)).toHaveLength(2);
+    setProperty(world, pillar, 'friction', 0.05);
+    world.step(); // the change event reaches the colliders
+    const frictions = [left, right].map((handle) => {
+      const rows = (physics.snapshot().data as { colliders: number[][] }).colliders;
+      const row = rows.find(([h]) => h === handle) ?? [];
+      return physics.rapierWorld.getCollider(row[1] ?? -1).friction();
+    });
+    expect(frictions.map((f) => Math.round(f * 100) / 100)).toEqual([0.05, 0.05]);
+    world.destroy(pillar); // the colliders are the scene's: they stay
+    expect(physics.count()).toBe(5);
   });
 });
 

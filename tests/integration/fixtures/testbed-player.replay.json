@@ -3,7 +3,7 @@
   "snapshotEncoding": 1,
   "scenario": "testbed-player",
   "buildSha": "local",
-  "contentHash": "96b002fdd714a9ab",
+  "contentHash": "03e30b02167c9e10",
   "seed": 1,
   "stepHz": 60,
   "ticks": 600,
@@ -30,17 +30,17 @@
     [53,[{"kind":"input.actions","move":{"x":0,"y":0},"look":{"x":0,"y":0},"lookStick":{"x":0,"y":0},"jump":{"pressed":false,"held":false,"released":false},"sprint":{"pressed":false,"held":false,"released":false},"crouch":{"pressed":false,"held":false,"released":false},"interact":{"pressed":false,"held":false,"released":false},"lockOn":{"pressed":false,"held":false,"released":false},"cycleTarget":{"pressed":false,"held":false,"released":false},"primaryAttack":{"pressed":false,"held":false,"released":false},"secondaryAttack":{"pressed":false,"held":false,"released":false},"ability1":{"pressed":false,"held":false,"released":false},"ability2":{"pressed":false,"held":false,"released":false},"ability3":{"pressed":false,"held":false,"released":false},"ability4":{"pressed":false,"held":false,"released":false},"inventory":{"pressed":false,"held":false,"released":false},"pause":{"pressed":false,"held":false,"released":false}}]]
   ],
   "checkpoints": [
-    {"tick":0,"hash":"d34b1013"},
-    {"tick":60,"hash":"04b01736"},
-    {"tick":120,"hash":"7c7e942d"},
-    {"tick":180,"hash":"d20e2908"},
-    {"tick":240,"hash":"0204a54c"},
-    {"tick":300,"hash":"22cbf034"},
-    {"tick":360,"hash":"bcc07e5f"},
-    {"tick":420,"hash":"0f3a4791"},
-    {"tick":480,"hash":"81e05322"},
-    {"tick":540,"hash":"fc7f742c"},
-    {"tick":600,"hash":"162fc65a"}
+    {"tick":0,"hash":"e3d30737"},
+    {"tick":60,"hash":"ce9d075c"},
+    {"tick":120,"hash":"4060a5fc"},
+    {"tick":180,"hash":"e4685187"},
+    {"tick":240,"hash":"b4e7aab7"},
+    {"tick":300,"hash":"ad60f188"},
+    {"tick":360,"hash":"c6320a73"},
+    {"tick":420,"hash":"b1e3da45"},
+    {"tick":480,"hash":"949e3861"},
+    {"tick":540,"hash":"6299aa65"},
+    {"tick":600,"hash":"041aba4c"}
   ],
-  "finalHash": "162fc65a"
+  "finalHash": "041aba4c"
 }

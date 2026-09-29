@@ -73,9 +73,10 @@ export interface PhysicsObject {
   readonly awakeSince: number;
 }
 
-/** A static collider that belongs to an entity (`physics.collider`; never renamed). */
+/** Static colliders that belong to an entity (`physics.collider`; never renamed). */
 export interface PhysicsCollider {
-  readonly collider: number;
+  /** In the order they were bound (a kit piece may have several solid parts). */
+  readonly colliders: readonly number[];
 }
 
 export const PhysicsObjectComponent = defineComponent<PhysicsObject>('physics.object');
@@ -201,18 +202,26 @@ export function addPhysicsObject(
   return body;
 }
 
-/** Takes `entity`'s body out of the physics world (do this before destroying a physics object). */
+/**
+ * Makes `entity` an ordinary entity again: its `physics.object` component goes and, with it, its
+ * body (a structural change: end of tick during a step). Destroying a physics object needs no call
+ * to this: its body leaves the physics world with the entity (mw-e03.41).
+ * @throws Error when `entity` is not a physics object.
+ */
 export function removePhysicsObject(world: World<never>, entity: EntityId): void {
-  const object = world.get(entity, PhysicsObjectComponent);
-  if (object === undefined) throw new Error(`entity ${String(entity)} is not a physics object`);
-  rigidBodiesOf(world).remove(object.body as ColliderHandle);
+  if (!world.has(entity, PhysicsObjectComponent)) {
+    throw new Error(`entity ${String(entity)} is not a physics object`);
+  }
   world.remove(entity, PhysicsObjectComponent);
 }
 
 /**
  * Makes static collider `collider` (e.g. from `loadScene`) part of `entity`: impacts name the entity
  * and its material, and the collider takes the entity's friction and bounciness, now and whenever
- * they change.
+ * they change. An entity may own several colliders; bind them between steps (during a step the
+ * component change waits for the end of the tick, so a second bind in the same tick replaces the
+ * first). The collider stays in the physics world when the entity goes: its owner (the scene) removes
+ * it.
  */
 export function bindCollider(
   world: World<never>,
@@ -220,7 +229,12 @@ export function bindCollider(
   collider: ColliderHandle,
 ): void {
   rigidBodiesOf(world).setMaterial(collider, bodyMaterialOf(world, entity));
-  world.add(entity, PhysicsColliderComponent, Object.freeze({ collider }));
+  const bound = world.get(entity, PhysicsColliderComponent)?.colliders ?? [];
+  world.add(
+    entity,
+    PhysicsColliderComponent,
+    Object.freeze({ colliders: Object.freeze([...bound, collider]) }),
+  );
 }
 
 interface Owned {
@@ -245,8 +259,8 @@ function emitImpacts(
     objects.set(object.body, { entity, object });
   });
   const bound = new Map<number, EntityId>();
-  world.query(PhysicsColliderComponent).forEach((entity, { collider }) => {
-    bound.set(collider, entity);
+  world.query(PhysicsColliderComponent).forEach((entity, { colliders }) => {
+    for (const collider of colliders) bound.set(collider, entity);
   });
   for (const impact of hard) {
     const a = objects.get(impact.a);
@@ -368,6 +382,10 @@ export function installPhysicsObjects<W extends World<never>>(
   const port = rigidBodiesOf(world);
   world.register(PhysicsObjectComponent, PhysicsColliderComponent);
   world.addSystem(physicsObjectsSystem(options));
+  // A physics object's body goes with its component: removed, or destroyed with the entity.
+  world.onRemove(PhysicsObjectComponent, (_entity, object) => {
+    port.remove(object.body as ColliderHandle);
+  });
   world.events.on(impulseApplied, ({ entity, impulse }) => {
     const object = world.get(entity, PhysicsObjectComponent);
     if (object !== undefined) port.applyImpulse(object.body as ColliderHandle, impulse);
@@ -375,14 +393,16 @@ export function installPhysicsObjects<W extends World<never>>(
   world.events.on(propertyChanged, ({ entity, key }) => {
     if (key !== 'weight' && key !== 'friction' && key !== 'impactAbsorb') return;
     const object = world.get(entity, PhysicsObjectComponent);
-    const handle = (object?.body ?? world.get(entity, PhysicsColliderComponent)?.collider) as
-      ColliderHandle | undefined;
-    if (handle === undefined) return;
-    if (key === 'weight') {
-      if (object !== undefined) port.setMass(handle, massOf(world, entity));
-    } else {
-      port.setMaterial(handle, bodyMaterialOf(world, entity));
+    if (object !== undefined) {
+      const body = object.body as ColliderHandle;
+      if (key === 'weight') port.setMass(body, massOf(world, entity));
+      else port.setMaterial(body, bodyMaterialOf(world, entity));
+      return;
     }
+    const bound = world.get(entity, PhysicsColliderComponent);
+    if (bound === undefined || key === 'weight') return;
+    const material = bodyMaterialOf(world, entity);
+    for (const collider of bound.colliders) port.setMaterial(collider as ColliderHandle, material);
   });
   return world;
 }

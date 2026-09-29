@@ -113,6 +113,20 @@ test('mw-e03.35 AC-4: ?scene=testbed registers its static colliders in the Rapie
   expect(problems).toEqual([]);
 });
 
+test('mw-e03.39 AC-6: the testbed spawns its movable props as physics objects with zero console errors', async ({
+  page,
+}) => {
+  const problems = collectProblems(page);
+  await page.goto('/?scene=testbed');
+  const app = page.locator('#app');
+  await expect(app).toHaveAttribute('data-scene', 'testbed', { timeout: 5_000 });
+  // The loose crate and the arena plank.
+  await expect(app).toHaveAttribute('data-physics-objects', '2');
+  await nextFrames(page);
+  await expect(app).not.toHaveAttribute('data-physics-budget', /.*/);
+  expect(problems).toEqual([]);
+});
+
 test('the default scene (no ?scene=) is the testbed', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#app')).toHaveAttribute('data-scene', 'testbed');

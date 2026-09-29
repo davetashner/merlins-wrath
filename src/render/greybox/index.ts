@@ -8,7 +8,7 @@
 // Playwright scene smoke (e2e/scenes.spec.ts).
 
 import type { KitPurpose } from '@content/index';
-import type { SceneLayout, ScenePart, SceneSpawnPlacement } from '@sim/index';
+import type { SceneLayout, ScenePart, SceneSpawnPlacement, Vec3 } from '@sim/index';
 import {
   BoxGeometry,
   BufferGeometry,
@@ -121,6 +121,8 @@ export interface GreyboxView {
   staticGeometry(layout: SceneLayout): Object3D;
   /** The object for one spawn (a prop box, or a marker cone pointing the spawn's way). */
   spawn(spawn: SceneSpawnPlacement): Object3D;
+  /** A movable prop (mw-e03.39): a `size` box centred on the origin, which follows its body. */
+  body(spawn: SceneSpawnPlacement, size: Vec3): Object3D;
   /** Removes the lights. Scene objects are disposed through their render bindings. */
   dispose(): void;
 }
@@ -203,6 +205,21 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
         mesh.position.y = 0.35;
       }
       mesh.name = spawn.prop ?? 'marker';
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+      scene.add(group);
+      return group;
+    },
+
+    body(spawn, size) {
+      const group = new Group();
+      group.name = `body:${spawn.id}`;
+      const mesh = new Mesh(
+        new BoxGeometry(size.x, size.y, size.z),
+        gridMaterial(PURPOSE_COLOURS.interactive),
+      );
+      mesh.name = spawn.prop ?? 'body';
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);

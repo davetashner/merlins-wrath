@@ -49,6 +49,8 @@ check enforces this).
 - Particle effects are in: sparks, flames, smoke and glowing motes, kept within a particle budget so a
   busy fight can't tank the frame rate. Add `?vfx=demo` to the testbed URL to see twenty test effects
   and a stats overlay (`?vfx` shows the overlay alone).
+- The testbed's loose crate and the arena plank are now real physics objects: they rest on the floor
+  and fall, tumble and stack like wood, and the player bumps into them instead of walking through.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.

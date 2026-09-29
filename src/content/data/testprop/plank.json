@@ -3,5 +3,6 @@
   "id": "plank",
   "name": "Broken plank",
   "mass": 1.5,
-  "flammable": true
+  "flammable": true,
+  "body": { "size": [1.2, 0.08, 0.25], "material": "wood" }
 }

@@ -630,3 +630,52 @@ describe('shared snapshots', () => {
     expect(w.snapshot({ shared: false }).components['Plain']?.[0]?.[1]).not.toBe(live);
   });
 });
+
+describe('World remove listeners (mw-e03.41)', () => {
+  it('AC-1: tells listeners what a component held when it is removed or its entity destroyed', () => {
+    const w = world();
+    const seen: string[] = [];
+    w.onRemove(Health, (id, hp) => seen.push(`a${String(id)}:${String(hp)}`));
+    w.onRemove(Health, (id) => seen.push(`b${String(id)}`));
+    const [x, y, z] = [w.spawn(), w.spawn(), w.spawn()];
+    w.add(x, Health, 5);
+    w.add(y, Health, 7);
+    w.add(z, Position, { x: 0, y: 0 });
+    w.remove(x, Health);
+    expect(seen).toEqual(['a1:5', 'b1']);
+    w.destroy(y);
+    w.destroy(z); // no Health: nothing to tell
+    w.remove(x, Health); // already gone
+    expect(seen).toEqual(['a1:5', 'b1', 'a2:7', 'b2']);
+  });
+
+  it('AC-1: during a step, listeners run when the change applies at the end of the tick', () => {
+    const w = world();
+    const id = w.spawn();
+    w.add(id, Health, 3);
+    const seen: [number, number][] = [];
+    w.onRemove(Health, (_id, hp) => seen.push([w.tick, hp]));
+    w.addSystem(
+      system('destroyer', () => {
+        w.destroy(id);
+        expect(seen).toEqual([]);
+      }),
+    );
+    w.step();
+    expect(seen).toEqual([[0, 3]]);
+  });
+
+  it('never calls listeners on restore, and refuses unregistered types', () => {
+    const w = world();
+    const id = w.spawn();
+    w.add(id, Health, 1);
+    const empty = world().snapshot();
+    let calls = 0;
+    w.onRemove(Health, () => calls++);
+    w.restore(empty);
+    expect(calls).toBe(0);
+    expect(w.isAlive(id)).toBe(false);
+    const Unregistered = defineComponent<number>('Unregistered');
+    expect(() => w.onRemove(Unregistered, () => undefined)).toThrow('is not registered');
+  });
+});

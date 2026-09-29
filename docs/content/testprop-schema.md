@@ -13,3 +13,6 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `flammable` | boolean | required | World property: fire can ignite it. |
 | `tags` | list of string | `[]` | Free-form tags for grey-box scenes. |
 | `breaksInto` | ref → testprop | — | Id of the testprop left when this one breaks. |
+| `body` | object | — | Makes the prop a movable physics object; without one it stays put. |
+| `body.size` | list of any (at least 3) | required | Box size along x, y, z in metres; the spawn point is the middle of its base. |
+| `body.material` | ref → material | required | Material preset (world properties) of the body. |
