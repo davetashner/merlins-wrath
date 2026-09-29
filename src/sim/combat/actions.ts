@@ -6,8 +6,11 @@
 import type { EntityId } from '../core/component';
 import { defineEvent } from '../core/events';
 
-/** Why an action was refused. */
-export type ActionRejectReason = 'stamina';
+/**
+ * Why an action was refused: `stamina` — the pool is empty (mw-e04.5); `busy` — a buffered request
+ * never became legal within the input buffer (the action timeline, mw-e04.4).
+ */
+export type ActionRejectReason = 'stamina' | 'busy';
 
 /** A refused action. */
 export interface ActionRejection {
