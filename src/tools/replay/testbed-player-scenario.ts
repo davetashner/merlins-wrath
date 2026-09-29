@@ -11,7 +11,6 @@
 // module is passed in and the recording is re-made by the integration test:
 //   TESTBED_PLAYER_RECORD=1 pnpm vitest run tests/integration/testbed-player.test.ts
 
-import { z } from 'zod';
 import { loadGameContent } from '@content/game-content';
 import { PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
 import { ActionSampler } from '@game/input/index';
@@ -19,8 +18,6 @@ import { RenderSync, type SceneBinding } from '@game/loop/index';
 import { setupTestbedPlayer, type TransformReader } from '@game/player/index';
 import { readSceneTransform, SceneLoader } from '@game/scene/index';
 import {
-  ACTION_FRAME_COMMAND,
-  BUTTON_ACTIONS,
   RapierCollisionWorld,
   RapierPhysics,
   registerSceneComponents,
@@ -30,17 +27,9 @@ import {
   type ReplayScenario,
 } from '@sim/index';
 
-const button = z.strictObject({ pressed: z.boolean(), held: z.boolean(), released: z.boolean() });
-const vector = z.strictObject({ x: z.number(), y: z.number() });
+import { actionFrameCommand } from './action-frame-command';
 
-/** One tick's ActionFrame, as stored in replay files. */
-export const actionFrameCommand = z.strictObject({
-  kind: z.literal(ACTION_FRAME_COMMAND),
-  move: vector,
-  look: vector,
-  lookStick: vector,
-  ...Object.fromEntries(BUTTON_ACTIONS.map((action) => [action, button])),
-}) as unknown as z.ZodType<ActionFrame>;
+export { actionFrameCommand };
 
 /** Keys held (KeyboardEvent.code) and mouse counts moved right per tick, for a stretch of ticks. */
 export interface ScriptStep {
