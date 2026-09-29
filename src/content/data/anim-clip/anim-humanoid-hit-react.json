@@ -1,0 +1,80 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-humanoid-hit-react",
+  "rig": "greybox-humanoid",
+  "additive": true,
+  "duration": 0.5,
+  "notes": "Grey-box placeholder (mw-e02.20): an additive flinch, chest and head knocked back, recovering by 0.5 s.",
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.08,
+        "rot": [-12, 0, 4]
+      },
+      {
+        "t": 0.5,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "chest": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.08,
+        "rot": [-15, 5, 0]
+      },
+      {
+        "t": 0.5,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "head": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.1,
+        "rot": [-20, 0, 0]
+      },
+      {
+        "t": 0.5,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.1,
+        "rot": [0, 0, -25]
+      },
+      {
+        "t": 0.5,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.1,
+        "rot": [0, 0, 25]
+      },
+      {
+        "t": 0.5,
+        "rot": [0, 0, 0]
+      }
+    ]
+  }
+}

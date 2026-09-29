@@ -42,6 +42,10 @@ check enforces this).
 - Add `?hitboxes` to the URL to draw the combat hit volumes as wireframes: each swing's sweep from
   its last pose to its current one, and every body's hit zones coloured by region (weak point, head,
   torso, limb; armored ones in grey). Nothing swings in the testbed yet; knight attacks bring it to life.
+- The testbed arena now has two animated grey-box characters: a humanoid with a sword and a
+  four-legged beast. Each one loops through standing, walking a circle, attacking and flinching from
+  a hit. The game simulation drives their timing, so each attack's swing lands on the move's
+  active frame.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.

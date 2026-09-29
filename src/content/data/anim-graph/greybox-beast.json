@@ -1,0 +1,240 @@
+{
+  "$schema": "../anim-graph.schema.json",
+  "id": "greybox-beast",
+  "notes": "Grey-box four-legged creature placeholder rig (mw-e02.20): a non-humanoid skeleton (body, neck, head, jaw, tail, four legs) proving creatures run on the same runtime with a different graph.",
+  "skeleton": [
+    {
+      "bone": "body",
+      "parent": null,
+      "offset": [0, 0.55, 0],
+      "shape": {
+        "size": [0.45, 0.35, 1.0]
+      }
+    },
+    {
+      "bone": "neck",
+      "parent": "body",
+      "offset": [0, 0.1, -0.45],
+      "shape": {
+        "size": [0.2, 0.2, 0.32],
+        "center": [0, 0.04, -0.16]
+      }
+    },
+    {
+      "bone": "head",
+      "parent": "neck",
+      "offset": [0, 0.05, -0.3],
+      "shape": {
+        "size": [0.28, 0.24, 0.36],
+        "center": [0, 0, -0.18]
+      }
+    },
+    {
+      "bone": "jaw",
+      "parent": "head",
+      "offset": [0, -0.1, -0.08],
+      "shape": {
+        "size": [0.22, 0.06, 0.3],
+        "center": [0, 0, -0.15]
+      }
+    },
+    {
+      "bone": "tail",
+      "parent": "body",
+      "offset": [0, 0.1, 0.5],
+      "shape": {
+        "size": [0.08, 0.08, 0.5],
+        "center": [0, 0, 0.25]
+      }
+    },
+    {
+      "bone": "leg-fl",
+      "parent": "body",
+      "offset": [-0.18, -0.12, -0.36],
+      "shape": {
+        "size": [0.1, 0.43, 0.1],
+        "center": [0, -0.215, 0]
+      }
+    },
+    {
+      "bone": "leg-fr",
+      "parent": "body",
+      "offset": [0.18, -0.12, -0.36],
+      "shape": {
+        "size": [0.1, 0.43, 0.1],
+        "center": [0, -0.215, 0]
+      }
+    },
+    {
+      "bone": "leg-bl",
+      "parent": "body",
+      "offset": [-0.18, -0.12, 0.36],
+      "shape": {
+        "size": [0.1, 0.43, 0.1],
+        "center": [0, -0.215, 0]
+      }
+    },
+    {
+      "bone": "leg-br",
+      "parent": "body",
+      "offset": [0.18, -0.12, 0.36],
+      "shape": {
+        "size": [0.1, 0.43, 0.1],
+        "center": [0, -0.215, 0]
+      }
+    }
+  ],
+  "masks": {
+    "forequarters": ["neck", "head", "jaw", "leg-fl", "leg-fr"]
+  },
+  "layers": [
+    {
+      "id": "base",
+      "initial": "idle",
+      "states": [
+        {
+          "id": "idle",
+          "motion": {
+            "kind": "clip",
+            "clip": "anim-beast-idle"
+          }
+        },
+        {
+          "id": "move",
+          "motion": {
+            "kind": "blend1d",
+            "param": "speed",
+            "points": [
+              {
+                "at": 0,
+                "clip": "anim-beast-idle"
+              },
+              {
+                "at": 1.5,
+                "clip": "anim-beast-walk"
+              }
+            ]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "from": "idle",
+          "to": "move",
+          "duration": 0.2,
+          "when": [
+            {
+              "param": "speed",
+              "op": ">",
+              "value": 0.2
+            }
+          ]
+        },
+        {
+          "from": "move",
+          "to": "idle",
+          "duration": 0.25,
+          "when": [
+            {
+              "param": "speed",
+              "op": "<=",
+              "value": 0.2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "mask": "forequarters",
+      "initial": "none",
+      "states": [
+        {
+          "id": "none",
+          "motion": {
+            "kind": "none"
+          }
+        },
+        {
+          "id": "attack",
+          "motion": {
+            "kind": "action",
+            "fallback": "anim-beast-lunge"
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "from": "none",
+          "to": "attack",
+          "duration": 0.1,
+          "when": [
+            {
+              "param": "actionVerb",
+              "op": "==",
+              "value": "attack"
+            }
+          ]
+        },
+        {
+          "from": "attack",
+          "to": "none",
+          "duration": 0.2,
+          "when": [
+            {
+              "param": "acting",
+              "op": "==",
+              "value": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hit",
+      "mode": "additive",
+      "initial": "none",
+      "states": [
+        {
+          "id": "none",
+          "motion": {
+            "kind": "none"
+          }
+        },
+        {
+          "id": "hit-react",
+          "motion": {
+            "kind": "clip",
+            "clip": "anim-beast-hit-react"
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "from": "none",
+          "to": "hit-react",
+          "duration": 0.05,
+          "when": [
+            {
+              "param": "hitReact",
+              "op": "==",
+              "value": true
+            }
+          ]
+        },
+        {
+          "from": "hit-react",
+          "to": "none",
+          "duration": 0.2,
+          "when": [
+            {
+              "param": "hitReact",
+              "op": "!=",
+              "value": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

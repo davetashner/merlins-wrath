@@ -1,0 +1,52 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-beast-hit-react",
+  "rig": "greybox-beast",
+  "additive": true,
+  "duration": 0.5,
+  "notes": "Grey-box placeholder (mw-e02.20): an additive recoil, body rocked back and head tossed.",
+  "tracks": {
+    "body": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.08,
+        "rot": [-8, 0, 6]
+      },
+      {
+        "t": 0.5,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "neck": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.1,
+        "rot": [-25, 10, 0]
+      },
+      {
+        "t": 0.5,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "tail": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.1,
+        "rot": [30, 0, 0]
+      },
+      {
+        "t": 0.5,
+        "rot": [0, 0, 0]
+      }
+    ]
+  }
+}

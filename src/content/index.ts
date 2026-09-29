@@ -22,6 +22,45 @@ export {
   type Frozen,
 } from './loader.ts';
 export {
+  ANIM_MARKER_KINDS,
+  animClipSchema,
+  type AnimClipDef,
+  type AnimClipDefInput,
+  type AnimMarkerKind,
+} from './types/anim-clip.ts';
+export {
+  ANIM_ACTION_PHASES,
+  ANIM_ACTION_VERBS,
+  ANIM_CONDITION_OPS,
+  ANIM_LAYER_MODES,
+  ANIM_PARAMETERS,
+  ANIM_PARAMETER_NAMES,
+  ANIM_RESTART_FADE,
+  animGraphSchema,
+  motionClips,
+  type AnimBoneDef,
+  type AnimConditionDef,
+  type AnimConditionOp,
+  type AnimGraphDef,
+  type AnimGraphDefInput,
+  type AnimLayerDef,
+  type AnimLayerMode,
+  type AnimMotionDef,
+  type AnimParameterName,
+  type AnimParameterSpec,
+  type AnimStateDef,
+  type AnimTransitionDef,
+} from './types/anim-graph.ts';
+export {
+  ANIM_MAX_MARKER_DRIFT_TICKS,
+  ANIM_SIM_HZ,
+  animMarkerDrift,
+  checkAnimation,
+  type AnimMarkerDrift,
+  type DriftClip,
+  type DriftMove,
+} from './anim-checks.ts';
+export {
   ATTACK_KINDS,
   ATTACK_SCHEMA_VERSION,
   AttackCompileError,

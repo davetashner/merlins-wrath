@@ -2,8 +2,11 @@
 // name under src/content/data/. Adding a content type = a schema module + one line here + a folder.
 // `contentChecks` are the checks across entries (fact references, mw-e27.2) every load runs.
 
+import { checkAnimation } from './anim-checks.ts';
 import { checkFacts } from './fact-checks.ts';
 import type { Catalogue, ContentCheck, EntryOf } from './loader.ts';
+import { animClipSchema } from './types/anim-clip.ts';
+import { animGraphSchema } from './types/anim-graph.ts';
 import { attackSchema } from './types/attack.ts';
 import { cameraSchema } from './types/camera.ts';
 import { controllerSchema } from './types/controller.ts';
@@ -23,6 +26,8 @@ import { testPropSchema } from './types/testprop.ts';
 
 /** Content type name → schema of one entry. */
 export const contentTypes = {
+  'anim-clip': animClipSchema,
+  'anim-graph': animGraphSchema,
   attack: attackSchema,
   camera: cameraSchema,
   controller: controllerSchema,
@@ -42,7 +47,7 @@ export const contentTypes = {
 };
 
 /** Checks across entries, run on every load of the registered types (see loader.ts). */
-export const contentChecks: readonly ContentCheck[] = [checkFacts];
+export const contentChecks: readonly ContentCheck[] = [checkFacts, checkAnimation];
 
 export type ContentTypes = typeof contentTypes;
 /** A registered content type name (its folder under src/content/data/). */

@@ -1,0 +1,479 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Rig id, e.g. \"greybox-humanoid\"; clips name it as their rig."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the rig is for, for owner review."
+    },
+    "skeleton": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "bone": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Bone name, unique in the skeleton, e.g. \"upper-arm-l\"."
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Parent bone (listed earlier), or null for the root; exactly one root."
+          },
+          "offset": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Rest position relative to the parent, metres ([x, y, z]; +y up, −z forward)."
+          },
+          "shape": {
+            "description": "Grey-box placeholder shape drawn for the bone; absent = invisible.",
+            "type": "object",
+            "properties": {
+              "size": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "Box size, metres."
+              },
+              "center": {
+                "default": [
+                  0,
+                  0,
+                  0
+                ],
+                "description": "Box centre relative to the bone, metres.",
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3
+              }
+            },
+            "required": [
+              "size"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "bone",
+          "parent",
+          "offset"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Bones, parents before children; the first is the root."
+    },
+    "masks": {
+      "description": "Named bone sets for masked layers, e.g. { \"upper-body\": [\"spine\", …] }.",
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "additionalProperties": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        }
+      }
+    },
+    "layers": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Layer id, e.g. \"base\", \"action\", \"hit\"."
+          },
+          "mode": {
+            "default": "override",
+            "description": "override replaces lower layers (by mask); additive adds its rotations on top.",
+            "type": "string",
+            "enum": [
+              "override",
+              "additive"
+            ]
+          },
+          "mask": {
+            "description": "Bone mask (a key of `masks`) the layer affects; absent = every bone.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "initial": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "State the layer starts in."
+          },
+          "states": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                  "description": "State id, unique in its layer (the probe reports it), e.g. \"idle\"."
+                },
+                "motion": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "clip"
+                        },
+                        "clip": {
+                          "description": "Clip id (the clip manifest, content type anim-clip).",
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                          "x-contentRef": "anim-clip"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "clip"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "blend1d"
+                        },
+                        "param": {
+                          "type": "string",
+                          "enum": [
+                            "speed",
+                            "turnRate",
+                            "grounded",
+                            "acting",
+                            "actionPhase",
+                            "actionVerb",
+                            "hitReact"
+                          ],
+                          "description": "Number parameter the blend follows, e.g. \"speed\"."
+                        },
+                        "points": {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "at": {
+                                "type": "number",
+                                "description": "Parameter value at which this clip has full weight."
+                              },
+                              "clip": {
+                                "description": "Clip id.",
+                                "type": "string",
+                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                "x-contentRef": "anim-clip"
+                              }
+                            },
+                            "required": [
+                              "at",
+                              "clip"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "description": "Clips by parameter value, ascending; weights are linear between neighbours."
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "param",
+                        "points"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "blend2d"
+                        },
+                        "x": {
+                          "type": "string",
+                          "enum": [
+                            "speed",
+                            "turnRate",
+                            "grounded",
+                            "acting",
+                            "actionPhase",
+                            "actionVerb",
+                            "hitReact"
+                          ],
+                          "description": "Number parameter on the x axis, e.g. \"speed\"."
+                        },
+                        "y": {
+                          "type": "string",
+                          "enum": [
+                            "speed",
+                            "turnRate",
+                            "grounded",
+                            "acting",
+                            "actionPhase",
+                            "actionVerb",
+                            "hitReact"
+                          ],
+                          "description": "Number parameter on the y axis, e.g. \"turnRate\"."
+                        },
+                        "points": {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "at": {
+                                "type": "array",
+                                "prefixItems": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "number"
+                                  }
+                                ],
+                                "items": false,
+                                "minItems": 2,
+                                "maxItems": 2,
+                                "description": "[x, y] parameter values at which this clip has full weight."
+                              },
+                              "clip": {
+                                "description": "Clip id.",
+                                "type": "string",
+                                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                "x-contentRef": "anim-clip"
+                              }
+                            },
+                            "required": [
+                              "at",
+                              "clip"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "description": "Clips by [x, y]; weights are inverse-distance, exact on a point."
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "x",
+                        "y",
+                        "points"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "action"
+                        },
+                        "fallback": {
+                          "description": "Clip played when the running move’s presentation.anim is not a clip of this rig.",
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                          "x-contentRef": "anim-clip"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "fallback"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "none"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ],
+                  "description": "What the state plays: { kind: \"clip\", clip }, { kind: \"blend1d\", param, points }, { kind: \"blend2d\", x, y, points }, { kind: \"action\", fallback } (the sim’s running move, time-warped to its frame data) or { kind: \"none\" } (the layer contributes nothing)."
+                }
+              },
+              "required": [
+                "id",
+                "motion"
+              ],
+              "additionalProperties": false
+            },
+            "description": "The layer’s states."
+          },
+          "transitions": {
+            "description": "Transitions, tried in order; the first whose `from` and `when` match is taken.",
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Source state id, or \"*\" for any state other than `to`."
+                },
+                "to": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                  "description": "Target state id."
+                },
+                "duration": {
+                  "default": 0.2,
+                  "description": "Crossfade duration, seconds.",
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "when": {
+                  "description": "Conditions on sim parameters, all of which must hold; empty = always.",
+                  "default": [],
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "param": {
+                        "type": "string",
+                        "enum": [
+                          "speed",
+                          "turnRate",
+                          "grounded",
+                          "acting",
+                          "actionPhase",
+                          "actionVerb",
+                          "hitReact"
+                        ],
+                        "description": "A sim-published parameter (ANIM_PARAMETERS)."
+                      },
+                      "op": {
+                        "type": "string",
+                        "enum": [
+                          "==",
+                          "!=",
+                          "<",
+                          "<=",
+                          ">",
+                          ">="
+                        ],
+                        "description": "Comparison; flags and strings allow == and != only."
+                      },
+                      "value": {
+                        "description": "Value compared against; must match the parameter’s kind.",
+                        "type": [
+                          "number",
+                          "boolean",
+                          "string"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "param",
+                      "op",
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "from",
+                "to"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "initial",
+          "states"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Layers, bottom first: base locomotion, then masked actions, then additive reactions."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "skeleton",
+    "layers"
+  ],
+  "additionalProperties": false
+}

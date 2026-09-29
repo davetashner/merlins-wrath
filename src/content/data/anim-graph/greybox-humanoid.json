@@ -1,0 +1,289 @@
+{
+  "$schema": "../anim-graph.schema.json",
+  "id": "greybox-humanoid",
+  "notes": "Grey-box humanoid placeholder rig (mw-e02.20): box limbs on a 14-bone skeleton, feet at the origin, facing -z. The knight and every humanoid NPC use this graph until the e37 animation pipeline supplies real rigs.",
+  "skeleton": [
+    {
+      "bone": "pelvis",
+      "parent": null,
+      "offset": [0, 0.95, 0],
+      "shape": {
+        "size": [0.34, 0.18, 0.2]
+      }
+    },
+    {
+      "bone": "spine",
+      "parent": "pelvis",
+      "offset": [0, 0.09, 0],
+      "shape": {
+        "size": [0.3, 0.24, 0.18],
+        "center": [0, 0.12, 0]
+      }
+    },
+    {
+      "bone": "chest",
+      "parent": "spine",
+      "offset": [0, 0.24, 0],
+      "shape": {
+        "size": [0.42, 0.3, 0.22],
+        "center": [0, 0.14, 0]
+      }
+    },
+    {
+      "bone": "head",
+      "parent": "chest",
+      "offset": [0, 0.3, 0],
+      "shape": {
+        "size": [0.2, 0.24, 0.22],
+        "center": [0, 0.13, 0]
+      }
+    },
+    {
+      "bone": "upper-arm-l",
+      "parent": "chest",
+      "offset": [-0.27, 0.24, 0],
+      "shape": {
+        "size": [0.1, 0.3, 0.1],
+        "center": [0, -0.15, 0]
+      }
+    },
+    {
+      "bone": "forearm-l",
+      "parent": "upper-arm-l",
+      "offset": [0, -0.3, 0],
+      "shape": {
+        "size": [0.09, 0.28, 0.09],
+        "center": [0, -0.14, 0]
+      }
+    },
+    {
+      "bone": "upper-arm-r",
+      "parent": "chest",
+      "offset": [0.27, 0.24, 0],
+      "shape": {
+        "size": [0.1, 0.3, 0.1],
+        "center": [0, -0.15, 0]
+      }
+    },
+    {
+      "bone": "forearm-r",
+      "parent": "upper-arm-r",
+      "offset": [0, -0.3, 0],
+      "shape": {
+        "size": [0.09, 0.28, 0.09],
+        "center": [0, -0.14, 0]
+      }
+    },
+    {
+      "bone": "sword",
+      "parent": "forearm-r",
+      "offset": [0, -0.28, 0],
+      "shape": {
+        "size": [0.04, 0.8, 0.04],
+        "center": [0, -0.4, 0]
+      }
+    },
+    {
+      "bone": "thigh-l",
+      "parent": "pelvis",
+      "offset": [-0.1, -0.05, 0],
+      "shape": {
+        "size": [0.13, 0.42, 0.13],
+        "center": [0, -0.21, 0]
+      }
+    },
+    {
+      "bone": "shin-l",
+      "parent": "thigh-l",
+      "offset": [0, -0.42, 0],
+      "shape": {
+        "size": [0.11, 0.43, 0.11],
+        "center": [0, -0.22, 0]
+      }
+    },
+    {
+      "bone": "thigh-r",
+      "parent": "pelvis",
+      "offset": [0.1, -0.05, 0],
+      "shape": {
+        "size": [0.13, 0.42, 0.13],
+        "center": [0, -0.21, 0]
+      }
+    },
+    {
+      "bone": "shin-r",
+      "parent": "thigh-r",
+      "offset": [0, -0.42, 0],
+      "shape": {
+        "size": [0.11, 0.43, 0.11],
+        "center": [0, -0.22, 0]
+      }
+    }
+  ],
+  "masks": {
+    "upper-body": [
+      "spine",
+      "chest",
+      "head",
+      "upper-arm-l",
+      "forearm-l",
+      "upper-arm-r",
+      "forearm-r",
+      "sword"
+    ]
+  },
+  "layers": [
+    {
+      "id": "base",
+      "initial": "idle",
+      "states": [
+        {
+          "id": "idle",
+          "motion": {
+            "kind": "clip",
+            "clip": "anim-humanoid-idle"
+          }
+        },
+        {
+          "id": "move",
+          "motion": {
+            "kind": "blend1d",
+            "param": "speed",
+            "points": [
+              {
+                "at": 0,
+                "clip": "anim-humanoid-idle"
+              },
+              {
+                "at": 1.5,
+                "clip": "anim-humanoid-walk"
+              },
+              {
+                "at": 4,
+                "clip": "anim-humanoid-run"
+              }
+            ]
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "from": "idle",
+          "to": "move",
+          "duration": 0.2,
+          "when": [
+            {
+              "param": "speed",
+              "op": ">",
+              "value": 0.2
+            }
+          ]
+        },
+        {
+          "from": "move",
+          "to": "idle",
+          "duration": 0.25,
+          "when": [
+            {
+              "param": "speed",
+              "op": "<=",
+              "value": 0.2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "action",
+      "mask": "upper-body",
+      "initial": "none",
+      "states": [
+        {
+          "id": "none",
+          "motion": {
+            "kind": "none"
+          }
+        },
+        {
+          "id": "attack",
+          "motion": {
+            "kind": "action",
+            "fallback": "anim-knight-sword-light-1"
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "from": "none",
+          "to": "attack",
+          "duration": 0.1,
+          "when": [
+            {
+              "param": "acting",
+              "op": "==",
+              "value": true
+            }
+          ]
+        },
+        {
+          "from": "attack",
+          "to": "none",
+          "duration": 0.2,
+          "when": [
+            {
+              "param": "acting",
+              "op": "==",
+              "value": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hit",
+      "mode": "additive",
+      "initial": "none",
+      "states": [
+        {
+          "id": "none",
+          "motion": {
+            "kind": "none"
+          }
+        },
+        {
+          "id": "hit-react",
+          "motion": {
+            "kind": "clip",
+            "clip": "anim-humanoid-hit-react"
+          }
+        }
+      ],
+      "transitions": [
+        {
+          "from": "none",
+          "to": "hit-react",
+          "duration": 0.05,
+          "when": [
+            {
+              "param": "hitReact",
+              "op": "==",
+              "value": true
+            }
+          ]
+        },
+        {
+          "from": "hit-react",
+          "to": "none",
+          "duration": 0.2,
+          "when": [
+            {
+              "param": "hitReact",
+              "op": "==",
+              "value": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

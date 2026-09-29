@@ -1,0 +1,105 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-knight-sword-light-1",
+  "rig": "greybox-humanoid",
+  "duration": 0.5667,
+  "notes": "Grey-box placeholder for move sword-light-1 (12/4/18 ticks): windup, a downward slash whose hit marker (0.2 s = tick 12) sits on the first active tick, and a follow-through to tick 34.",
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.2,
+        "rot": [8, -10, 0]
+      },
+      {
+        "t": 0.5667,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "chest": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.15,
+        "rot": [-6, 20, 0]
+      },
+      {
+        "t": 0.2,
+        "rot": [10, -15, 0]
+      },
+      {
+        "t": 0.35,
+        "rot": [6, -20, 0]
+      },
+      {
+        "t": 0.5667,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [0, 0, 6]
+      },
+      {
+        "t": 0.15,
+        "rot": [150, 0, 20]
+      },
+      {
+        "t": 0.2,
+        "rot": [80, 0, 10]
+      },
+      {
+        "t": 0.35,
+        "rot": [20, 0, 10]
+      },
+      {
+        "t": 0.5667,
+        "rot": [0, 0, 6]
+      }
+    ],
+    "forearm-r": [
+      {
+        "t": 0,
+        "rot": [8, 0, 0]
+      },
+      {
+        "t": 0.15,
+        "rot": [40, 0, 0]
+      },
+      {
+        "t": 0.2,
+        "rot": [10, 0, 0]
+      },
+      {
+        "t": 0.5667,
+        "rot": [8, 0, 0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [0, 0, -6]
+      },
+      {
+        "t": 0.2,
+        "rot": [30, 0, -20]
+      },
+      {
+        "t": 0.5667,
+        "rot": [0, 0, -6]
+      }
+    ]
+  },
+  "markers": [
+    {
+      "kind": "hit",
+      "t": 0.2
+    }
+  ]
+}
