@@ -1,0 +1,8 @@
+{
+  "$schema": "../testprop.schema.json",
+  "id": "lever",
+  "name": "Wall lever",
+  "mass": 4,
+  "flammable": false,
+  "tags": ["interactive"]
+}

@@ -300,6 +300,34 @@ ${tokens}
   border: 2px solid currentColor;
   border-radius: var(--ui-radius);
 }
+.vb-interact {
+  position: absolute;
+  left: 50%;
+  top: 62%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-space-1);
+  font-size: ${size(1.125)};
+}
+.vb-interact[hidden], .vb-interact [hidden] { display: none; }
+.vb-interact[data-available='false'] .vb-glyph-prompt { opacity: 0.6; }
+.vb-interact-reason { font-size: ${size(0.875)}; font-style: italic; }
+.vb-interact-bar {
+  width: 8em;
+  height: 0.3em;
+  border-radius: var(--ui-radius);
+  background: var(--ui-color-bar-track);
+  overflow: hidden;
+}
+.vb-interact-fill {
+  display: block;
+  height: 100%;
+  background: var(--ui-color-hud-text);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
 `;
 }
 

@@ -94,9 +94,10 @@ describe('scene loader glue (mw-e00.21)', () => {
       'static:testbed',
       'spawn:player-start',
       'spawn:loose-crate',
+      'spawn:room-lever',
       'spawn:arena-plank',
     ]);
-    expect(sync.size).toBe(4);
+    expect(sync.size).toBe(5);
     expect(built[0]?.transform?.position).toEqual({ x: 0, y: 0, z: 0 });
     expect(built[1]?.transform?.position).toEqual({ x: 0, y: 0, z: -1 });
   });

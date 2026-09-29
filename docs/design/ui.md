@@ -98,6 +98,8 @@ binding.frame(latestSnapshot, frame.timeMs);
   costs zero DOM writes.
 - `Meter` draws the delayed-damage trail, which snaps under reduced motion.
 - Deriving the vitals from real sim components is owned by the HUD feature beads (e.g. mw-e04.10).
+- `InteractPrompt` (`src/ui/interact-prompt.ts`) is the contextual Interact prompt (`[E] Pull lever`,
+  greyed with a reason when unavailable, a bar for holds); see [interaction](interaction.md).
 
 ## Game glue (`src/game/ui`)
 

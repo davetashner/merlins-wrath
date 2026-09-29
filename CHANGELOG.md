@@ -51,6 +51,9 @@ check enforces this).
   and a stats overlay (`?vfx` shows the overlay alone).
 - The testbed's loose crate and the arena plank are now real physics objects: they rest on the floor
   and fall, tumble and stack like wood, and the player bumps into them instead of walking through.
+- Look at an object and press Interact (E, or X on a controller) to use it: a prompt under the view
+  names what you can do and shows the key to press. Things you can't use yet stay listed, greyed, with
+  the reason ("Locked — needs Iron Key"). The testbed room has a lever to try it on.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.

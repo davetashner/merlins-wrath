@@ -7,18 +7,32 @@
 // small read-only readouts for the HUD and the Playwright e2e: the player's state after every sim
 // tick, and the camera's after every frame it drives.
 //
+// With `interaction` (mw-e02.5) the player can also focus and interact with world objects: the
+// sim's interaction system runs after the controller, the scene's interactable spawns get their
+// affordances, and `prompt()` returns what the contextual prompt should show.
+//
 // Renderer-agnostic: the caller supplies the capsule object and how an object follows its entity
 // (object3DBinding for Three.js). The sim steps only through the frame loop, as ever; nothing here
 // mutates the sim after setup (the camera's collision queries are read-only).
 
 import type { CameraTuning, ControllerTuning, Frozen, MoveTable } from '@content/index';
 import {
+  addInteractor,
+  addSceneInteractables,
   CharacterController,
+  installInteraction,
   installPlayer,
+  interacted,
+  interactionPrompt,
   PlayerLook,
+  type BodyId,
   type CollisionWorld,
   type EntityId,
+  type Interaction,
+  type InteractionPrompt,
+  type InteractorKit,
   type LoadedScene,
+  type SightWorld,
   type World,
 } from '@sim/index';
 import {
@@ -63,6 +77,21 @@ export interface CameraReadout {
   readonly position: Vec3;
 }
 
+/**
+ * The player's interactions (mw-e02.5). Register the placement component and the world properties
+ * on the world first (the focus reads both).
+ */
+export interface TestbedInteractionOptions {
+  /** Solid colliders that block reach: RapierSightWorld over the world's physics. */
+  readonly sight?: SightWorld;
+  /** Colliders belonging to an entity, which never block reach to it. */
+  readonly bodiesOf?: (entity: EntityId) => readonly BodyId[];
+  /** The player's capabilities and items (none until classes and inventory arrive). */
+  readonly kit?: Partial<InteractorKit>;
+  /** Receives every interaction the player completes (the e2e hook). */
+  readonly publish?: (interaction: Interaction) => void;
+}
+
 export interface TestbedPlayerOptions<TObject, TCommand> {
   readonly world: World<TCommand>;
   /** The loaded scene; the player spawns at its `player-start` spawn. */
@@ -89,6 +118,8 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
    * action timeline and the dodge roll and backstep (mw-e04.8). Absent = movement only.
    */
   readonly moves?: MoveTable;
+  /** Lets the player focus and interact with world objects (mw-e02.5). */
+  readonly interaction?: TestbedInteractionOptions;
 }
 
 export interface TestbedPlayer {
@@ -101,6 +132,8 @@ export interface TestbedPlayer {
   zoom(notches: number): void;
   /** The player's state now, or undefined once disposed. */
   readout(): PlayerReadout | undefined;
+  /** What the Interact prompt shows now; undefined with nothing in focus or no interaction. */
+  prompt(): InteractionPrompt | undefined;
   /** Unbinds the capsule and removes the player (its systems stay; they find no player). */
   dispose(): void;
 }
@@ -149,6 +182,22 @@ export function setupTestbedPlayer<TObject, TCommand>(
     ...(options.moves !== undefined && { combat: { moves: options.moves } }),
   });
   const orbit = new OrbitCamera(cameraTuning, collision);
+  const interaction = options.interaction;
+  let unsubscribe: (() => void) | undefined;
+  if (interaction !== undefined) {
+    const { sight, bodiesOf, publish: publishInteraction } = interaction;
+    installInteraction(world, {
+      ...(sight !== undefined && { sight }),
+      ...(bodiesOf !== undefined && { bodiesOf: (_world, target) => bodiesOf(target) }),
+    });
+    addInteractor(world, entity, interaction.kit);
+    addSceneInteractables(world, scene.spawns);
+    if (publishInteraction !== undefined) {
+      unsubscribe = world.events.on(interacted, (event) => {
+        if (event.actor === entity) publishInteraction(event);
+      });
+    }
+  }
 
   // Remember the interpolated transform render sync last applied: the camera follows exactly what
   // is drawn.
@@ -250,7 +299,12 @@ export function setupTestbedPlayer<TObject, TCommand>(
       orbit.zoomBy(notches);
     },
     readout,
+    prompt() {
+      if (interaction === undefined || !world.isAlive(entity)) return undefined;
+      return interactionPrompt(world, entity);
+    },
     dispose() {
+      unsubscribe?.();
       sync.unbind(entity);
       if (world.isAlive(entity)) world.destroy(entity);
       shown = undefined;

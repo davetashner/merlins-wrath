@@ -166,6 +166,8 @@ export interface GlyphPrompt {
   readonly element: HTMLElement;
   /** Changes the glyph (the device changed, or the binding was remapped). */
   setGlyph(glyph: string): void;
+  /** Changes the action text (a contextual prompt whose target changed). */
+  setAction(action: string): void;
 }
 
 /**
@@ -175,16 +177,20 @@ export interface GlyphPrompt {
  */
 export function glyphPrompt(glyph: string, action: string): GlyphPrompt {
   const kbd = h('kbd', { text: glyph });
+  const label = h('span', { text: action });
   const element = h(
     'span',
     { className: 'vb-glyph-prompt', data: { uiComponent: 'glyph' } },
     kbd,
-    h('span', { text: action }),
+    label,
   );
   return {
     element,
     setGlyph(next: string) {
       if (kbd.textContent !== next) kbd.textContent = next;
+    },
+    setAction(next: string) {
+      if (label.textContent !== next) label.textContent = next;
     },
   };
 }
