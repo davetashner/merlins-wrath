@@ -1,5 +1,5 @@
 {
-  "id": "test-smoke",
+  "id": "vfx-test-smoke",
   "notes": "Framework test effect (mw-e29.1): looping alpha-blended smoke in the fire school's smoke colour fading to day fog (style bible §2.3, §8: smoke sits in the world, not additive). Low priority, so it is culled first when the budget is full.",
   "priority": 20,
   "duration": 2,

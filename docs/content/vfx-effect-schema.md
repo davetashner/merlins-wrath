@@ -7,7 +7,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 
 | Field | Type | Default | Description |
 | --- | --- | --- | --- |
-| `id` | id | required | Effect id, e.g. "impact-sparks". |
+| `id` | string | required | Effect id: the VFX cue id moves and spells name (style bible §15.1), e.g. "vfx-impact-sparks". |
 | `notes` | string | required | What the effect shows and where it is used, for review. |
 | `priority` | integer 0–100 | `50` | 0–100: when the particle budget is full, lower-priority effects are culled first. |
 | `duration` | number > 0 | required | Seconds the effect emits for; a looping effect repeats its bursts each period. |

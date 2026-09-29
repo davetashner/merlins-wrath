@@ -20,13 +20,13 @@ const DT = 1 / 60;
 
 type EmitterInput = VfxEffectDefInput['emitters'][number];
 
-const def = (
+const parse = (
   id: string,
   overrides: Partial<VfxEffectDefInput> = {},
   emitter: Partial<EmitterInput> = {},
 ) =>
   vfxEffectSchema.parse({
-    id,
+    id: `vfx-${id}`,
     notes: 'Test effect.',
     duration: 1,
     emitters: [
@@ -41,6 +41,9 @@ const def = (
     ],
     ...overrides,
   });
+
+/** Test effects keep short ids (the runtime does not care; content requires `vfx-…`). */
+const def = (...args: Parameters<typeof parse>) => ({ ...parse(...args), id: args[0] });
 
 /** A one-shot burst of `count` particles living 0.1 s. */
 const burst = (id: string, count: number, priority = 50) =>
@@ -190,9 +193,9 @@ describe('VfxSystem budget', () => {
 
   it('High-only emitters do not run on Low; an effect with nothing left gets no handle', () => {
     const highOnly = def('sparkle', {}, { rate: 10, minTier: 'high' });
-    const mixed = vfxEffectSchema.parse({
+    const mixed = {
       ...def('mixed', {}, { rate: 10 }),
-      emitters: [
+      emitters: vfxEffectSchema.shape.emitters.parse([
         {
           id: 'base',
           texture: 'vfx-a',
@@ -210,8 +213,8 @@ describe('VfxSystem budget', () => {
           color: '#000000',
           minTier: 'high',
         },
-      ],
-    });
+      ]),
+    };
     const { vfx } = system([highOnly, mixed], { tier: 'low' });
     expect(vfx.spawn('sparkle', { position: ORIGIN })).toBeNull();
     vfx.spawn('mixed', { position: ORIGIN });

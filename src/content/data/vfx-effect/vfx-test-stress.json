@@ -1,5 +1,5 @@
 {
-  "id": "test-stress",
+  "id": "vfx-test-stress",
   "notes": "Framework perf effect (mw-e29.1 AC-7): a looping column of arcane-school motes sized to reserve exactly 40 particles, so the ?vfx=stress testbed's 50 of them fill the 2000-particle High cap.",
   "priority": 50,
   "duration": 1,

@@ -19,15 +19,15 @@ export function parseVfxParam(search: string): VfxDemoMode | undefined {
 
 /** Effects the demo cycles through (content/data/vfx-effect). */
 export const DEMO_EFFECTS: readonly string[] = [
-  'test-sparks',
-  'test-flame',
-  'test-smoke',
-  'test-arcane-motes',
+  'vfx-test-sparks',
+  'vfx-test-flame',
+  'vfx-test-smoke',
+  'vfx-test-arcane-motes',
 ];
 /** Effects the demo spawns. */
 export const DEMO_COUNT = 20;
 /** The stress effect: reserves 40 particles, so 50 of them fill the 2000-particle High cap. */
-export const STRESS_EFFECT = 'test-stress';
+export const STRESS_EFFECT = 'vfx-test-stress';
 export const STRESS_COUNT = 50;
 /** Seconds between repeats of a demo one-shot. */
 export const DEMO_REPEAT_SECONDS = 1;

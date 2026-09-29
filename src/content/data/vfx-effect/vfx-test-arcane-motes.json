@@ -1,5 +1,5 @@
 {
-  "id": "test-arcane-motes",
+  "id": "vfx-test-arcane-motes",
   "notes": "Framework test effect (mw-e29.1): looping arcane-school motes (style bible §2.3 Arcane: circles and motes, steady) drifting in every direction around the origin. Tests spherical spawn and a 180° cone.",
   "priority": 50,
   "duration": 1.5,

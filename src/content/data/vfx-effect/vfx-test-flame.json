@@ -1,5 +1,5 @@
 {
-  "id": "test-flame",
+  "id": "vfx-test-flame",
   "notes": "Framework test effect (mw-e29.1): a looping fire-school flame (style bible §2.3 Fire: rising, licking) from a 4×4 flipbook, with embers that only run on the High tier. Used by the testbed ?vfx demo and the framework tests.",
   "priority": 40,
   "duration": 1,

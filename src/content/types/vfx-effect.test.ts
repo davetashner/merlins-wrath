@@ -22,7 +22,7 @@ const emitter = (overrides: Partial<EmitterInput> = {}): EmitterInput => ({
 });
 
 const effect = (overrides: Partial<VfxEffectDefInput> = {}): VfxEffectDefInput => ({
-  id: 'test',
+  id: 'vfx-test',
   notes: 'Test effect.',
   duration: 1,
   emitters: [emitter()],
@@ -37,7 +37,9 @@ const problems = (value: unknown) =>
 /** Loads one effect file through the real loader and returns its issues. */
 function loadIssues(value: unknown) {
   try {
-    loadContent(contentTypes, [{ path: 'data/vfx-effect/test.json', text: JSON.stringify(value) }]);
+    loadContent(contentTypes, [
+      { path: 'data/vfx-effect/vfx-test.json', text: JSON.stringify(value) },
+    ]);
   } catch (error) {
     expect(error).toBeInstanceOf(ContentLoadError);
     return (error as ContentLoadError).issues;
@@ -60,7 +62,7 @@ describe('vfx-effect schema', () => {
     );
     expect(issues).toHaveLength(1);
     expect(issues[0]).toMatchObject({
-      file: 'data/vfx-effect/test.json',
+      file: 'data/vfx-effect/vfx-test.json',
       pointer: '/emitters/1/lifetime/min',
     });
   });
@@ -69,10 +71,16 @@ describe('vfx-effect schema', () => {
     const issues = loadIssues(effect({ emitters: [emitter({ blend: 'screen' as 'alpha' })] }));
     expect(issues).toHaveLength(1);
     expect(issues[0]).toMatchObject({
-      file: 'data/vfx-effect/test.json',
+      file: 'data/vfx-effect/vfx-test.json',
       pointer: '/emitters/0/blend',
     });
     expect(issues[0]?.message).toMatch(/additive|alpha/);
+  });
+
+  it('effect ids are VFX cue ids, so moves and spells can name them', () => {
+    expect(problems(effect({ id: 'impact-sparks' }))).toEqual([
+      'id: must be a VFX cue id like "vfx-sword-trail-light"',
+    ]);
   });
 
   it('fills defaults and normalises ranges', () => {

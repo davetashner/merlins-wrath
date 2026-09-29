@@ -4,10 +4,12 @@
 // lifetime, speed inside a cone, gravity and drag) and how it looks over a particle's life (size,
 // colour and alpha curves; a texture or flipbook asset id and a blend mode, style bible §8). The
 // renderer-agnostic runtime and the budget manager are src/game/vfx; the Three.js drawing is
-// src/render/vfx. Which sim event spawns which effect is VFX cue sheets' job (e29.3), not this file's.
+// src/render/vfx. The effect id is the VFX cue id that moves and spells name (`vfxCue`). Which sim
+// event spawns which effect is VFX cue sheets' job (e29.3), not this file's.
 
 import { z } from 'zod';
 import { contentId } from '../schema.ts';
+import { VFX_CUE_PATTERN } from './move.ts';
 
 /** Blend modes (style bible §8): magic cores are additive, smoke, dust and debris alpha-blended. */
 export const VFX_BLEND_MODES = ['additive', 'alpha'] as const;
@@ -18,7 +20,7 @@ export const VFX_QUALITY_TIERS = ['low', 'high'] as const;
 export type VfxQualityTier = (typeof VFX_QUALITY_TIERS)[number];
 
 /** A VFX texture or flipbook asset id (style bible §15 naming), e.g. `vfx-fire-flame-loop-8x8-01`. */
-export const VFX_TEXTURE_PATTERN = /^vfx-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const VFX_TEXTURE_PATTERN = VFX_CUE_PATTERN;
 
 /** A colour as `#RRGGBB` (style bible palette values). */
 export const HEX_COLOUR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
@@ -160,7 +162,11 @@ export const vfxEmitterSchema = z
 /** One VFX effect: `src/content/data/vfx-effect/<id>.json`. */
 export const vfxEffectSchema = z
   .strictObject({
-    id: contentId.describe('Effect id, e.g. "impact-sparks".'),
+    id: contentId
+      .regex(VFX_CUE_PATTERN, 'must be a VFX cue id like "vfx-sword-trail-light"')
+      .describe(
+        'Effect id: the VFX cue id moves and spells name (style bible §15.1), e.g. "vfx-impact-sparks".',
+      ),
     notes: z.string().min(1).describe('What the effect shows and where it is used, for review.'),
     priority: z
       .number()

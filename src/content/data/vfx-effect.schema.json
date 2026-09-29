@@ -8,8 +8,15 @@
     },
     "id": {
       "type": "string",
-      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-      "description": "Effect id, e.g. \"impact-sparks\"."
+      "allOf": [
+        {
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        {
+          "pattern": "^vfx-[a-z0-9]+(?:-[a-z0-9]+)*$"
+        }
+      ],
+      "description": "Effect id: the VFX cue id moves and spells name (style bible §15.1), e.g. \"vfx-impact-sparks\"."
     },
     "notes": {
       "type": "string",

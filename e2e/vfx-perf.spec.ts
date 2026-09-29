@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test';
 //
 //   VESPER_PERF=1 pnpm exec playwright test e2e/vfx-perf.spec.ts --headed
 //
-// `?vfx=stress` spawns 50 looping test-stress effects that together reserve the whole 2000-particle
+// `?vfx=stress` spawns 50 looping vfx-test-stress effects that together reserve the whole 2000-particle
 // High cap. Budget: frame interval p95 ≤ 16.7 ms (60 fps). VESPER_PERF_SECONDS sets the sampling time
 // (default 20 s); VESPER_PERF_CHANNEL=chrome uses installed Chrome.
 
