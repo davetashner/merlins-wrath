@@ -44,6 +44,7 @@ export default defineConfig({
         main: 'index.html',
         'testbed-audio': 'testbed/audio.html',
         'testbed-render': 'testbed/render.html',
+        'testbed-ui': 'testbed/ui.html',
       },
     },
   },

@@ -180,6 +180,24 @@ describe('createFrameLoop', () => {
     expect(sim.steps).toEqual([['cmd-0'], ['cmd-1'], ['cmd-2']]);
   });
 
+  it('mw-e00.23: while simPaused, frames render but no step runs and paused time is discarded', () => {
+    let paused = true;
+    const sample = vi.fn(() => ['cmd']);
+    const { frames, sim, rendered, loop } = setup({
+      simPaused: () => paused,
+      sampleCommands: sample,
+    });
+    loop.start();
+    for (let i = 0; i < 60; i++) frames.frame(1000 / 60);
+    expect(sim.steps).toHaveLength(0);
+    expect(sample).not.toHaveBeenCalled();
+    expect(rendered).toHaveLength(60);
+    expect(rendered.every((frame) => frame.steps === 0 && frame.alpha === 0)).toBe(true);
+    paused = false;
+    frames.frame(1000 / 60); // no catch-up burst: exactly one step
+    expect(sim.steps).toHaveLength(1);
+  });
+
   it('steps with no commands when there is no command sampler', () => {
     const { frames, sim, loop } = setup();
     loop.start();

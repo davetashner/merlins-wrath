@@ -74,6 +74,11 @@ export interface FrameLoopOptions<TCommand> {
   readonly onStep?: (tick: number) => void;
   /** Called once per frame after stepping. */
   readonly render?: (frame: FrameInfo) => void;
+  /**
+   * While this returns true (a menu that pauses the game is open, mw-e00.23) frames keep rendering
+   * but no sim step runs and no commands are sampled; the paused time is discarded, not caught up.
+   */
+  readonly simPaused?: () => boolean;
   /** Spiral-of-death guard (default 5). */
   readonly maxStepsPerFrame?: number;
   /** Where dropped-time warnings go (default console.warn). */
@@ -148,7 +153,7 @@ export function createFrameLoop<TCommand>(options: FrameLoopOptions<TCommand>): 
     const timeMs = now();
     const delta = Math.max(0, timeMs - last);
     last = timeMs;
-    accumulator += delta;
+    accumulator = options.simPaused?.() === true ? 0 : accumulator + delta;
 
     let steps = 0;
     while (accumulator + EPSILON_MS >= stepMs && steps < maxSteps) {

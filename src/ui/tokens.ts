@@ -1,0 +1,332 @@
+// UI design tokens and the kit's stylesheet (mw-e00.23). Every colour, size and duration the UI kit
+// uses is a CSS custom property defined here, following the style bible's UI section (§9: parchment
+// panels, ink text, hearth accent, ember warnings; §2.1 hex values). Components never hard-code a
+// colour: a later art pass (mw-e37) or an accessibility setting (mw-e31) restyles the whole UI by
+// overriding tokens on the UI root, e.g. `root.style.setProperty('--ui-color-accent', …)`.
+//
+// Two tokens are hooks for comfort settings (see comfort.ts): `--ui-text-scale` (0.8–2.0, every font
+// size is multiplied by it) and `--ui-motion-scale` (0 under reduced motion, so every transition
+// duration collapses to zero).
+
+/** Style bible §2.1 core palette entries the UI uses. */
+export const PALETTE = Object.freeze({
+  ink: '#1E1B2E',
+  dusk: '#3B3A5A',
+  leaf: '#6B8F4E',
+  parchment: '#EFE2C4',
+  cream: '#FFF4DC',
+  hearth: '#E8A24A',
+  ember: '#C8553D',
+  brass: '#C9A042',
+  wayfinder: '#F2C94C',
+});
+
+/** Token name (without the leading `--`) → default value. */
+export const UI_TOKENS: Readonly<Record<string, string>> = Object.freeze({
+  // Colour (style bible §9: parchment panels, ink text, hearth hover, ember warnings).
+  'ui-color-panel': PALETTE.parchment,
+  'ui-color-panel-raised': PALETTE.cream,
+  'ui-color-text': PALETTE.ink,
+  'ui-color-text-muted': PALETTE.dusk,
+  'ui-color-accent': PALETTE.hearth,
+  'ui-color-warning': PALETTE.ember,
+  'ui-color-border': PALETTE.brass,
+  'ui-color-focus': PALETTE.ink,
+  'ui-color-backdrop': 'rgb(30 27 46 / 72%)',
+  'ui-color-hud-text': PALETTE.parchment,
+  'ui-color-hud-shadow': PALETTE.ink,
+  'ui-color-bar-track': 'rgb(30 27 46 / 70%)',
+  'ui-color-health': PALETTE.ember,
+  'ui-color-stamina': PALETTE.leaf,
+  'ui-color-bar-trail': PALETTE.hearth,
+  // Type (style bible §9.1; the fonts are self-hosted by mw-e37, system fallbacks until then).
+  'ui-font-body': "'Alegreya Sans', 'Atkinson Hyperlegible', system-ui, sans-serif",
+  'ui-font-heading': "'Cinzel', Georgia, serif",
+  'ui-font-size': '16px',
+  'ui-text-scale': '1',
+  // Space, shape, motion.
+  'ui-space-1': '0.25rem',
+  'ui-space-2': '0.5rem',
+  'ui-space-3': '1rem',
+  'ui-space-4': '1.5rem',
+  'ui-radius': '4px',
+  'ui-focus-width': '3px',
+  'ui-focus-offset': '2px',
+  'ui-motion-scale': '1',
+  'ui-motion-duration': '160ms',
+});
+
+/** Font size `n` × the base size × the text scale. */
+const size = (n: number): string =>
+  `calc(${String(n)} * var(--ui-font-size) * var(--ui-text-scale))`;
+
+const MOTION = 'calc(var(--ui-motion-duration) * var(--ui-motion-scale))';
+
+/** The kit's stylesheet: tokens on `.vb-ui` and every component's rules. */
+export function uiStyleSheet(): string {
+  const tokens = Object.entries(UI_TOKENS)
+    .map(([name, value]) => `  --${name}: ${value};`)
+    .join('\n');
+  return `
+.vb-ui {
+${tokens}
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--ui-font-body);
+  font-size: ${size(1)};
+  line-height: 1.4;
+  color: var(--ui-color-text);
+}
+.vb-ui[data-motion='reduce'] { --ui-motion-scale: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .vb-ui:not([data-motion='full']) { --ui-motion-scale: 0; }
+}
+.vb-ui *, .vb-ui *::before, .vb-ui *::after { box-sizing: border-box; }
+.vb-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--ui-color-hud-text);
+  text-shadow: 0 1px 2px var(--ui-color-hud-shadow);
+}
+.vb-menus { position: absolute; inset: 0; pointer-events: none; }
+.vb-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+.vb-screen[data-modal] { background: var(--ui-color-backdrop); }
+.vb-screen[inert] { pointer-events: none; }
+.vb-panel {
+  max-width: min(60rem, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: var(--ui-space-4);
+  background: var(--ui-color-panel);
+  color: var(--ui-color-text);
+  border: 2px solid var(--ui-color-border);
+  border-radius: var(--ui-radius);
+}
+.vb-panel h1, .vb-panel h2, .vb-panel h3 {
+  font-family: var(--ui-font-heading);
+  margin: 0 0 var(--ui-space-2);
+}
+.vb-panel h1 { font-size: ${size(1.75)}; }
+.vb-panel h2 { font-size: ${size(1.25)}; }
+.vb-panel h3 { font-size: ${size(1.05)}; }
+.vb-ui :focus { outline: none; }
+.vb-ui :focus-visible,
+.vb-ui[data-modality='nav'] :focus {
+  outline: var(--ui-focus-width) solid var(--ui-color-focus);
+  outline-offset: var(--ui-focus-offset);
+}
+.vb-button {
+  font: inherit;
+  color: var(--ui-color-text);
+  background: var(--ui-color-panel-raised);
+  border: 2px solid var(--ui-color-text);
+  border-radius: var(--ui-radius);
+  padding: var(--ui-space-1) var(--ui-space-3);
+  cursor: pointer;
+  transition: background-color ${MOTION};
+}
+.vb-button:hover, .vb-button:focus { background: var(--ui-color-accent); }
+.vb-button[data-variant='warning'] { border-color: var(--ui-color-warning); }
+.vb-button:disabled { opacity: 0.55; cursor: not-allowed; }
+.vb-panel.vb-gallery { width: min(64rem, 100%); }
+.vb-gallery-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18em, 1fr));
+  gap: var(--ui-space-4);
+  align-items: start;
+}
+.vb-row { display: flex; flex-wrap: wrap; gap: var(--ui-space-2); align-items: center; }
+.vb-stack { display: flex; flex-direction: column; gap: var(--ui-space-3); }
+.vb-list {
+  position: relative;
+  overflow-y: auto;
+  border: 1px solid var(--ui-color-text-muted);
+  border-radius: var(--ui-radius);
+  background: var(--ui-color-panel-raised);
+}
+.vb-list-spacer { position: relative; }
+.vb-list-item {
+  position: absolute;
+  left: 0;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.vb-list-item[aria-selected='true'] { background: var(--ui-color-accent); }
+.vb-tabs [role='tablist'] { display: flex; gap: var(--ui-space-1); }
+.vb-tab {
+  font: inherit;
+  color: var(--ui-color-text);
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  cursor: pointer;
+}
+.vb-tab[aria-selected='true'] { border-bottom-color: var(--ui-color-text); font-weight: 700; }
+.vb-tabpanel { padding: var(--ui-space-2) 0; }
+.vb-toggle {
+  font: inherit;
+  color: var(--ui-color-text);
+  background: transparent;
+  border: 0;
+}
+.vb-toggle, .vb-slider, .vb-select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border-radius: var(--ui-radius);
+  cursor: pointer;
+}
+.vb-toggle-track {
+  width: 2.5em;
+  height: 1.3em;
+  border-radius: 1em;
+  background: var(--ui-color-text-muted);
+  position: relative;
+  transition: background-color ${MOTION};
+}
+.vb-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 0.15em;
+  left: 0.15em;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  background: var(--ui-color-panel-raised);
+  transition: transform ${MOTION};
+}
+.vb-toggle[aria-checked='true'] .vb-toggle-track { background: var(--ui-color-text); }
+.vb-toggle[aria-checked='true'] .vb-toggle-track::after { transform: translateX(1.2em); }
+.vb-slider-track {
+  width: 10em;
+  height: 0.5em;
+  border-radius: 0.25em;
+  background: var(--ui-color-text-muted);
+  position: relative;
+}
+.vb-slider-fill { position: absolute; inset: 0 auto 0 0; background: var(--ui-color-text); border-radius: inherit; }
+.vb-select-value { min-width: 6em; text-align: center; font-weight: 700; }
+.vb-meter {
+  position: relative;
+  width: 14em;
+  height: 0.75em;
+  background: var(--ui-color-bar-track);
+  border-radius: 0.4em;
+  overflow: hidden;
+}
+.vb-meter-trail, .vb-meter-fill {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+}
+.vb-meter-trail { background: var(--ui-color-bar-trail); }
+.vb-meter-fill { background: var(--ui-color-health); }
+.vb-meter[data-kind='stamina'] .vb-meter-fill { background: var(--ui-color-stamina); }
+.vb-slot {
+  position: relative;
+  width: 3em;
+  height: 3em;
+  border-radius: 50%;
+  border: 2px solid var(--ui-color-border);
+  background: var(--ui-color-bar-track);
+  color: var(--ui-color-hud-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.vb-slot-cooldown {
+  position: absolute;
+  inset: 0;
+  background: var(--ui-color-backdrop);
+  transform-origin: bottom center;
+}
+.vb-slot-count {
+  position: absolute;
+  right: 0.2em;
+  bottom: 0;
+  font-size: ${size(0.75)};
+  font-variant-numeric: tabular-nums;
+}
+.vb-tooltip {
+  position: absolute;
+  z-index: 10;
+  max-width: 20em;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  background: var(--ui-color-text);
+  color: var(--ui-color-panel);
+  border-radius: var(--ui-radius);
+  font-size: ${size(0.875)};
+  pointer-events: none;
+}
+.vb-tooltip[hidden] { display: none; }
+.vb-toasts {
+  position: absolute;
+  top: var(--ui-space-3);
+  right: var(--ui-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  pointer-events: none;
+}
+.vb-toast {
+  max-width: 24em;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  background: var(--ui-color-panel);
+  color: var(--ui-color-text);
+  border-left: 4px solid var(--ui-color-accent);
+  border-radius: var(--ui-radius);
+}
+.vb-toast[data-tone='warning'] { border-left-color: var(--ui-color-warning); }
+.vb-glyph-prompt { display: inline-flex; align-items: center; gap: var(--ui-space-1); }
+.vb-glyph-prompt kbd {
+  font: inherit;
+  font-weight: 700;
+  min-width: 1.6em;
+  padding: 0 0.35em;
+  text-align: center;
+  border: 2px solid currentColor;
+  border-radius: var(--ui-radius);
+}
+`;
+}
+
+export const UI_STYLE_ID = 'vb-ui-styles';
+
+/** Adds the kit's stylesheet to `doc` once (later calls are no-ops). */
+export function installUiStyles(doc: Document): void {
+  if (doc.getElementById(UI_STYLE_ID)) return;
+  const style = doc.createElement('style');
+  style.id = UI_STYLE_ID;
+  style.textContent = uiStyleSheet();
+  doc.head.append(style);
+}
+
+/** WCAG relative luminance of an `#rrggbb` colour. */
+export function luminance(hex: string): number {
+  const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!match) throw new RangeError(`not an #rrggbb colour: ${hex}`);
+  const [r, g, b] = match.slice(1).map((part) => {
+    const c = parseInt(part, 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG contrast ratio between two `#rrggbb` colours (1–21). */
+export function contrastRatio(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+}
