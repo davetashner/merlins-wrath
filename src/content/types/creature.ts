@@ -2,7 +2,8 @@
 // combat and the bestiary (constitution: enemies are creatures, not target dummies, and they are
 // data). Only id, family, stats, senses and locomotion are required; every other section has a
 // documented default filled at load, so later items (attacks e12.5, locomotion e12.6,
-// resistances and poise regen e04.1/e12.7, factions e12.8, fears e12.10, personality e12.11, needs e12.12…) can
+// resistances and poise regen e04.1/e12.7, hit reactions e04.7, factions e12.8, fears e12.10,
+// personality e12.11, needs e12.12…) can
 // extend their stub sub-schema here without touching existing creature files. The field reference
 // in docs/content/creature-schema.md is generated from this file (`pnpm content:docs`). Senses and
 // their reusable `sense` profiles live in sense.ts (e12.2); locomotion and its reusable `locomotion`
@@ -12,7 +13,7 @@
 
 import { z } from 'zod';
 import { contentId, ref } from '../schema.ts';
-import { poiseRegenSchema, resistancesSchema } from './damage.ts';
+import { hitReactionsSchema, poiseRegenSchema, resistancesSchema } from './damage.ts';
 import { creatureLocomotionSchema } from './locomotion.ts';
 import { creatureSensesSchema } from './sense.ts';
 
@@ -119,6 +120,7 @@ export const creatureSchema = z.strictObject({
     .describe('World-property tags (e03), e.g. "flammable", "conductive".'),
   resistances: resistancesSchema,
   poiseRegen: poiseRegenSchema,
+  reactions: hitReactionsSchema,
   faction: ref('faction')
     .optional()
     .describe('Faction it belongs to (e12.8); absent = the "unaligned" faction.'),

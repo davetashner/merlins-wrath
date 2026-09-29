@@ -60,13 +60,14 @@ describe('content-docs', () => {
       '| `faction` | ref → faction | — |',
       '| `personality.greed` | number 0–1 | `0.5` |',
       '| `needs.<key>.threshold` | number 0–100 | required |',
+      '| `reactions.knockbackImpulse` | number > 0 | `300` |',
       '| `loot` | id | — |',
       '| `presentation.mesh` | id | `"placeholder-capsule"` |',
     ]) {
       expect(doc).toContain(row);
     }
     const documented = [...doc.matchAll(/^\| `([^`]+)`/gm)].map((m) => m[1]);
-    expect(documented).toHaveLength(112);
+    expect(documented).toHaveLength(117);
   });
 
   it('writes one doc per content type, creating docs/content, then --check passes', () => {

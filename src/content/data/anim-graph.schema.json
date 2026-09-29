@@ -217,7 +217,9 @@
                             "acting",
                             "actionPhase",
                             "actionVerb",
-                            "hitReact"
+                            "hitReact",
+                            "hitReaction",
+                            "hitDirection"
                           ],
                           "description": "Number parameter the blend follows, e.g. \"speed\"."
                         },
@@ -270,7 +272,9 @@
                             "acting",
                             "actionPhase",
                             "actionVerb",
-                            "hitReact"
+                            "hitReact",
+                            "hitReaction",
+                            "hitDirection"
                           ],
                           "description": "Number parameter on the x axis, e.g. \"speed\"."
                         },
@@ -283,7 +287,9 @@
                             "acting",
                             "actionPhase",
                             "actionVerb",
-                            "hitReact"
+                            "hitReact",
+                            "hitReaction",
+                            "hitDirection"
                           ],
                           "description": "Number parameter on the y axis, e.g. \"turnRate\"."
                         },
@@ -417,7 +423,9 @@
                           "acting",
                           "actionPhase",
                           "actionVerb",
-                          "hitReact"
+                          "hitReact",
+                          "hitReaction",
+                          "hitDirection"
                         ],
                         "description": "A sim-published parameter (ANIM_PARAMETERS)."
                       },
