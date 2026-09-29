@@ -50,6 +50,7 @@ export * from './elements';
 export * from './factions';
 export * from './facts';
 export * from './field';
+export * from './input';
 export * as simMath from './math';
 export * from './physics';
 export * from './properties';
