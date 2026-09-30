@@ -1,0 +1,9 @@
+{
+  "$schema": "../condition.schema.json",
+  "id": "horn-ally",
+  "name": "Horn is a living ally",
+  "notes": "Story bible §4.2: Brother Horn was befriended (winning the Trial of Horns also sets horn.befriended) and is still alive (horn.fate, §4.4). Gates what an ally Horn gives: Hornfolk lore, the crypt shortcut and fighting at the player's side. For the Warden encounter (mw-e13.14) and Act III.",
+  "when": {
+    "all": [{ "fact": "horn.befriended" }, { "fact": "horn.fate", "eq": "alive" }]
+  }
+}

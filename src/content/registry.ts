@@ -1,15 +1,18 @@
 // The content-type registry (mw-e00.18): every content type the game loads, keyed by its folder
 // name under src/content/data/. Adding a content type = a schema module + one line here + a folder.
 // `contentChecks` are the checks across entries every load runs: fact references (mw-e27.2),
-// animation (mw-e02.20) and socket tracks (mw-e04.26).
+// conditions against the fact registry (mw-e27.5), animation (mw-e02.20) and socket tracks
+// (mw-e04.26).
 
 import { checkAnimation } from './anim-checks.ts';
+import { checkConditions } from './condition-checks.ts';
 import { checkFacts } from './fact-checks.ts';
 import type { Catalogue, ContentCheck, EntryOf } from './loader.ts';
 import { animClipSchema } from './types/anim-clip.ts';
 import { animGraphSchema } from './types/anim-graph.ts';
 import { attackSchema } from './types/attack.ts';
 import { cameraSchema } from './types/camera.ts';
+import { namedConditionSchema } from './types/condition.ts';
 import { controllerSchema } from './types/controller.ts';
 import { creatureSchema } from './types/creature.ts';
 import { cueSheetSchema } from './types/cue-sheet.ts';
@@ -34,6 +37,7 @@ export const contentTypes = {
   'anim-graph': animGraphSchema,
   attack: attackSchema,
   camera: cameraSchema,
+  condition: namedConditionSchema,
   controller: controllerSchema,
   creature: creatureSchema,
   'cue-sheet': cueSheetSchema,
@@ -56,6 +60,7 @@ export const contentTypes = {
 /** Checks across entries, run on every load of the registered types (see loader.ts). */
 export const contentChecks: readonly ContentCheck[] = [
   checkFacts,
+  checkConditions,
   checkAnimation,
   checkSocketTracks,
 ];
