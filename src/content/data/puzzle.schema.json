@@ -1,0 +1,730 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Puzzle id, e.g. \"sunbeam-chapel\". Stable once shipped (saves)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (docs, debug tools and telemetry)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the puzzle is and where it comes from (level plan, canon section)."
+    },
+    "scene": {
+      "description": "The level the puzzle lives in; entities are its spawn ids.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "x-contentRef": "scene"
+    },
+    "entities": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Id of a spawn in the puzzle’s scene."
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the entity is to the puzzle, e.g. \"brazier to be lit\"."
+          },
+          "critical": {
+            "default": false,
+            "description": "The puzzle needs it: losing it could softlock the puzzle (see `policy.recovery`).",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "role"
+        ],
+        "additionalProperties": false
+      },
+      "description": "The level entities the puzzle is about; steps, hints and recovery name these."
+    },
+    "goal": {
+      "description": "True when the puzzle is solved, whatever made it so (docs/design/conditions.md).",
+      "$ref": "#/$defs/condition"
+    },
+    "solutions": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Solution id, unique in the puzzle (telemetry and solver reports)."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Short name, e.g. \"Burn the rope\"."
+          },
+          "capabilities": {
+            "default": [],
+            "description": "Capabilities the solution needs, all of them; empty = anyone can.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$",
+              "description": "Capability id declared in src/content/data/capability/, e.g. \"spell.mage-hand\"."
+            }
+          },
+          "steps": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "stimulus",
+                      "description": "Step kind: a stimulus reaches the target."
+                    },
+                    "element": {
+                      "type": "string",
+                      "enum": [
+                        "heat",
+                        "cold",
+                        "water",
+                        "charge",
+                        "force",
+                        "gas",
+                        "light",
+                        "blunt",
+                        "slash",
+                        "pierce"
+                      ],
+                      "description": "Stimulus element that reaches it."
+                    },
+                    "target": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "description": "Id of an entity listed in `entities`."
+                    },
+                    "using": {
+                      "description": "Capability the step uses; one of the solution’s `capabilities`. Omit: anyone can.",
+                      "type": "string",
+                      "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$"
+                    },
+                    "note": {
+                      "description": "What the step means, for designers.",
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "element",
+                    "target"
+                  ],
+                  "additionalProperties": false,
+                  "description": "A stimulus reaches the target (heat lights the brazier, cold freezes the water)."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "move",
+                      "description": "Step kind: the target ends up at another entity."
+                    },
+                    "target": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                        },
+                        {
+                          "type": "string",
+                          "const": "player"
+                        }
+                      ],
+                      "description": "Id of the listed entity that moves, or \"player\"."
+                    },
+                    "to": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "description": "Id of the listed entity it ends up on or at (a plate, a ledge)."
+                    },
+                    "using": {
+                      "description": "Capability the step uses; one of the solution’s `capabilities`. Omit: anyone can.",
+                      "type": "string",
+                      "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$"
+                    },
+                    "note": {
+                      "description": "What the step means, for designers.",
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "target",
+                    "to"
+                  ],
+                  "additionalProperties": false,
+                  "description": "The target ends up at another entity (pushed, carried, levitated, floated)."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "interact",
+                      "description": "Step kind: the player uses an affordance."
+                    },
+                    "verb": {
+                      "type": "string",
+                      "enum": [
+                        "use",
+                        "open",
+                        "close",
+                        "pull",
+                        "press",
+                        "pick-up",
+                        "read",
+                        "search",
+                        "hide",
+                        "climb",
+                        "talk",
+                        "push",
+                        "unlock",
+                        "pick-lock",
+                        "light",
+                        "extinguish"
+                      ],
+                      "description": "Affordance verb used on it, e.g. \"pull\"."
+                    },
+                    "target": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "description": "Id of an entity listed in `entities`."
+                    },
+                    "using": {
+                      "description": "Capability the step uses; one of the solution’s `capabilities`. Omit: anyone can.",
+                      "type": "string",
+                      "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$"
+                    },
+                    "note": {
+                      "description": "What the step means, for designers.",
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "verb",
+                    "target"
+                  ],
+                  "additionalProperties": false,
+                  "description": "The player uses one of the target’s affordances (pull a lever, pick a lock)."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "reach",
+                      "description": "Step kind: the player gets to the target."
+                    },
+                    "target": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "description": "Id of an entity listed in `entities`."
+                    },
+                    "using": {
+                      "description": "Capability the step uses; one of the solution’s `capabilities`. Omit: anyone can.",
+                      "type": "string",
+                      "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$"
+                    },
+                    "note": {
+                      "description": "What the step means, for designers.",
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "target"
+                  ],
+                  "additionalProperties": false,
+                  "description": "The player gets to the target (climbs, blinks, swims, crosses)."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "wait",
+                      "description": "Step kind: time passes."
+                    },
+                    "seconds": {
+                      "type": "number",
+                      "exclusiveMinimum": 0,
+                      "description": "Seconds to wait (water freezes, a timer runs)."
+                    },
+                    "note": {
+                      "description": "What the step means, for designers.",
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "seconds"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Time passes."
+                }
+              ],
+              "description": "One step: stimulus, move, interact, reach or wait."
+            },
+            "description": "Abstract steps, in order, for the solver and replays to follow."
+          },
+          "notes": {
+            "description": "Anything a designer or tester should know.",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "steps"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Intended solutions; the goal may also come true by a route nobody declared."
+    },
+    "policy": {
+      "default": {
+        "repeatable": false,
+        "recovery": []
+      },
+      "description": "What happens after solving, and how the puzzle recovers.",
+      "type": "object",
+      "properties": {
+        "repeatable": {
+          "default": false,
+          "description": "false: once solved it stays solved; true: it unsolves when the goal fails.",
+          "type": "boolean"
+        },
+        "recovery": {
+          "default": [],
+          "description": "Diegetic recovery from lost objects and stuck mechanisms.",
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "respawn",
+                    "description": "Policy kind: a lost critical entity reappears."
+                  },
+                  "entity": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "description": "Id of the listed critical entity that is replaced."
+                  },
+                  "seconds": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Seconds after it is lost that a new one appears."
+                  }
+                },
+                "required": [
+                  "kind",
+                  "entity",
+                  "seconds"
+                ],
+                "additionalProperties": false,
+                "description": "A lost critical entity reappears where it spawned (a crate chute)."
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "reset",
+                    "description": "Policy kind: a trigger resets the mechanisms."
+                  },
+                  "trigger": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "description": "Id of the listed entity that resets the puzzle (a lever)."
+                  }
+                },
+                "required": [
+                  "kind",
+                  "trigger"
+                ],
+                "additionalProperties": false,
+                "description": "Using the trigger returns the puzzle’s mechanisms to their authored state."
+              }
+            ],
+            "description": "How the puzzle recovers when a key object is lost or a mechanism is stuck."
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "hints": {
+      "default": [],
+      "description": "The hint ladder: tiers fire in order while the player is stuck.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "afterSeconds": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "Seconds in progress before the tier fires; tiers are in increasing order."
+          },
+          "afterAttempts": {
+            "description": "Failed attempts that fire the tier sooner, whichever comes first.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "bark": {
+            "description": "What the player character mutters.",
+            "type": "string",
+            "minLength": 1
+          },
+          "highlight": {
+            "description": "Listed entities that glint or pulse to draw the eye.",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "description": "Id of an entity listed in `entities`."
+            }
+          },
+          "variants": {
+            "default": [],
+            "description": "Class-aware barks: the first whose capability the player has replaces `bark`.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "capability": {
+                  "type": "string",
+                  "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$",
+                  "description": "Used when the player has this capability."
+                },
+                "bark": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The bark for a player with that capability."
+                }
+              },
+              "required": [
+                "capability",
+                "bark"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "afterSeconds"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "tags": {
+      "default": [],
+      "description": "Free-form tags; \"mvp\" requires 2+ solutions.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
+    },
+    "focus": {
+      "default": [],
+      "description": "Classes the puzzle is meant to showcase; empty = none in particular.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "knight",
+          "archer",
+          "sorcerer",
+          "thief"
+        ]
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "properties": {
+        "solvedFact": {
+          "type": "string",
+          "pattern": "^(?:entity:[a-z0-9]+(?:-[a-z0-9]+)*\\/[a-z0-9]+(?:-[a-z0-9]+)*\\.)?[a-z0-9]+(?:-[a-z0-9]+)*(?:\\.[a-z0-9]+(?:-[a-z0-9]+)*)*$",
+          "description": "Declared bool fact set true when the puzzle is solved."
+        },
+        "set": {
+          "default": [],
+          "description": "Further facts written when solved (doors, rewards and quests read these).",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "fact": {
+                "type": "string",
+                "pattern": "^(?:entity:[a-z0-9]+(?:-[a-z0-9]+)*\\/[a-z0-9]+(?:-[a-z0-9]+)*\\.)?[a-z0-9]+(?:-[a-z0-9]+)*(?:\\.[a-z0-9]+(?:-[a-z0-9]+)*)*$",
+                "description": "Declared fact the puzzle writes when solved."
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                ],
+                "description": "A bool, a whole number or a string (enum value or content id), fitting the fact type."
+              }
+            },
+            "required": [
+              "fact",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "solvedFact"
+      ],
+      "additionalProperties": false,
+      "description": "Facts written when the puzzle is solved."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "scene",
+    "entities",
+    "goal",
+    "solutions",
+    "outputs"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "condition": {
+      "description": "A condition over world facts: one of fact, count, all, any, not (docs/design/conditions.md).",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "fact": {
+              "type": "string",
+              "pattern": "^(?:entity:[a-z0-9]+(?:-[a-z0-9]+)*\\/[a-z0-9]+(?:-[a-z0-9]+)*\\.)?[a-z0-9]+(?:-[a-z0-9]+)*(?:\\.[a-z0-9]+(?:-[a-z0-9]+)*)*$",
+              "description": "Fact key to test. Alone: the (bool) fact is true. With one operator: that comparison holds."
+            },
+            "eq": {
+              "description": "The fact equals this value.",
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "string",
+                  "minLength": 1
+                }
+              ]
+            },
+            "neq": {
+              "description": "The fact does not equal this value (unset counts as unequal).",
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "string",
+                  "minLength": 1
+                }
+              ]
+            },
+            "gt": {
+              "description": "The (int or tick) fact is greater than this.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "gte": {
+              "description": "The (int or tick) fact is at least this.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "lt": {
+              "description": "The (int or tick) fact is less than this.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "lte": {
+              "description": "The (int or tick) fact is at most this.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "has": {
+              "description": "true: the fact holds a value (set, or declared with a non-null default); false: none.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "fact"
+          ],
+          "additionalProperties": false,
+          "description": "Tests one fact, with at most one operator."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "string",
+              "pattern": "^entity:([a-z0-9]+(?:-[a-z0-9]+)*|\\*)\\/\\*\\.([a-z0-9]+(?:-[a-z0-9]+)*(?:\\.[a-z0-9]+(?:-[a-z0-9]+)*)*)$",
+              "description": "Entity facts to count: `entity:<level>/*.<fact>` (one level) or `entity:*/*.<fact>` (every level). Counts those holding true."
+            },
+            "eq": {
+              "description": "The count equals this.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "neq": {
+              "description": "The count does not equal this.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "gt": {
+              "description": "The count is greater than this.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "gte": {
+              "description": "The count is at least this.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "lt": {
+              "description": "The count is less than this.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "lte": {
+              "description": "The count is at most this.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "count"
+          ],
+          "additionalProperties": false,
+          "description": "Counts true entity facts matching a pattern, compared with exactly one operator."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "all": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/condition"
+              },
+              "description": "Every condition holds."
+            }
+          },
+          "required": [
+            "all"
+          ],
+          "additionalProperties": false,
+          "description": "True when every condition in the list holds."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "any": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/condition"
+              },
+              "description": "At least one holds."
+            }
+          },
+          "required": [
+            "any"
+          ],
+          "additionalProperties": false,
+          "description": "True when at least one condition in the list holds."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "not": {
+              "description": "The condition that must not hold.",
+              "$ref": "#/$defs/condition"
+            }
+          },
+          "required": [
+            "not"
+          ],
+          "additionalProperties": false,
+          "description": "True when the condition does not hold."
+        }
+      ]
+    }
+  }
+}

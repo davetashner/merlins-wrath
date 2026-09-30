@@ -4,7 +4,7 @@
 // bool template, and every operator suits the fact's type (a bare test or `true`/`false` needs a
 // bool, `gte` an int or tick, an enum value is one of its values). Issues name the file, the JSON
 // pointer and the problem. Each content type with condition fields registers where they are in
-// CONDITION_USAGES: named conditions today; dialogue (mw-e22) and quests (mw-e23) add a line.
+// CONDITION_USAGES: named conditions and puzzle goals (mw-e15.1) today; dialogue (mw-e22) and quests (mw-e23) add a line.
 
 import { factIndex, lookupFact, type FactIndex } from './fact-checks.ts';
 import type { ContentCheck, ContentIssue, Frozen } from './loader.ts';
@@ -18,6 +18,7 @@ import {
   type NamedCondition,
 } from './types/condition.ts';
 import type { FactDef, FactGroup } from './types/fact.ts';
+import type { Puzzle } from './types/puzzle.ts';
 
 /** One condition in a content entry. */
 export interface ConditionUsage {
@@ -31,6 +32,7 @@ export const CONDITION_USAGES: Readonly<
   Record<string, (entry: never) => readonly ConditionUsage[]>
 > = {
   condition: (entry: NamedCondition) => [{ pointer: '/when', condition: entry.when }],
+  puzzle: (entry: Puzzle) => [{ pointer: '/goal', condition: entry.goal }],
 };
 
 /** A problem in a condition, at a JSON pointer relative to the condition. */

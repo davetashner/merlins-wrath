@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Group id, e.g. \"sorcerer-spells\". Capabilities are keyed by their id."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name of the group (docs and debug tools)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the group covers and where it comes from, for review."
+    },
+    "capabilities": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$",
+            "description": "Capability id: verb., spell., arrow., tool., trick., technique. or sense. then a name."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Display name, e.g. \"Mage Hand\"."
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the capability lets the player do in the world, for designers and review."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "additionalProperties": false
+      },
+      "description": "The capabilities it declares."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "capabilities"
+  ],
+  "additionalProperties": false
+}

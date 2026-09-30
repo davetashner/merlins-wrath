@@ -1,0 +1,111 @@
+import { describe, expect, it } from 'vitest';
+import { GAME_CONTENT_ROOT, gameContentSources } from './game-content.ts';
+import { ContentLoadError, loadContent, type ContentSource } from './loader.ts';
+import { checkPuzzles } from './puzzle-checks.ts';
+import { contentChecks, contentTypes } from './registry.ts';
+import type { PuzzleInput } from './types/puzzle.ts';
+
+const EXAMPLE = `${GAME_CONTENT_ROOT}/puzzle/testbed-room-lever.json`;
+const FILE = `${GAME_CONTENT_ROOT}/puzzle/zz-test.json`;
+const SCENE = `${GAME_CONTENT_ROOT}/scene/testbed.json`;
+
+/** The shipped example puzzle, re-id'd as a test file, with `change` applied. */
+function puzzle(change: (p: PuzzleInput) => PuzzleInput): ContentSource {
+  const example = gameContentSources().find((s) => s.path === EXAMPLE);
+  if (example === undefined) throw new Error(`no ${EXAMPLE}`);
+  const base = { ...(JSON.parse(example.text) as PuzzleInput), id: 'zz-test' };
+  return { path: FILE, text: JSON.stringify(change(base)) };
+}
+
+function loadIssues(extra: readonly ContentSource[]): string[] {
+  try {
+    loadContent(contentTypes, [...gameContentSources(), ...extra], contentChecks);
+  } catch (error) {
+    if (!(error instanceof ContentLoadError)) throw error;
+    return error.issues.map((i) => `${i.file}#${i.pointer}: ${i.message}`);
+  }
+  return [];
+}
+
+describe('puzzle load checks (mw-e15.1)', () => {
+  it('AC-1: the shipped content, with the example puzzle, passes', () => {
+    expect(loadIssues([])).toEqual([]);
+    expect(loadIssues([puzzle((p) => p)])).toEqual([]);
+  });
+
+  it('AC-2: a puzzle naming an entity its level does not place fails, naming the id and level', () => {
+    const issues = loadIssues([
+      puzzle((p) => ({
+        ...p,
+        entities: [...p.entities, { id: 'west-brazier', role: 'brazier' }],
+      })),
+    ]);
+    expect(issues).toEqual([
+      `${FILE}#/entities/2/id: puzzle:zz-test names entity "west-brazier", which level "testbed" (${SCENE}) does not place`,
+    ]);
+  });
+
+  it('AC-4: a solution or hint naming an unknown capability fails with the id', () => {
+    const issues = loadIssues([
+      puzzle((p) => ({
+        ...p,
+        solutions: p.solutions.map((s) =>
+          s.id === 'mage-hand'
+            ? {
+                ...s,
+                capabilities: ['spell.mage-hand', 'spell.telekinesis'],
+              }
+            : s,
+        ),
+        hints: [
+          {
+            afterSeconds: 60,
+            bark: 'Hm.',
+            variants: [{ capability: 'arrow.rope', bark: 'Rope!' }],
+          },
+        ],
+      })),
+    ]);
+    expect(issues).toEqual([
+      `${FILE}#/solutions/1/capabilities/1: puzzle:zz-test names unknown capability "spell.telekinesis": declare it in src/content/data/capability/`,
+      `${FILE}#/hints/0/variants/0/capability: puzzle:zz-test names unknown capability "arrow.rope": declare it in src/content/data/capability/`,
+    ]);
+  });
+
+  it('checks the goal and output facts against the fact registry', () => {
+    const undeclared = loadIssues([
+      puzzle((p) => ({
+        ...p,
+        goal: { all: [{ fact: 'testbed.room-lever.thrown' }, { fact: 'testbed.nope' }] },
+        outputs: {
+          solvedFact: 'testbed.nope-solved',
+          set: [
+            { fact: 'testbed.room-lever.thrown', value: 3 },
+            { fact: 'kestrel-lock.gate-open', value: true },
+            { fact: 'testbed.missing', value: true },
+          ],
+        },
+      })),
+    ]);
+    expect(undeclared).toEqual([
+      `${FILE}#/goal/all/1/fact: puzzle:zz-test names undeclared fact "testbed.nope": declare it in src/content/data/fact/`,
+      `${FILE}#/outputs/solvedFact: puzzle:zz-test names undeclared fact "testbed.nope-solved": declare it in src/content/data/fact/`,
+      `${FILE}#/outputs/set/0: puzzle:zz-test "testbed.room-lever.thrown" is bool: 3 is not a bool`,
+      `${FILE}#/outputs/set/2: puzzle:zz-test names undeclared fact "testbed.missing": declare it in src/content/data/fact/`,
+    ]);
+    const notBool = loadIssues([puzzle((p) => ({ ...p, outputs: { solvedFact: 'horn.fate' } }))]);
+    expect(notBool).toEqual([
+      `${FILE}#/outputs/solvedFact: puzzle:zz-test solved fact "horn.fate" must be bool, not enum`,
+    ]);
+  });
+
+  it('a puzzle in a missing scene is reported once, by the reference check', () => {
+    const issues = loadIssues([puzzle((p) => ({ ...p, scene: 'no-such-level' }))]);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain('no-such-level');
+  });
+
+  it('ignores entries of other types', () => {
+    expect(checkPuzzles([{ type: 'testprop', file: 'x.json', value: { id: 'x' } }])).toEqual([]);
+  });
+});

@@ -155,6 +155,26 @@ export {
   type NamedConditionInput,
 } from './types/condition.ts';
 export {
+  CAPABILITY_ID_PATTERN,
+  capabilityId,
+  capabilityIds,
+  capabilitySchema,
+  checkCapabilities,
+  type CapabilityGroup,
+  type CapabilityGroupInput,
+} from './types/capability.ts';
+export {
+  MVP_MIN_SOLUTIONS,
+  MVP_TAG,
+  PUZZLE_CLASSES,
+  PUZZLE_PLAYER,
+  puzzleSchema,
+  type Puzzle,
+  type PuzzleInput,
+  type PuzzleStep,
+} from './types/puzzle.ts';
+export { checkPuzzles } from './puzzle-checks.ts';
+export {
   CONDITION_USAGES,
   checkConditions,
   conditionProblems,

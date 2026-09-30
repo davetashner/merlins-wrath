@@ -7,6 +7,7 @@ import { contentJsonSchema } from '../src/content/json-schema.ts';
 import { contentId, ref } from '../src/content/schema.ts';
 import { loadGameContent } from '../src/content/game-content.ts';
 import { materialSchema } from '../src/content/types/material.ts';
+import { puzzleSchema } from '../src/content/types/puzzle.ts';
 import { WORLD_PROPERTY_KEYS, WORLD_PROPERTY_SPECS } from '../src/sim/properties/spec.ts';
 import {
   expectedDocs,
@@ -68,6 +69,25 @@ describe('content-docs', () => {
     }
     const documented = [...doc.matchAll(/^\| `([^`]+)`/gm)].map((m) => m[1]);
     expect(documented).toHaveLength(117);
+  });
+
+  it('AC-1 (mw-e15.1): every puzzle field, and every field the example puzzle uses, is documented', () => {
+    const rows = fieldRows(jsonSchema(puzzleSchema));
+    expect(rows.filter((r) => r.description === '').map((r) => r.field)).toEqual([]);
+    const documented = new Set(rows.map((r) => r.field));
+    /** Dotted field paths of a JSON value, lists as `[]` (the goal is its own `condition` section). */
+    const paths = (value: unknown, prefix: string): string[] => {
+      if (Array.isArray(value)) return value.flatMap((item) => paths(item, `${prefix}[]`));
+      if (typeof value !== 'object' || value === null || prefix === 'goal') return [];
+      return Object.entries(value).flatMap(([key, child]) => {
+        const field = prefix === '' ? key : `${prefix}.${key}`;
+        return key === '$schema' ? [] : [field, ...paths(child, field)];
+      });
+    };
+    const example = readFileSync('src/content/data/puzzle/testbed-room-lever.json', 'utf8');
+    const used = paths(JSON.parse(example), '');
+    expect(used.filter((field) => !documented.has(field))).toEqual([]);
+    expect(used.length).toBeGreaterThan(30);
   });
 
   it('writes one doc per content type, creating docs/content, then --check passes', () => {

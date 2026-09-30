@@ -1,0 +1,22 @@
+{
+  "$schema": "../fact.schema.json",
+  "id": "testbed",
+  "name": "Testbed facts",
+  "notes": "Grey-box facts for the testbed scene (src/content/data/scene/testbed.json), used by the example puzzle testbed-room-lever. Not story canon.",
+  "facts": [
+    {
+      "key": "testbed.room-lever.thrown",
+      "type": "bool",
+      "default": false,
+      "description": "The testbed's room lever has been thrown, by any means. Written by the lever's signal graph once one is placed in the testbed; the example puzzle's goal reads it.",
+      "owner": "signals"
+    },
+    {
+      "key": "testbed.room-lever-puzzle.solved",
+      "type": "bool",
+      "default": false,
+      "description": "The example puzzle testbed-room-lever is solved. Written once by the puzzle runtime (mw-e15.3).",
+      "owner": "puzzle"
+    }
+  ]
+}
