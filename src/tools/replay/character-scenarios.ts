@@ -7,6 +7,9 @@
 //   character-course  the mw-e02.2 traversal course: step, 40° ramp, ledge, coyote jump, crawl
 //                     tunnel, 50° slope (blocked), 0.40 m wall jump, moving platform
 //   character-stress  an obstacle arena with rapid, seeded-random direction, camera and button changes
+//   character-mantle  the mw-e02.12 greybox mantle course, built from the game's kit pieces: an
+//                     auto-mantle onto a crate, a jump mantle onto a 1.4 m block, a ledge grab,
+//                     shimmy across a gap and pull-up, lowering over an edge and a jump back off it
 //
 // The scenarios live in tools, not src/sim/replay/scenarios, because they read the tuning from game
 // content, which the sim may import only as types. src/tools/replay/scenarios.ts registers them.
@@ -23,13 +26,24 @@ import {
   CharacterController,
   characterControllerSystem,
   FakeCollisionWorld,
+  InMemoryColliderSink,
+  layoutScene,
+  LEDGE_HANG_CAPABILITY,
+  ledgeTraversal,
+  loadScene,
   rampAt,
+  registerSceneComponents,
+  registerWorldProperties,
+  sceneLedges,
   spawnCharacter,
   World,
   type CharacterInput,
+  type KitLookup,
   Rng,
   type GreyboxShape,
   type ReplayScenario,
+  type SceneSpec,
+  type TraversalHook,
 } from '@sim/index';
 
 interface Vec3 {
@@ -62,6 +76,8 @@ export interface Move {
   readonly jump?: boolean;
   readonly sprint?: boolean;
   readonly crouch?: boolean;
+  /** Crouch pressed this tick (and held): drops from a ledge hang. */
+  readonly drop?: boolean;
   readonly yaw?: number;
 }
 
@@ -72,6 +88,7 @@ export function frame({
   jump = false,
   sprint = false,
   crouch = false,
+  drop = false,
   yaw = EAST_YAW,
 }: Move): CharacterInput {
   return characterCommand.parse({
@@ -79,7 +96,7 @@ export function frame({
       move: { x: right, y: forward },
       jump: { pressed: jump, held: jump },
       sprint: { pressed: false, held: sprint },
-      crouch: { pressed: false, held: crouch },
+      crouch: { pressed: drop, held: crouch || drop },
     },
     cameraYaw: yaw,
   });
@@ -99,6 +116,11 @@ export interface CharacterGolden {
   readonly ticks: number;
   /** The player's input on each tick of the script. */
   readonly log: readonly CharacterInput[];
+  /**
+   * A course laid out from kit pieces (`course` is its solid parts): the world loads it, and the
+   * player mantles and hangs from its ledges with `capabilities` (mw-e02.12).
+   */
+  readonly scene?: { readonly spec: SceneSpec; readonly capabilities: readonly string[] };
 }
 
 let shippedTuning: Frozen<ControllerTuning> | undefined;
@@ -117,6 +139,17 @@ export function createCharacterWorld(
 ): World<CharacterInput> {
   const collision = new FakeCollisionWorld(golden.course);
   const world = new World<CharacterInput>({ seed, hz }).register(CharacterController);
+  // The player is always entity 1 (spawned before any scene), so reports name the same entity.
+  spawnCharacter(world, golden.spawn);
+  const hooks: TraversalHook[] = [];
+  if (golden.scene !== undefined) {
+    const { spec, capabilities } = golden.scene;
+    registerWorldProperties(registerSceneComponents(world));
+    const loaded = loadScene(world, spec, gameKit, new InMemoryColliderSink());
+    hooks.push(
+      ledgeTraversal({ world, ledges: sceneLedges(loaded), capabilities: () => capabilities }),
+    );
+  }
   world
     .addSystem({
       name: 'platforms',
@@ -124,8 +157,9 @@ export function createCharacterWorld(
         collision.advance(1 / clock.hz);
       },
     })
-    .addSystem(characterControllerSystem({ collision, tuning, input: (inputs) => inputs[0] }));
-  spawnCharacter(world, golden.spawn);
+    .addSystem(
+      characterControllerSystem({ collision, tuning, hooks, input: (inputs) => inputs[0] }),
+    );
   return world;
 }
 
@@ -298,9 +332,65 @@ function stressLog(ticks: number): CharacterInput[] {
 
 export const stressGolden = logGolden('character-stress', ARENA, v(0, 0, 0), stressLog(1800));
 
+// --- character-mantle (mw-e02.12 AC-6) ------------------------------------------------------------
+
+/** The game's kit pieces (crate, platform, floor…), as the scene loader lays them out. */
+let kitContent: ReturnType<typeof loadGameContent> | undefined;
+const gameKit: KitLookup = (id) => (kitContent ??= loadGameContent()).get('kit', id);
+
+/** A kit piece stood on the floor at `at` (x, z), scaled. */
+const piece = (id: string, x: number, z: number, scale: readonly [number, number, number]) =>
+  ({ piece: { id }, at: [x, 0, z], yaw: 0, scale }) as const;
+
+/** The mantle course, east along +x, from kit pieces. */
+export const MANTLE_COURSE: SceneSpec = {
+  id: 'mantle-course',
+  grid: 1,
+  placements: [
+    piece('floor', 14, 0, [16, 1, 4]), // 32 × 8 m of floor
+    piece('crate', 4.5, 0, [1, 1, 4]), // a 1 m crate: walked into, mantled on its own
+    piece('platform', 10, 0, [1, 1.4, 2]), // a 1.4 m block: jump-mantled
+    piece('platform', 17, 0, [1, 2.1, 1]), // two 2.1 m blocks with a 0.2 m gap: grab, shimmy…
+    piece('platform', 17, 2.2, [1, 2.1, 1]),
+  ],
+  spawns: [],
+};
+
+/** The mantle course input log: [ticks, input] segments, 60 Hz. */
+export const MANTLE_LOG: readonly CharacterInput[] = inputLog([
+  [10, {}],
+  [120, { forward: 1 }], // into the crate: auto-mantle, over it and down, on towards the block
+  [1, { forward: 1, jump: true }], // jump-mantle the 1.4 m block
+  [103, { forward: 1 }], // over it and down the far side, up to the high blocks
+  [1, { forward: 1, jump: true }], // grab the 2.1 m ledge
+  [40, {}], // hang
+  [150, { right: 1 }], // shimmy right, across the gap onto the second block
+  [1, { jump: true }], // pull up
+  [60, {}],
+  [40, { forward: 1, crouch: true }], // crouch-walk off the far edge into a hang
+  [40, {}],
+  [90, { right: -1 }], // shimmy back across the gap
+  [1, { forward: 1, jump: true }], // jump back off the wall (it faces east now)
+  [60, {}],
+  [40, {}],
+]);
+
+export const mantleGolden: CharacterGolden = {
+  ...logGolden(
+    'character-mantle',
+    layoutScene(MANTLE_COURSE, gameKit)
+      .parts.map((part) => part.collider)
+      .filter((collider) => collider !== undefined),
+    v(0, 0, 0),
+    MANTLE_LOG,
+  ),
+  scene: { spec: MANTLE_COURSE, capabilities: [LEDGE_HANG_CAPABILITY] },
+};
+
 /** Every character golden. */
 export const characterGoldens: readonly CharacterGolden[] = [
   basicGolden,
   courseGolden,
   stressGolden,
+  mantleGolden,
 ];

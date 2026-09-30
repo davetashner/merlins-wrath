@@ -97,6 +97,42 @@ describe('controller schema', () => {
       'gait.landingMs: Invalid input: expected int, received number',
     ]);
   });
+
+  it('mw-e02.12: takes optional ledge tuning; heights ordered from auto-mantle to hang reach', () => {
+    const ledge = {
+      autoMantleHeight: 1,
+      mantleHeight: 1.6,
+      hangReach: 2.2,
+      hangDepth: 2,
+      reach: 1,
+      grabReach: 0.3,
+      maxTopSlope: 20,
+      autoMantleMs: 400,
+      mantleMs: 600,
+      pullUpMs: 700,
+      grabMs: 250,
+      lowerMs: 500,
+      shimmySpeed: 1,
+      shimmyGap: 0.3,
+      slipGraceMs: 1000,
+      jumpBack: { away: 4, up: 6 },
+    };
+    expect(controllerSchema.parse({ ...valid, ledge }).ledge).toEqual(ledge);
+    expect(
+      problems({
+        ...valid,
+        ledge: { ...ledge, autoMantleHeight: 0.3, mantleHeight: 0.2, hangReach: 0.1, hangDepth: 1 },
+      }),
+    ).toEqual([
+      'ledge.autoMantleHeight: ledge.autoMantleHeight must be higher than stepHeight',
+      'ledge.mantleHeight: ledge.mantleHeight must not be lower than autoMantleHeight',
+      'ledge.hangReach: ledge.hangReach must not be lower than mantleHeight',
+      'ledge.hangDepth: ledge.hangDepth must not be higher than hangReach',
+    ]);
+    expect(problems({ ...valid, ledge: { ...ledge, mantleMs: 0.5 } })).toEqual([
+      'ledge.mantleMs: Invalid input: expected int, received number',
+    ]);
+  });
 });
 
 describeContent(

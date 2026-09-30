@@ -21,6 +21,7 @@ import {
   hashWorld,
   interacted,
   LineOfSight,
+  LEDGE_HANG_CAPABILITY,
   PlacementComponent,
   placeEntity,
   PlayerLook,
@@ -109,6 +110,7 @@ function testbed(options: Extra | ((physics: RapierPhysics) => Extra) = {}) {
   const extra = typeof options === 'function' ? options(physics) : options;
   const world = registerSceneComponents(new World<ActionFrame>({ seed: 1, physics }));
   if (extra.interaction !== undefined) registerWorldProperties(world).register(PlacementComponent);
+  else if (extra.ledges !== undefined) registerWorldProperties(world);
   const sampler = new ActionSampler();
   const frames = new FakeFrames();
   const { loop, sync } = createGameLoop<ActionFrame>({
@@ -889,5 +891,56 @@ describe('readPlayerTransform', () => {
     const world = new World({ seed: 1 }).register(CharacterController, PlayerLook);
     const npc = spawnCharacter(world, { x: 0, y: 0, z: 0 });
     expect(readPlayerTransform(world, npc)).toBeUndefined();
+  });
+});
+
+describe('testbed player mantling (mw-e02.12)', () => {
+  /** Holds `key` until `done` (at most `seconds`), a frame at a time. */
+  function holdUntil(
+    rig: ReturnType<typeof testbed>,
+    key: string,
+    done: (readout: PlayerReadout) => boolean,
+    seconds = 3,
+  ) {
+    rig.sampler.down(key);
+    for (let i = 0; i < seconds * 60 && !done(rig.state()); i++) rig.run(1 / 60);
+    rig.sampler.up(key);
+  }
+
+  it('AC-1: walking into the testbed’s crates climbs them, crate then stack, playing the mantle clip', () => {
+    const body = animatedBody();
+    const rig = testbed({ animation: body.animation, ledges: {} });
+    rig.run(0.2);
+    // Back from the spawn to the crates’ row (z = −3.5), then sideways (−x) into them.
+    holdUntil(rig, 'KeyS', (r) => r.position.z <= -3.5);
+    holdUntil(rig, 'KeyD', (r) => r.position.y > 2, 4);
+    rig.run(0.5);
+    expect(rig.state().grounded).toBe(true);
+    expect(rig.state().position.y).toBeCloseTo(2 + SKIN, 3);
+    const history = body.last()?.history ?? [];
+    expect(history.filter((state) => state === 'mantle')).toHaveLength(2);
+    expect(body.last()?.clipHistory).toContain('anim-humanoid-mantle');
+  });
+
+  it('with the ledge-hang capability, crouch-walking off the stack hangs from it (the hang clip)', () => {
+    const body = animatedBody();
+    const rig = testbed({
+      animation: body.animation,
+      ledges: { capabilities: [LEDGE_HANG_CAPABILITY] },
+    });
+    rig.run(0.2);
+    holdUntil(rig, 'KeyS', (r) => r.position.z <= -3.5);
+    holdUntil(rig, 'KeyD', (r) => r.position.y > 2, 4);
+    rig.run(0.5);
+    // Back off the stack's far (−z) edge, crouched: the gap to the room's back wall fits a hang.
+    rig.sampler.down('KeyC');
+    holdUntil(rig, 'KeyS', (r) => !r.grounded);
+    rig.sampler.up('KeyC');
+    rig.run(1);
+    const readout = rig.state();
+    expect(readout.grounded).toBe(false);
+    expect(readout.position.y).toBeCloseTo(0, 1);
+    expect(body.last()?.layers[0]?.state).toBe('hang');
+    expect(rig.world.get(rig.player.entity, CharacterController)?.traversal).toBe('hang');
   });
 });

@@ -41,3 +41,22 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `launch` | object | — | Being thrown by an impulse; absent = the sim’s defaults (DEFAULT_LAUNCH_TUNING). |
 | `launch.airControl` | number 0–1 | required | Share of ground acceleration available while flying from an impulse the player chose (a self-cast Gust), 0–1; a staggering launch (a blast, a troll’s blow) has none. |
 | `launch.recoveryMs` | integer 0–1000 | required | After a staggering launch lands, movement and jump input are ignored this long, whole ms (≤ 1000). |
+| `ledge` | object | — | Mantling and ledge hangs; absent = the sim’s defaults (DEFAULT_LEDGE_TUNING). |
+| `ledge.autoMantleHeight` | number > 0 ≤ 5 | required | Ledges up to this high above the feet are mantled by walking into them, no jump needed, m. |
+| `ledge.mantleHeight` | number > 0 ≤ 5 | required | Ledges up to this high are mantled by pressing jump at them (every class), m; at least autoMantleHeight. |
+| `ledge.hangReach` | number > 0 ≤ 5 | required | Highest ledge above the feet a grab reaches (ledge hang, capability-gated), m; at least mantleHeight. |
+| `ledge.hangDepth` | number > 0 ≤ 5 | required | How far below the ledge top the feet hang, m; at most hangReach. Grabs lower than this pull straight up. |
+| `ledge.reach` | number > 0 ≤ 3 | required | How far ahead of the capsule a jump press finds a ledge to mantle or grab from the ground, m. |
+| `ledge.grabReach` | number > 0 ≤ 1 | required | How far ahead of the capsule hands catch a ledge in the air, or walking into one (auto-mantle), m. |
+| `ledge.maxTopSlope` | number ≥ 0 | required | Steepest ledge top a mantle stands on, degrees. |
+| `ledge.autoMantleMs` | integer 1–3000 | required | Duration of a mantle onto a ledge up to autoMantleHeight, whole ms. |
+| `ledge.mantleMs` | integer 1–3000 | required | Duration of a mantle onto a higher ledge, whole ms. |
+| `ledge.pullUpMs` | integer 1–3000 | required | Duration of a pull-up from a hang (or a catch low on a ledge), whole ms. |
+| `ledge.grabMs` | integer 1–3000 | required | Duration of catching a ledge into a hang, whole ms. |
+| `ledge.lowerMs` | integer 1–3000 | required | Duration of lowering over an edge into a hang, whole ms. |
+| `ledge.shimmySpeed` | number > 0 ≤ 10 | required | Sideways speed while hanging, at full stick deflection, m/s. |
+| `ledge.shimmyGap` | number 0–2 | required | Widest gap between ledges a shimmy crosses, m; wider gaps stop it. |
+| `ledge.slipGraceMs` | integer 0–10000 | required | How long hands hold a ledge that became impossible to hold (frozen, burning) before the character drops, whole ms. |
+| `ledge.jumpBack` | object | required | Jumping off a hang, away from the wall. |
+| `ledge.jumpBack.away` | number 0–20 | required | Speed away from the wall, m/s. |
+| `ledge.jumpBack.up` | number 0–20 | required | Upward speed, m/s. |

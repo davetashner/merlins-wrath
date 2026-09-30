@@ -1,17 +1,20 @@
-// Traversal extension points (mw-e02.2). Climbing (mw-e10.9), mantling and ledge grabs (mw-e02.12) and
-// swimming (mw-e02.14) take over the character from ordinary locomotion while they last. Each is a
-// TraversalHook the controller consults every tick; none is implemented here.
+// Traversal extension points (mw-e02.2). Climbing (mw-e02.13), mantling and ledge hangs (mw-e02.12,
+// src/sim/climb/mantle.ts) and swimming (mw-e02.14) take over the character from ordinary
+// locomotion while they last. Each is a TraversalHook the controller consults every tick.
 //
 // While no traversal mode is active, the controller asks each hook in order whether it wants the
-// character (`shouldEnter`); the first that does runs this tick. While one is active, only that hook
-// runs, until it returns a state whose `traversal` is null (back to locomotion) or another mode.
+// character (`shouldEnter`); the first that does runs this tick. While one is active, only the hook
+// owning that mode runs, until it returns a state whose `traversal` is null (back to locomotion) or
+// another mode. A hook may own several modes (mantling hands over to hanging and back).
 
 import type { Frozen, ControllerTuning } from '@content/index';
+import type { EntityId } from '../core/component';
+import type { Vec3 } from '../stimulus/shapes';
 import type { CollisionWorld } from './collision-world';
 import type { CharacterInput, CharacterState, ControllerParams } from './controller';
 
 /** The traversal modes later features provide. */
-export const TRAVERSAL_MODES = ['climb', 'mantle', 'swim'] as const;
+export const TRAVERSAL_MODES = ['climb', 'mantle', 'hang', 'swim'] as const;
 
 /** A traversal mode name. */
 export type TraversalMode = (typeof TRAVERSAL_MODES)[number];
@@ -24,11 +27,36 @@ export interface TraversalContext {
   readonly world: CollisionWorld;
   readonly tuning: Frozen<ControllerTuning>;
   readonly params: ControllerParams;
+  /** The character's entity, when the controller runs inside a sim world (capabilities, class). */
+  readonly entity?: EntityId;
+}
+
+/**
+ * A sim-driven move along a path (mantle curves, lowering to a hang): the path's corners, the tick
+ * reached and the move's length in ticks. Not root motion: the sim places the character each tick.
+ */
+export interface TraversalPath {
+  readonly points: readonly Vec3[];
+  readonly tick: number;
+  readonly ticks: number;
+  /** What the character does at the end: stands, crouches (low headroom) or hangs. */
+  readonly then: 'stand' | 'crouch' | 'hang';
+}
+
+/** The ledge a mantling or hanging character is on (mw-e02.12): plain data, snapshotted and hashed. */
+export interface LedgeTraversal {
+  /** The ledge (its id in the scene's LedgeIndex). */
+  readonly ledge: number;
+  /** The move in progress; absent while hanging still or shimmying. */
+  readonly path?: TraversalPath;
+  /** Ticks the held ledge has been impossible to hold (frozen, burning); 0 when it holds. */
+  readonly slipping: number;
 }
 
 /** A traversal mode that can take over the character from locomotion. */
 export interface TraversalHook {
-  readonly mode: TraversalMode;
+  /** The modes this hook runs; it is asked to step whenever the character is in one of them. */
+  readonly modes: readonly TraversalMode[];
   /** Whether to take over this tick (only asked while no traversal mode is active). */
   shouldEnter(ctx: TraversalContext): boolean;
   /**

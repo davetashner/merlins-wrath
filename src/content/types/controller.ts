@@ -118,6 +118,82 @@ export const launchTuningSchema = z
 /** How being thrown handles (see launchTuningSchema). */
 export type LaunchTuning = z.output<typeof launchTuningSchema>;
 
+const heightM = z.number().positive().max(5);
+const traversalMs = z.int().min(1).max(3000);
+
+export const ledgeTuningSchema = z
+  .strictObject({
+    autoMantleHeight: heightM.describe(
+      'Ledges up to this high above the feet are mantled by walking into them, no jump needed, m.',
+    ),
+    mantleHeight: heightM.describe(
+      'Ledges up to this high are mantled by pressing jump at them (every class), m; at least autoMantleHeight.',
+    ),
+    hangReach: heightM.describe(
+      'Highest ledge above the feet a grab reaches (ledge hang, capability-gated), m; at least mantleHeight.',
+    ),
+    hangDepth: heightM.describe(
+      'How far below the ledge top the feet hang, m; at most hangReach. Grabs lower than this pull straight up.',
+    ),
+    reach: z
+      .number()
+      .positive()
+      .max(3)
+      .describe(
+        'How far ahead of the capsule a jump press finds a ledge to mantle or grab from the ground, m.',
+      ),
+    grabReach: z
+      .number()
+      .positive()
+      .max(1)
+      .describe(
+        'How far ahead of the capsule hands catch a ledge in the air, or walking into one (auto-mantle), m.',
+      ),
+    maxTopSlope: z
+      .number()
+      .min(0)
+      .lt(90)
+      .describe('Steepest ledge top a mantle stands on, degrees.'),
+    autoMantleMs: traversalMs.describe(
+      'Duration of a mantle onto a ledge up to autoMantleHeight, whole ms.',
+    ),
+    mantleMs: traversalMs.describe('Duration of a mantle onto a higher ledge, whole ms.'),
+    pullUpMs: traversalMs.describe(
+      'Duration of a pull-up from a hang (or a catch low on a ledge), whole ms.',
+    ),
+    grabMs: traversalMs.describe('Duration of catching a ledge into a hang, whole ms.'),
+    lowerMs: traversalMs.describe('Duration of lowering over an edge into a hang, whole ms.'),
+    shimmySpeed: z
+      .number()
+      .positive()
+      .max(10)
+      .describe('Sideways speed while hanging, at full stick deflection, m/s.'),
+    shimmyGap: z
+      .number()
+      .min(0)
+      .max(2)
+      .describe('Widest gap between ledges a shimmy crosses, m; wider gaps stop it.'),
+    slipGraceMs: z
+      .int()
+      .min(0)
+      .max(10_000)
+      .describe(
+        'How long hands hold a ledge that became impossible to hold (frozen, burning) before the character drops, whole ms.',
+      ),
+    jumpBack: z
+      .strictObject({
+        away: z.number().min(0).max(20).describe('Speed away from the wall, m/s.'),
+        up: z.number().min(0).max(20).describe('Upward speed, m/s.'),
+      })
+      .describe('Jumping off a hang, away from the wall.'),
+  })
+  .describe(
+    'Mantling and ledge hangs (mw-e02.12): heights, reach, sim-driven move durations, shimmy and slipping.',
+  );
+
+/** Mantle and ledge-hang tuning (see ledgeTuningSchema). */
+export type LedgeTuning = z.output<typeof ledgeTuningSchema>;
+
 /** Every tuning value the controller reads (a profile without its id, name and notes). */
 const tuningShape = {
   capsule: capsuleSchema,
@@ -168,6 +244,9 @@ const tuningShape = {
   launch: launchTuningSchema
     .optional()
     .describe('Being thrown by an impulse; absent = the sim’s defaults (DEFAULT_LAUNCH_TUNING).'),
+  ledge: ledgeTuningSchema
+    .optional()
+    .describe('Mantling and ledge hangs; absent = the sim’s defaults (DEFAULT_LEDGE_TUNING).'),
 };
 
 /**
@@ -209,6 +288,24 @@ function checkTuning(t: TuningFields, ctx: z.RefinementCtx): void {
   }
   if (t.gait !== undefined && t.gait.runFrom <= t.gait.walkFrom) {
     issue(['gait', 'runFrom'], 'gait.runFrom must be higher than gait.walkFrom');
+  }
+  const { ledge } = t;
+  if (ledge !== undefined) {
+    if (ledge.autoMantleHeight <= t.stepHeight) {
+      issue(['ledge', 'autoMantleHeight'], 'ledge.autoMantleHeight must be higher than stepHeight');
+    }
+    if (ledge.mantleHeight < ledge.autoMantleHeight) {
+      issue(
+        ['ledge', 'mantleHeight'],
+        'ledge.mantleHeight must not be lower than autoMantleHeight',
+      );
+    }
+    if (ledge.hangReach < ledge.mantleHeight) {
+      issue(['ledge', 'hangReach'], 'ledge.hangReach must not be lower than mantleHeight');
+    }
+    if (ledge.hangDepth > ledge.hangReach) {
+      issue(['ledge', 'hangDepth'], 'ledge.hangDepth must not be higher than hangReach');
+    }
   }
 }
 

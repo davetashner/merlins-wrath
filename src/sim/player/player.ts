@@ -17,6 +17,10 @@
 // (`locomotionScale`). The caller registers the hit-volume, damage and placement components, and
 // adds the hit-volume system and `installMeleeStrikes` itself (they are world-wide, not the player's).
 //
+// With `ledges` (mw-e02.12) the controller runs the mantle and ledge-hang traversal hook over the
+// scene's ledges (src/sim/climb/mantle.ts): the player mantles onto crates and sills, and with the
+// ledge-hang capability grabs, hangs from and shimmies along higher ledges.
+//
 // After the controller, the locomotion system (mw-e02.6) publishes what the player is doing — idle,
 // walk, run, airborne, landing… — with its speeds and turn rate, and emits jump, land and footstep
 // events, for animation and audio to follow. The player counts as moving while move input is held or
@@ -76,6 +80,8 @@ import {
   type ActionVector,
 } from '../input/action-frame';
 import { cos, pow, sin } from '../math';
+import type { LedgeIndex } from '../climb/ledges';
+import { ledgeTraversal } from '../climb/mantle';
 import type { SceneSpawnPlacement } from '../scene/layout';
 import type { Vec3 } from '../stimulus/shapes';
 
@@ -326,6 +332,16 @@ export interface PlayerOptions {
   readonly pitch?: number;
   /** Stamina, the action timeline and the dodge (see the file header); absent = movement only. */
   readonly combat?: PlayerCombatOptions;
+  /** Mantling and ledge hangs over the scene's ledges (mw-e02.12); absent = none. */
+  readonly ledges?: PlayerLedgeOptions;
+}
+
+/** The player's mantling and ledge hangs (mw-e02.12). */
+export interface PlayerLedgeOptions {
+  /** The scene's ledges (`sceneLedges` of the loaded scene). */
+  readonly index: LedgeIndex;
+  /** The player's capabilities (class data, mw-e02.3), e.g. LEDGE_HANG_CAPABILITY; none by default. */
+  readonly capabilities?: readonly string[];
 }
 
 /** Thrown when a scene has no spawn tagged `player-start`. */
@@ -367,10 +383,20 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     }
     world.addSystem(dodgeMotionSystem({ moves, facing: lookFacing }));
   }
+  const { ledges } = options;
   world.addSystem(
     characterControllerSystem<TInput>({
       collision: options.collision,
       tuning: options.tuning,
+      ...(ledges !== undefined && {
+        hooks: [
+          ledgeTraversal({
+            world,
+            ledges: ledges.index,
+            capabilities: () => ledges.capabilities ?? [],
+          }),
+        ],
+      }),
       input: (inputs, entity) => {
         const frame = actionFrameOf(inputs);
         const look = world.get(entity, PlayerLook);

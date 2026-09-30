@@ -14,6 +14,11 @@ import {
 } from '../input/action-frame';
 import { FakeCollisionWorld } from '../character/fake-collision-world';
 import { TEST_SCENE, testKit } from '../scene/fixtures';
+import { loadScene, registerSceneComponents } from '../scene/loader';
+import { InMemoryColliderSink } from '../physics/static-colliders';
+import { registerWorldProperties } from '../properties/components';
+import { sceneLedges } from '../climb/ledges';
+import { LEDGE_HANG_CAPABILITY } from '../climb/mantle';
 import { layoutScene, type SceneSpawnPlacement } from '../scene/layout';
 import { hashWorld } from '../snapshot';
 import {
@@ -234,6 +239,57 @@ describe('ActionFrames drive the player (mw-e02.23)', () => {
 });
 
 const DEG = Math.PI / 180;
+
+describe('mantling and ledge hangs (mw-e02.12)', () => {
+  /** The test room with a crate `height` tall 1 m ahead of the player start (which faces it). */
+  function crateRoom(height: number, capabilities?: readonly string[]) {
+    const scene = {
+      ...TEST_SCENE,
+      placements: [
+        { piece: { id: 'floor' }, at: [0, 0, 0], yaw: 0, scale: [5, 1, 5] },
+        // The floor piece stretched up into a 2 × 2 m crate.
+        { piece: { id: 'floor' }, at: [0, height, 0], yaw: 0, scale: [1, height / 0.2, 1] },
+      ],
+    } as const;
+    const world = registerWorldProperties(
+      registerSceneComponents(new World<ActionFrame>({ seed: 3 })),
+    );
+    const loaded = loadScene(world, scene, testKit, new InMemoryColliderSink());
+    const collision = new FakeCollisionWorld(
+      loaded.layout.parts.flatMap((part) => part.collider ?? []),
+    );
+    const player = installPlayer(world, {
+      spawns: loaded.layout.spawns,
+      collision,
+      tuning: TUNING,
+      ledges: {
+        index: sceneLedges(loaded),
+        ...(capabilities !== undefined && { capabilities }),
+      },
+    });
+    const state = () => world.get(player, CharacterController);
+    world.step([frame({})]); // the first tick finds the ground
+    return { world, state };
+  }
+
+  it('AC-1: a jump at a 1.4 m crate while moving forward mantles the player onto it', () => {
+    const { world, state } = crateRoom(1.4);
+    world.step([frame({ move: [0, 1], pressed: ['jump'], held: ['jump'] })]);
+    expect(state()?.traversal).toBe('mantle');
+    for (let i = 0; i < 40; i++) world.step([frame({})]);
+    expect(state()).toMatchObject({ traversal: null, grounded: true });
+    expect(state()?.position.y).toBeCloseTo(1.4 + SKIN, 9);
+  });
+
+  it('AC-4: a 2.1 m ledge is grabbed only with the ledge-hang capability', () => {
+    const plain = crateRoom(2.1);
+    plain.world.step([frame({ move: [0, 1], pressed: ['jump'], held: ['jump'] })]);
+    expect(plain.state()?.traversal).toBeNull();
+    const climber = crateRoom(2.1, [LEDGE_HANG_CAPABILITY]);
+    climber.world.step([frame({ move: [0, 1], pressed: ['jump'], held: ['jump'] })]);
+    expect(climber.state()?.traversal).toBe('hang');
+  });
+});
 
 describe('look pitch (mw-e02.4)', () => {
   it('spawns level by default, or at the given pitch within the limits', () => {

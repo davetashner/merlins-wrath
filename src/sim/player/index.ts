@@ -23,6 +23,7 @@ export {
   type LookSettings,
   type LookTurn,
   type PlayerCombatOptions,
+  type PlayerLedgeOptions,
   type PlayerMeleeOptions,
   type PlayerOptions,
   type StickLookSettings,

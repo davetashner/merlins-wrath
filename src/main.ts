@@ -72,6 +72,7 @@ import {
   HIT_VOLUME_COMPONENTS,
   installDebugCommands,
   LineOfSight,
+  LEDGE_HANG_CAPABILITY,
   physicsBodiesOf,
   PhysicsObjectComponent,
   playerStart,
@@ -553,6 +554,9 @@ function startRenderer(root: HTMLElement): void {
           // shield (mw-e04.6) are playable.
           moves: combat.moves,
           melee: combat.melee,
+          // Mantling for every class; ledge hangs are capability-gated (mw-e02.12), granted here
+          // until class data (mw-e02.3) says who climbs.
+          ledges: { capabilities: [LEDGE_HANG_CAPABILITY] },
           object: body.root,
           animation: {
             controller: new AnimationController(graph),
