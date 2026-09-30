@@ -29,9 +29,23 @@
 // rests where it met the edge, so it rolls smoothly up onto steps and off ledges. The ray finds the
 // face itself, so steep slopes stay steep, and a step onto an edge must top out within stepHeight
 // of the feet, so walls a little taller than a step stay walls.
+//
+// Launches (mw-e02.15). Impulses from any source (a force stimulus, a blow, a blast; see impulse.ts)
+// change the velocity at once and, when the character is airborne afterwards, put it in the
+// ragdoll-free launched state (`launch`) until it lands: no jumping, no committed-move root motion,
+// and air control cut to launch.airControl (a self-cast push) or to nothing (a staggering one). A
+// launched character that strikes a wall loses its horizontal velocity. Landing ends the launch; a
+// staggering one then ignores movement and jump input for launch.recoveryMs (`recovery`).
+//
+// Impacts. `stepCharacterWithImpacts` also reports what the character struck hard this tick: every
+// landing (not the first settle of a newly placed character), with the closing speed along the ground normal at the moment of contact (from the fall's
+// energy, v² = v₀² + 2·g·drop, so it does not depend on where in the tick the contact fell), and,
+// while launched, every wall. Each carries the height of the drop that would land that fast,
+// speed² / (2 · gravity): the fall-damage rules (mw-e04.19) price every impact by it.
 
-import type { ControllerTuning, Frozen } from '@content/index';
+import type { ControllerTuning, Frozen, LaunchTuning } from '@content/index';
 import type { ReadonlyClock } from '../clock';
+import type { EntityId } from '../core/component';
 import { cos, sin } from '../math';
 import type { Vec3 } from '../stimulus/shapes';
 import type { BodyId, Capsule, CollisionHit, CollisionWorld } from './collision-world';
@@ -94,6 +108,32 @@ export const IDLE_INPUT: CharacterInput = {
   cameraYaw: 0,
 };
 
+/** A launch in progress: who threw the character, and whether it lost control. */
+export interface LaunchState {
+  /** The entity responsible (credit and blame for where it lands), or null. */
+  readonly source: EntityId | null;
+  /** Staggering: no air control, and the landing locks input for launch.recoveryMs. */
+  readonly stagger: boolean;
+}
+
+/** One impulse on a character, as the impulse API stores it until the controller's next step. */
+export interface ImpulsePart {
+  /** Velocity change, m/s. */
+  readonly velocity: Vec3;
+  readonly source: EntityId | null;
+  readonly stagger: boolean;
+}
+
+/**
+ * Impulses applied since the controller last stepped: the velocity they started from and every part
+ * in canonical order, so the velocity is always base + their sum in that order, whatever order they
+ * arrived in (see impulse.ts).
+ */
+export interface PendingImpulses {
+  readonly base: Vec3;
+  readonly parts: readonly ImpulsePart[];
+}
+
 /** The controller's per-character state: plain data, snapshotted and hashed every tick. */
 export interface CharacterState {
   /** Feet position (the bottom of the capsule), metres. */
@@ -116,6 +156,34 @@ export interface CharacterState {
   readonly jumpAge: number;
   /** The traversal mode in control, or null during ordinary locomotion. */
   readonly traversal: TraversalMode | null;
+  /** Present while launched by an impulse (airborne until it lands). Absent otherwise. */
+  readonly launch?: LaunchState;
+  /** Ticks of landing recovery left after a staggering launch (movement input ignored); absent at 0. */
+  readonly recovery?: number;
+  /** Impulses applied since the last step; the step consumes them. Absent when there are none. */
+  readonly impulses?: PendingImpulses;
+}
+
+/** Something the character struck hard this tick (see the file header). */
+export interface CharacterImpact {
+  /** Landing on walkable ground, or (while launched) striking a wall or steep slope. */
+  readonly kind: 'ground' | 'wall';
+  /** Closing speed along the surface normal at contact, m/s (> 0). */
+  readonly speed: number;
+  /** Height of the drop that lands this fast, speed² / (2 · gravity), m. */
+  readonly height: number;
+  /** Unit normal of the surface struck. */
+  readonly normal: Vec3;
+  /** The collider struck. */
+  readonly body: BodyId;
+  /** The launch the character was in, or null (it fell, jumped or walked off). */
+  readonly launch: LaunchState | null;
+}
+
+/** One tick of the controller: the next state and what the character struck on the way. */
+export interface CharacterStep {
+  readonly state: CharacterState;
+  readonly impacts: readonly CharacterImpact[];
 }
 
 /** The movement state other systems read (animation, stealth, noise). */
@@ -125,6 +193,16 @@ export interface MovementState {
   readonly crouched: boolean;
   readonly sprinting: boolean;
 }
+
+/**
+ * The defaults when a controller profile has no `launch` block: a self-cast push keeps 10% air
+ * control, and a staggering launch's landing locks input for 250 ms. The shipped player profile
+ * states its own (src/content/data/controller).
+ */
+export const DEFAULT_LAUNCH_TUNING: Frozen<LaunchTuning> = Object.freeze({
+  airControl: 0.1,
+  recoveryMs: 250,
+});
 
 /** Values derived once from tuning and the tick rate. */
 export interface ControllerParams {
@@ -139,6 +217,10 @@ export interface ControllerParams {
   /** Ground acceleration and deceleration, m/s². */
   readonly accel: number;
   readonly decel: number;
+  /** Air control share while launched without stagger. */
+  readonly launchAirControl: number;
+  /** Landing recovery after a staggering launch, ticks. */
+  readonly recoveryTicks: number;
 }
 
 /** Derives the per-tick constants for `tuning` at the clock's tick rate. */
@@ -154,6 +236,8 @@ export function controllerParams(
     jumpBufferTicks: clock.ticksFor(tuning.jumpBufferMs),
     accel: tuning.speeds.run / tuning.accelTime,
     decel: tuning.speeds.run / tuning.decelTime,
+    launchAirControl: (tuning.launch ?? DEFAULT_LAUNCH_TUNING).airControl,
+    recoveryTicks: clock.ticksFor((tuning.launch ?? DEFAULT_LAUNCH_TUNING).recoveryMs),
   };
 }
 
@@ -205,14 +289,42 @@ export function stepCharacter(
   input: CharacterInput,
   context: ControllerContext,
 ): CharacterState {
+  return stepCharacterWithImpacts(state, input, context).state;
+}
+
+/**
+ * Simulates one fixed tick of the character and reports what it struck (see the file header). Pure:
+ * the inputs are not modified. Pending impulses are consumed: their velocity is already the state's.
+ */
+export function stepCharacterWithImpacts(
+  current: CharacterState,
+  input: CharacterInput,
+  context: ControllerContext,
+): CharacterStep {
+  const state = consumed(current);
   const { world, tuning, params, hooks = [] } = context;
   const ctx = { state, input, world, tuning, params };
   const hook =
     state.traversal === null
       ? hooks.find((h) => h.shouldEnter(ctx))
       : hooks.find((h) => h.mode === state.traversal);
-  if (hook !== undefined) return hook.step(ctx);
+  if (hook !== undefined) return { state: hook.step(ctx), impacts: [] };
   return locomotion({ ...state, traversal: null }, input, world, tuning, params);
+}
+
+/** `state` without its pending impulses: their velocity change is already in it. */
+function consumed(state: CharacterState): CharacterState {
+  if (state.impulses === undefined) return state;
+  const copy = { ...state };
+  delete copy.impulses;
+  return copy;
+}
+
+const RELEASED: ButtonState = { pressed: false, held: false };
+
+/** `actions` with movement, jump and sprint released (landing recovery); crouch is kept. */
+function locked(actions: MovementActions): MovementActions {
+  return { move: { x: 0, y: 0 }, jump: RELEASED, sprint: RELEASED, crouch: actions.crouch };
 }
 
 /** `from` moved towards `to` by at most `maxDelta`. */
@@ -229,8 +341,9 @@ function locomotion(
   world: CollisionWorld,
   tuning: Frozen<ControllerTuning>,
   params: ControllerParams,
-): CharacterState {
-  const { actions } = input;
+): CharacterStep {
+  const { launch, recovery: recovering } = state;
+  const actions = recovering === undefined ? input.actions : locked(input.actions);
   const { dt } = params;
   const mover = new Mover(world, tuning, params);
 
@@ -240,8 +353,9 @@ function locomotion(
     actions.crouch.held || (state.crouched && !mover.roomToStand(state.position, standing));
   const capsule = capsuleOf({ ...state, crouched }, tuning);
 
-  // 2. Horizontal velocity (root motion, when a committed move supplies it, replaces steering).
-  const { motion } = input;
+  // 2. Horizontal velocity (root motion, when a committed move supplies it, replaces steering; a
+  // launched character is carried by its launch instead).
+  const motion = launch === undefined ? input.motion : undefined;
   const raw = actions.move;
   const deflection = Math.min(1, Math.sqrt(raw.x * raw.x + raw.y * raw.y));
   const moving = deflection > 0;
@@ -266,7 +380,9 @@ function locomotion(
     const rate = length(target) >= length(current) ? params.accel : params.decel;
     horizontal = moveTowards(current, target, rate * dt);
   } else if (moving) {
-    horizontal = moveTowards(current, target, params.accel * tuning.airControl * dt);
+    const control =
+      launch === undefined ? tuning.airControl : launch.stagger ? 0 : params.launchAirControl;
+    horizontal = moveTowards(current, target, params.accel * control * dt);
   }
 
   // 3. Jump (buffered press; grounded or within coyote time of walking off).
@@ -275,15 +391,17 @@ function locomotion(
     : state.jumpAge >= 0 && state.jumpAge < params.jumpBufferTicks
       ? state.jumpAge + 1
       : -1;
-  const canJump = state.grounded || (!state.jumped && state.airTicks < params.coyoteTicks);
+  const canJump =
+    launch === undefined &&
+    (state.grounded || (!state.jumped && state.airTicks < params.coyoteTicks));
   const jumping = motion === undefined && jumpAge >= 0 && canJump;
   const onGround = state.grounded && !jumping;
 
   // 4. Vertical velocity and this tick's rise or fall.
   let vy = 0;
   let dy = 0;
+  const vy0 = jumping ? params.jumpSpeed : state.velocity.y;
   if (!onGround) {
-    const vy0 = jumping ? params.jumpSpeed : state.velocity.y;
     vy = Math.max(vy0 - tuning.gravity * dt, -tuning.maxFallSpeed);
     dy = ((vy0 + vy) / 2) * dt;
   }
@@ -298,10 +416,24 @@ function locomotion(
   // 6. Collide and slide (grounded movement follows the ground).
   let displacement = vec(horizontal.x * dt, dy, horizontal.z * dt);
   if (onGround) displacement = alongGround(displacement, state.groundNormal);
+  const startY = position.y;
   const moved = mover.move(position, displacement, capsule, onGround);
   position = moved.position;
   let velocity = vec(horizontal.x, vy, horizontal.z);
-  for (const normal of moved.blockers) velocity = mover.slide(velocity, normal);
+  const impacts: CharacterImpact[] = [];
+  const impact = (kind: CharacterImpact['kind'], speed: number, normal: Vec3, body: BodyId) => {
+    const height = (speed * speed) / (2 * tuning.gravity);
+    impacts.push({ kind, speed, height, normal, body, launch: launch ?? null });
+  };
+  for (const { normal, body } of moved.blockers) {
+    if (launch !== undefined && normal.y > -params.minGroundY && !mover.walkable(normal)) {
+      // A launched character strikes a wall: its horizontal velocity stops there.
+      const closing = -dot(velocity, normalize(flat(normal)));
+      if (closing > 0) impact('wall', closing, normal, body);
+      velocity = vec(0, velocity.y, 0);
+    }
+    velocity = mover.slide(velocity, normal);
+  }
 
   // 7. Ground check and snap.
   let ground: { normal: Vec3; body: BodyId } | undefined;
@@ -320,7 +452,24 @@ function locomotion(
     }
   }
   const grounded = ground !== undefined;
-  return {
+  if (ground !== undefined && !state.grounded && state.airTicks > 0) {
+    // Landed: the vertical speed at contact from the drop's energy, capped at terminal speed.
+    const drop = startY - position.y;
+    const fall = Math.min(
+      Math.sqrt(Math.max(0, vy0 * vy0 + 2 * tuning.gravity * drop)),
+      tuning.maxFallSpeed,
+    );
+    const n = ground.normal;
+    const closing = fall * n.y - velocity.x * n.x - velocity.z * n.z;
+    if (closing > 0) impact('ground', closing, n, ground.body);
+  }
+  const recovery =
+    recovering !== undefined
+      ? recovering - 1
+      : grounded && launch?.stagger === true
+        ? params.recoveryTicks
+        : 0;
+  const next: CharacterState = {
     position,
     velocity,
     grounded,
@@ -332,7 +481,10 @@ function locomotion(
     jumped: !grounded && (state.jumped || jumping),
     jumpAge: jumping ? -1 : jumpAge,
     traversal: null,
+    ...(!grounded && launch !== undefined && { launch }),
+    ...(recovery > 0 && { recovery }),
   };
+  return { state: next, impacts };
 }
 
 /**
@@ -405,18 +557,18 @@ class Mover {
 
   /**
    * Moves the capsule by `displacement`, sliding along what it hits. `grounded` movement follows
-   * walkable slopes and tries to step up walls. Returns where it ended and the normals that blocked
-   * it (for removing velocity into them).
+   * walkable slopes and tries to step up walls. Returns where it ended and the surfaces (normal and
+   * collider) that blocked it, for removing velocity into them.
    */
   move(
     from: Vec3,
     displacement: Vec3,
     capsule: Capsule,
     grounded: boolean,
-  ): { position: Vec3; blockers: Vec3[] } {
+  ): { position: Vec3; blockers: { normal: Vec3; body: BodyId }[] } {
     let position = from;
     let remaining = displacement;
-    const blockers: Vec3[] = [];
+    const blockers: { normal: Vec3; body: BodyId }[] = [];
     for (let pass = 0; pass < MAX_SLIDES; pass++) {
       const distance = length(remaining);
       if (distance < MIN_MOVE) break;
@@ -441,7 +593,7 @@ class Mover {
           break;
         }
       }
-      blockers.push(n);
+      blockers.push({ normal: n, body: hit.body });
       remaining = this.slide(remaining, n);
     }
     return { position, blockers };

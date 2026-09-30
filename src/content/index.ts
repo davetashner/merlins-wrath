@@ -89,6 +89,9 @@ export {
 export {
   MAX_COYOTE_MS,
   MAX_JUMP_BUFFER_MS,
+  MAX_LAUNCH_RECOVERY_MS,
+  launchTuningSchema,
+  type LaunchTuning,
   PLAYER_CONTROLLER_ID,
   controllerSchema,
   controllerTuningSchema,
@@ -108,6 +111,16 @@ export {
   type CreatureDef,
   type CreatureDefInput,
 } from './types/creature.ts';
+export {
+  DEFAULT_ENVIRONMENT_DAMAGE_ID,
+  HAZARD_PROPERTIES,
+  environmentDamageSchema,
+  environmentDamageTuningSchema,
+  type EnvironmentDamageDef,
+  type EnvironmentDamageDefInput,
+  type EnvironmentDamageTuning,
+  type HazardProperty,
+} from './types/environment-damage.ts';
 export {
   CUE_EVENTS,
   CUE_EVENT_NAMES,

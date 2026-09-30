@@ -21,10 +21,11 @@
 // `interruptAction`) and lock it for the reaction's length. A flinch interrupts only a move in its
 // startup (or holds an idle entity): during active or recovery ticks the move is committed and the
 // flinch plays over it (the animation's additive layer). Knockback and knockdown push the entity by
-// the hit's impulse through the world's pushers: a character (`pushCharacter`) is launched — impulse
-// over mass plus the profile's launchSpeed upwards, airborne so the controller's collide-and-slide
-// and gravity carry it, walls stop it and ledges drop it (e02.15's impulse API and launched state
-// will take this over); a physics object (`pushPhysicsObject`) gets the impulse on its rigid body.
+// the hit's impulse through the world's pushers: a character (`pushCharacter`) is launched through
+// the controller's impulse API (mw-e02.15) — impulse over mass plus the profile's launchSpeed
+// upwards, staggering, blamed on the hit's instigator — so collide-and-slide and gravity carry it,
+// walls stop it, ledges drop it and the fall-damage rules (e04.19) price the landing; a physics
+// object (`pushPhysicsObject`) gets the impulse on its rigid body.
 //
 // Direction: the side the hit came from, relative to the entity's facing (its hurtbox frame by
 // default): front or back within 45° of the facing axis, else left or right.
@@ -45,7 +46,7 @@
 import type { MoveTable } from '@content/index';
 import type { EntityId } from '../../core/component';
 import type { System, World } from '../../core/world';
-import { CharacterController } from '../../character/system';
+import { applyCharacterImpulse } from '../../character/impulse';
 import { PhysicsObjectComponent, rigidBodiesOf } from '../../physics/objects';
 import type { ColliderHandle } from '../../physics/static-colliders';
 import type { Vec3 } from '../../stimulus/shapes';
@@ -204,35 +205,28 @@ const isZero = (v: Vec3): boolean => v.x === 0 && v.y === 0 && v.z === 0;
 
 /**
  * Pushes an entity hit by a knockback or knockdown through physics; returns whether it moved it
- * (false when the entity is not the kind it moves).
+ * (false when the entity is not the kind it moves). `instigator` is the hit's.
  */
 export type Pusher = (
   world: World<never>,
   entity: EntityId,
   impulse: Vec3,
   profile: ReactionProfile,
+  instigator: EntityId | null,
 ) => boolean;
 
 /**
- * Launches a character (CharacterController, which the world must register): impulse over the
- * profile's mass plus its launchSpeed upwards, airborne so the controller carries it (see the file
- * header). A push with no rise leaves a grounded character on the ground.
+ * Launches a character (CharacterController, which the world must register) through the impulse API:
+ * impulse over the profile's mass plus its launchSpeed upwards, staggering, sourced by the hit's
+ * instigator (see the file header). A push with no rise leaves a grounded character on the ground.
  */
-export const pushCharacter: Pusher = (world, entity, impulse, profile) => {
-  const character = world.get(entity, CharacterController);
-  if (character === undefined) return false;
-  const { velocity } = character;
+export const pushCharacter: Pusher = (world, entity, impulse, profile, instigator) => {
   const k = 1 / profile.mass;
-  const vy = Math.max(velocity.y, 0) + impulse.y * k + profile.launchSpeed;
-  const launched = vy > 0;
-  world.set(entity, CharacterController, {
-    ...character,
-    velocity: { x: velocity.x + impulse.x * k, y: vy, z: velocity.z + impulse.z * k },
-    grounded: launched ? false : character.grounded,
-    groundBody: launched ? null : character.groundBody,
-    jumped: launched || character.jumped,
+  return applyCharacterImpulse(world, entity, {
+    velocity: { x: impulse.x * k, y: impulse.y * k + profile.launchSpeed, z: impulse.z * k },
+    source: instigator,
+    stagger: true,
   });
-  return true;
 };
 
 /** Gives a physics object (PhysicsObjectComponent, registered) the impulse on its rigid body. */
@@ -288,7 +282,8 @@ function start(
   const interrupted = locked && !s.locked && interruptAction(world, entity, ticks);
   const pushes = (kind === 'knockback' || kind === 'knockdown') && !isZero(s.impulse);
   const displaced =
-    pushes && (options.pushers ?? []).some((p) => p(world, entity, s.impulse, state.profile));
+    pushes &&
+    (options.pushers ?? []).some((p) => p(world, entity, s.impulse, state.profile, s.instigator));
   const endsAt = tick + 1 + ticks;
   const current: ActiveReaction = Object.freeze({
     kind,
