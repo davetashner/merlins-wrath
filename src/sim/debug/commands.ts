@@ -90,12 +90,7 @@ export interface DespawnCommand {
 }
 
 export type DebugCommand =
-  | SpawnCommand
-  | CheatCommand
-  | TeleportCommand
-  | KillCommand
-  | BlastCommand
-  | DespawnCommand;
+  SpawnCommand | CheatCommand | TeleportCommand | KillCommand | BlastCommand | DespawnCommand;
 
 /** A finite position with -0 folded to 0 (replays reject -0). */
 function position(what: string, v: Vec3): Vec3 {
