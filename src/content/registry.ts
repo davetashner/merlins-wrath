@@ -22,6 +22,7 @@ import { kitSchema } from './types/kit.ts';
 import { locomotionSchema } from './types/locomotion.ts';
 import { materialSchema } from './types/material.ts';
 import { moveSchema } from './types/move.ts';
+import { sandboxSchema } from './types/sandbox.ts';
 import { sceneSchema } from './types/scene.ts';
 import { senseSchema } from './types/sense.ts';
 import { shieldSchema } from './types/shield.ts';
@@ -47,6 +48,7 @@ export const contentTypes = {
   locomotion: locomotionSchema,
   material: materialSchema,
   move: moveSchema,
+  sandbox: sandboxSchema,
   scene: sceneSchema,
   sense: senseSchema,
   shield: shieldSchema,

@@ -7,7 +7,8 @@ import { defineEvent } from '../../core/events';
 import type { HitDirection, HitReactionKind } from './components';
 
 /** Why a hit that could have caused a reaction caused none. */
-export type ReactionSuppression = 'hyperarmor' | 'invulnerable' | 'weaker' | 'replaced' | null;
+export type ReactionSuppression =
+  'hyperarmor' | 'invulnerable' | 'weaker' | 'replaced' | 'blocked' | null;
 
 /** Payload of HitReaction. */
 export interface HitReactionInfo {

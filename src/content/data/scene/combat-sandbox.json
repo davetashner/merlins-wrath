@@ -1,0 +1,59 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "combat-sandbox",
+  "name": "Combat sandbox",
+  "description": "A walled 12 m arena for tuning combat feel (mw-e04.9): a training dummy to hit and an attacker dummy that swings every 2 s for block, parry and dodge practice. F3 shows frame data, F4 toggles 0.25× slow motion; the debug console spawns more dummies.",
+  "grid": 1,
+  "camera": {
+    "position": [0, 7, -11],
+    "target": [0, 1, 1]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 0],
+      "scale": [6, 1, 6]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, -6],
+      "scale": [6, 0.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 6],
+      "scale": [6, 0.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-6, 0, 0],
+      "yaw": 90,
+      "scale": [6, 0.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [6, 0, 0],
+      "yaw": 90,
+      "scale": [6, 0.5, 1]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, -3],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "training-dummy",
+      "at": [-2, 0, 1],
+      "yaw": 180,
+      "tags": ["sandbox-dummy"]
+    },
+    {
+      "id": "attacker-dummy",
+      "at": [2, 0, 1],
+      "yaw": 180,
+      "tags": ["sandbox-attacker"]
+    }
+  ]
+}

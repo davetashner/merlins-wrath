@@ -5,11 +5,16 @@ import {
   PLAYER_CONTROLLER_ID,
 } from '@content/index';
 import {
+  bindSandboxDummies,
+  createSandboxHud,
   dummyReadout,
+  installSandboxRules,
   prepareTestbedCombat,
   readDummyTransform,
+  readSandboxDummyTransform,
   startTestbedCombat,
   TRAINING_DUMMY,
+  type SandboxHud,
 } from '@game/combat/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
@@ -44,13 +49,16 @@ import { openSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { VfxSystem } from '@game/vfx/index';
 import { createRenderBootstrap } from '@render/bootstrap/index';
-import { createTrainingDummy } from '@render/combat/index';
+import { createSandboxDummy, createTrainingDummy } from '@render/combat/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
 import { createPlayerBody } from '@render/player/index';
 import { createVfxRenderer } from '@render/vfx/index';
 import {
+  AttackerDummyComponent,
+  checkSandboxCommand,
+  checkSandboxSpawn,
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
   installDebugCommands,
@@ -66,6 +74,7 @@ import {
   type ActionFrame,
   type DebugCommand,
   type DifficultyCommand,
+  type SandboxCommand,
   type EntityId,
   type RapierPhysics,
 } from '@sim/index';
@@ -84,6 +93,7 @@ import {
   DEBUG_CAMERA_HINT,
   GAMEPAD_DISCONNECTED_HINT,
   playerControlsHint,
+  SANDBOX_HINT,
   sceneErrorMessage,
   sceneLabel,
 } from '@ui/scene-hud';
@@ -101,7 +111,7 @@ const PLAYER_RIG_ID = 'greybox-humanoid';
 const BOOT_SEED = 1;
 
 /** Everything the game feeds `World.step`: sampled input plus queued debug-console commands. */
-type GameCommand = ActionFrame | DebugCommand | DifficultyCommand;
+type GameCommand = ActionFrame | DebugCommand | DifficultyCommand | SandboxCommand;
 
 const app = document.querySelector<HTMLElement>('#app');
 if (app) {
@@ -309,15 +319,23 @@ function startRenderer(root: HTMLElement): void {
   const startWorld = (physics: RapierPhysics): void => {
     const world = registerSceneComponents(new World<GameCommand>({ seed: BOOT_SEED, physics }));
     const content = loadGameContent();
+    // The knight's sword and shield (mw-e04.6): moves, socket tracks, the wood shield and the
+    // damage model with the shield rule; and the combat sandbox's tuning (mw-e04.9).
+    const combat = prepareTestbedCombat(content);
     // Debug commands first (mw-e33.1), so a teleport or cheat is what every later system sees. The
     // sim side is always present; only the console that issues them is dev/playtest-only. Props with
-    // a body spawn as physics objects (mw-e33.16), like the scene's own movable props.
+    // a body spawn as physics objects (mw-e33.16), like the scene's own movable props. God mode
+    // joins the damage model; the sandbox's dummies are spawnable in every scene (mw-e04.9).
     const props = propBodies(content);
-    const spawners = testPropSpawners(
+    const propSpawners = testPropSpawners(
       content.all('testprop').map((prop) => prop.id),
       { props, materials: materialPresets(content.all('material')) },
     );
-    installDebugCommands(world, { spawners });
+    const spawners = new Map([...propSpawners, ...combat.spawners]);
+    installDebugCommands(world, { spawners, damage: combat.damage });
+    // The combat sandbox's rules (mw-e04.9): its commands, attacker metronomes (before the player's
+    // action timeline, so a swing starts on its beat) and infinite-health refills.
+    installSandboxRules(world, combat);
     const commands = new CommandQueue<GameCommand>();
     const afterStep: (() => void)[] = [];
     // Swept hitboxes and region-tagged hurtboxes (mw-e04.2). No faction table is loaded yet, so
@@ -341,10 +359,10 @@ function startRenderer(root: HTMLElement): void {
     view.scene.add(hitOverlay.object);
     root.dataset['hitboxOverlay'] = hitOverlay.enabled ? 'on' : 'off';
 
-    // The knight's sword and shield (mw-e04.6): moves, socket tracks, the wood shield and the
-    // damage model with the shield rule.
-    const combat = prepareTestbedCombat(content);
     let dummy: EntityId | undefined;
+    // The combat sandbox's frame-data overlay and slow motion (mw-e04.9), in the sandbox scene or
+    // with ?frames anywhere.
+    let sandboxHud: SandboxHud | undefined;
     let publishedDummy = '';
 
     // VFX (mw-e29.1): effects from content, simulated each frame after the sim and the camera have
@@ -411,6 +429,7 @@ function startRenderer(root: HTMLElement): void {
           const readout = JSON.stringify(dummyReadout(world, dummy) ?? null);
           if (readout !== publishedDummy) root.dataset['dummy'] = publishedDummy = readout;
         }
+        sandboxHud?.frame();
         hitOverlay.sync(world);
         if (animation !== undefined) {
           animation.driver.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
@@ -543,8 +562,42 @@ function startRenderer(root: HTMLElement): void {
           },
         });
       }
-      // Hit volumes, melee strikes and the scene's training dummies (mw-e04.6), after the player.
-      const dummies = startTestbedCombat(world, combat, loaded.layout.spawns);
+      // Hit volumes, melee strikes, hit reactions (mw-e04.7, mw-e04.31), the player as a combatant
+      // and the scene's training and sandbox dummies (mw-e04.6, mw-e04.9), after the player.
+      const { dummies } = startTestbedCombat(world, combat, loaded.layout.spawns, player?.entity);
+      // Sandbox dummies — the scene's and any the console spawns — get grey-box bodies.
+      const bindDummies = (): void => {
+        bindSandboxDummies(world, sync, (entity) => {
+          const attacker = world.has(entity, AttackerDummyComponent);
+          const object = createSandboxDummy({
+            radius: combat.sandbox.tuning.dummy.radius,
+            attacker,
+          });
+          view.scene.add(object);
+          return object3DBinding(object, readSandboxDummyTransform);
+        });
+      };
+      bindDummies();
+      afterStep.push(bindDummies);
+      const isSandbox = scene.id === combat.sandbox.tuning.scene;
+      if (isSandbox || new URLSearchParams(location.search).has('frames')) {
+        sandboxHud = createSandboxHud({
+          world,
+          root,
+          hud: ui.hud,
+          keys: globalThis.window,
+          loop,
+          moves: combat.moves,
+          player: () => player?.entity,
+          hitboxes: hitOverlay,
+          visible: true,
+          keysEnabled: () => !ui.capturesInput,
+        });
+        const sandboxHint = document.createElement('p');
+        sandboxHint.dataset['testid'] = 'sandbox-hint';
+        sandboxHint.textContent = SANDBOX_HINT;
+        hud.append(sandboxHint);
+      }
       const { radius, torso } = TRAINING_DUMMY;
       for (const entity of dummies) {
         const object = createTrainingDummy({ radius, height: torso.top });
@@ -569,7 +622,8 @@ function startRenderer(root: HTMLElement): void {
       dev: import.meta.env.DEV,
       search: location.search,
     };
-    if (__DEBUG_CONSOLE__ && debugConsoleEnabled(consoleGate)) {
+    const sandboxScene = request.kind === 'scene' && request.id === combat.sandbox.tuning.scene;
+    if (__DEBUG_CONSOLE__ && debugConsoleEnabled({ ...consoleGate, sandbox: sandboxScene })) {
       void import('@tools/console/start').then(({ startDebugConsole, unboundDebugSpawns }) => {
         const bookmarks = new Map(
           (scenes.current?.layout.spawns ?? []).map((spawn) => [spawn.id, spawn.position] as const),
@@ -581,6 +635,14 @@ function startRenderer(root: HTMLElement): void {
           },
           player: (): EntityId | undefined => player?.entity,
           spawnables: [...spawners.keys()].sort(),
+          // Sandbox dummies take options (mw-e04.9: `spawn dummy --poise 60`); props take none.
+          checkSpawn: (content, options) =>
+            combat.spawners.has(content)
+              ? checkSandboxSpawn(combat.sandbox, content, options, world.clock.hz)
+              : Object.keys(options).length === 0
+                ? undefined
+                : `${content} takes no options`,
+          sandbox: (command) => checkSandboxCommand(combat.sandbox, command, world.clock.hz),
           bookmarks: () => bookmarks,
           scenes: scenes.available(),
           loadScene: (id) => {

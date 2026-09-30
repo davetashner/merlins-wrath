@@ -15,7 +15,10 @@ import { addProperties, registerWorldProperties } from '../../properties/compone
 import { hashWorld } from '../../snapshot';
 import { installStimuli } from '../../stimulus/stimulus';
 import type { Vec3 } from '../../stimulus/shapes';
-import { StaminaComponent } from '../stamina';
+import { giveStamina, StaminaComponent } from '../stamina';
+import { GuardBroken, type GuardBreak } from '../melee/events';
+import { giveGuard, GuardComponent, MELEE_COMPONENTS } from '../melee/components';
+import { GUARD_BREAK_STAGGER_TICKS, shieldGuard } from '../melee/guard';
 import { DAMAGE_COMPONENTS, giveCombatant, healthOf, poiseOf } from '../damage/components';
 import { PoiseBroken } from '../damage/events';
 import { DamageModel } from '../damage/model';
@@ -51,6 +54,7 @@ import {
 import {
   applyHitReaction,
   chooseReaction,
+  GUARD_BREAK_REACTION,
   hitDirection,
   hurtboxFacing,
   hyperarmorModifier,
@@ -823,5 +827,143 @@ describe('hit reactions: choosing and profiles', () => {
     expect(bad({ knockdownImpulse: 100 })).toThrow('knockdownImpulse must be ≥ knockbackImpulse');
     expect(bad({ launchSpeed: -1 })).toThrow('launchSpeed must be a finite number ≥ 0');
     expect(bad({ launchSpeed: Number.POSITIVE_INFINITY })).toThrow(RangeError);
+  });
+});
+
+describe('hit reactions: blocks and guard breaks (mw-e04.31)', () => {
+  const WOOD = Object.freeze({
+    id: 'wood',
+    absorption: { slash: 85 },
+    stability: 60,
+    raiseTicks: 6,
+    arcDegrees: 120,
+    moveSpeedScale: 0.5,
+  });
+  const FROM_FRONT = v(0, 0, -1); // a blocker facing +z, struck from ahead
+
+  /** A creature with stamina behind a raised wood shield (facing +z), and the shield rule. */
+  function blocker(s: Setup, stamina = 100): EntityId {
+    s.world.register(...MELEE_COMPONENTS);
+    s.damage.register(shieldGuard());
+    const e = s.creature({ poise: 40 });
+    giveStamina(s.world, e, {
+      max: stamina,
+      regenPerSecond: 40,
+      regenDelayTicks: 30,
+      exhaustedRegenDelayTicks: 72,
+      blockingRegenMultiplier: 0.35,
+      sprintDrainPerSecond: 10,
+      sprintRecoverThreshold: Math.min(20, stamina),
+    });
+    giveGuard(s.world, e, WOOD);
+    s.steps(1);
+    const guard = s.world.get(e, GuardComponent) ?? expect.fail('no guard');
+    s.world.set(e, GuardComponent, { ...guard, held: true, raisedAt: s.world.tick - 10 });
+    return e;
+  }
+
+  it('AC-1: a blocked hit causes no flinch: nothing interrupts or locks the blocker, even a heavy push', () => {
+    const s = setup();
+    const knight = blocker(s);
+    const t0 = startMove(s, knight, 'swing');
+    s.stepTo(t0 + 3); // in startup, where a flinch would interrupt
+    const guard = s.world.get(knight, GuardComponent) ?? expect.fail('no guard');
+    s.world.set(knight, GuardComponent, { ...guard, raisedAt: s.world.tick - 10 });
+    s.hit(knight, {
+      amounts: { slash: 30 },
+      poiseDamage: 15,
+      staminaDamage: 20,
+      impulse: v(0, 0, -400),
+      direction: FROM_FRONT,
+    });
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({
+      reaction: 'none',
+      suppressed: 'blocked',
+      interrupted: false,
+      displaced: false,
+    });
+    expect(reactionOf(s.world, knight)).toBeUndefined();
+    expect(s.actionsEnded).toEqual([]);
+    expect(actionOf(s.world, knight)?.move).toBe('swing');
+    expect(s.world.get(knight, ActionTimelineComponent)?.lockTicks).toBe(0);
+  });
+
+  it('AC-1: the same hit from behind is not blocked and flinches', () => {
+    const s = setup();
+    const knight = blocker(s);
+    s.hit(knight, { amounts: { slash: 30 }, poiseDamage: 15, direction: v(0, 0, 1) });
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({ reaction: 'flinch', suppressed: null });
+  });
+
+  it('AC-2: GuardBroken plays a 60-tick guard-break stagger without locking the timeline again', () => {
+    const s = setup();
+    const knight = blocker(s, 8); // one 8-stamina block empties it
+    const breaks: GuardBreak[] = [];
+    s.world.events.on(GuardBroken, (e) => breaks.push(e));
+    s.hit(knight, {
+      amounts: { slash: 30 },
+      poiseDamage: 15,
+      staminaDamage: 20,
+      direction: FROM_FRONT,
+      instigator: 7,
+    });
+    const T = s.world.tick;
+    s.steps(1);
+    expect(breaks).toEqual([
+      { tick: T, entity: knight, instigator: 7, source: null, staggerTicks: 60 },
+    ]);
+    // The guard break's reaction, then the blocked hit's none.
+    expect(s.reactions).toEqual([
+      {
+        tick: T,
+        entity: knight,
+        reaction: GUARD_BREAK_REACTION,
+        direction: 'front',
+        ticks: GUARD_BREAK_STAGGER_TICKS,
+        interrupted: false,
+        displaced: false,
+        suppressed: null,
+        instigator: 7,
+        source: null,
+      },
+      expect.objectContaining({ reaction: 'none', suppressed: 'blocked' }),
+    ]);
+    expect(reactionOf(s.world, knight)).toEqual({
+      kind: 'stagger',
+      direction: 'front',
+      startedAt: T,
+      endsAt: T + 61,
+      interrupted: true,
+    });
+    // The guard rule's single 60-tick lock: a request made during it starts as it runs out, on the
+    // tick the reaction ends.
+    const started: number[] = [];
+    s.world.events.on(ActionStarted, (e) => started.push(e.tick));
+    s.stepTo(T + 55);
+    requestMove(s.world, knight, 'swing');
+    s.stepTo(T + 62);
+    expect(started).toEqual([T + 61]);
+    expect(s.ended).toEqual([
+      { tick: T + 61, entity: knight, reaction: 'stagger', iframesUntil: null },
+    ]);
+  });
+
+  it('AC-2: a locked request never interrupts the move it is given (no second interruptAction)', () => {
+    const s = setup();
+    const knight = s.creature();
+    const t0 = startMove(s, knight, 'swing');
+    s.stepTo(t0 + 3);
+    const info = applyHitReaction(
+      s.world,
+      knight,
+      { kind: 'stagger', ticks: 60, locked: true },
+      { moves: MOVES },
+    );
+    expect(info).toMatchObject({ reaction: 'stagger', ticks: 60, interrupted: false });
+    s.steps(1);
+    expect(s.actionsEnded).toEqual([]);
+    expect(actionOf(s.world, knight)?.move).toBe('swing');
   });
 });

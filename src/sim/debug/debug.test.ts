@@ -30,6 +30,7 @@ import {
   spawnCommand,
   teleportCommand,
   type DebugCommand,
+  type SpawnParams,
 } from './commands';
 import {
   DEBUG_SPAWN_TAG,
@@ -37,6 +38,7 @@ import {
   propSpawner,
   SPAWN_SPACING,
   testPropSpawners,
+  type Spawner,
 } from './system';
 
 const ORIGIN = { x: 0, y: 0, z: 0 };
@@ -95,6 +97,18 @@ describe('debug command builders', () => {
     expect(() => killCommand(1.5)).toThrow(/entity id/);
   });
 
+  it('carry spawn options sorted by name, only when there are some (mw-e04.9)', () => {
+    const plain = spawnCommand('dummy', 1, ORIGIN, {});
+    expect('params' in plain).toBe(false);
+    const withParams = spawnCommand('dummy', 1, ORIGIN, { resist: 'slash=0.5', poise: '60' });
+    expect(withParams.params).toEqual({ poise: '60', resist: 'slash=0.5' });
+    expect(Object.keys(withParams.params ?? {})).toEqual(['poise', 'resist']);
+    expect(JSON.parse(JSON.stringify(withParams))).toEqual(withParams);
+    expect(() => spawnCommand('dummy', 1, ORIGIN, { 'Bad Name': '1' })).toThrow(
+      'bad spawn option name "Bad Name"',
+    );
+  });
+
   it('isDebugCommand picks debug commands out of arbitrary inputs', () => {
     expect(isDebugCommand(killCommand(1))).toBe(true);
     expect(isDebugCommand({ kind: 'sim.fact' })).toBe(false);
@@ -145,6 +159,32 @@ describe('debug command system', () => {
     expect(hashWorld(world)).toBe(hashWorld(other));
   });
 
+  it('passes spawn options to the spawner; a spawner that rejects them skips the command', () => {
+    const world = registerSceneComponents(new World<unknown>({ seed: 3 }));
+    const seen: SpawnParams[] = [];
+    const picky: Spawner = (w, at, params) => {
+      seen.push(params);
+      if (params['bad'] !== undefined) throw new RangeError('bad option');
+      return propSpawner('crate')(w, at, params);
+    };
+    installDebugCommands(world, { spawners: new Map([['picky', picky]]) });
+    world.step([
+      spawnCommand('picky', 2, ORIGIN, { size: 'big' }),
+      spawnCommand('picky', 1, ORIGIN),
+      spawnCommand('picky', 3, ORIGIN, { bad: 'yes' }),
+    ]);
+    expect(seen).toEqual([{ size: 'big' }, { size: 'big' }, {}, { bad: 'yes' }]);
+    expect(spawned(world, 'crate')).toHaveLength(3);
+    const broken: Spawner = () => {
+      throw new Error('bug');
+    };
+    const other = registerSceneComponents(new World<unknown>({ seed: 3 }));
+    installDebugCommands(other, { spawners: new Map([['broken', broken]]) });
+    expect(() => {
+      other.step([spawnCommand('broken', 1, ORIGIN)]);
+    }).toThrow('bug');
+  });
+
   it('toggles cheats per entity, accumulating several toggles in one tick', () => {
     const world = debugWorld();
     const a = world.spawn();
@@ -167,7 +207,7 @@ describe('debug command system', () => {
     const world = debugWorld();
     world.register(CharacterController);
     const hero = spawnCharacter(world, ORIGIN);
-    const [crate] = [propSpawner('crate')(world, ORIGIN)];
+    const [crate] = [propSpawner('crate')(world, ORIGIN, {})];
     const bare = world.spawn();
     const to = { x: 4, y: 2, z: -3 };
     world.step([teleportCommand(hero, to), teleportCommand(crate, to), teleportCommand(bare, to)]);
@@ -187,7 +227,7 @@ describe('debug command system', () => {
     world.events.on(Died, (death) => died.push(death));
     const foe = world.spawn();
     giveCombatant(world, foe, { health: 50 });
-    const prop = propSpawner('plank')(world, ORIGIN);
+    const prop = propSpawner('plank')(world, ORIGIN, {});
     const hero = spawnCharacter(world, ORIGIN);
     world.step([killCommand(foe), killCommand(prop), killCommand(hero)]);
     expect(world.get(foe, HealthComponent)?.current).toBe(0);

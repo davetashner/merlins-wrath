@@ -4,6 +4,7 @@ import {
   GAMEPAD_DISCONNECTED_HINT,
   PLAYER_CONTROLS_HINT,
   playerControlsHint,
+  SANDBOX_HINT,
   sceneErrorMessage,
   sceneLabel,
 } from './scene-hud';
@@ -14,6 +15,7 @@ describe('scene overlay text (mw-e00.21)', () => {
       'Greybox testbed (testbed) · build 1a2b3c4',
     );
     expect(DEBUG_CAMERA_HINT).toMatch(/^F2: fly camera/);
+    expect(SANDBOX_HINT).toMatch(/^Combat sandbox: F3 frame data and hitboxes, F4 slow motion/);
   });
 
   it('tells the player how to take control (mw-e02.23)', () => {

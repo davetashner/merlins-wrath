@@ -10,15 +10,11 @@ import { creatureSchema, HIT_REACTION_DEFAULTS, type CreatureDefInput } from '@c
 import {
   CharacterController,
   combatantFromCreature,
-  DamageModel,
   DEFAULT_REACTION_PROFILE,
   giveActionTimeline,
   giveCombatant,
   giveHitReactions,
   HitReaction,
-  HitReactionComponent,
-  installHitReactions,
-  pushCharacter,
   reactionOf,
   reactionProfileFromCreature,
   SKIN,
@@ -27,7 +23,7 @@ import {
   type EntityId,
   type HitReactionInfo,
 } from '@sim/index';
-import { createTestbedWorld } from '@tools/replay/testbed-player-scenario';
+import { createGameWorld } from '@tools/replay/testbed-player-scenario';
 
 /** The arena platform at [6, 0, 29] scaled [1, 2, 1]: x 5…7, z 28…30, top at y = 2. */
 const LEDGE = { edgeX: 7, top: 2, z: 29 };
@@ -68,12 +64,12 @@ function must<T>(value: T | undefined): T {
 }
 
 function shove() {
-  const world = createTestbedWorld(RAPIER, { seed: 1, hz: 60 });
-  // The testbed's player and combat (mw-e04.6) already register the action timeline, stamina,
-  // damage and hit-volume components.
-  world.register(HitReactionComponent);
-  const damage = new DamageModel();
-  installHitReactions(world, { moves: new Map(), damage, pushers: [pushCharacter] });
+  // The testbed's combat (mw-e04.6) registers the action timeline, stamina, damage and hit-volume
+  // components, and installs hit reactions on the game's damage model with the character and
+  // physics-object pushers (mw-e04.31).
+  const game = createGameWorld<never>(RAPIER, { seed: 1, hz: 60 });
+  const { world } = game;
+  const { damage } = game.combat;
   const goblin: EntityId = spawnCharacter(world, {
     x: LEDGE.edgeX - 0.5,
     y: LEDGE.top + SKIN,

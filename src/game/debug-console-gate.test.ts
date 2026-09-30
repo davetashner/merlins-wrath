@@ -11,7 +11,16 @@ describe('debugConsoleEnabled', () => {
     expect(debugConsoleEnabled({ built: true, dev: false, search: '?debug=0' })).toBe(false);
   });
 
+  it('in the combat sandbox without ?debug=1 (mw-e04.9)', () => {
+    const search = '?scene=combat-sandbox';
+    expect(debugConsoleEnabled({ built: true, dev: false, search, sandbox: true })).toBe(true);
+    expect(debugConsoleEnabled({ built: true, dev: false, search, sandbox: false })).toBe(false);
+  });
+
   it('never when the build left the console out', () => {
     expect(debugConsoleEnabled({ built: false, dev: true, search: '?debug=1' })).toBe(false);
+    expect(debugConsoleEnabled({ built: false, dev: false, search: '', sandbox: true })).toBe(
+      false,
+    );
   });
 });

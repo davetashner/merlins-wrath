@@ -26,6 +26,18 @@ import { CommandRegistry } from './registry';
 
 const PROPS = ['crate', 'plank', 'barrel', 'brazier', 'crystal'];
 
+/** The host options every test host shares. */
+const HOST_BASE = (world: World) => ({
+  world,
+  submit: () => undefined,
+  player: () => undefined,
+  spawnables: [],
+  bookmarks: () => new Map(),
+  scenes: [],
+  loadScene: () => undefined,
+  loop: { timeScale: 1 },
+});
+
 /** A real sim world behind a console, with a replay recorder in front of it like a session. */
 function session(options: { withPlayer?: boolean; props?: readonly string[] } = {}) {
   const world = registerSceneComponents(new World<unknown>({ seed: 42 }));
@@ -148,6 +160,46 @@ describe('built-in console commands', () => {
     expect(s.registry.execute('spawn testprop-crate 0').ok).toBe(false);
   });
 
+  it('spawn passes --options to spawnables that take them, checked up front (mw-e04.9)', () => {
+    const s = session();
+    const checked: [string, Readonly<Record<string, string>>][] = [];
+    const host: ConsoleHost = Object.assign(Object.create(s.host) as ConsoleHost, {
+      checkSpawn: (content: string, options: Readonly<Record<string, string>>) => {
+        checked.push([content, options]);
+        return options['poise'] === '-1' ? '--poise must be a number 0–…' : undefined;
+      },
+    });
+    const registry = new CommandRegistry<ConsoleHost>(host);
+    registerBuiltins(registry);
+    expect(registry.execute('spawn testprop-crate 2 --poise 60 --resist slash=0.5')).toEqual({
+      ok: true,
+      lines: ['spawning 2 × testprop-crate --poise 60 --resist slash=0.5'],
+    });
+    expect(s.queue.drain()).toEqual([
+      spawnCommand('testprop-crate', 2, { x: 0, y: 0, z: 0 }, { poise: '60', resist: 'slash=0.5' }),
+    ]);
+    expect(registry.execute('spawn testprop-crate --poise -1')).toEqual({
+      ok: false,
+      lines: ['spawn testprop-crate: --poise must be a number 0–…'],
+    });
+    expect(checked).toHaveLength(2);
+    expect(registry.execute('spawn testprop-crate --poise').lines).toEqual([
+      'option --poise needs a value',
+    ]);
+    expect(registry.execute('spawn testprop-crate 1 2').lines).toEqual([
+      'spawn: invalid arguments: arg 2: Too big: expected array to have <=1 items',
+      'usage: spawn <contentId> [count 1–100] [--option value…]',
+    ]);
+    // Without a check, no spawnable takes options.
+    expect(s.registry.execute('spawn testprop-crate --size big').lines).toEqual([
+      'spawn testprop-crate: testprop-crate takes no options',
+    ]);
+    expect(s.queue.size).toBe(0);
+    expect(
+      createGameHost({ ...HOST_BASE(s.world), checkSpawn: () => 'nope' }).checkSpawn?.('x', {}),
+    ).toBe('nope');
+  });
+
   it('god and noclip toggle the player through cheat commands, or set a state explicitly', () => {
     const s = session({ withPlayer: true });
     const player = s.hero;
@@ -243,8 +295,8 @@ describe('built-in console commands', () => {
       'tp',
     ]);
     expect(s.registry.execute('help spawn').lines).toEqual([
-      'usage: spawn <contentId> [count 1–100]',
-      'spawn content in front of the player',
+      'usage: spawn <contentId> [count 1–100] [--option value…]',
+      'spawn content in front of the player (sandbox dummies take options: type dummies)',
     ]);
     expect(s.registry.execute('help spwn').lines).toEqual([
       'unknown command "spwn"; closest: spawn, scene, seed',

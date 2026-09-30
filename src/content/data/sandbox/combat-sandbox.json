@@ -1,0 +1,37 @@
+{
+  "$schema": "../sandbox.schema.json",
+  "id": "combat-sandbox",
+  "notes": "PLACEHOLDER TUNING (mw-e04.9) — every number here is a first guess for the owner to tune in ?scene=combat-sandbox. Dummy: 1000 health (infinite by default: refills 180 ticks = 3 s after the last hit), 40 poise (a light chain staggers it), no resistances, head/torso/limb hurtboxes at ×1.5/×1/×0.75 (weakpoint ×2 when spawned with --regions weakpoint), and the e04.7 reaction defaults (knockback 300 N·s, knockdown 900 N·s, launch 2 m/s) on an 80 kg body. Attacker: the training-dummy swing every 120 ticks (2.0 s), parryable and blockable. Player: 100 health and 30 poise until the knight's stats arrive.",
+  "scene": "combat-sandbox",
+  "dummy": {
+    "health": 1000,
+    "poise": 40,
+    "infiniteHealth": true,
+    "resetAfterTicks": 180,
+    "resistances": {},
+    "regions": ["head", "torso", "limb"],
+    "regionMultipliers": {
+      "weakpoint": 2,
+      "head": 1.5,
+      "torso": 1,
+      "limb": 0.75
+    },
+    "radius": 0.35,
+    "reactions": {
+      "knockbackImpulse": 300,
+      "knockdownImpulse": 900,
+      "launchSpeed": 2,
+      "mass": 80
+    }
+  },
+  "attacker": {
+    "move": "training-dummy-swing",
+    "periodTicks": 120,
+    "parryable": true,
+    "unblockable": false
+  },
+  "player": {
+    "health": 100,
+    "poise": 30
+  }
+}

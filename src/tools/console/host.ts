@@ -27,6 +27,11 @@ export interface GameHostOptions {
   readonly submit: (command: unknown) => void;
   readonly player: () => EntityId | undefined;
   readonly spawnables: readonly string[];
+  /** Checks a spawn's options (ConsoleHost.checkSpawn); without it no spawnable takes options. */
+  readonly checkSpawn?: (
+    content: string,
+    options: Readonly<Record<string, string>>,
+  ) => string | undefined;
   readonly bookmarks: () => ReadonlyMap<string, Vec3>;
   readonly scenes: readonly string[];
   readonly loadScene: (id: string) => void;
@@ -59,6 +64,7 @@ export function createGameHost(options: GameHostOptions): ConsoleHost {
       };
     },
     spawnables: options.spawnables,
+    ...(options.checkSpawn !== undefined && { checkSpawn: options.checkSpawn }),
     bookmarks: options.bookmarks,
     scenes: options.scenes,
     loadScene: options.loadScene,

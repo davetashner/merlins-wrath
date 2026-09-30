@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { KNIGHT_SHIELD_ID, loadGameContent } from '@content/index';
 import {
   DAMAGE_COMPONENTS,
+  DEFAULT_REACTION_PROFILE,
+  giveCombatant,
+  healthOf,
+  HitReactionComponent,
+  HurtboxComponent,
+  PlayerCombatantComponent,
+  poiseOf,
   HIT_VOLUME_COMPONENTS,
   PlacementComponent,
   World,
@@ -61,14 +68,46 @@ describe('training dummy (mw-e04.6)', () => {
     expect(combat.damage.modifiers().map((m) => [m.name, m.stage])).toEqual([
       ['shield-block', 'guard'],
     ]);
+    expect(combat.sandbox.tuning.id).toBe('combat-sandbox');
+    expect([...combat.spawners.keys()]).toEqual(['dummy', 'attacker-dummy']);
+    expect(combat.moves.has('training-dummy-swing:parryable:unblockable')).toBe(true);
     const w = world();
-    const dummies = startTestbedCombat(w, combat, [
+    const { dummies, sandboxDummies } = startTestbedCombat(w, combat, [
       spawn('d1', [TRAINING_DUMMY_TAG]),
       spawn('x', []),
       spawn('d2', [TRAINING_DUMMY_TAG], 3),
     ]);
     expect(dummies).toHaveLength(2);
+    expect(sandboxDummies).toEqual([]);
+    // Hit reactions joined the damage model (mw-e04.7, mw-e04.31).
+    expect(combat.damage.modifiers().map((m) => m.name)).toEqual([
+      'wake-up-iframes',
+      'hyperarmor',
+      'shield-block',
+    ]);
     w.step();
     expect(dummies.map((d) => dummyReadout(w, d)?.health)).toEqual([200, 200]);
+  });
+
+  it('arms the player: health, poise, a hurtbox and hit reactions, unless it is a combatant already (mw-e04.31)', () => {
+    const combat = prepareTestbedCombat(loadGameContent());
+    const w = world();
+    const knight = w.spawn();
+    startTestbedCombat(w, combat, [], knight);
+    const again = world();
+    const other = again.spawn();
+    giveCombatant(again, other, { health: 5 });
+    again.step();
+    startTestbedCombat(again, prepareTestbedCombat(loadGameContent()), [], other);
+    w.step();
+    again.step();
+    expect(healthOf(w, knight)).toEqual({ max: 100, current: 100 });
+    expect(poiseOf(w, knight)?.max).toBe(30);
+    expect(w.has(knight, PlayerCombatantComponent)).toBe(true);
+    expect(w.get(knight, HurtboxComponent)?.boxes.map((b) => b.region)).toEqual(['torso']);
+    expect(w.get(knight, HitReactionComponent)?.profile).toEqual(DEFAULT_REACTION_PROFILE);
+    // Already a combatant: left as it was.
+    expect(healthOf(again, other)).toEqual({ max: 5, current: 5 });
+    expect(again.has(other, HurtboxComponent)).toBe(false);
   });
 });

@@ -63,8 +63,8 @@ describe('createGameHost', () => {
 describe('unboundDebugSpawns', () => {
   it('lists debug-spawned props without a render object, as spawn placements', () => {
     const w = world();
-    const crate = propSpawner('crate')(w, { x: 2, y: 0, z: -1 });
-    const bound = propSpawner('plank')(w, { x: 0, y: 0, z: 0 });
+    const crate = propSpawner('crate')(w, { x: 2, y: 0, z: -1 }, {});
+    const bound = propSpawner('plank')(w, { x: 0, y: 0, z: 0 }, {});
     const sceneProp = w.spawn();
     w.add(sceneProp, SceneTransformComponent, {
       position: { x: 0, y: 0, z: 0 },

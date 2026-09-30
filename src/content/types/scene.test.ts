@@ -91,11 +91,11 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene and the kit gallery', () => {
+  it('ships the default testbed scene, the kit gallery and the combat sandbox', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
         .map((s) => s.id),
-    ).toEqual(['kit-gallery', 'testbed']);
+    ).toEqual(['combat-sandbox', 'kit-gallery', 'testbed']);
   });
 });

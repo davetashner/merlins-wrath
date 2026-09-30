@@ -19,7 +19,13 @@ import { SceneSpawnComponent, SceneTransformComponent } from '../scene/loader';
 import { addPropPhysics, type ScenePhysicsOptions } from '../scene/physics';
 import type { Vec3 } from '../stimulus/shapes';
 import { DebugCheatsComponent, godModeModifier, NO_CHEATS, type DebugCheats } from './cheats';
-import { isDebugCommand, type CheatCommand, type DebugCommand } from './commands';
+import {
+  isDebugCommand,
+  NO_SPAWN_PARAMS,
+  type CheatCommand,
+  type DebugCommand,
+  type SpawnParams,
+} from './commands';
 
 /** Distance between the entities one spawn command creates, metres along +x. */
 export const SPAWN_SPACING = 1;
@@ -27,8 +33,12 @@ export const SPAWN_SPACING = 1;
 /** The tag every debug-spawned prop carries in its SceneSpawn component. */
 export const DEBUG_SPAWN_TAG = 'debug-spawn';
 
-/** Creates one entity of some content at `at` (code, not state: the same on every run). */
-export type Spawner = <TInput>(world: World<TInput>, at: Vec3) => EntityId;
+/**
+ * Creates one entity of some content at `at` (code, not state: the same on every run), configured by
+ * the command's `params`. A spawner that rejects its params throws a RangeError before changing the
+ * world; the command is then skipped.
+ */
+export type Spawner = <TInput>(world: World<TInput>, at: Vec3, params: SpawnParams) => EntityId;
 
 export interface DebugCommandOptions {
   /** Spawnable id → spawner; `spawn` commands for other ids are skipped. */
@@ -127,9 +137,14 @@ export function debugCommandSystem<TInput>(options: DebugCommandOptions): System
         if (command.op === 'spawn') {
           const spawn = spawners.get(command.content);
           if (spawn === undefined) continue;
-          for (let i = 0; i < command.count; i++) {
-            const { x, y, z } = command.at;
-            spawn(world, { x: x + i * SPAWN_SPACING, y, z });
+          const params = command.params ?? NO_SPAWN_PARAMS;
+          try {
+            for (let i = 0; i < command.count; i++) {
+              const { x, y, z } = command.at;
+              spawn(world, { x: x + i * SPAWN_SPACING, y, z }, params);
+            }
+          } catch (error) {
+            if (!(error instanceof RangeError)) throw error;
           }
           continue;
         }
