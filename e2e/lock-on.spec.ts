@@ -105,6 +105,8 @@ interface MarkerSample {
   target: string;
   x: number;
   y: number;
+  /** Where the marker is once the camera has settled on the target. */
+  settled?: { x: number; y: number };
 }
 
 /**
@@ -140,7 +142,9 @@ async function tapAndMark(
     [code, key, previous ?? ''] as const,
   );
   await page.waitForTimeout(1_000); // the player turns and the camera frames the new target
-  return sample;
+  const box = await page.getByTestId('lock-marker').boundingBox();
+  if (box === null) throw new Error('lock marker has no box');
+  return { ...sample, settled: { x: box.x + box.width / 2, y: box.y + box.height / 2 } };
 }
 
 test('AC-6: locking on and cycling moves the HUD lock marker across all three dummies', async ({
@@ -149,7 +153,7 @@ test('AC-6: locking on and cycling moves the HUD lock marker across all three du
   const problems = collectProblems(page);
   await play(page);
   await expect(page.getByTestId('lock-marker')).toBeHidden();
-  await walkTo(page, 16); // through the corridor, into the arena doorway
+  await walkTo(page, 15); // through the corridor, into the arena doorway
   await page.waitForTimeout(500); // coast to a stop
 
   const first = await tapAndMark(page, 'KeyQ', 'q', undefined);
@@ -160,7 +164,10 @@ test('AC-6: locking on and cycling moves the HUD lock marker across all three du
   expect(new Set(samples.map((s) => s.target)).size).toBe(3);
   expect((await player(page)).lock).toBe(Number(third.target));
   const viewport = page.viewportSize() ?? { width: 0, height: 0 };
-  for (const { x, y } of samples) {
+  // Once framed, every target's marker is on screen. (The first-frame samples below may still be
+  // off screen on a slow runner: the camera is framed on the previous target then.)
+  for (const { settled } of samples) {
+    const { x, y } = settled ?? { x: -1, y: -1 };
     expect(x).toBeGreaterThan(0);
     expect(x).toBeLessThan(viewport.width);
     expect(y).toBeGreaterThan(0);
