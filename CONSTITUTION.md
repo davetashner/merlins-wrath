@@ -61,7 +61,7 @@ Bookshops should therefore be genuinely exciting destinations.
 
 Different settlements can have different magical inventories, specialties and rare books. Some books are expensive. Others are stolen, forbidden, hidden, damaged, untranslated, won from characters, found in ruins or carried by enemies.
 
-Potential schools include Fire, Frost, Storm, Arcane, Illusion, Alteration, Conjuration, Necromancy, Nature, Light, Shadow, Gravity and Time.
+Potential schools include Fire, Frost, Storm, Arcane, Illusion, Alteration, Conjuration, Necromancy, Nature, Light, Shadow, Gravity, Time and Somnomancy.
 
 Spells should include combat, utility and world interaction.
 

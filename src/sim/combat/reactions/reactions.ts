@@ -434,7 +434,9 @@ export function hyperarmorModifier(moves: MoveTable): DamageModifier {
 
 /**
  * The wake-up invulnerability rule, for the damage model's attacker stage: a hit on an entity in
- * its wake-up i-frames deals no damage, poise or stamina damage and is tagged `invulnerable`.
+ * its wake-up i-frames deals no damage, poise or stamina damage and is tagged `invulnerable`. Hits
+ * through hit volumes or the attack executor never get here when they are given
+ * `invulnerabilityRule` (they become DodgedHit); this catches damage from every other path.
  */
 export function wakeIframesModifier(): DamageModifier {
   return {

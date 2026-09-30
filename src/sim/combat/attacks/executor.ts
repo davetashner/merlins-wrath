@@ -14,6 +14,14 @@
 // hit at most once per attack. Projectiles fly straight at their speed, sweep a capsule each tick and
 // hit the first target along the path (level geometry does not stop them yet).
 //
+// I-frames (mw-e04.28): a target the `invulnerable` rule (`invulnerabilityRule`: dodge and wake-up
+// i-frames, the same rule the hit-volume system asks) names on the tick it is struck gets DodgedHit
+// instead of damage. A dodged melee target counts as hit for the attack, so the swing cannot catch it
+// later in its window; a projectile flies on through it as if it missed (DodgedHit once per target)
+// and may still hit whoever is behind. Until executor hits route through hit volumes (mw-e04.20),
+// DodgedHit names the attack as the hitbox and the bounding sphere as hurtbox `body` (torso, ×1).
+// Run the action timeline before the executor so the rule reads this tick's move.
+//
 // A poise break (PoiseBroken) or death of the attacker breaks its attack off; hyperarmor is the poise
 // rules' business, so a hit that did not break poise never reaches here.
 
@@ -25,11 +33,14 @@ import { shapeFalloff, type Vec3 } from '../../stimulus/shapes';
 import { HealthComponent } from '../damage/components';
 import { Died, PoiseBroken, type DamageResult } from '../damage/events';
 import type { DamageModel } from '../damage/model';
+import { DodgedHit } from '../hits/events';
+import { noInvulnerability, type InvulnerabilityRule } from '../hits/system';
 import {
   AttackerComponent,
   ProjectileComponent,
   type ActiveAttack,
   type Attacker,
+  type Projectile,
 } from './components';
 import {
   AttackActive,
@@ -49,6 +60,11 @@ export type AttackLookup = ReadonlyMap<string, RuntimeAttack>;
 export interface AttackExecutorOptions {
   readonly attacks: AttackLookup;
   readonly damage: DamageModel;
+  /**
+   * Who is invulnerable this tick: a hit on them is DodgedHit, not damage. Defaults to nobody;
+   * `invulnerabilityRule(moves)` gives dodge and wake-up i-frames (run the timeline first).
+   */
+  readonly invulnerable?: InvulnerabilityRule;
 }
 
 /** A phase of an attack. */
@@ -185,6 +201,26 @@ function lookup(attacks: AttackLookup, id: string): RuntimeAttack {
   return attack;
 }
 
+/** Emits DodgedHit for `target`, struck by `attack` on its `activeTick`-th active tick. */
+function dodged(
+  world: World<never>,
+  hit: { attacker: EntityId; attack: RuntimeAttack; target: EntityId; aim: Vec3 },
+  activeTick: number,
+): void {
+  world.events.emit(DodgedHit, {
+    tick: world.tick,
+    attacker: hit.attacker,
+    hitbox: hit.attack.id,
+    activeTick,
+    target: hit.target,
+    hurtbox: 'body',
+    region: 'torso',
+    multiplier: 1,
+    armored: false,
+    direction: hit.aim,
+  });
+}
+
 /** Applies every packet of `attack` to `target`; emits AttackHit. */
 function strike(
   world: World<never>,
@@ -270,8 +306,11 @@ function runActive(
     ({ entity: target, at }) =>
       !current.hit.includes(target) && shapeFalloff(shape, 'none', at, at.radius) !== undefined,
   );
+  const invulnerable = options.invulnerable ?? noInvulnerability;
   for (const { entity: target } of targets) {
-    strike(world, options, { attacker: entity, source: entity, attack, target, aim: current.aim });
+    const hit = { attacker: entity, source: entity, attack, target, aim: current.aim };
+    if (invulnerable(world, target)) dodged(world, hit, attackTick - attack.move.startup);
+    else strike(world, options, hit);
   }
   if (targets.length === 0) return current;
   const hit = [...current.hit, ...targets.map((t) => t.entity)].sort((a, b) => a - b);
@@ -313,34 +352,41 @@ export function attackSystem<TInput>(options: AttackExecutorOptions): System<TIn
   };
 }
 
-/** The first living hurtbox the swept capsule `from`→`to` touches, nearest along the path. */
-function firstAlong(
+/**
+ * The living hurtboxes the swept capsule `from`→`to` touches, other than `exclude` and those in
+ * `skip`, nearest along the path first (ties in ascending id order).
+ */
+function allAlong(
   world: World<never>,
   exclude: EntityId,
+  skip: readonly EntityId[],
   path: { from: Vec3; to: Vec3; direction: Vec3; radius: number },
-): EntityId | undefined {
+): EntityId[] {
   const sweep: HitShape = { kind: 'capsule', from: path.from, to: path.to, radius: path.radius };
-  let best: { entity: EntityId; along: number } | undefined;
+  const found: { entity: EntityId; along: number }[] = [];
   for (const { entity, at } of hurtboxes(world, exclude)) {
+    if (skip.includes(entity)) continue;
     if (shapeFalloff(sweep, 'none', at, at.radius) === undefined) continue;
     const d = path.direction;
     const along =
       (at.x - path.from.x) * d.x + (at.y - path.from.y) * d.y + (at.z - path.from.z) * d.z;
-    if (best === undefined || along < best.along) best = { entity, along };
+    found.push({ entity, along });
   }
-  return best?.entity;
+  // A stable sort: equal distances keep the query's ascending id order.
+  return found.sort((a, b) => a.along - b.along).map((f) => f.entity);
 }
 
 /**
  * Moves every projectile one tick (speed / hz metres, never past its max range), hits the first
  * living hurtbox along the way with the attack's packets, and removes projectiles that hit or reached
- * their range.
+ * their range. An invulnerable hurtbox along the way gets DodgedHit (once) and is flown through.
  */
 export function projectileSystem<TInput>(options: AttackExecutorOptions): System<TInput> {
   return {
     name: 'attack-projectiles',
     run: ({ world, clock }) => {
       const w: World<never> = world;
+      const invulnerable = options.invulnerable ?? noInvulnerability;
       w.query(ProjectileComponent).forEach((entity, projectile) => {
         const attack = lookup(options.attacks, projectile.attack);
         const flight = attack.projectile;
@@ -352,20 +398,28 @@ export function projectileSystem<TInput>(options: AttackExecutorOptions): System
           y: from.y + direction.y * step,
           z: from.z + direction.z * step,
         };
-        const target = firstAlong(w, projectile.attacker, {
+        const passed = projectile.dodged ?? [];
+        const along = allAlong(w, projectile.attacker, passed, {
           from,
           to,
           direction,
           radius: flight.radius,
         });
-        if (target !== undefined) {
-          strike(w, options, {
+        const dodgedNow: EntityId[] = [];
+        for (const target of along) {
+          const hit = {
             attacker: projectile.attacker,
             source: entity,
             attack,
             target,
             aim: direction,
-          });
+          };
+          if (invulnerable(w, target)) {
+            dodged(w, hit, 1);
+            dodgedNow.push(target);
+            continue;
+          }
+          strike(w, options, hit);
           w.destroy(entity);
           return;
         }
@@ -374,11 +428,15 @@ export function projectileSystem<TInput>(options: AttackExecutorOptions): System
           w.destroy(entity);
           return;
         }
-        w.set(
-          entity,
-          ProjectileComponent,
-          Object.freeze({ ...projectile, position: to, travelled }),
-        );
+        const moved: Projectile = {
+          ...projectile,
+          position: to,
+          travelled,
+          ...(dodgedNow.length > 0 && {
+            dodged: Object.freeze([...passed, ...dodgedNow].sort((a, b) => a - b)),
+          }),
+        };
+        w.set(entity, ProjectileComponent, Object.freeze(moved));
       });
     },
   };

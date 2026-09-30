@@ -1,4 +1,4 @@
-import type { RuntimeAttack } from '@content/index';
+import type { MoveTable, RuntimeAttack, RuntimeMove } from '@content/index';
 import { describe, expect, it } from 'vitest';
 import type { EntityId } from '../../core/component';
 import { World } from '../../core/world';
@@ -8,6 +8,11 @@ import type { Vec3 } from '../../stimulus/shapes';
 import { DAMAGE_COMPONENTS, giveCombatant, HealthComponent, healthOf } from '../damage/components';
 import { DamageApplied, type DamageResult } from '../damage/events';
 import { DamageModel } from '../damage/model';
+import { DodgedHit, type HitboxHitInfo } from '../hits/events';
+import { invulnerabilityRule } from '../invulnerability';
+import { ACTION_TIMELINE_COMPONENTS, giveActionTimeline } from '../timeline/components';
+import { actionTimelineSystem, requestMove } from '../timeline/timeline';
+import { StaminaComponent } from '../stamina';
 import {
   ATTACK_COMPONENTS,
   AttackerComponent,
@@ -458,5 +463,154 @@ describe('projectile attacks', () => {
     expect(() => {
       world.step();
     }).toThrow('attack "plain" is not a projectile attack');
+  });
+});
+
+// The shipped dodge roll (src/content/data/move/dodge-roll.json): i-frames on move ticks 2–14.
+const ROLL: RuntimeMove = Object.freeze({
+  ...makeAttack('roll').move,
+  id: 'dodge-roll',
+  verb: 'dodge',
+  startup: 2,
+  active: 13,
+  recovery: 21,
+  totalTicks: 36,
+  activeFrom: 2,
+  recoveryFrom: 15,
+  damage: null,
+  hitbox: null,
+  iframes: { from: 2, to: 14 },
+});
+const MOVES: MoveTable = new Map([[ROLL.id, ROLL]]);
+
+/** A knight that rolls on tick 0 (timeline before the executor, the shared rule), and a log. */
+function rolling(attacks: readonly RuntimeAttack[], at: Vec3) {
+  const world = new World<never>({ seed: 5 }).register(
+    ...DAMAGE_COMPONENTS,
+    ...ATTACK_COMPONENTS,
+    ...ACTION_TIMELINE_COMPONENTS,
+    StaminaComponent,
+    PlacementComponent,
+  );
+  world.addSystem(actionTimelineSystem({ moves: MOVES }));
+  installAttacks(world, {
+    attacks: new Map(attacks.map((a) => [a.id, a])),
+    damage: new DamageModel(),
+    invulnerable: invulnerabilityRule(MOVES),
+  });
+  const log = { hit: [] as AttackHitInfo[], dodged: [] as HitboxHitInfo[] };
+  world.events.on(AttackHit, (e) => log.hit.push(e));
+  world.events.on(DodgedHit, (e) => log.dodged.push(e));
+  const attacker = world.spawn();
+  giveCombatant(world, attacker, { health: 100, poise: 10 });
+  giveAttacker(world, attacker);
+  placeEntity(world, attacker, { x: 0, y: 0, z: 0 }, 0.4);
+  const knight = world.spawn();
+  giveCombatant(world, knight, { health: 100 });
+  placeEntity(world, knight, at, 0.4);
+  giveActionTimeline(world, knight);
+  requestMove(world, knight, 'dodge-roll');
+  const until = (tick: number) => {
+    while (world.tick < tick) world.step();
+  };
+  const health = (e: EntityId) => healthOf(world, e)?.current;
+  return { world, log, attacker, knight, until, health };
+}
+
+describe('attack executor and i-frames (mw-e04.28)', () => {
+  // One active tick: started on world tick s, attack tick 13 (its only active tick) runs on s + 12.
+  const jab = makeAttack('jab', [12, 1, 10]);
+
+  it('AC-1: a knight rolling on tick 0 dodges an executor melee hit landing on tick 14 (DodgedHit, no damage)', () => {
+    const { world, log, attacker, knight, until, health } = rolling([jab], { x: 0, y: 0, z: 1.2 });
+    until(2);
+    startAttack(world, attacker, jab, FORWARD);
+    until(15);
+    expect(log.hit).toEqual([]);
+    expect(log.dodged).toEqual([
+      {
+        tick: 14,
+        attacker,
+        hitbox: 'jab',
+        activeTick: 1,
+        target: knight,
+        hurtbox: 'body',
+        region: 'torso',
+        multiplier: 1,
+        armored: false,
+        direction: FORWARD,
+      },
+    ]);
+    expect(health(knight)).toBe(100);
+  });
+
+  it('AC-1: landing on tick 15, the first tick after the i-frames, the hit applies', () => {
+    const { world, log, attacker, knight, until, health } = rolling([jab], { x: 0, y: 0, z: 1.2 });
+    until(3);
+    startAttack(world, attacker, jab, FORWARD);
+    until(16);
+    expect(log.dodged).toEqual([]);
+    expect(log.hit.map((h) => [h.tick, h.target])).toEqual([[15, knight]]);
+    expect(health(knight)).toBe(90);
+  });
+
+  it('a melee swing dodged once cannot catch the knight later in its window', () => {
+    const long = makeAttack('sweep', [10, 6, 4]);
+    const { world, log, attacker, knight, until, health } = rolling([long], { x: 0, y: 0, z: 1.2 });
+    until(3);
+    startAttack(world, attacker, long, FORWARD); // active on ticks 13–18; i-frames end after 14
+    until(20);
+    expect(log.dodged.map((h) => [h.tick, h.activeTick])).toEqual([[13, 1]]);
+    expect(log.hit).toEqual([]);
+    expect(health(knight)).toBe(100);
+  });
+
+  const bolt = makeAttack('bolt', [2, 2, 2], {
+    kind: 'projectile',
+    projectile: { speed: 60, maxRange: 5, origin: { x: 0, y: 0, z: 0.5 }, radius: 0.1 },
+  });
+
+  it('AC-2: a projectile reaching a knight during its i-frames is DodgedHit and flies on as a miss', () => {
+    const { world, log, attacker, knight, until, health } = rolling([bolt], { x: 0, y: 0, z: 3.2 });
+    const behind = world.spawn();
+    giveCombatant(world, behind, { health: 100 });
+    placeEntity(world, behind, { x: 0, y: 0, z: 4.3 }, 0.4);
+    startAttack(world, attacker, bolt, FORWARD);
+    until(12);
+    // Launched on tick 2; it overlaps the knight on two sweeps but is dodged once, on tick 5.
+    expect(log.dodged.map((h) => [h.tick, h.target, h.hitbox])).toEqual([[5, knight, 'bolt']]);
+    expect(health(knight)).toBe(100);
+    expect(log.hit.map((h) => [h.tick, h.target])).toEqual([[6, behind]]);
+    expect(health(behind)).toBe(90);
+  });
+
+  it('AC-2: with nobody behind, the dodged projectile flies to its max range and vanishes', () => {
+    const { world, log, attacker, knight, until, health } = rolling([bolt], { x: 0, y: 0, z: 3.2 });
+    startAttack(world, attacker, bolt, FORWARD);
+    until(6);
+    const projectile = world.query(ProjectileComponent).ids()[0] ?? expect.fail('no projectile');
+    expect(world.get(projectile, ProjectileComponent)?.dodged).toEqual([knight]);
+    until(12);
+    expect(world.isAlive(projectile)).toBe(false);
+    expect(log.dodged).toHaveLength(1);
+    expect(log.hit).toEqual([]);
+    expect(health(knight)).toBe(100);
+  });
+
+  it('a projectile flies through two rolling knights, dodged once by each', () => {
+    const { world, log, attacker, knight, until } = rolling([bolt], { x: 0, y: 0, z: 3.2 });
+    const nearer = world.spawn();
+    giveCombatant(world, nearer, { health: 100 });
+    placeEntity(world, nearer, { x: 0, y: 0, z: 2.2 }, 0.4);
+    giveActionTimeline(world, nearer);
+    requestMove(world, nearer, 'dodge-roll');
+    startAttack(world, attacker, bolt, FORWARD);
+    until(6);
+    expect(log.dodged.map((h) => [h.tick, h.target])).toEqual([
+      [4, nearer],
+      [5, knight],
+    ]);
+    const projectile = world.query(ProjectileComponent).ids()[0] ?? expect.fail('no projectile');
+    expect(world.get(projectile, ProjectileComponent)?.dodged).toEqual([knight, nearer]);
   });
 });
