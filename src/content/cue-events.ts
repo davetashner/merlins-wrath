@@ -111,6 +111,23 @@ export const CUE_EVENTS = {
   },
   volumeEntered: { anchors: ['entity'], facts: { graph: 'string', node: 'string' } },
   volumeExited: { anchors: ['entity'], facts: { graph: 'string', node: 'string' } },
+  physicsImpact: {
+    /** `entity` is the physics object, `other` what it hit (none for unbound geometry), `at` where. */
+    anchors: ['entity', 'other', 'at'],
+    facts: {
+      /** Impact class of the physics object's material (its `impactSound` without `sfx-impact-`). */
+      entity: 'string',
+      entityMaterial: 'string',
+      /** Impact class of what it hit: another object, a wall or floor (the default material if unbound). */
+      other: 'string',
+      otherMaterial: 'string',
+      /** Kinetic energy of the closing motion, J: scale volume by it. */
+      energy: 'number',
+      impulse: 'number',
+      /** Closing speed, m/s. */
+      speed: 'number',
+    },
+  },
 } as const satisfies Record<string, CueEventSpec>;
 
 /** A sim event name a cue sheet may use. */

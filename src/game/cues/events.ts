@@ -17,6 +17,7 @@ import {
   fireBurntOut,
   fireExtinguished,
   fireIgnited,
+  physicsImpact,
   PoiseBroken,
   propertyChanged,
   signalReceived,
@@ -70,15 +71,23 @@ function bind<T>(
 const at = (entity: EntityId | null): CueAnchor | undefined =>
   entity === null ? undefined : { entity };
 
+/** `<prefix>` (impact class) and `<prefix>Material` facts of a known material id. */
+function classFacts(
+  prefix: string,
+  material: string,
+  { impactClassOf }: CueLookups,
+): Record<string, string> {
+  return { [prefix]: impactClassOf(material) ?? material, [`${prefix}Material`]: material };
+}
+
 /** `<prefix>` (impact class) and `<prefix>Material` facts of an entity. */
 function materialFacts(
   prefix: string,
   entity: EntityId | null,
-  { materialOf, impactClassOf }: CueLookups,
+  lookups: CueLookups,
 ): Record<string, string | undefined> {
-  const material = entity === null ? undefined : materialOf(entity);
-  if (material === undefined) return {};
-  return { [prefix]: impactClassOf(material) ?? material, [`${prefix}Material`]: material };
+  const material = entity === null ? undefined : lookups.materialOf(entity);
+  return material === undefined ? {} : classFacts(prefix, material, lookups);
 }
 
 /** The damage type that dealt the most (canonical order breaks ties). */
@@ -241,5 +250,20 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
   volumeExited: bind(volumeExited, (e) => ({
     anchors: { entity: { entity: e.entity } },
     facts: { graph: e.graphId, node: e.node },
+  })),
+  // The payload names both materials (unbound geometry reads the default), so no lookup is needed.
+  physicsImpact: bind(physicsImpact, (e, look) => ({
+    anchors: {
+      entity: { entity: e.entity, position: e.position },
+      other: at(e.other),
+      at: { position: e.position },
+    },
+    facts: {
+      ...classFacts('entity', e.materials[0], look),
+      ...classFacts('other', e.materials[1], look),
+      energy: e.energy,
+      impulse: e.impulse,
+      speed: e.speed,
+    },
   })),
 };

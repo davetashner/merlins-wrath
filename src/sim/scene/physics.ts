@@ -9,6 +9,9 @@
 //   weight and its material's properties. From then on the sim moves it; the renderer draws it from
 //   its `physics.object` pose.
 //
+// `addPropPhysics` is the one way a prop becomes a physics object: the debug console's spawners
+// (src/sim/debug) use it too.
+//
 // Unloading needs nothing extra: destroying a spawn entity takes its body with it (mw-e03.41), and
 // the scene's colliders go with `unloadScene`. The sim never imports content: the game passes the
 // prop bodies and material presets in as plain lookups.
@@ -17,8 +20,14 @@ import type { EntityId } from '../core/component';
 import type { World } from '../core/world';
 import { addPhysicsObject, bindCollider } from '../physics/objects';
 import type { ColliderHandle } from '../physics/static-colliders';
-import { addMaterialProperties, type MaterialPresets } from '../properties/materials';
+import {
+  addMaterialProperties,
+  resolveProperties,
+  type MaterialPresets,
+} from '../properties/materials';
+import type { WorldPropertyInit } from '../properties/components';
 import type { Vec3 } from '../stimulus/shapes';
+import type { Quat } from './layout';
 import type { LoadedScene } from './loader';
 
 /** The material level geometry is made of unless the scene physics says otherwise. */
@@ -88,18 +97,40 @@ export function addScenePhysics<T>(
   for (const { entity, spawn } of loaded.spawns) {
     const body = spawn.prop === undefined ? undefined : options.props(spawn.prop);
     if (body === undefined) continue;
-    addMaterialProperties(sim, entity, options.materials, {
-      material: body.material,
-      weight: body.weight,
-      ...(body.flammable !== undefined && { flammable: body.flammable }),
-    });
-    const { x, y, z } = body.size;
-    addPhysicsObject(sim, entity, {
-      shape: { kind: 'box', halfExtents: { x: x / 2, y: y / 2, z: z / 2 } },
-      position: { x: spawn.position.x, y: spawn.position.y + y / 2, z: spawn.position.z },
-      rotation: spawn.rotation,
-    });
+    addPropPhysics(sim, entity, body, options.materials, spawn.position, spawn.rotation);
     objects.push(entity);
   }
   return Object.freeze({ objects: Object.freeze(objects), solids: Object.freeze(solids) });
+}
+
+/**
+ * Makes `entity` a movable prop: gives it `body`'s material properties and makes it a physics object
+ * standing on `at` (the middle of the body's base), turned by `rotation`. Works between steps and
+ * during one (a debug spawn inside `World.step`): the body is built from the resolved properties, so
+ * it has the prop's mass and material at once, while the properties and the `physics.object`
+ * component go live with the rest of the tick's structural changes.
+ * @throws RangeError when `body` names a material `materials` does not have.
+ */
+export function addPropPhysics(
+  world: World<never>,
+  entity: EntityId,
+  body: PropBody,
+  materials: MaterialPresets,
+  at: Vec3,
+  rotation?: Quat,
+): void {
+  const init: WorldPropertyInit = {
+    material: body.material,
+    weight: body.weight,
+    ...(body.flammable !== undefined && { flammable: body.flammable }),
+  };
+  const { weight, friction, impactAbsorb } = resolveProperties(materials, init);
+  addMaterialProperties(world, entity, materials, init);
+  const { x, y, z } = body.size;
+  addPhysicsObject(world, entity, {
+    shape: { kind: 'box', halfExtents: { x: x / 2, y: y / 2, z: z / 2 } },
+    position: { x: at.x, y: at.y + y / 2, z: at.z },
+    ...(rotation !== undefined && { rotation }),
+    properties: { weight, friction, impactAbsorb },
+  });
 }

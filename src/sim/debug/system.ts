@@ -16,6 +16,7 @@ import type { DamageModel } from '../combat/damage/model';
 import type { ComponentType, EntityId } from '../core/component';
 import type { System, World } from '../core/world';
 import { SceneSpawnComponent, SceneTransformComponent } from '../scene/loader';
+import { addPropPhysics, type ScenePhysicsOptions } from '../scene/physics';
 import type { Vec3 } from '../stimulus/shapes';
 import { DebugCheatsComponent, godModeModifier, NO_CHEATS, type DebugCheats } from './cheats';
 import { isDebugCommand, type CheatCommand, type DebugCommand } from './commands';
@@ -38,11 +39,19 @@ export interface DebugCommandOptions {
 
 const IDENTITY = Object.freeze({ x: 0, y: 0, z: 0, w: 1 });
 
+/** Prop bodies and material presets, so props with a body spawn as physics objects. */
+export type SpawnPhysics = Pick<ScenePhysicsOptions, 'props' | 'materials'>;
+
 /**
  * A spawner for a grey-box test prop: a scene-spawn entity (the scene components must be
- * registered) that the renderer draws like the scene's own props, tagged DEBUG_SPAWN_TAG.
+ * registered) that the renderer draws like the scene's own props, tagged DEBUG_SPAWN_TAG. With
+ * `physics`, a prop with a body also becomes a physics object standing on `at`, like a scene prop
+ * (mw-e33.16; the world needs world properties and physics objects installed). All of it happens in
+ * the tick of the recorded spawn command: the body exists at once, built from the prop's resolved
+ * material properties, and everything else goes live with the entity at the end of that tick.
  */
-export function propSpawner(prop: string): Spawner {
+export function propSpawner(prop: string, physics?: SpawnPhysics): Spawner {
+  const body = physics?.props(prop);
   return (world, at) => {
     const id = world.spawn();
     world.add(
@@ -55,13 +64,20 @@ export function propSpawner(prop: string): Spawner {
       SceneSpawnComponent,
       Object.freeze({ id: `${DEBUG_SPAWN_TAG}-${prop}`, prop, tags: [DEBUG_SPAWN_TAG] }),
     );
+    if (physics !== undefined && body !== undefined) {
+      const sim = world as unknown as World<never>; // the physics layer never reads inputs
+      addPropPhysics(sim, id, body, physics.materials, at);
+    }
     return id;
   };
 }
 
-/** Spawners for test props, keyed `testprop-<id>`. */
-export function testPropSpawners(ids: readonly string[]): Map<string, Spawner> {
-  return new Map(ids.map((id) => [`testprop-${id}`, propSpawner(id)]));
+/** Spawners for test props, keyed `testprop-<id>`; with `physics`, see `propSpawner`. */
+export function testPropSpawners(
+  ids: readonly string[],
+  physics?: SpawnPhysics,
+): Map<string, Spawner> {
+  return new Map(ids.map((id) => [`testprop-${id}`, propSpawner(id, physics)]));
 }
 
 /** `type` of `id`, or undefined also when the world does not register `type`. */

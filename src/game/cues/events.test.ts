@@ -81,6 +81,16 @@ const SAMPLES: Record<CueEventName, unknown> = {
   },
   volumeEntered: { graph: 7, graphId: 'gate', node: 'plate', entity: 4, tick: 1 },
   volumeExited: { graph: 7, graphId: 'gate', node: 'plate', entity: 4, tick: 1 },
+  physicsImpact: {
+    entity: 3,
+    other: 5,
+    materials: ['dry-wood', 'iron'],
+    energy: 54,
+    impulse: 18,
+    speed: 6,
+    normal: { x: 0, y: -1, z: 0 },
+    position: origin,
+  },
 };
 
 const read = (event: CueEventName, payload: unknown, look = lookups): CueReading =>
@@ -239,5 +249,32 @@ describe('cue event bindings', () => {
         key: null,
       }).facts['key'],
     ).toBeUndefined();
+  });
+
+  it('AC-1: read a physics impact: both sides’ impact class and material, energy, impulse and speed', () => {
+    expect(read('physicsImpact', SAMPLES.physicsImpact)).toEqual({
+      anchors: {
+        entity: { entity: 3, position: origin },
+        other: { entity: 5 },
+        at: { position: origin },
+      },
+      facts: {
+        entity: 'dry-wood', // no impact class known: the material is its own class
+        entityMaterial: 'dry-wood',
+        other: 'metal',
+        otherMaterial: 'iron',
+        energy: 54,
+        impulse: 18,
+        speed: 6,
+      },
+    });
+    // Unbound level geometry: no `other` anchor, but the payload still names its material.
+    const unbound = read('physicsImpact', {
+      ...(SAMPLES.physicsImpact as object),
+      other: null,
+      materials: ['bone', 'generic'],
+    });
+    expect(unbound.anchors['other']).toBeUndefined();
+    expect(unbound.facts).toMatchObject({ entity: 'bone', other: 'generic' });
   });
 });

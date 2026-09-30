@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { PlayOptions } from '@audio/index';
-import { cueRuleSchema, type CueRuleDef } from '@content/index';
+import { cueRuleSchema, loadGameContent, type CueRuleDef } from '@content/index';
 import {
   addProperties,
   DamageApplied,
   Died,
+  physicsImpact,
   registerWorldProperties,
   World,
   type EventType,
@@ -347,5 +348,43 @@ describe('cue bridge helpers', () => {
     } as never);
     world.step();
     expect(played).toEqual(['sfx-metal-bone']);
+  });
+
+  it('AC-2: with the physics cue sheet, a wood crate landing on stone plays sfx-impact-wood at the crate, louder the harder it lands', () => {
+    const content = loadGameContent();
+    const world = registerWorldProperties(new World({ seed: 1 }));
+    const crate = world.spawn();
+    addProperties(world, crate, { material: 'wood' });
+    const floor = world.spawn();
+    addProperties(world, floor, { material: 'stone' });
+    world.step();
+    const played: { cue: string; options: PlayOptions }[] = [];
+    const bridge = new AudioCueBridge({
+      sheets: [content.get('cue-sheet', 'physics')],
+      player: { play: (cue, options) => played.push({ cue, options }) },
+      now: () => world.tick * 1000, // a second per tick: the cooldown never interferes
+      lookups: worldCueLookups(world, content.all('material')),
+    });
+    bridge.attach(world.events);
+    const land = (energy: number): void => {
+      world.events.emit(physicsImpact, {
+        entity: crate,
+        other: floor,
+        materials: ['wood', 'stone'],
+        energy,
+        impulse: 10,
+        speed: 4,
+        normal: { x: 0, y: -1, z: 0 },
+        position: { x: 0, y: 0.3, z: 0 },
+      });
+      world.step();
+    };
+    land(5);
+    land(250);
+    expect(played.map((p) => p.cue)).toEqual(['sfx-impact-wood', 'sfx-impact-wood']);
+    const [soft, hard] = played.map((p) => p.options);
+    expect(soft?.entity).toBe(crate);
+    expect(hard?.entity).toBe(crate);
+    expect(hard?.volume ?? 0).toBeGreaterThan(soft?.volume ?? 0);
   });
 });
