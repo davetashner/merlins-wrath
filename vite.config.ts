@@ -36,6 +36,13 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  server: {
+    watch: {
+      // Agent worktrees and test/coverage output live inside the repo; watching them makes every
+      // parallel coverage run reload the dev page thousands of times (mw-d8h).
+      ignored: ['**/.claude/**', '**/coverage/**', '**/test-results/**', '**/playwright-report/**'],
+    },
+  },
   build: {
     target: 'es2023',
     // three.js alone is ~530 kB minified (~130 kB gz) in one chunk; warn only above that (mw-e00.19).
