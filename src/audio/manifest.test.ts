@@ -7,6 +7,8 @@ import {
   loopSidecarSchema,
   OPUS_MIME,
   pickFormat,
+  PLACEHOLDER_FORMAT,
+  registryAssetUrl,
   soundDefSchema,
   soundManifestSchema,
   SoundRegistry,
@@ -79,6 +81,25 @@ describe('formats and paths (audio bible §5.2, §6)', () => {
     expect(assetUrl('/assets/audio', 'music-knot-combat', 'json')).toBe(
       '/assets/audio/music/music-knot-combat.json',
     );
+  });
+
+  it('serves placeholder assets (mw-e28.2) as the pack WAVs and final ones in the session format', () => {
+    const registry = new SoundRegistry().register([
+      {
+        id: 'sfx-foot-stone-walk',
+        variants: ['sfx-foot-stone-walk-01'],
+        bus: 'footsteps',
+        placeholder: true,
+      },
+      { id: 'sfx-ui-page-turn', variants: ['sfx-ui-page-turn-01'], bus: 'ui', loop: true },
+    ]);
+    expect(registry.isPlaceholderAsset('sfx-foot-stone-walk-01')).toBe(true);
+    expect(registry.isPlaceholderAsset('sfx-ui-page-turn-01')).toBe(false);
+    const url = registryAssetUrl(registry, '/a');
+    expect(PLACEHOLDER_FORMAT).toBe('wav');
+    expect(url('sfx-foot-stone-walk-01', 'ogg')).toBe('/a/sfx/sfx-foot-stone-walk-01.wav');
+    expect(url('sfx-foot-stone-walk-01', 'json')).toBe('/a/sfx/sfx-foot-stone-walk-01.json');
+    expect(url('sfx-ui-page-turn-01', 'm4a')).toBe('/a/sfx/sfx-ui-page-turn-01.m4a');
   });
 });
 

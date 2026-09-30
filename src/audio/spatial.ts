@@ -93,3 +93,33 @@ export function applyListener(listener: AudioListenerLike, pose: ListenerPose): 
     listener.setOrientation(f.x, f.y, f.z, u.x, u.y, u.z);
   }
 }
+
+/** A rotation quaternion (x, y, z, w), e.g. the camera's. */
+export interface Quat {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly w: number;
+}
+
+/** `v` rotated by the unit quaternion `q`. */
+export function rotate(v: Vec3, q: Quat): Vec3 {
+  // t = 2 (q.xyz × v); v' = v + w t + q.xyz × t
+  const tx = 2 * (q.y * v.z - q.z * v.y);
+  const ty = 2 * (q.z * v.x - q.x * v.z);
+  const tz = 2 * (q.x * v.y - q.y * v.x);
+  return {
+    x: v.x + q.w * tx + (q.y * tz - q.z * ty),
+    y: v.y + q.w * ty + (q.z * tx - q.x * tz),
+    z: v.z + q.w * tz + (q.x * ty - q.y * tx),
+  };
+}
+
+/** The listener pose of a camera at `position` with orientation `rotation` (looking down its −z). */
+export function listenerPose(position: Vec3, rotation: Quat): ListenerPose {
+  return {
+    position: { x: position.x, y: position.y, z: position.z },
+    forward: rotate(DEFAULT_LISTENER.forward, rotation),
+    up: rotate(DEFAULT_LISTENER.up, rotation),
+  };
+}

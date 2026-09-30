@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- The testbed has sound: after your first click or key press, sword hits on the training dummy,
+  staggers, deaths, running out of stamina and props thudding into things play placeholder sounds
+  that come from where they happen and follow the camera. They are simple synthesised stand-ins
+  until the real sound effects arrive.
 - A combat sandbox for tuning fights: open `?scene=combat-sandbox` for an arena with a training dummy
   and an attacker dummy that swings every 2 s. F3 shows live frame data (move, phase, tick, i-frames,
   hyperarmor, reactions, health, poise, DPS) with hitboxes; F4 plays in 0.25× slow motion; the debug
