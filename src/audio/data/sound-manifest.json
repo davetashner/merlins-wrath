@@ -1,0 +1,939 @@
+[
+  {
+    "id": "sfx-arrow-blunt-thud",
+    "variants": [
+      "sfx-arrow-blunt-thud-01",
+      "sfx-arrow-blunt-thud-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-fire-ignite",
+    "variants": [
+      "sfx-arrow-fire-ignite-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-flyby",
+    "variants": [
+      "sfx-arrow-flyby-01",
+      "sfx-arrow-flyby-02",
+      "sfx-arrow-flyby-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-impact-flesh",
+    "variants": [
+      "sfx-arrow-impact-flesh-01",
+      "sfx-arrow-impact-flesh-02",
+      "sfx-arrow-impact-flesh-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-impact-metal",
+    "variants": [
+      "sfx-arrow-impact-metal-01",
+      "sfx-arrow-impact-metal-02",
+      "sfx-arrow-impact-metal-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-impact-stone",
+    "variants": [
+      "sfx-arrow-impact-stone-01",
+      "sfx-arrow-impact-stone-02",
+      "sfx-arrow-impact-stone-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-impact-wood",
+    "variants": [
+      "sfx-arrow-impact-wood-01",
+      "sfx-arrow-impact-wood-02",
+      "sfx-arrow-impact-wood-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-noise-rattle",
+    "variants": [
+      "sfx-arrow-noise-rattle-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-pickup",
+    "variants": [
+      "sfx-arrow-pickup-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-ricochet-metal",
+    "variants": [
+      "sfx-arrow-ricochet-metal-01",
+      "sfx-arrow-ricochet-metal-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-rope-unfurl",
+    "variants": [
+      "sfx-arrow-rope-unfurl-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-arrow-water-splash",
+    "variants": [
+      "sfx-arrow-water-splash-01",
+      "sfx-arrow-water-splash-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-bow-draw-creak-loop",
+    "variants": [
+      "sfx-bow-draw-creak-loop-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "loop": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-bow-focused-chime",
+    "variants": [
+      "sfx-bow-focused-chime-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-bow-release-twang",
+    "variants": [
+      "sfx-bow-release-twang-01",
+      "sfx-bow-release-twang-02",
+      "sfx-bow-release-twang-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-critical",
+    "variants": [
+      "sfx-combat-critical-01",
+      "sfx-combat-critical-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-bone",
+    "variants": [
+      "sfx-combat-death-bone-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-cloth",
+    "variants": [
+      "sfx-combat-death-cloth-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-earth",
+    "variants": [
+      "sfx-combat-death-earth-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-flesh",
+    "variants": [
+      "sfx-combat-death-flesh-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-glass",
+    "variants": [
+      "sfx-combat-death-glass-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-metal",
+    "variants": [
+      "sfx-combat-death-metal-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-rope",
+    "variants": [
+      "sfx-combat-death-rope-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-stone",
+    "variants": [
+      "sfx-combat-death-stone-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-straw",
+    "variants": [
+      "sfx-combat-death-straw-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-water",
+    "variants": [
+      "sfx-combat-death-water-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-death-wood",
+    "variants": [
+      "sfx-combat-death-wood-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-exhausted",
+    "variants": [
+      "sfx-combat-exhausted-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-glance",
+    "variants": [
+      "sfx-combat-glance-01",
+      "sfx-combat-glance-02",
+      "sfx-combat-glance-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-stagger",
+    "variants": [
+      "sfx-combat-stagger-01",
+      "sfx-combat-stagger-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-stamina-wheeze",
+    "variants": [
+      "sfx-combat-stamina-wheeze-01",
+      "sfx-combat-stamina-wheeze-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-dirt-run",
+    "variants": [
+      "sfx-foot-dirt-run-01",
+      "sfx-foot-dirt-run-02",
+      "sfx-foot-dirt-run-03",
+      "sfx-foot-dirt-run-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-dirt-sneak",
+    "variants": [
+      "sfx-foot-dirt-sneak-01",
+      "sfx-foot-dirt-sneak-02",
+      "sfx-foot-dirt-sneak-03",
+      "sfx-foot-dirt-sneak-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-dirt-walk",
+    "variants": [
+      "sfx-foot-dirt-walk-01",
+      "sfx-foot-dirt-walk-02",
+      "sfx-foot-dirt-walk-03",
+      "sfx-foot-dirt-walk-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-grass-run",
+    "variants": [
+      "sfx-foot-grass-run-01",
+      "sfx-foot-grass-run-02",
+      "sfx-foot-grass-run-03",
+      "sfx-foot-grass-run-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-grass-sneak",
+    "variants": [
+      "sfx-foot-grass-sneak-01",
+      "sfx-foot-grass-sneak-02",
+      "sfx-foot-grass-sneak-03",
+      "sfx-foot-grass-sneak-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-grass-walk",
+    "variants": [
+      "sfx-foot-grass-walk-01",
+      "sfx-foot-grass-walk-02",
+      "sfx-foot-grass-walk-03",
+      "sfx-foot-grass-walk-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-gravel-run",
+    "variants": [
+      "sfx-foot-gravel-run-01",
+      "sfx-foot-gravel-run-02",
+      "sfx-foot-gravel-run-03",
+      "sfx-foot-gravel-run-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-gravel-sneak",
+    "variants": [
+      "sfx-foot-gravel-sneak-01",
+      "sfx-foot-gravel-sneak-02",
+      "sfx-foot-gravel-sneak-03",
+      "sfx-foot-gravel-sneak-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-gravel-walk",
+    "variants": [
+      "sfx-foot-gravel-walk-01",
+      "sfx-foot-gravel-walk-02",
+      "sfx-foot-gravel-walk-03",
+      "sfx-foot-gravel-walk-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-land-heavy",
+    "variants": [
+      "sfx-foot-land-heavy-01",
+      "sfx-foot-land-heavy-02",
+      "sfx-foot-land-heavy-03"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-land-light",
+    "variants": [
+      "sfx-foot-land-light-01",
+      "sfx-foot-land-light-02",
+      "sfx-foot-land-light-03"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-stone-run",
+    "variants": [
+      "sfx-foot-stone-run-01",
+      "sfx-foot-stone-run-02",
+      "sfx-foot-stone-run-03",
+      "sfx-foot-stone-run-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-stone-sneak",
+    "variants": [
+      "sfx-foot-stone-sneak-01",
+      "sfx-foot-stone-sneak-02",
+      "sfx-foot-stone-sneak-03",
+      "sfx-foot-stone-sneak-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-stone-walk",
+    "variants": [
+      "sfx-foot-stone-walk-01",
+      "sfx-foot-stone-walk-02",
+      "sfx-foot-stone-walk-03",
+      "sfx-foot-stone-walk-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-water-shallow-run",
+    "variants": [
+      "sfx-foot-water-shallow-run-01",
+      "sfx-foot-water-shallow-run-02",
+      "sfx-foot-water-shallow-run-03",
+      "sfx-foot-water-shallow-run-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-water-shallow-sneak",
+    "variants": [
+      "sfx-foot-water-shallow-sneak-01",
+      "sfx-foot-water-shallow-sneak-02",
+      "sfx-foot-water-shallow-sneak-03",
+      "sfx-foot-water-shallow-sneak-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-water-shallow-walk",
+    "variants": [
+      "sfx-foot-water-shallow-walk-01",
+      "sfx-foot-water-shallow-walk-02",
+      "sfx-foot-water-shallow-walk-03",
+      "sfx-foot-water-shallow-walk-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-wood-run",
+    "variants": [
+      "sfx-foot-wood-run-01",
+      "sfx-foot-wood-run-02",
+      "sfx-foot-wood-run-03",
+      "sfx-foot-wood-run-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-wood-sneak",
+    "variants": [
+      "sfx-foot-wood-sneak-01",
+      "sfx-foot-wood-sneak-02",
+      "sfx-foot-wood-sneak-03",
+      "sfx-foot-wood-sneak-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-foot-wood-walk",
+    "variants": [
+      "sfx-foot-wood-walk-01",
+      "sfx-foot-wood-walk-02",
+      "sfx-foot-wood-walk-03",
+      "sfx-foot-wood-walk-04"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-bone",
+    "variants": [
+      "sfx-impact-bone-01",
+      "sfx-impact-bone-02",
+      "sfx-impact-bone-03",
+      "sfx-impact-bone-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-cloth",
+    "variants": [
+      "sfx-impact-cloth-01",
+      "sfx-impact-cloth-02",
+      "sfx-impact-cloth-03",
+      "sfx-impact-cloth-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-earth",
+    "variants": [
+      "sfx-impact-earth-01",
+      "sfx-impact-earth-02",
+      "sfx-impact-earth-03",
+      "sfx-impact-earth-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-flesh",
+    "variants": [
+      "sfx-impact-flesh-01",
+      "sfx-impact-flesh-02",
+      "sfx-impact-flesh-03",
+      "sfx-impact-flesh-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-glass",
+    "variants": [
+      "sfx-impact-glass-01",
+      "sfx-impact-glass-02",
+      "sfx-impact-glass-03",
+      "sfx-impact-glass-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-metal",
+    "variants": [
+      "sfx-impact-metal-01",
+      "sfx-impact-metal-02",
+      "sfx-impact-metal-03",
+      "sfx-impact-metal-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-rope",
+    "variants": [
+      "sfx-impact-rope-01",
+      "sfx-impact-rope-02",
+      "sfx-impact-rope-03",
+      "sfx-impact-rope-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-stone",
+    "variants": [
+      "sfx-impact-stone-01",
+      "sfx-impact-stone-02",
+      "sfx-impact-stone-03",
+      "sfx-impact-stone-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-straw",
+    "variants": [
+      "sfx-impact-straw-01",
+      "sfx-impact-straw-02",
+      "sfx-impact-straw-03",
+      "sfx-impact-straw-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-water",
+    "variants": [
+      "sfx-impact-water-01",
+      "sfx-impact-water-02",
+      "sfx-impact-water-03",
+      "sfx-impact-water-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-impact-wood",
+    "variants": [
+      "sfx-impact-wood-01",
+      "sfx-impact-wood-02",
+      "sfx-impact-wood-03",
+      "sfx-impact-wood-04"
+    ],
+    "bus": "sfx",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-block-shield-metal",
+    "variants": [
+      "sfx-knight-block-shield-metal-01",
+      "sfx-knight-block-shield-metal-02",
+      "sfx-knight-block-shield-metal-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-block-shield-wood",
+    "variants": [
+      "sfx-knight-block-shield-wood-01",
+      "sfx-knight-block-shield-wood-02",
+      "sfx-knight-block-shield-wood-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-charge-ready",
+    "variants": [
+      "sfx-knight-charge-ready-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-dodge-roll-armor",
+    "variants": [
+      "sfx-knight-dodge-roll-armor-01",
+      "sfx-knight-dodge-roll-armor-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-dodge-roll-cloth",
+    "variants": [
+      "sfx-knight-dodge-roll-cloth-01",
+      "sfx-knight-dodge-roll-cloth-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-guard-break",
+    "variants": [
+      "sfx-knight-guard-break-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-kick",
+    "variants": [
+      "sfx-knight-kick-01",
+      "sfx-knight-kick-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-parry-metal",
+    "variants": [
+      "sfx-knight-parry-metal-01",
+      "sfx-knight-parry-metal-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-riposte",
+    "variants": [
+      "sfx-knight-riposte-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-shield-bash",
+    "variants": [
+      "sfx-knight-shield-bash-01",
+      "sfx-knight-shield-bash-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-stamina-exhausted",
+    "variants": [
+      "sfx-knight-stamina-exhausted-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-sword-swing-heavy",
+    "variants": [
+      "sfx-knight-sword-swing-heavy-01",
+      "sfx-knight-sword-swing-heavy-02",
+      "sfx-knight-sword-swing-heavy-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-sword-swing-light",
+    "variants": [
+      "sfx-knight-sword-swing-light-01",
+      "sfx-knight-sword-swing-light-02",
+      "sfx-knight-sword-swing-light-03"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-knight-wall-recoil-clang",
+    "variants": [
+      "sfx-knight-wall-recoil-clang-01",
+      "sfx-knight-wall-recoil-clang-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-cancel",
+    "variants": [
+      "sfx-ui-cancel-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-coin",
+    "variants": [
+      "sfx-ui-coin-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-confirm",
+    "variants": [
+      "sfx-ui-confirm-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-equip",
+    "variants": [
+      "sfx-ui-equip-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-error-deny",
+    "variants": [
+      "sfx-ui-error-deny-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-hover",
+    "variants": [
+      "sfx-ui-hover-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-item-pickup",
+    "variants": [
+      "sfx-ui-item-pickup-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-journal-quill",
+    "variants": [
+      "sfx-ui-journal-quill-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-lockon",
+    "variants": [
+      "sfx-ui-lockon-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-low-health-heartbeat-loop",
+    "variants": [
+      "sfx-ui-low-health-heartbeat-loop-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "loop": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-menu-close",
+    "variants": [
+      "sfx-ui-menu-close-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-menu-open",
+    "variants": [
+      "sfx-ui-menu-open-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-page-turn",
+    "variants": [
+      "sfx-ui-page-turn-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-ui-quest-update",
+    "variants": [
+      "sfx-ui-quest-update-01"
+    ],
+    "bus": "ui",
+    "spatial": false,
+    "placeholder": true
+  }
+]

@@ -37,6 +37,8 @@ export {
   loopSeconds,
   loopSidecarSchema,
   pickFormat,
+  PLACEHOLDER_FORMAT,
+  registryAssetUrl,
   soundDefSchema,
   soundManifestSchema,
   type AudioFormat,
@@ -63,9 +65,13 @@ export {
   configurePanner,
   distance,
   inverseDistanceGain,
+  listenerPose,
+  rotate,
   type AudioQuality,
   type ListenerPose,
+  type Quat,
   type Vec3,
 } from './spatial.ts';
+export { gameSoundRegistry, SOUND_MANIFEST } from './sounds.ts';
 export { encodeWav, sineTone } from './wav.ts';
 export type * from './web-audio.ts';
