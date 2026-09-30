@@ -5,18 +5,25 @@ export type { BodyId, Capsule, CollisionHit, CollisionWorld } from './collision-
 export {
   capsuleOf,
   controllerParams,
+  DEFAULT_LAUNCH_TUNING,
   IDLE_INPUT,
   initialCharacterState,
   movementState,
   SKIN,
   stepCharacter,
+  stepCharacterWithImpacts,
   type ButtonState,
+  type CharacterImpact,
   type CharacterInput,
   type CharacterState,
+  type CharacterStep,
   type ControllerContext,
   type ControllerParams,
+  type ImpulsePart,
+  type LaunchState,
   type MovementActions,
   type MovementState,
+  type PendingImpulses,
 } from './controller';
 export { FakeCollisionWorld } from './fake-collision-world';
 export {
@@ -31,9 +38,17 @@ export {
 } from './greybox';
 export { NOCLIP_BOOST, stepNoclip } from './noclip';
 export {
+  applyCharacterImpulse,
+  impelCharacter,
+  installCharacterImpulses,
+  type CharacterImpulse,
+} from './impulse';
+export {
   CharacterController,
+  CharacterImpacted,
   characterControllerSystem,
   spawnCharacter,
+  type CharacterImpactInfo,
   type CharacterSystemOptions,
 } from './system';
 export {

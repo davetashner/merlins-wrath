@@ -9,6 +9,7 @@ import { markExercised } from '@content/testing';
 import {
   box,
   controllerParams,
+  DEFAULT_LAUNCH_TUNING,
   FakeCollisionWorld,
   IDLE_INPUT,
   initialCharacterState,
@@ -133,5 +134,9 @@ describe('shipped player tuning (mw-e02.2)', () => {
     expect(under.length).toBeGreaterThan(30);
     expect(under.every((s) => s.crouched)).toBe(true);
     expect(must(trace.at(-1)).crouched).toBe(false);
+  });
+
+  it('mw-e02.15: the shipped launch tuning is the sim’s default (10% air control, 250 ms recovery)', () => {
+    expect(tuning.launch).toEqual(DEFAULT_LAUNCH_TUNING);
   });
 });

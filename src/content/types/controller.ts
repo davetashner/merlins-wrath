@@ -91,6 +91,33 @@ export const gaitTuningSchema = z
 /** Gait thresholds, landing and footstep spacing (see gaitTuningSchema). */
 export type GaitTuning = z.output<typeof gaitTuningSchema>;
 
+/** The longest landing recovery after a staggering launch the design allows, ms. */
+export const MAX_LAUNCH_RECOVERY_MS = 1000;
+
+export const launchTuningSchema = z
+  .strictObject({
+    airControl: z
+      .number()
+      .min(0)
+      .max(1)
+      .describe(
+        'Share of ground acceleration available while flying from an impulse the player chose (a self-cast Gust), 0–1; a staggering launch (a blast, a troll’s blow) has none.',
+      ),
+    recoveryMs: z
+      .int()
+      .min(0)
+      .max(MAX_LAUNCH_RECOVERY_MS)
+      .describe(
+        `After a staggering launch lands, movement and jump input are ignored this long, whole ms (≤ ${String(MAX_LAUNCH_RECOVERY_MS)}).`,
+      ),
+  })
+  .describe(
+    'Being thrown by an impulse (mw-e02.15): explosions, Gust, Thunderclap and heavy blows launch the character into a ragdoll-free airborne state.',
+  );
+
+/** How being thrown handles (see launchTuningSchema). */
+export type LaunchTuning = z.output<typeof launchTuningSchema>;
+
 /** Every tuning value the controller reads (a profile without its id, name and notes). */
 const tuningShape = {
   capsule: capsuleSchema,
@@ -138,6 +165,9 @@ const tuningShape = {
   gait: gaitTuningSchema
     .optional()
     .describe('Locomotion states and events; absent = the sim’s defaults (DEFAULT_GAIT_TUNING).'),
+  launch: launchTuningSchema
+    .optional()
+    .describe('Being thrown by an impulse; absent = the sim’s defaults (DEFAULT_LAUNCH_TUNING).'),
 };
 
 /**

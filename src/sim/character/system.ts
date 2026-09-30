@@ -1,9 +1,11 @@
 // The character controller inside the sim world (mw-e02.2): a component holding each character's
 // controller state (so it is snapshotted, hashed and replayed) and a system that steps every
-// character once per tick with that tick's input.
+// character once per tick with that tick's input, emitting CharacterImpacted for every hard landing
+// and (while launched) wall strike, for fall damage (mw-e04.19), audio and VFX.
 
 import type { ControllerTuning, Frozen } from '@content/index';
 import { defineComponent, type EntityId } from '../core/component';
+import { defineEvent } from '../core/events';
 import type { System, World } from '../core/world';
 import type { Vec3 } from '../stimulus/shapes';
 import type { CollisionWorld } from './collision-world';
@@ -11,7 +13,8 @@ import {
   controllerParams,
   IDLE_INPUT,
   initialCharacterState,
-  stepCharacter,
+  stepCharacterWithImpacts,
+  type CharacterImpact,
   type CharacterInput,
   type CharacterState,
 } from './controller';
@@ -20,6 +23,17 @@ import type { TraversalHook } from './traversal';
 
 /** A character moved by the kinematic controller. */
 export const CharacterController = defineComponent<CharacterState>('character.controller');
+
+/** Payload of CharacterImpacted. */
+export interface CharacterImpactInfo extends CharacterImpact {
+  readonly tick: number;
+  readonly entity: EntityId;
+  /** Feet position after the tick, metres. */
+  readonly position: Vec3;
+}
+
+/** A character landed, or (launched) struck a wall, this tick (see CharacterImpact). */
+export const CharacterImpacted = defineEvent<CharacterImpactInfo>('CharacterImpacted');
 
 /** Adds a character with its feet at `feet` to `world` (register CharacterController first). */
 export function spawnCharacter<TInput>(world: World<TInput>, feet: Vec3): EntityId {
@@ -46,16 +60,20 @@ export function characterControllerSystem<TInput>(
   const { collision, tuning, hooks = [] } = options;
   return {
     name: 'character-controller',
-    run({ world, inputs, clock }) {
+    run({ world, inputs, clock, tick }) {
       const params = controllerParams(tuning, clock);
       const context = { world: collision, tuning, params, hooks };
-      world.query(CharacterController).forEach((id, state) => {
-        const input = options.input(inputs, id) ?? IDLE_INPUT;
-        const next =
-          options.noclip?.(id) === true
-            ? stepNoclip(state, input, tuning, params)
-            : stepCharacter(state, input, context);
-        world.set(id, CharacterController, next);
+      world.query(CharacterController).forEach((entity, state) => {
+        const input = options.input(inputs, entity) ?? IDLE_INPUT;
+        const step =
+          options.noclip?.(entity) === true
+            ? { state: stepNoclip(state, input, tuning, params), impacts: [] }
+            : stepCharacterWithImpacts(state, input, context);
+        world.set(entity, CharacterController, step.state);
+        const { position } = step.state;
+        for (const impact of step.impacts) {
+          world.events.emit(CharacterImpacted, { ...impact, tick, entity, position });
+        }
       });
     },
   };

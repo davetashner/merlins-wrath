@@ -3,23 +3,40 @@
 // querying RapierCollisionWorld); a creature stands on the arena's 2 m platform 0.5 m from its edge
 // as a character on the same controller, and a knockback hit toward the edge goes through the damage
 // model, the reaction rules and physics: it is launched over the edge, falls the 2 m and lands on the
-// arena floor. Fall damage is e04.19's (not built yet): this test pins the fall it will read.
+// arena floor, where the environmental fall-damage rules (mw-e04.19) price the impacts: the launch
+// is blamed on the hit's instigator, and a 2 m drop is below the shipped rules' 4 m safe height.
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
-import { creatureSchema, HIT_REACTION_DEFAULTS, type CreatureDefInput } from '@content/index';
+import {
+  creatureSchema,
+  DEFAULT_ENVIRONMENT_DAMAGE_ID,
+  HIT_REACTION_DEFAULTS,
+  loadGameContent,
+  PLAYER_CONTROLLER_ID,
+  type CreatureDefInput,
+  type EnvironmentDamageTuning,
+  type Frozen,
+} from '@content/index';
+import { markExercised } from '@content/testing';
 import {
   CharacterController,
+  CharacterImpacted,
   combatantFromCreature,
+  DamageApplied,
   DEFAULT_REACTION_PROFILE,
   giveActionTimeline,
   giveCombatant,
   giveHitReactions,
+  healthOf,
   HitReaction,
+  installEnvironmentDamage,
   reactionOf,
   reactionProfileFromCreature,
   SKIN,
   spawnCharacter,
+  type CharacterImpactInfo,
   type CharacterState,
+  type DamageResult,
   type EntityId,
   type HitReactionInfo,
 } from '@sim/index';
@@ -63,13 +80,19 @@ function must<T>(value: T | undefined): T {
   return value;
 }
 
-function shove() {
+const content = loadGameContent();
+const RULES = content.get('environment-damage', DEFAULT_ENVIRONMENT_DAMAGE_ID);
+const CAPSULE = content.get('controller', PLAYER_CONTROLLER_ID).capsule;
+
+function shove(rules: Frozen<EnvironmentDamageTuning> = RULES) {
   // The testbed's combat (mw-e04.6) registers the action timeline, stamina, damage and hit-volume
   // components, and installs hit reactions on the game's damage model with the character and
   // physics-object pushers (mw-e04.31).
   const game = createGameWorld<never>(RAPIER, { seed: 1, hz: 60 });
   const { world } = game;
   const { damage } = game.combat;
+  installEnvironmentDamage(world, { damage, tuning: rules, capsule: CAPSULE });
+  const knight = world.spawn();
   const goblin: EntityId = spawnCharacter(world, {
     x: LEDGE.edgeX - 0.5,
     y: LEDGE.top + SKIN,
@@ -80,6 +103,14 @@ function shove() {
   giveHitReactions(world, goblin, reactionProfileFromCreature(creature));
   const reactions: HitReactionInfo[] = [];
   world.events.on(HitReaction, (e) => reactions.push(e));
+  const impacts: CharacterImpactInfo[] = [];
+  world.events.on(CharacterImpacted, (e) => {
+    if (e.entity === goblin) impacts.push(e);
+  });
+  const hits: DamageResult[] = [];
+  world.events.on(DamageApplied, (e) => {
+    if (e.target === goblin) hits.push(e);
+  });
   const trace: CharacterState[] = [];
   const step = () => {
     world.step([]);
@@ -91,9 +122,10 @@ function shove() {
     poiseDamage: 5,
     impulse: { x: 320, y: 0, z: 0 }, // towards the edge, just over the 300 N·s threshold
     direction: { x: 1, y: 0, z: 0 },
+    instigator: knight,
   });
   for (let i = 0; i < 90; i++) step();
-  return { world, goblin, reactions, trace };
+  return { world, goblin, knight, reactions, trace, impacts, hits };
 }
 
 describe('hit reactions in the greybox testbed (mw-e04.7)', () => {
@@ -116,10 +148,42 @@ describe('hit reactions in the greybox testbed (mw-e04.7)', () => {
     expect(landed.grounded).toBe(true);
     expect(landed.position.x).toBeGreaterThan(LEDGE.edgeX);
     expect(landed.position.y).toBeCloseTo(SKIN, 3);
-    // The fall e04.19's fall-damage rule will read: the 2 m drop from the ledge top.
+    // The fall the fall-damage rules read: the 2 m drop from the ledge top.
     const lowest = Math.min(...trace.slice(10).map((s) => s.velocity.y));
     expect(lowest).toBeLessThan(-5);
     expect(reactionOf(world, goblin)).toBeUndefined();
+  });
+
+  it('AC-5: the environmental fall-damage rules price the impacts: all below the 4 m safe height', ({
+    task,
+  }) => {
+    markExercised(task, 'environment-damage', DEFAULT_ENVIRONMENT_DAMAGE_ID);
+    const { world, goblin, knight, impacts, hits } = shove();
+    // Launched by the knight's blow, it clips the arena wall beyond the ledge (losing its horizontal
+    // speed), then lands on the floor: the drop from the ledge top plus the launch's rise.
+    const launch = { source: knight, stagger: true };
+    expect(impacts.map((i) => [i.kind, i.launch])).toEqual([
+      ['wall', launch],
+      ['ground', launch],
+    ]);
+    expect(impacts[0]?.height).toBeLessThan(RULES.fall.safeHeight);
+    expect(impacts[1]?.height).toBeGreaterThan(2);
+    expect(impacts[1]?.height).toBeLessThan(2.3);
+    // Only the blow itself hurt: both impacts were safe.
+    expect(hits.map((h) => h.tags)).toEqual([[]]);
+    expect(healthOf(world, goblin)?.current).toBe(55);
+  });
+
+  it('AC-5: with a harsher curve the same impacts hurt, blamed on the knight who shoved it', () => {
+    const harsh = { ...RULES, fall: { safeHeight: 1, lethalHeight: 3, deepWater: 1.5 } };
+    const { goblin, knight, impacts, hits } = shove(harsh);
+    const falls = hits.filter((h) => h.tags.includes('fall'));
+    expect(falls).toHaveLength(2);
+    falls.forEach((fall, i) => {
+      expect(fall.target).toBe(goblin);
+      expect(fall.packet).toMatchObject({ instigator: knight, tags: ['environment', 'fall'] });
+      expect(fall.total).toBeCloseTo((60 * ((impacts[i]?.height ?? 0) - 1)) / 2, 1);
+    });
   });
 
   it('AC-5: the same shove replays to the same final state', () => {

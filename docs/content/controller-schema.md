@@ -38,3 +38,6 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `gait.footstep.run` | number > 0 ≤ 5 | required | Running, m. |
 | `gait.footstep.sprint` | number > 0 ≤ 5 | required | Sprinting, m. |
 | `gait.footstep.crouch` | number > 0 ≤ 5 | required | Crouching, m. |
+| `launch` | object | — | Being thrown by an impulse; absent = the sim’s defaults (DEFAULT_LAUNCH_TUNING). |
+| `launch.airControl` | number 0–1 | required | Share of ground acceleration available while flying from an impulse the player chose (a self-cast Gust), 0–1; a staggering launch (a blast, a troll’s blow) has none. |
+| `launch.recoveryMs` | integer 0–1000 | required | After a staggering launch lands, movement and jump input are ignored this long, whole ms (≤ 1000). |
