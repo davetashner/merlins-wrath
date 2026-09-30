@@ -143,14 +143,19 @@ export function hurtboxShapes(world: World<never>, entity: EntityId): readonly P
   }));
 }
 
+/** One placed hurtbox of a target. */
+interface TargetBox {
+  readonly hurtbox: Hurtbox;
+  readonly shape: GeomShape;
+  readonly piece: Piece;
+  readonly bounds: GeomBounds;
+}
+
+/** A living entity's placed hurtboxes and their bounds. */
 interface Target {
   readonly entity: EntityId;
   readonly bounds: GeomBounds;
-  readonly boxes: readonly {
-    readonly hurtbox: Hurtbox;
-    readonly piece: Piece;
-    readonly bounds: GeomBounds;
-  }[];
+  readonly boxes: readonly TargetBox[];
 }
 
 function targetsOf(world: World<never>): readonly Target[] {
@@ -159,7 +164,7 @@ function targetsOf(world: World<never>): readonly Target[] {
     if (!living(world, entity)) continue;
     const boxes = hurtboxShapes(world, entity).map(({ hurtbox, shape }) => {
       const piece = pieceOf(shape);
-      return { hurtbox, piece, bounds: pieceBounds(piece) };
+      return { hurtbox, shape, piece, bounds: pieceBounds(piece) };
     });
     const [first, ...rest] = boxes;
     if (first === undefined) continue;
@@ -188,16 +193,17 @@ function resolve(
   pieces: readonly BoundedPiece[],
   bounds: GeomBounds,
   target: Target,
-): Hurtbox | undefined {
-  let best: Hurtbox | undefined;
-  for (const { hurtbox, piece, bounds: box } of target.boxes) {
+): TargetBox | undefined {
+  let best: TargetBox | undefined;
+  for (const entry of target.boxes) {
+    const { hurtbox, piece, bounds: box } = entry;
     if (best !== undefined) {
-      const order = priority(hurtbox.region) - priority(best.region);
-      if (order > 0 || (order === 0 && hurtbox.multiplier <= best.multiplier)) continue;
+      const order = priority(hurtbox.region) - priority(best.hurtbox.region);
+      if (order > 0 || (order === 0 && hurtbox.multiplier <= best.hurtbox.multiplier)) continue;
     }
     if (!meet(bounds, box)) continue;
     const hit = pieces.some((p) => meet(p.bounds, box) && piecesOverlap(p.piece, piece));
-    if (hit) best = hurtbox;
+    if (hit) best = entry;
   }
   return best;
 }
@@ -220,7 +226,7 @@ function sweep(
     if (!meet(bounds, target.bounds)) continue;
     if (entity === attacker || hitbox.hit.includes(entity)) continue;
     if (!hitbox.friendlyFire && rules.isAlly(world, attacker, entity)) continue;
-    const hurtbox = resolve(pieces, bounds, target);
+    const hurtbox = resolve(pieces, bounds, target)?.hurtbox;
     if (hurtbox === undefined) continue;
     struck.push(entity);
     const hit: HitboxHitInfo = {
@@ -242,6 +248,95 @@ function sweep(
       ? hitbox.hit
       : Object.freeze([...hitbox.hit, ...struck].sort((a, b) => a - b));
   return Object.freeze({ ...hitbox, elapsed: activeTick, sweptFrom: from, pose: to, hit });
+}
+
+/** Living entities' placed hurtboxes with their bounds, for `segmentHurtboxHits` (one tick's worth). */
+export interface HurtboxTargets {
+  readonly targets: readonly Target[];
+}
+
+/**
+ * Every living, placed entity's hurtboxes as the hit queries test them. Place them once per tick and
+ * run any number of `segmentHurtboxHits` against the result (they stay valid while nothing moves).
+ */
+export function hurtboxTargets(world: World<never>): HurtboxTargets {
+  return { targets: targetsOf(world) };
+}
+
+/** A target a swept segment touches (`segmentHurtboxHits`). */
+export interface SegmentHurtboxHit {
+  readonly entity: EntityId;
+  /** The hurtbox touched first (region priority among those touched at the same point). */
+  readonly hurtbox: Hurtbox;
+  /** That hurtbox placed in the world. */
+  readonly shape: GeomShape;
+  /**
+   * Fraction of the segment travelled before first contact, in [0, 1] (to 2⁻²⁰ of it); exactly 0
+   * when the segment starts touching the target.
+   */
+  readonly fraction: number;
+}
+
+/** Bisection steps that find where a segment first touches a target: 2⁻²⁰ of the segment. */
+const CONTACT_BISECTIONS = 20;
+
+/** The segment `from`→(`from` + t·(`to` − `from`)), grown by `radius`, with its bounds. */
+function prefixOf(from: Vec3, to: Vec3, radius: number, t: number): BoundedPiece {
+  const end = {
+    x: from.x + (to.x - from.x) * t,
+    y: from.y + (to.y - from.y) * t,
+    z: from.z + (to.z - from.z) * t,
+  };
+  const piece: Piece = { kind: 'simplex', points: [from, end], radius };
+  return { piece, bounds: pieceBounds(piece) };
+}
+
+/**
+ * The targets the segment `from`→`to` grown by `radius` (a flying arrow's path this tick) touches,
+ * except those `skip` names, nearest first (ties in ascending id order). Each reports where along the
+ * segment it is first touched and the hurtbox touched there — so an arrow that would cross a torso
+ * and then a head in one tick strikes the torso. Pure: reads the placed `targets` only.
+ */
+export function segmentHurtboxHits(
+  { targets }: HurtboxTargets,
+  path: { readonly from: Vec3; readonly to: Vec3; readonly radius: number },
+  skip: (entity: EntityId) => boolean,
+): SegmentHurtboxHit[] {
+  const { from, to, radius } = path;
+  const whole = prefixOf(from, to, radius, 1);
+  const out: SegmentHurtboxHit[] = [];
+  for (const target of targets) {
+    if (!meet(whole.bounds, target.bounds) || skip(target.entity)) continue;
+    let box = resolve([whole], whole.bounds, target);
+    if (box === undefined) continue;
+    const start = prefixOf(from, to, radius, 0);
+    const inside = resolve([start], start.bounds, target);
+    if (inside !== undefined) {
+      out.push({
+        entity: target.entity,
+        hurtbox: inside.hurtbox,
+        shape: inside.shape,
+        fraction: 0,
+      });
+      continue;
+    }
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < CONTACT_BISECTIONS; i++) {
+      const mid = (lo + hi) / 2;
+      const prefix = prefixOf(from, to, radius, mid);
+      const touched = resolve([prefix], prefix.bounds, target);
+      if (touched === undefined) {
+        lo = mid;
+      } else {
+        hi = mid;
+        box = touched;
+      }
+    }
+    out.push({ entity: target.entity, hurtbox: box.hurtbox, shape: box.shape, fraction: hi });
+  }
+  // A stable sort: equal fractions keep the targets' ascending id order.
+  return out.sort((a, b) => a.fraction - b.fraction);
 }
 
 /**
