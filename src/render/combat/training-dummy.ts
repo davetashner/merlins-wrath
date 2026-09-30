@@ -5,7 +5,15 @@
 // Render-only (needs a GPU context to draw), so it is excluded from unit coverage and verified by the
 // Playwright knight combat e2e (e2e/knight-combat.spec.ts).
 
-import { BoxGeometry, CylinderGeometry, Color, Group, Mesh, MeshStandardMaterial, type Object3D } from 'three';
+import {
+  BoxGeometry,
+  CylinderGeometry,
+  Color,
+  Group,
+  Mesh,
+  MeshStandardMaterial,
+  type Object3D,
+} from 'three';
 
 const STRAW = 0xc9a45c;
 const WOOD = 0x6b4a2b;

@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- The knight can fight in the testbed: left click (RT) swings a three-hit sword chain, and holding
+  right click (LT) raises a wooden shield that blocks frontal hits at half walking speed. Running out
+  of stamina behind the shield breaks your guard and staggers you. A training dummy stands in front of
+  the start to practise on.
 - The game page now opens onto a 3D view (a placeholder scene) and loads physics in the background,
   with a "Loading physics…" notice while it downloads. Browsers without WebGL 2 or WebAssembly get a
   readable "this browser cannot run The Vesper Bell" screen instead of a blank page.

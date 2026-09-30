@@ -6,6 +6,7 @@ import {
   CharacterController,
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
+  StaminaComponent,
   FakeCollisionWorld,
   hashWorld,
   interacted,
@@ -172,7 +173,9 @@ describe('testbed player with sword and shield (mw-e04.6)', () => {
     });
     startTestbedCombat(world, combat, scene.layout.spawns);
     const sampler = new ActionSampler();
-    const step = () => { world.step(sampler.sampleCommands(world.tick)); };
+    const step = () => {
+      world.step(sampler.sampleCommands(world.tick));
+    };
     step();
     expect(player.readout()?.combat).toEqual({ action: null, stamina: 100, blocking: false });
     sampler.down('Mouse2');
@@ -186,6 +189,10 @@ describe('testbed player with sword and shield (mw-e04.6)', () => {
       stamina: 88,
       blocking: false,
     });
+    // A player whose pool was taken away reads as empty and unguarded.
+    world.remove(player.entity, StaminaComponent);
+    step();
+    expect(player.readout()?.combat).toMatchObject({ stamina: 0, blocking: false });
   });
 });
 

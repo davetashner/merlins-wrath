@@ -16,7 +16,6 @@ import {
   PlayerLook,
   shieldGuard,
   staminaOf,
-  type ActionFrame,
   type ActionStartInfo,
   type DamageResult,
 } from '@sim/index';

@@ -3,7 +3,7 @@
   "snapshotEncoding": 1,
   "scenario": "character-stress",
   "buildSha": "5cbd4f67ad98",
-  "contentHash": "b78e0078f47c31f6",
+  "contentHash": "84e6d7fe337d5941",
   "seed": 1,
   "stepHz": 60,
   "ticks": 1800,
