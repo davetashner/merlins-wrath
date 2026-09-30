@@ -51,6 +51,8 @@ describe('character golden scenarios (mw-e02.7)', () => {
       actions: { move: { x: -1, y: 0 }, jump: { pressed: true }, crouch: { held: true } },
       cameraYaw: 0,
     });
+    // A drop presses crouch (mw-e02.12: letting go of a ledge).
+    expect(frame({ drop: true }).actions.crouch).toEqual({ pressed: true, held: true });
   });
 
   it('registers every character golden next to the sim scenarios', () => {
@@ -58,6 +60,7 @@ describe('character golden scenarios (mw-e02.7)', () => {
       'character-basic',
       'character-course',
       'character-stress',
+      'character-mantle',
     ]);
     for (const golden of characterGoldens) {
       expect(goldenScenarios[golden.name]?.name).toBe(golden.name);

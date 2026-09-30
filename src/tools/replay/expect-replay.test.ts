@@ -114,7 +114,7 @@ describe('replay files', () => {
     const replay = readReplay(GOLDEN);
     expect(scenarioOf(replay)).toBe(coreScenario);
     expect(() => scenarioOf({ ...replay, scenario: 'ghost' })).toThrow(
-      'unknown replay scenario "ghost" (registered: core, character-basic, character-course, character-stress, action-timeline, dodge-on-time, dodge-early)',
+      'unknown replay scenario "ghost" (registered: core, character-basic, character-course, character-stress, character-mantle, action-timeline, dodge-on-time, dodge-early)',
     );
   });
 

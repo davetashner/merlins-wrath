@@ -1,0 +1,135 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-humanoid-mantle",
+  "rig": "greybox-humanoid",
+  "duration": 0.6,
+  "notes": "Grey-box placeholder (mw-e02.12): a mantle, played once over the sim-driven move: arms reach up to the edge, pull and push down past the chest while the lead knee comes up onto the top, then stand. The sim times the move (0.4–0.7 s); the clip only reads it.",
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [-5, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [25, 0, 0]
+      },
+      {
+        "t": 0.6,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [-160, 0, -10]
+      },
+      {
+        "t": 0.3,
+        "rot": [-40, 0, -15]
+      },
+      {
+        "t": 0.6,
+        "rot": [0, 0, -6]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [-160, 0, 10]
+      },
+      {
+        "t": 0.3,
+        "rot": [-40, 0, 15]
+      },
+      {
+        "t": 0.6,
+        "rot": [0, 0, 6]
+      }
+    ],
+    "forearm-l": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [70, 0, 0]
+      },
+      {
+        "t": 0.6,
+        "rot": [15, 0, 0]
+      }
+    ],
+    "forearm-r": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [70, 0, 0]
+      },
+      {
+        "t": 0.6,
+        "rot": [15, 0, 0]
+      }
+    ],
+    "thigh-l": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [85, 0, 0]
+      },
+      {
+        "t": 0.6,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "shin-l": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [-95, 0, 0]
+      },
+      {
+        "t": 0.6,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "thigh-r": [
+      {
+        "t": 0,
+        "rot": [5, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [20, 0, 0]
+      },
+      {
+        "t": 0.6,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "shin-r": [
+      {
+        "t": 0,
+        "rot": [-5, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [-30, 0, 0]
+      },
+      {
+        "t": 0.6,
+        "rot": [0, 0, 0]
+      }
+    ]
+  }
+}

@@ -32,6 +32,7 @@ import {
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
   installDebugCommands,
+  LEDGE_HANG_CAPABILITY,
   testPropSpawners,
   type EntityId,
   RapierCollisionWorld,
@@ -204,6 +205,7 @@ export function createGameWorld<TInput>(
       profile: (id) => content.get('targetable', id),
       defeated: zeroHealth,
     },
+    ledges: { capabilities: [LEDGE_HANG_CAPABILITY] },
   }).entity;
   focus.entity = player;
   const combatants = startTestbedCombat(world, combat, scene.layout.spawns, player);

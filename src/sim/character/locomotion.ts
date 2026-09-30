@@ -6,7 +6,7 @@
 // which gait), mantleStart and ledgeGrab.
 //
 // States, first match wins:
-//   climb / mantle / swim   a traversal mode has the character
+//   climb / mantle / hang / swim   a traversal mode has the character
 //   airborne                off the ground
 //   landing                 within landingMs of a hard landing (impact ≥ hardLanding)
 //   crouch                  crouched
@@ -43,6 +43,7 @@ export const LOCOMOTION_STATES = [
   'landing',
   'climb',
   'mantle',
+  'hang',
   'swim',
 ] as const;
 
@@ -250,9 +251,9 @@ export function stepLocomotion(
 
   if (character.jumped && !last.jumped) events.push({ kind: 'jumpStart' });
   if (traversal !== last.traversal && traversal === 'mantle') events.push({ kind: 'mantleStart' });
-  if (traversal !== last.traversal && traversal === 'climb' && last.fall !== null) {
-    events.push({ kind: 'ledgeGrab' });
-  }
+  // Hands take a ledge: every hang begins with one, and a climb entered while falling (a catch).
+  const grabbed = traversal === 'hang' || (traversal === 'climb' && last.fall !== null);
+  if (traversal !== last.traversal && grabbed) events.push({ kind: 'ledgeGrab' });
 
   let landingTicks = Math.max(0, last.landingTicks - 1);
   if (grounded && last.fall !== null) {

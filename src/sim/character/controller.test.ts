@@ -617,7 +617,7 @@ describe('moving platforms', () => {
 
 describe('traversal hooks', () => {
   const climb = (enter: boolean): TraversalHook & { entered: number } => ({
-    mode: 'climb',
+    modes: ['climb'],
     entered: 0,
     shouldEnter() {
       return enter;
@@ -628,8 +628,8 @@ describe('traversal hooks', () => {
     },
   });
 
-  it('offers climb, mantle and swim as traversal modes', () => {
-    expect(TRAVERSAL_MODES).toEqual(['climb', 'mantle', 'swim']);
+  it('offers climb, mantle, hang and swim as traversal modes', () => {
+    expect(TRAVERSAL_MODES).toEqual(['climb', 'mantle', 'hang', 'swim']);
   });
 
   it('runs locomotion while no hook wants the character', () => {

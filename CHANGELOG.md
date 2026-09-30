@@ -24,6 +24,11 @@ check enforces this).
   guard break clangs, every swing whooshes, a dodged swing whiffs past you, and your footsteps change
   with the ground (stone, wood, earth, shallow water), quieter crouching and louder sprinting, with
   landings that thud harder the further you fall. All still placeholder sounds.
+- Climb onto things: walk into a crate up to 1 m high and you pull yourself onto it; jump at a ledge
+  up to 1.6 m and you mantle up. In the testbed you can also grab ledges up to 2.2 m, hang, shimmy
+  sideways (across small gaps), pull up with jump, jump back off the wall or drop with crouch, and
+  crouch-walk off an edge to lower yourself into a hang. A ledge that freezes or catches fire makes
+  you let go after a second. Timings are placeholders to tune.
 - The testbed has sound: after your first click or key press, sword hits on the training dummy,
   staggers, deaths, running out of stamina and props thudding into things play placeholder sounds
   that come from where they happen and follow the camera. They are simple synthesised stand-ins

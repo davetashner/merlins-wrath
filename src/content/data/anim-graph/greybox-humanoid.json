@@ -1,7 +1,7 @@
 {
   "$schema": "../anim-graph.schema.json",
   "id": "greybox-humanoid",
-  "notes": "Grey-box humanoid placeholder rig (mw-e02.20): box limbs on a 14-bone skeleton, feet at the origin, facing -z. The knight and every humanoid NPC use this graph until the e37 animation pipeline supplies real rigs. The base layer follows the sim's locomotion state (mw-e02.6): idle, move (a speed blend of walk, run and sprint), crouch, jump while rising, fall, land, and dodge (the running dodge move's clip, full body); traversal states (climb, mantle, swim) keep the pose they had until their clips exist.",
+  "notes": "Grey-box humanoid placeholder rig (mw-e02.20): box limbs on a 14-bone skeleton, feet at the origin, facing -z. The knight and every humanoid NPC use this graph until the e37 animation pipeline supplies real rigs. The base layer follows the sim's locomotion state (mw-e02.6): idle, move (a speed blend of walk, run and sprint), crouch, jump while rising, fall, land, dodge (the running dodge move's clip, full body), mantle and hang (mw-e02.12 placeholders); the other traversal states (climb, swim) keep the pose they had until their clips exist.",
   "skeleton": [
     {
       "bone": "pelvis",
@@ -208,6 +208,20 @@
           }
         },
         {
+          "id": "mantle",
+          "motion": {
+            "kind": "clip",
+            "clip": "anim-humanoid-mantle"
+          }
+        },
+        {
+          "id": "hang",
+          "motion": {
+            "kind": "clip",
+            "clip": "anim-humanoid-hang"
+          }
+        },
+        {
           "id": "dodge",
           "motion": {
             "kind": "action",
@@ -225,6 +239,30 @@
               "param": "actionVerb",
               "op": "==",
               "value": "dodge"
+            }
+          ]
+        },
+        {
+          "from": "*",
+          "to": "mantle",
+          "duration": 0.08,
+          "when": [
+            {
+              "param": "locomotion",
+              "op": "==",
+              "value": "mantle"
+            }
+          ]
+        },
+        {
+          "from": "*",
+          "to": "hang",
+          "duration": 0.1,
+          "when": [
+            {
+              "param": "locomotion",
+              "op": "==",
+              "value": "hang"
             }
           ]
         },

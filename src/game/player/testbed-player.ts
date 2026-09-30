@@ -18,6 +18,10 @@
 // motion is never applied). A crouch lowers the rig's pelvis by CROUCH_DROP × the crouch state's
 // weight, so the bent legs keep the feet on the ground.
 //
+// With `ledges` (mw-e02.12) the player mantles onto the scene's crates and ledges, and with the
+// ledge-hang capability grabs, hangs from and shimmies along higher ones (src/sim/climb/mantle.ts);
+// the rig plays the graph's mantle and hang states from the published locomotion.
+//
 // Renderer-agnostic: the caller supplies the body object and how an object follows its entity
 // (object3DBinding for Three.js). The sim steps only through the frame loop, as ever; nothing here
 // mutates the sim after setup (the camera's collision queries are read-only).
@@ -53,6 +57,7 @@ import {
   LockOnComponent,
   PlayerLook,
   ViewAnchor,
+  sceneLedges,
   type BodyId,
   staminaOf,
   type PlayerMeleeOptions,
@@ -223,6 +228,17 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
   readonly animation?: PlayerAnimationView;
   /** Gives the player lock-on (mw-e02.16); absent = none. */
   readonly lockOn?: TestbedLockOn;
+  /**
+   * Mantling and ledge hangs over the scene's ledges (mw-e02.12); the world must have the world
+   * properties registered (a ledge's hold reads them). Absent = none.
+   */
+  readonly ledges?: TestbedLedgeOptions;
+}
+
+/** The player's mantling and ledge hangs (mw-e02.12). */
+export interface TestbedLedgeOptions {
+  /** The player's capabilities (e.g. LEDGE_HANG_CAPABILITY) until class data (mw-e02.3). */
+  readonly capabilities?: readonly string[];
 }
 
 export interface TestbedPlayer {
@@ -326,6 +342,9 @@ export function setupTestbedPlayer<TObject, TCommand>(
       ...(options.sensitivity !== undefined && { sensitivity: options.sensitivity }),
     },
     pitch: toRadians(cameraTuning.pitch.initial),
+    ...(options.ledges !== undefined && {
+      ledges: { index: sceneLedges(scene), ...options.ledges },
+    }),
     ...(options.moves !== undefined && {
       combat: {
         moves: options.moves,

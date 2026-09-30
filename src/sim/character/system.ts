@@ -62,8 +62,8 @@ export function characterControllerSystem<TInput>(
     name: 'character-controller',
     run({ world, inputs, clock, tick }) {
       const params = controllerParams(tuning, clock);
-      const context = { world: collision, tuning, params, hooks };
       world.query(CharacterController).forEach((entity, state) => {
+        const context = { world: collision, tuning, params, hooks, entity };
         const input = options.input(inputs, entity) ?? IDLE_INPUT;
         const step =
           options.noclip?.(entity) === true

@@ -39,6 +39,7 @@ export const ANIM_LOCOMOTION_STATES = [
   'landing',
   'climb',
   'mantle',
+  'hang',
   'swim',
 ] as const;
 

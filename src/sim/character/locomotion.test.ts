@@ -157,7 +157,7 @@ describe('classifyLocomotion', () => {
   });
 
   it('lists every state once', () => {
-    expect(new Set(LOCOMOTION_STATES).size).toBe(10);
+    expect(new Set(LOCOMOTION_STATES).size).toBe(11);
   });
 });
 
@@ -326,9 +326,9 @@ describe('locomotion system (mw-e02.6)', () => {
     expect(states[8]).toBe('run');
   });
 
-  it('reports traversal modes, and mantleStart and ledgeGrab (a climb entered in the air)', () => {
+  it('reports traversal modes, and mantleStart and ledgeGrab (a hang, or a climb entered in the air)', () => {
     const hook = (mode: TraversalMode, from: number, to: number): TraversalHook => ({
-      mode,
+      modes: [mode],
       shouldEnter: ({ state }) => state.airTicks === 0 && ticks >= from && ticks < to,
       step: ({ state }) => ({
         ...state,
@@ -353,13 +353,17 @@ describe('locomotion system (mw-e02.6)', () => {
     // Climbing from the ground is no ledge grab; grabbing on while falling is.
     expect(run([hook('climb', 3, 6)]).kinds).not.toContain('ledgeGrab');
     const grab: TraversalHook = {
-      mode: 'climb',
+      modes: ['climb'],
       shouldEnter: ({ state }) => state.airTicks >= 2,
       step: ({ state }) => ({ ...state, traversal: 'climb', grounded: false }),
     };
     const fall = run([grab], { x: 0, y: 3, z: 0 });
     expect(fall.kinds).toEqual(['ledgeGrab']);
     expect(fall.states.at(-1)).toBe('climb');
+    // mw-e02.12: every hang begins with a grab, from the ground too; a pull-up is a mantle.
+    const hang = run([hook('hang', 3, 6)]);
+    expect(hang.states.slice(3, 6)).toEqual(['hang', 'hang', 'hang']);
+    expect(hang.kinds.filter((k) => k === 'ledgeGrab')).toHaveLength(1);
   });
 
   it('leaves characters without CharacterLocomotion alone; locomotionOf is undefined for them', () => {

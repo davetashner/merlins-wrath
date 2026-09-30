@@ -238,6 +238,144 @@
         "recoveryMs"
       ],
       "additionalProperties": false
+    },
+    "ledge": {
+      "description": "Mantling and ledge hangs; absent = the sim’s defaults (DEFAULT_LEDGE_TUNING).",
+      "type": "object",
+      "properties": {
+        "autoMantleHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 5,
+          "description": "Ledges up to this high above the feet are mantled by walking into them, no jump needed, m."
+        },
+        "mantleHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 5,
+          "description": "Ledges up to this high are mantled by pressing jump at them (every class), m; at least autoMantleHeight."
+        },
+        "hangReach": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 5,
+          "description": "Highest ledge above the feet a grab reaches (ledge hang, capability-gated), m; at least mantleHeight."
+        },
+        "hangDepth": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 5,
+          "description": "How far below the ledge top the feet hang, m; at most hangReach. Grabs lower than this pull straight up."
+        },
+        "reach": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 3,
+          "description": "How far ahead of the capsule a jump press finds a ledge to mantle or grab from the ground, m."
+        },
+        "grabReach": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "description": "How far ahead of the capsule hands catch a ledge in the air, or walking into one (auto-mantle), m."
+        },
+        "maxTopSlope": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 90,
+          "description": "Steepest ledge top a mantle stands on, degrees."
+        },
+        "autoMantleMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3000,
+          "description": "Duration of a mantle onto a ledge up to autoMantleHeight, whole ms."
+        },
+        "mantleMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3000,
+          "description": "Duration of a mantle onto a higher ledge, whole ms."
+        },
+        "pullUpMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3000,
+          "description": "Duration of a pull-up from a hang (or a catch low on a ledge), whole ms."
+        },
+        "grabMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3000,
+          "description": "Duration of catching a ledge into a hang, whole ms."
+        },
+        "lowerMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3000,
+          "description": "Duration of lowering over an edge into a hang, whole ms."
+        },
+        "shimmySpeed": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "description": "Sideways speed while hanging, at full stick deflection, m/s."
+        },
+        "shimmyGap": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Widest gap between ledges a shimmy crosses, m; wider gaps stop it."
+        },
+        "slipGraceMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "How long hands hold a ledge that became impossible to hold (frozen, burning) before the character drops, whole ms."
+        },
+        "jumpBack": {
+          "type": "object",
+          "properties": {
+            "away": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 20,
+              "description": "Speed away from the wall, m/s."
+            },
+            "up": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 20,
+              "description": "Upward speed, m/s."
+            }
+          },
+          "required": [
+            "away",
+            "up"
+          ],
+          "additionalProperties": false,
+          "description": "Jumping off a hang, away from the wall."
+        }
+      },
+      "required": [
+        "autoMantleHeight",
+        "mantleHeight",
+        "hangReach",
+        "hangDepth",
+        "reach",
+        "grabReach",
+        "maxTopSlope",
+        "autoMantleMs",
+        "mantleMs",
+        "pullUpMs",
+        "grabMs",
+        "lowerMs",
+        "shimmySpeed",
+        "shimmyGap",
+        "slipGraceMs",
+        "jumpBack"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [
