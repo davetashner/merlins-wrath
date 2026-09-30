@@ -32,22 +32,28 @@ describe('cue sheet sound ids (mw-e28.2)', () => {
     });
   });
 
-  it('reads fact values from content: impact classes, material ids, attack telegraphs', () => {
-    const content = {
-      all: ((type: string) =>
-        type === 'material'
-          ? [
-              { id: 'iron', impactSound: 'sfx-impact-metal' },
-              { id: 'copper', impactSound: 'sfx-impact-metal' },
-            ]
-          : [{ telegraph: 'glint' }, { telegraph: 'glint' }]) as never,
+  it('reads fact values from content: impact classes, material ids, attack telegraphs, footstep surfaces and move sounds', () => {
+    const lists: Record<string, unknown[]> = {
+      material: [
+        { id: 'iron', impactSound: 'sfx-impact-metal' },
+        { id: 'copper', impactSound: 'sfx-impact-metal', footstepSurface: 'metal-grate' },
+      ],
+      attack: [{ telegraph: 'glint' }, { telegraph: 'glint' }],
+      move: [
+        { presentation: { audioCue: 'sfx-knight-kick' } },
+        { presentation: {} },
+        { presentation: { audioCue: 'sfx-knight-kick' } },
+      ],
     };
+    const content = { all: ((type: string) => lists[type] ?? []) as never };
     const facts = factDomains(content);
     expect(facts.get('target')).toEqual(['metal']);
     expect(facts.get('other')).toEqual(['metal']);
     expect(facts.get('weaponMaterial')).toEqual(['iron', 'copper']);
     expect(facts.get('material')).toEqual(['iron', 'copper']);
     expect(facts.get('telegraph')).toEqual(['glint']);
+    expect(facts.get('surface')).toEqual(['stone', 'metal-grate']);
+    expect(facts.get('sound')).toEqual(['sfx-knight-kick']);
   });
 
   it('AC-1: every sound id the committed cue sheets can play resolves to a manifest entry', () => {

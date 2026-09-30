@@ -16,8 +16,21 @@ import {
   type CueEventName,
   type CueRuleDef,
   type MaterialDef,
+  type MoveDef,
 } from '@content/index';
-import { readProperty, Rng, type EntityId, type EventType, type World } from '@sim/index';
+import {
+  CharacterController,
+  GuardComponent,
+  PhysicsColliderComponent,
+  PhysicsObjectComponent,
+  readProperty,
+  Rng,
+  WORLD_PROPERTY_SPECS,
+  type ComponentType,
+  type EntityId,
+  type EventType,
+  type World,
+} from '@sim/index';
 import { CUE_EVENT_BINDINGS, type CueAnchor, type CueLookups, type CueReading } from './events.ts';
 import { CueRuleSet, interpolateCue } from './matcher.ts';
 
@@ -223,19 +236,88 @@ export function soundVariantCount(registry: {
 /** Prefix of impact sound set ids (material `impactSound`). */
 const IMPACT_PREFIX = 'sfx-impact-';
 
+/** The footstep surface unknown surfaces play (audio bible §7.3: stone is the 0 dB reference). */
+export const DEFAULT_FOOTSTEP_SURFACE = 'stone';
+
+/** A material as the lookups read it. */
+export type CueMaterial = Pick<MaterialDef, 'id' | 'impactSound'> &
+  Partial<Pick<MaterialDef, 'footstepSurface'>>;
+
+/** Optional sources for the lookups beyond materials. */
+export interface WorldCueLookupOptions {
+  /** Moves, for their presentation audio cue (swing whooshes). */
+  readonly moves?: readonly Pick<MoveDef, 'id' | 'presentation'>[];
+  /** Armour weight class of a character (e04.16 will own it); none by default. */
+  readonly armorOf?: (entity: EntityId) => string | undefined;
+  /** Dev warnings (an unknown footstep surface, once per surface). */
+  readonly warn?: (message: string) => void;
+}
+
 /**
  * Material lookups from a world with world properties registered (`registerWorldProperties`) and
  * the loaded materials: an entity's `material` property (the default "generic" when unset) and each
- * material's impact class, e.g. iron → "metal".
+ * material's impact class, e.g. iron → "metal"; a blocker's shield; a move's own sound; and the
+ * footstep surface under a character, read from the collider it stands on (a bound level piece or a
+ * physics object: its material's `footstepSurface`). A surface no material declares a set for plays
+ * stone, with one dev warning naming it (mw-e28.6 AC-4). All reads, never writes.
  */
 export function worldCueLookups(
   world: World<never>,
-  materials: readonly Pick<MaterialDef, 'id' | 'impactSound'>[],
+  materials: readonly CueMaterial[],
+  options: WorldCueLookupOptions = {},
 ): CueLookups {
   const classes = new Map(materials.map((m) => [m.id, m.impactSound.slice(IMPACT_PREFIX.length)]));
+  const surfaces = new Map(materials.map((m) => [m.id, m.footstepSurface]));
+  const known = new Set<string>([DEFAULT_FOOTSTEP_SURFACE]);
+  for (const m of materials) if (m.footstepSurface !== undefined) known.add(m.footstepSurface);
+  const sounds = new Map((options.moves ?? []).map((m) => [m.id, m.presentation.audioCue]));
+  const warned = new Set<string>();
+  const warn =
+    options.warn ??
+    ((message: string) => {
+      console.warn(message);
+    });
+  const materialOf = (entity: EntityId): string | undefined =>
+    world.isAlive(entity) ? readProperty(world, entity, 'material') : undefined;
+  /** A component of a live entity, when the world has that component at all. */
+  const read = <T>(entity: EntityId, type: ComponentType<T>): T | undefined =>
+    world.isRegistered(type) && world.isAlive(entity) ? world.get(entity, type) : undefined;
+  /** The entity a collider handle belongs to: a physics object or a bound static collider. */
+  const ownerOf = (collider: number): EntityId | undefined => {
+    let owner: EntityId | undefined;
+    if (world.isRegistered(PhysicsObjectComponent)) {
+      world.query(PhysicsObjectComponent).forEach((entity, object) => {
+        if (object.body === collider) owner = entity;
+      });
+    }
+    if (world.isRegistered(PhysicsColliderComponent)) {
+      world.query(PhysicsColliderComponent).forEach((entity, { colliders }) => {
+        if (colliders.includes(collider)) owner = entity;
+      });
+    }
+    return owner;
+  };
   return {
-    materialOf: (entity: EntityId) =>
-      world.isAlive(entity) ? readProperty(world, entity, 'material') : undefined,
+    materialOf,
     impactClassOf: (material) => classes.get(material),
+    shieldOf: (entity) => read(entity, GuardComponent)?.shield.id,
+    moveSoundOf: (move) => sounds.get(move),
+    surfaceUnder: (entity) => {
+      const ground = read(entity, CharacterController)?.groundBody;
+      const owner = ground === undefined || ground === null ? undefined : ownerOf(ground);
+      const material =
+        (owner === undefined ? undefined : materialOf(owner)) ??
+        WORLD_PROPERTY_SPECS.material.default;
+      const surface = surfaces.get(material) ?? material;
+      if (known.has(surface)) return surface;
+      if (!warned.has(surface)) {
+        warned.add(surface);
+        warn(
+          `footsteps: no footstep set for surface "${surface}"; playing ${DEFAULT_FOOTSTEP_SURFACE}`,
+        );
+      }
+      return DEFAULT_FOOTSTEP_SURFACE;
+    },
+    ...(options.armorOf !== undefined && { armorOf: options.armorOf }),
   };
 }

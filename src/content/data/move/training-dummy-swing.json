@@ -36,7 +36,7 @@
   },
   "presentation": {
     "anim": "anim-dummy-swing",
-    "audioCue": "sfx-dummy-swing",
+    "audioCue": "sfx-knight-sword-swing-light",
     "vfxCue": "vfx-telegraph-glint"
   }
 }

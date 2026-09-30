@@ -3,8 +3,9 @@ import { expect, test, type Page } from '@playwright/test';
 // mw-e28.2: the placeholder sound pack is audible in ?scene=testbed against the production build
 // (Chromium). The page publishes the audio context state, voices and the latest cues it sent to the
 // engine on #app[data-audio]. Nothing may play before the first gesture (autoplay policy); a click
-// on the canvas starts the context, and a sword hit on the training dummy plays the struck
-// material's impact set, fetched from the placeholder pack without errors.
+// on the canvas starts the context, and a sword hit on the training dummy plays the swing whoosh and
+// the blade × material impact (mw-e28.4; the dummy has the default material, stone), fetched from
+// the placeholder pack without errors.
 
 // Driver performance notices from the GPU process are not our errors (see e2e/render-boot.spec.ts).
 const DRIVER_PERF_NOTICE = /^\[\.WebGL-[^\]]+\]GL Driver Message \([^)]*\bPerformance\b/;
@@ -65,8 +66,9 @@ test('a sword hit on the dummy plays its placeholder impact sound after the firs
     });
   });
   await expect
-    .poll(async () => (await audio(page))?.cues.some((cue) => cue.startsWith('sfx-impact-')))
+    .poll(async () => (await audio(page))?.cues.includes('sfx-blade-impact-stone'))
     .toBe(true);
+  expect((await audio(page))?.cues).toContain('sfx-knight-sword-swing-light');
   expect(failed).toEqual([]);
   expect(problems).toEqual([]);
 });

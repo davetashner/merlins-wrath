@@ -1,5 +1,25 @@
 [
   {
+    "id": "sfx-armor-chain-layer",
+    "variants": [
+      "sfx-armor-chain-layer-01",
+      "sfx-armor-chain-layer-02"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-armor-plate-layer",
+    "variants": [
+      "sfx-armor-plate-layer-01",
+      "sfx-armor-plate-layer-02"
+    ],
+    "bus": "footsteps",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
     "id": "sfx-arrow-blunt-thud",
     "variants": [
       "sfx-arrow-blunt-thud-01",
@@ -115,6 +135,126 @@
     "variants": [
       "sfx-arrow-water-splash-01",
       "sfx-arrow-water-splash-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blade-impact",
+    "variants": [
+      "sfx-blade-impact-01",
+      "sfx-blade-impact-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blade-impact-bone",
+    "variants": [
+      "sfx-blade-impact-bone-01",
+      "sfx-blade-impact-bone-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blade-impact-flesh",
+    "variants": [
+      "sfx-blade-impact-flesh-01",
+      "sfx-blade-impact-flesh-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blade-impact-metal",
+    "variants": [
+      "sfx-blade-impact-metal-01",
+      "sfx-blade-impact-metal-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blade-impact-stone",
+    "variants": [
+      "sfx-blade-impact-stone-01",
+      "sfx-blade-impact-stone-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blade-impact-wood",
+    "variants": [
+      "sfx-blade-impact-wood-01",
+      "sfx-blade-impact-wood-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blunt-impact",
+    "variants": [
+      "sfx-blunt-impact-01",
+      "sfx-blunt-impact-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blunt-impact-bone",
+    "variants": [
+      "sfx-blunt-impact-bone-01",
+      "sfx-blunt-impact-bone-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blunt-impact-flesh",
+    "variants": [
+      "sfx-blunt-impact-flesh-01",
+      "sfx-blunt-impact-flesh-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blunt-impact-metal",
+    "variants": [
+      "sfx-blunt-impact-metal-01",
+      "sfx-blunt-impact-metal-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blunt-impact-stone",
+    "variants": [
+      "sfx-blunt-impact-stone-01",
+      "sfx-blunt-impact-stone-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-blunt-impact-wood",
+    "variants": [
+      "sfx-blunt-impact-wood-01",
+      "sfx-blunt-impact-wood-02"
     ],
     "bus": "combat",
     "spatial": true,
@@ -294,6 +434,16 @@
     "variants": [
       "sfx-combat-stamina-wheeze-01",
       "sfx-combat-stamina-wheeze-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-combat-whiff",
+    "variants": [
+      "sfx-combat-whiff-01",
+      "sfx-combat-whiff-02"
     ],
     "bus": "combat",
     "spatial": true,
@@ -670,6 +820,15 @@
     "placeholder": true
   },
   {
+    "id": "sfx-knight-backstep",
+    "variants": [
+      "sfx-knight-backstep-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
     "id": "sfx-knight-block-shield-metal",
     "variants": [
       "sfx-knight-block-shield-metal-01",
@@ -804,6 +963,16 @@
     "variants": [
       "sfx-knight-wall-recoil-clang-01",
       "sfx-knight-wall-recoil-clang-02"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-pierce-impact",
+    "variants": [
+      "sfx-pierce-impact-01",
+      "sfx-pierce-impact-02"
     ],
     "bus": "combat",
     "spatial": true,

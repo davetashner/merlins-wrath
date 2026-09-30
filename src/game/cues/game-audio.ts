@@ -5,13 +5,14 @@
 // see installGestureUnlock), so sounds from the scene settling at load are dropped, not queued.
 
 import type { PlayOptions } from '@audio/index';
-import type { CueRuleDef, MaterialDef } from '@content/index';
+import type { CueRuleDef, MoveDef } from '@content/index';
 import type { EntityId, World } from '@sim/index';
 import type { SimView, Transform } from '../loop/render-sync.ts';
 import {
   AudioCueBridge,
   soundVariantCount,
   worldCueLookups,
+  type CueMaterial,
   type CuePlayer,
 } from './audio-bridge.ts';
 
@@ -26,7 +27,11 @@ export interface GameAudioOptions {
   /** Variant counts per cue (the engine's SoundRegistry satisfies it). */
   readonly registry: { get(id: string): { readonly variants: readonly string[] } | undefined };
   readonly sheets: readonly { readonly rules: readonly CueRuleDef[] }[];
-  readonly materials: readonly Pick<MaterialDef, 'id' | 'impactSound'>[];
+  readonly materials: readonly CueMaterial[];
+  /** Moves, for their own sounds (swing whooshes on ActionPhaseChanged). */
+  readonly moves?: readonly Pick<MoveDef, 'id' | 'presentation'>[];
+  /** Armour weight class of a character, for the footstep armour layer (e04.16 will own it). */
+  readonly armorOf?: (entity: EntityId) => string | undefined;
   /** Presentation clock in ms. */
   readonly now: () => number;
   /** Called with each cue actually sent to the engine (debug overlays, e2e probes). */
@@ -47,7 +52,10 @@ export function attachGameAudio(options: GameAudioOptions): () => void {
     sheets: options.sheets,
     player,
     now: options.now,
-    lookups: worldCueLookups(options.world, options.materials),
+    lookups: worldCueLookups(options.world, options.materials, {
+      ...(options.moves !== undefined && { moves: options.moves }),
+      ...(options.armorOf !== undefined && { armorOf: options.armorOf }),
+    }),
     variantCount: soundVariantCount(options.registry),
   });
   return bridge.attach(options.world.events);

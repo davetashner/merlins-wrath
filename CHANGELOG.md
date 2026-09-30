@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Combat and footsteps sound richer in the testbed: sword, club and point hits sound different on
+  flesh, bone, metal, wood and stone; a hit on your raised shield plays a block instead of a hit, a
+  guard break clangs, every swing whooshes, a dodged swing whiffs past you, and your footsteps change
+  with the ground (stone, wood, earth, shallow water), quieter crouching and louder sprinting, with
+  landings that thud harder the further you fall. All still placeholder sounds.
 - The testbed has sound: after your first click or key press, sword hits on the training dummy,
   staggers, deaths, running out of stamina and props thudding into things play placeholder sounds
   that come from where they happen and follow the camera. They are simple synthesised stand-ins

@@ -1,20 +1,28 @@
 {
   "id": "combat",
-  "notes": "Initial combat cue rules (mw-e28.3): the generic layer every hit, stagger, death, telegraph and refused action falls back to. A hit plays the struck material's impact set (sfx-impact-<class>, from the material's impactSound), louder the more damage it dealt; a critical, riposte or backstab adds an accent. Specific sound sets (the blade × material matrix, parry and block cues, whooshes) belong to e28.4 and add more specific rules on top; final assets arrive through the placeholder pack (e28.2) and the SFX asset groups.",
+  "notes": "Combat cue rules (mw-e28.3, impact matrix mw-e28.4). Every hit plays one impact-layer rule, the most specific that matches: a clean hit (contact hit) picks the attacker side by its dominant damage type (slash = blade, blunt = club or shield bash, pierce = point) and the struck material's impact class, so a sword on a skeleton plays sfx-blade-impact-bone; a pair without its own sound plays the attacker's generic strike (sfx-blade-impact), and a hit with no known damage type plays the struck material's own impact set (sfx-impact-<class>), so no hit is silent. Hits are louder the more damage they dealt (light < heavy < critical). A hit on a raised shield (contact blocked) plays the shield block instead of flesh, at a high voice priority, and a guard break adds its own clang at higher priority still; a critical or riposte adds an accent. Each move plays its own sound (the swing whoosh) as its active phase starts, and a swing that passes through a dodge's i-frames whiffs past the dodger. Not yet: parry (no sim event until mw-e04.12; its rule will take priority 100 so it is never stolen), wall recoil and charge-ready (no sim events yet), claw and bone attackers (creature damage types map through the same slash/blunt/pierce sides). Final assets arrive through the placeholder pack (e28.2) and the SFX asset groups.",
   "rules": [
     {
       "event": "DamageApplied",
+      "match": {},
       "layer": "impact",
       "cue": "sfx-impact-{target}",
       "variants": 4,
       "pitchJitter": 0.05,
       "volumeJitterDb": 1.5,
-      "volumeBy": { "fact": "total", "min": 0, "max": 40, "floorDb": -9 },
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
       "priority": 60
     },
     {
       "event": "DamageApplied",
-      "match": { "immune": true },
+      "match": {
+        "contact": "immune"
+      },
       "layer": "impact",
       "cue": "sfx-combat-glance",
       "pitchJitter": 0.05,
@@ -22,11 +30,377 @@
     },
     {
       "event": "DamageApplied",
-      "match": { "tags": "critical" },
+      "match": {
+        "contact": "blocked"
+      },
+      "layer": "impact",
+      "cue": "sfx-knight-block-shield-wood",
+      "pitchJitter": 0.04,
+      "volumeJitterDb": 1,
+      "priority": 85
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "slash"
+      },
+      "layer": "impact",
+      "cue": "sfx-blade-impact",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "blunt"
+      },
+      "layer": "impact",
+      "cue": "sfx-blunt-impact",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "pierce"
+      },
+      "layer": "impact",
+      "cue": "sfx-pierce-impact",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "slash",
+        "target": "flesh"
+      },
+      "layer": "impact",
+      "cue": "sfx-blade-impact-flesh",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "slash",
+        "target": "bone"
+      },
+      "layer": "impact",
+      "cue": "sfx-blade-impact-bone",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "slash",
+        "target": "metal"
+      },
+      "layer": "impact",
+      "cue": "sfx-blade-impact-metal",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "slash",
+        "target": "wood"
+      },
+      "layer": "impact",
+      "cue": "sfx-blade-impact-wood",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "slash",
+        "target": "stone"
+      },
+      "layer": "impact",
+      "cue": "sfx-blade-impact-stone",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "blunt",
+        "target": "flesh"
+      },
+      "layer": "impact",
+      "cue": "sfx-blunt-impact-flesh",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "blunt",
+        "target": "bone"
+      },
+      "layer": "impact",
+      "cue": "sfx-blunt-impact-bone",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "blunt",
+        "target": "metal"
+      },
+      "layer": "impact",
+      "cue": "sfx-blunt-impact-metal",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "blunt",
+        "target": "wood"
+      },
+      "layer": "impact",
+      "cue": "sfx-blunt-impact-wood",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "blunt",
+        "target": "stone"
+      },
+      "layer": "impact",
+      "cue": "sfx-blunt-impact-stone",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "pierce",
+        "target": "flesh"
+      },
+      "layer": "impact",
+      "cue": "sfx-arrow-impact-flesh",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "pierce",
+        "target": "metal"
+      },
+      "layer": "impact",
+      "cue": "sfx-arrow-impact-metal",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "pierce",
+        "target": "wood"
+      },
+      "layer": "impact",
+      "cue": "sfx-arrow-impact-wood",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "contact": "hit",
+        "damageType": "pierce",
+        "target": "stone"
+      },
+      "layer": "impact",
+      "cue": "sfx-arrow-impact-stone",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1.5,
+      "volumeBy": {
+        "fact": "total",
+        "min": 0,
+        "max": 40,
+        "floorDb": -9
+      },
+      "priority": 60
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "tags": "riposte"
+      },
+      "layer": "accent",
+      "cue": "sfx-knight-riposte",
+      "pitchJitter": 0.03,
+      "priority": 80
+    },
+    {
+      "event": "DamageApplied",
+      "match": {
+        "tags": "critical"
+      },
       "layer": "accent",
       "cue": "sfx-combat-critical",
       "pitchJitter": 0.03,
       "priority": 70
+    },
+    {
+      "event": "GuardBroken",
+      "cue": "sfx-knight-guard-break",
+      "pitchJitter": 0.03,
+      "priority": 92
+    },
+    {
+      "event": "DodgedHit",
+      "cue": "sfx-combat-whiff",
+      "pitchJitter": 0.06,
+      "volumeJitterDb": 1,
+      "priority": 50
+    },
+    {
+      "event": "ActionPhaseChanged",
+      "match": {
+        "phase": "active"
+      },
+      "cue": "{sound}",
+      "pitchJitter": 0.04,
+      "volumeJitterDb": 1,
+      "priority": 45
     },
     {
       "event": "PoiseBroken",
@@ -47,7 +421,9 @@
     },
     {
       "event": "ActionRejected",
-      "match": { "reason": "stamina" },
+      "match": {
+        "reason": "stamina"
+      },
       "cue": "sfx-combat-stamina-wheeze",
       "cooldownMs": 400,
       "priority": 55

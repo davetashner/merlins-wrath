@@ -413,6 +413,8 @@ function startRenderer(root: HTMLElement): void {
       registry: sounds,
       sheets: content.all('cue-sheet'),
       materials: content.all('material'),
+      // Swing whooshes play each move's own sound (mw-e28.4); footsteps read the ground's material.
+      moves: content.all('move'),
       now: () => performance.now(),
       onPlay: (cue) => {
         recentCues.push(cue);

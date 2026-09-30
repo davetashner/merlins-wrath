@@ -4,6 +4,7 @@
   "name": "Earth",
   "notes": "Soil, dirt, mud banks, dug graves and earthworks. Non-flammable and smothers fire. Density 1500 kg/m³ (loose soil). Absorbs sound and falls (0.4). Quieter than stone underfoot (−3 dB, audio bible §7.3: dirt below stone). Soft surface that arrows and rope arrows embed in (softAnchor). (mw-e03.31)",
   "footstepLoudness": -3,
+  "footstepSurface": "dirt",
   "impactSound": "sfx-impact-earth",
   "properties": {
     "density": 1500,

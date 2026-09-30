@@ -52,7 +52,7 @@
   },
   "presentation": {
     "anim": "anim-knight-sword-heavy",
-    "audioCue": "sfx-knight-swing-heavy",
+    "audioCue": "sfx-knight-sword-swing-heavy",
     "vfxCue": "vfx-sword-trail-heavy"
   }
 }

@@ -6,17 +6,23 @@
 
 import type { CueEventName } from '@content/index';
 import {
+  ActionPhaseChanged,
   ActionRejected,
   AttackEnded,
   AttackHit,
   AttackProjectileLaunched,
   AttackTelegraph,
+  DAMAGE_TAGS,
   DamageApplied,
+  DEFAULT_GAIT_TUNING,
   Died,
+  DodgedHit,
   factChanged,
   fireBurntOut,
   fireExtinguished,
   fireIgnited,
+  GuardBroken,
+  LocomotionEvents,
   physicsImpact,
   PoiseBroken,
   propertyChanged,
@@ -27,6 +33,7 @@ import {
   volumeEntered,
   volumeExited,
   type DamageAmounts,
+  type DamageResult,
   type EntityId,
   type EventType,
   type StimulusShape,
@@ -52,6 +59,14 @@ export interface CueLookups {
   readonly materialOf: (entity: EntityId) => string | undefined;
   /** Impact class of a material (its impactSound without `sfx-impact-`), e.g. iron → "metal". */
   readonly impactClassOf: (material: string) => string | undefined;
+  /** Shield id an entity holds (a blocker), e.g. "wood-shield". */
+  readonly shieldOf?: (entity: EntityId) => string | undefined;
+  /** A move's own presentation audio cue (`presentation.audioCue`), e.g. its swing whoosh. */
+  readonly moveSoundOf?: (move: string) => string | undefined;
+  /** Footstep surface under a character (audio bible §7.3), already resolved to one with a set. */
+  readonly surfaceUnder?: (entity: EntityId) => string | undefined;
+  /** Armour weight class of a character's armour layer, e.g. "plate". */
+  readonly armorOf?: (entity: EntityId) => string | undefined;
 }
 
 /** A cue event bound to the sim. */
@@ -128,6 +143,16 @@ function shapeAnchor(shape: StimulusShape): CueAnchor {
   }
 }
 
+/** How a hit met its target: a raised shield, only ignored damage types, or cleanly. */
+function contactOf(e: DamageResult): string {
+  if (e.tags.includes(DAMAGE_TAGS.blocked)) return 'blocked';
+  return e.immune ? 'immune' : 'hit';
+}
+
+/** Landings at or above the default hard-landing speed are heavy. */
+const landingWeight = (impactSpeed: number): string =>
+  impactSpeed >= DEFAULT_GAIT_TUNING.hardLanding ? 'heavy' : 'light';
+
 const entityOnly = (payload: { entity: EntityId }): CueReading => ({
   anchors: { entity: { entity: payload.entity } },
   facts: {},
@@ -147,6 +172,8 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
         ...materialFacts('target', e.target, look),
         ...materialFacts('weapon', hitter, look),
         damageType: dominantType(e.amounts),
+        contact: contactOf(e),
+        shield: e.tags.includes(DAMAGE_TAGS.blocked) ? look.shieldOf?.(e.target) : undefined,
         region: e.packet.region,
         tags: e.tags,
         immune: e.immune,
@@ -165,6 +192,34 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
     anchors: { target: { entity: e.target }, killer: at(e.killer), source: at(e.source) },
     facts: { ...materialFacts('target', e.target, look), tags: e.tags },
   })),
+  GuardBroken: bind(GuardBroken, (e, look) => ({
+    anchors: { entity: { entity: e.entity }, instigator: at(e.instigator), source: at(e.source) },
+    facts: { shield: look.shieldOf?.(e.entity) },
+  })),
+  DodgedHit: bind(DodgedHit, (e) => ({
+    anchors: { target: { entity: e.target }, attacker: { entity: e.attacker } },
+    facts: { hitbox: e.hitbox, region: e.region },
+  })),
+  ActionPhaseChanged: bind(ActionPhaseChanged, (e, look) => ({
+    anchors: { entity: { entity: e.entity } },
+    facts: { move: e.move, phase: e.phase, sound: look.moveSoundOf?.(e.move) },
+  })),
+  LocomotionEvents: bind(LocomotionEvents, (e, look) => {
+    const grounded = e.kind === 'footstep' || e.kind === 'land';
+    return {
+      anchors: { entity: { entity: e.entity } },
+      facts: {
+        kind: e.kind,
+        ...(e.kind === 'footstep' && { foot: e.foot, gait: e.gait }),
+        ...(e.kind === 'land' && {
+          impactSpeed: e.impactSpeed,
+          landing: landingWeight(e.impactSpeed),
+        }),
+        surface: grounded ? look.surfaceUnder?.(e.entity) : undefined,
+        armor: look.armorOf?.(e.entity),
+      },
+    };
+  }),
   AttackTelegraph: bind(AttackTelegraph, (e) => ({
     anchors: { attacker: { entity: e.attacker } },
     facts: { attack: e.attack, telegraph: e.cue },

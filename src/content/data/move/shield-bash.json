@@ -49,7 +49,7 @@
   },
   "presentation": {
     "anim": "anim-knight-shield-bash",
-    "audioCue": "sfx-knight-bash-wood",
+    "audioCue": "sfx-knight-shield-bash",
     "vfxCue": "vfx-impact-dust"
   }
 }

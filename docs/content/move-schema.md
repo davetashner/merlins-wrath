@@ -82,5 +82,5 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `motion.direction` | `"input"` \| `"backward"` | required | "input": the direction held when the move was requested, relative to the camera or lock-on target (facing when none); "backward": away from the facing. |
 | `presentation` | object | required | Presentation ids: unknown ids warn (assets may lag) but never fail validation. |
 | `presentation.anim` | string | required | Animation clip id (style bible §15.1), e.g. "anim-knight-sword-light-1". |
-| `presentation.audioCue` | string | — | Audio cue id (audio bible §6) of the move’s sound, e.g. "sfx-knight-swing-light". |
+| `presentation.audioCue` | string | — | Audio cue id (audio bible §6) of the move’s sound, e.g. "sfx-knight-sword-swing-light". |
 | `presentation.vfxCue` | string | — | VFX cue id (style bible §15.1), e.g. "vfx-sword-trail-light". |

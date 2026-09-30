@@ -17,6 +17,30 @@ import { worldPropertiesSchema, type Present } from '../world-properties.ts';
 /** Footstep loudness offset range, dB relative to stone (matches e09 surface acoustics). */
 export const FOOTSTEP_LOUDNESS_RANGE = { min: -20, max: 20 } as const;
 
+/**
+ * Footstep surface ids (audio bible §7.3; they must match the sim's acoustic surface table, e09). A
+ * material names the surface its footsteps sound like; footstep cue sheets play `sfx-foot-<surface>-…`.
+ */
+export const FOOTSTEP_SURFACES = [
+  'stone',
+  'wood',
+  'wood-hollow',
+  'dirt',
+  'grass',
+  'gravel',
+  'mud',
+  'water-shallow',
+  'snow-ice',
+  'metal-grate',
+  'straw',
+  'carpet',
+  'bone-litter',
+  'leaves',
+  'glass-shards',
+] as const;
+/** A footstep surface id. */
+export type FootstepSurface = (typeof FOOTSTEP_SURFACES)[number];
+
 /** Impact sound set ids: `sfx-impact-<material>` (audio bible §6, §7.2); variants picked at runtime. */
 export const IMPACT_SOUND_PATTERN = /^sfx-impact-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -131,6 +155,13 @@ export const materialSchema = z
       .min(FOOTSTEP_LOUDNESS_RANGE.min)
       .max(FOOTSTEP_LOUDNESS_RANGE.max)
       .describe('Footstep loudness offset relative to stone, dB.'),
+    footstepSurface: z
+      .enum(FOOTSTEP_SURFACES)
+      .optional()
+      .describe(
+        'Footstep surface (audio bible §7.3) walking on it sounds like, e.g. "wood"; absent = no ' +
+          'footstep set yet (footsteps fall back to stone and warn once in dev).',
+      ),
     impactSound: z
       .string()
       .regex(IMPACT_SOUND_PATTERN, 'must be an impact sound set id, e.g. "sfx-impact-wood"')

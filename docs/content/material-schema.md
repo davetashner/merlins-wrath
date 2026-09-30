@@ -11,6 +11,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `name` | string | required | Display name (editor and docs). |
 | `notes` | string | required | Why these values (sources, units, design intent), for owner review. |
 | `footstepLoudness` | number -20–20 | required | Footstep loudness offset relative to stone, dB. |
+| `footstepSurface` | `"stone"` \| `"wood"` \| `"wood-hollow"` \| `"dirt"` \| `"grass"` \| `"gravel"` \| `"mud"` \| `"water-shallow"` \| `"snow-ice"` \| `"metal-grate"` \| `"straw"` \| `"carpet"` \| `"bone-litter"` \| `"leaves"` \| `"glass-shards"` | — | Footstep surface (audio bible §7.3) walking on it sounds like, e.g. "wood"; absent = no footstep set yet (footsteps fall back to stone and warn once in dev). |
 | `impactSound` | string | required | Impact sound set id (audio bible §7.2), e.g. "sfx-impact-wood". |
 | `properties` | object | required | World-property defaults for objects of this material; omitted ones take the global default. |
 | `properties.temperature` | number -273.15–10000 | — | Current temperature, °C. |
