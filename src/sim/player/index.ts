@@ -1,9 +1,11 @@
-// The player in the sim (mw-e02.23): spawn, mouse-look yaw and pitch and ActionFrame → controller wiring.
+// The player in the sim (mw-e02.23): spawn, mouse-look yaw and pitch and ActionFrame → controller wiring;
+// with combat, the dodge (mw-e04.8) and the knight's sword and shield (mw-e04.6).
 export {
   clampPitch,
   DEFAULT_LOOK_SETTINGS,
   installPlayer,
   KNIGHT_DODGE,
+  KNIGHT_LIGHT_ATTACK,
   lookTurn,
   NoPlayerStartError,
   PLAYER_LOOK_SENSITIVITY,
@@ -11,6 +13,7 @@ export {
   PlayerLook,
   playerLookSystem,
   playerStart,
+  restrainMovement,
   spawnYaw,
   stickResponse,
   wrapYaw,
@@ -19,6 +22,7 @@ export {
   type LookSettings,
   type LookTurn,
   type PlayerCombatOptions,
+  type PlayerMeleeOptions,
   type PlayerOptions,
   type StickLookSettings,
 } from './player';

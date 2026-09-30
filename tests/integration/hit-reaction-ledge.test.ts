@@ -10,7 +10,6 @@ import { creatureSchema, HIT_REACTION_DEFAULTS, type CreatureDefInput } from '@c
 import {
   CharacterController,
   combatantFromCreature,
-  DAMAGE_COMPONENTS,
   DamageModel,
   DEFAULT_REACTION_PROFILE,
   giveActionTimeline,
@@ -18,7 +17,6 @@ import {
   giveHitReactions,
   HitReaction,
   HitReactionComponent,
-  HIT_VOLUME_COMPONENTS,
   installHitReactions,
   pushCharacter,
   reactionOf,
@@ -71,9 +69,9 @@ function must<T>(value: T | undefined): T {
 
 function shove() {
   const world = createTestbedWorld(RAPIER, { seed: 1, hz: 60 });
-  // The testbed's player already registers the action timeline and stamina components.
-  world.register(...DAMAGE_COMPONENTS);
-  world.register(HitReactionComponent, ...HIT_VOLUME_COMPONENTS);
+  // The testbed's player and combat (mw-e04.6) already register the action timeline, stamina,
+  // damage and hit-volume components.
+  world.register(HitReactionComponent);
   const damage = new DamageModel();
   installHitReactions(world, { moves: new Map(), damage, pushers: [pushCharacter] });
   const goblin: EntityId = spawnCharacter(world, {

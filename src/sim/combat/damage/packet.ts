@@ -40,6 +40,12 @@ export const DAMAGE_TAGS = Object.freeze({
   counter: 'counter',
   /** Falls, crushes and hazards (e04.19). */
   environment: 'environment',
+  /** Passes through shields: the move is unblockable (grabs, some slams). */
+  unblockable: 'unblockable',
+  /** Met a raised shield; added by the guard stage (e04.6). */
+  blocked: 'blocked',
+  /** A blocked hit that emptied the blocker's stamina and broke the guard (e04.6). */
+  guardBreak: 'guard-break',
 } as const);
 
 /** A hit as its source describes it; see `DamagePacket` for the fields. */

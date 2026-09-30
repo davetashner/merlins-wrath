@@ -284,6 +284,15 @@ export {
   type SocketTrackTable,
 } from './types/socket-track.ts';
 export {
+  KNIGHT_SHIELD_ID,
+  compileShield,
+  shieldSchema,
+  type RuntimeShield,
+  type ShieldDef,
+  type ShieldDefInput,
+  type ShieldEntry,
+} from './types/shield.ts';
+export {
   SPECIAL_SENSE_CHANNELS,
   SenseResolutionError,
   creatureSensesSchema,

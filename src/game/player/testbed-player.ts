@@ -19,6 +19,7 @@ import type { CameraTuning, ControllerTuning, Frozen, MoveTable } from '@content
 import {
   addInteractor,
   addSceneInteractables,
+  ActionTimelineComponent,
   CharacterController,
   installInteraction,
   installPlayer,
@@ -26,6 +27,8 @@ import {
   interactionPrompt,
   PlayerLook,
   type BodyId,
+  staminaOf,
+  type PlayerMeleeOptions,
   type CollisionWorld,
   type EntityId,
   type Interaction,
@@ -60,6 +63,18 @@ export interface PlayerReadout {
   readonly yaw: number;
   /** Look pitch, radians above the horizon. */
   readonly pitch: number;
+  /** Combat state, when the player has moves (mw-e04.6): the e2e reads the chain from it. */
+  readonly combat?: PlayerCombatReadout;
+}
+
+/** The player's combat state in a readout. */
+export interface PlayerCombatReadout {
+  /** The move in progress, or null when idle. */
+  readonly action: string | null;
+  /** Stamina now (rounded to 0.1 mm like positions: 1e-4). */
+  readonly stamina: number;
+  /** The shield is up. */
+  readonly blocking: boolean;
 }
 
 /** What the orbit camera publishes each frame it drives (the e2e clipping probe reads it). */
@@ -120,6 +135,11 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
   readonly moves?: MoveTable;
   /** Lets the player focus and interact with world objects (mw-e02.5). */
   readonly interaction?: TestbedInteractionOptions;
+  /**
+   * Sword and shield (mw-e04.6), with `moves`: the light chain and the block. The caller registers
+   * the hit-volume, damage and placement components and wires the strikes (see installPlayer).
+   */
+  readonly melee?: PlayerMeleeOptions;
 }
 
 export interface TestbedPlayer {
@@ -179,7 +199,12 @@ export function setupTestbedPlayer<TObject, TCommand>(
       ...(options.sensitivity !== undefined && { sensitivity: options.sensitivity }),
     },
     pitch: toRadians(cameraTuning.pitch.initial),
-    ...(options.moves !== undefined && { combat: { moves: options.moves } }),
+    ...(options.moves !== undefined && {
+      combat: {
+        moves: options.moves,
+        ...(options.melee !== undefined && { melee: options.melee }),
+      },
+    }),
   });
   const orbit = new OrbitCamera(cameraTuning, collision);
   const interaction = options.interaction;
@@ -198,6 +223,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
       });
     }
   }
+  const hasMoves = options.moves !== undefined;
 
   // Remember the interpolated transform render sync last applied: the camera follows exactly what
   // is drawn.
@@ -215,12 +241,22 @@ export function setupTestbedPlayer<TObject, TCommand>(
     const state = world.get(entity, CharacterController);
     const view = world.get(entity, PlayerLook);
     if (state === undefined || view === undefined) return undefined;
+    // Only a player with moves has a timeline (and the components are only registered then).
+    const timeline = hasMoves ? world.get(entity, ActionTimelineComponent) : undefined;
+    const pool = timeline === undefined ? undefined : staminaOf(world, entity);
     return {
       tick: world.tick,
       position: roundVec(state.position),
       grounded: state.grounded,
       yaw: round(view.yaw),
       pitch: round(view.pitch),
+      ...(timeline !== undefined && {
+        combat: {
+          action: timeline.current?.move ?? null,
+          stamina: round(pool?.current ?? 0),
+          blocking: pool?.blocking ?? false,
+        },
+      }),
     };
   };
 

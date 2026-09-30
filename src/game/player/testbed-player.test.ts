@@ -4,6 +4,9 @@ import { loadGameContent, PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@conten
 import {
   box,
   CharacterController,
+  DAMAGE_COMPONENTS,
+  HIT_VOLUME_COMPONENTS,
+  StaminaComponent,
   FakeCollisionWorld,
   hashWorld,
   interacted,
@@ -21,7 +24,8 @@ import {
   type Interaction,
 } from '@sim/index';
 import { ActionSampler } from '../input';
-import { createGameLoop, FakeFrames, type SceneBinding, type Transform } from '../loop';
+import { prepareTestbedCombat, startTestbedCombat } from '../combat';
+import { createGameLoop, FakeFrames, RenderSync, type SceneBinding, type Transform } from '../loop';
 import { readSceneTransform, SceneLoader } from '../scene';
 import { lookForward, toRadians } from '../camera';
 import {
@@ -134,6 +138,63 @@ function testbed(options: Extra | ((physics: RapierPhysics) => Extra) = {}) {
   };
   return { world, sync, sampler, player, capsule, camera, run, state, loop, frames, physics };
 }
+
+describe('testbed player with sword and shield (mw-e04.6)', () => {
+  it('publishes the move in progress, stamina and the raised shield', () => {
+    const combat = prepareTestbedCombat(content);
+    const physics = new RapierPhysics(RAPIER);
+    const world = registerSceneComponents(new World<ActionFrame>({ seed: 1, physics })).register(
+      ...HIT_VOLUME_COMPONENTS,
+      ...DAMAGE_COMPONENTS,
+      PlacementComponent,
+    );
+    const sync = new RenderSync(world);
+    const loader = new SceneLoader({
+      world,
+      sync,
+      colliders: physics,
+      content,
+      objects: { staticGeometry: () => ({}), spawn: () => ({}) },
+      binding: (object: Box) => binding(object, readSceneTransform),
+    });
+    const scene = loader.load('testbed');
+    const player = setupTestbedPlayer({
+      world,
+      scene,
+      sync,
+      tuning,
+      cameraTuning,
+      collision: new RapierCollisionWorld(physics),
+      object: {},
+      binding,
+      camera: fakeCamera(),
+      moves: combat.moves,
+      melee: combat.melee,
+    });
+    startTestbedCombat(world, combat, scene.layout.spawns);
+    const sampler = new ActionSampler();
+    const step = () => {
+      world.step(sampler.sampleCommands(world.tick));
+    };
+    step();
+    expect(player.readout()?.combat).toEqual({ action: null, stamina: 100, blocking: false });
+    sampler.down('Mouse2');
+    step();
+    expect(player.readout()?.combat?.blocking).toBe(true);
+    sampler.up('Mouse2');
+    sampler.down('Mouse0');
+    step();
+    expect(player.readout()?.combat).toEqual({
+      action: 'sword-light-1',
+      stamina: 88,
+      blocking: false,
+    });
+    // A player whose pool was taken away reads as empty and unguarded.
+    world.remove(player.entity, StaminaComponent);
+    step();
+    expect(player.readout()?.combat).toMatchObject({ stamina: 0, blocking: false });
+  });
+});
 
 describe('testbed player wiring (mw-e02.23)', () => {
   it('spawns the player at the testbed player-start, facing +z into the room', () => {

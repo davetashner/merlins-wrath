@@ -23,9 +23,12 @@
 // recovery ends starts on the tick it ends, and one made 12 ticks before is dropped.
 //
 // Chains. A request names a chain root (the knight's light attack binds `sword-light-1`). If the move
-// being cancelled, or the one that ended this very step, belongs to that root's chain, the request
-// continues the chain (its `chainNext`); past the chain's last hit it restarts at the root. Any other
-// move — a heavy after a light, a light after a roll — starts fresh.
+// being cancelled, or the chain hit that completed within the last `chainResetTicks` idle local ticks
+// (CHAIN_RESET_TICKS, 30, by default), belongs to that root's chain, the request continues the chain
+// (its `chainNext`); past the chain's last hit it restarts at the root. A hit that completed on world
+// tick E is continued by a request that starts on E … E + 29; from E + 30 the chain has reset and the
+// root starts again. An interrupt or any other move forgets the chain. Any other move — a heavy after
+// a light, a light after a roll — starts fresh.
 //
 // Input. Entities with an ActionInput are driven by the tick's ActionFrame: a press (not a hold) of a
 // bound button requests its move, in BUTTON_ACTIONS order, so of two presses on one tick the later
@@ -64,6 +67,9 @@ import {
 
 /** Local ticks a request waits for its move to become legal: 9 ticks, 150 ms at 60 Hz. */
 export const ACTION_BUFFER_TICKS = 9;
+
+/** Idle local ticks after a chain hit completes before the chain resets to its root (mw-e04.6). */
+export const CHAIN_RESET_TICKS = 30;
 
 /** Resolution of local time scales: a scale is rounded to a multiple of 1 / TIME_SCALE_STEPS. */
 export const TIME_SCALE_STEPS = 1000;
@@ -213,7 +219,7 @@ export function interruptAction(world: World<never>, entity: EntityId, lockTicks
   const timeline = timelineOf(world, entity);
   const { current } = timeline;
   if (current !== null) emitEnded(world, entity, current, current.tick, 'interrupted');
-  store(world, entity, { ...timeline, current: null, buffer: null, lockTicks });
+  store(world, entity, { ...timeline, current: null, buffer: null, lockTicks, chain: null });
   return current !== null;
 }
 
@@ -228,7 +234,7 @@ function inChain(moves: MoveTable, root: RuntimeMove, move: RuntimeMove): boolea
   return false;
 }
 
-/** The move a request for `requested` starts, given the move it follows (cancelled or just ended). */
+/** The move a request for `requested` starts, given the move it follows (cancelled or remembered). */
 function resolve(moves: MoveTable, requested: string, previous: RuntimeMove | null): RuntimeMove {
   const root = lookup(moves, requested);
   if (previous?.chainNext == null || !inChain(moves, root, previous)) return root;
@@ -247,12 +253,12 @@ function tryStart(
   world: World<never>,
   moves: MoveTable,
   entity: EntityId,
-  step: { current: RunningAction | null; locked: boolean; ended: RuntimeMove | null },
+  step: { current: RunningAction | null; locked: boolean; previous: RuntimeMove | null },
   requested: string,
 ): Attempt {
-  const { current, locked, ended } = step;
+  const { current, locked, previous } = step;
   const running = current === null ? null : { at: current.tick, move: lookup(moves, current.move) };
-  const resolved = resolve(moves, requested, running?.move ?? ended);
+  const resolved = resolve(moves, requested, running?.move ?? previous);
   const window = running && windowAt(running.move, running.at, resolved.verb);
   const legal = running === null ? !locked : window !== undefined;
   if (!legal) return 'wait';
@@ -284,16 +290,23 @@ function localStep(
   moves: MoveTable,
   entity: EntityId,
   timeline: ActionTimeline,
+  chainResetTicks: number,
 ): ActionTimeline {
   let { current, lockTicks, buffer } = timeline;
-  let ended: RuntimeMove | null = null;
+  // Saves and snapshots from before chain memory existed have no `chain`.
+  let chain = timeline.chain ?? null;
+  if (current === null && chain !== null) {
+    const idle = chain.idle + 1;
+    chain = idle >= chainResetTicks ? null : Object.freeze({ move: chain.move, idle });
+  }
   if (current !== null) {
     const move = lookup(moves, current.move);
     const tick = current.tick + 1;
     if (tick >= move.totalTicks) {
       emitEnded(world, entity, current, tick, 'completed');
       current = null;
-      ended = move;
+      // Only chain hits are remembered: nothing else can be continued.
+      chain = move.chainNext === null ? null : Object.freeze({ move: move.id, idle: 0 });
     } else {
       const phase = phaseAt(move, tick);
       if (phase !== phaseAt(move, current.tick)) {
@@ -311,10 +324,12 @@ function localStep(
   const locked = current === null && lockTicks > 0;
   if (locked) lockTicks--;
   if (buffer !== null) {
-    const attempt = tryStart(world, moves, entity, { current, locked, ended }, buffer.move);
+    const previous = chain === null ? null : lookup(moves, chain.move);
+    const attempt = tryStart(world, moves, entity, { current, locked, previous }, buffer.move);
     if (typeof attempt === 'object') {
       current = attempt;
       buffer = null;
+      chain = null;
     } else if (attempt === 'refused') {
       buffer = null;
     } else if (buffer.age >= ACTION_BUFFER_TICKS) {
@@ -329,12 +344,14 @@ function localStep(
       buffer = Object.freeze({ move: buffer.move, age: buffer.age + 1 });
     }
   }
-  return { ...timeline, current, lockTicks, buffer };
+  return { ...timeline, current, lockTicks, buffer, chain };
 }
 
 /** What the timeline needs: every move an entity may perform, by id (`compileMoves`). */
 export interface ActionTimelineOptions {
   readonly moves: MoveTable;
+  /** Idle local ticks before a chain resets to its root; defaults to CHAIN_RESET_TICKS (30). */
+  readonly chainResetTicks?: number;
 }
 
 /**
@@ -343,7 +360,12 @@ export interface ActionTimelineOptions {
  * (and StaminaComponent, if entities pay for moves) first.
  */
 export function actionTimelineSystem<TInput>(options: ActionTimelineOptions): System<TInput> {
-  const { moves } = options;
+  const { moves, chainResetTicks = CHAIN_RESET_TICKS } = options;
+  if (!(Number.isSafeInteger(chainResetTicks) && chainResetTicks >= 0)) {
+    throw new RangeError(
+      `chain reset must be a whole number of ticks ≥ 0, got ${String(chainResetTicks)}`,
+    );
+  }
   return {
     name: 'action-timeline',
     run: ({ world, inputs }) => {
@@ -367,7 +389,9 @@ export function actionTimelineSystem<TInput>(options: ActionTimelineOptions): Sy
               ? { ...timeline, scaleTicks: timeline.scaleTicks - 1 }
               : { ...timeline, timeScale: 1, scaleTicks: null };
         }
-        for (let i = 0; i < steps; i++) timeline = localStep(w, moves, entity, timeline);
+        for (let i = 0; i < steps; i++) {
+          timeline = localStep(w, moves, entity, timeline, chainResetTicks);
+        }
         store(w, entity, timeline);
       });
     },

@@ -18,7 +18,7 @@ describe('scene overlay text (mw-e00.21)', () => {
 
   it('tells the player how to take control (mw-e02.23)', () => {
     expect(PLAYER_CONTROLS_HINT).toBe(
-      'Click to play: WASD move, mouse look, wheel zoom, Space jump, Shift sprint, C crouch, R dodge, Esc release',
+      'Click to play: WASD move, mouse look, wheel zoom, Space jump, Shift sprint, C crouch, R dodge, Left click attack, Right click block, Esc release',
     );
   });
 
@@ -29,9 +29,11 @@ describe('scene overlay text (mw-e00.21)', () => {
       sprint: 'LS',
       crouch: 'D-pad Down',
       dodge: 'B',
+      attack: 'RT',
+      block: 'LT',
     };
     expect(playerControlsHint('gamepad', labels)).toBe(
-      'Controller: Left stick move, right stick look, A jump, LS sprint (toggle), D-pad Down crouch, B dodge',
+      'Controller: Left stick move, right stick look, A jump, LS sprint (toggle), D-pad Down crouch, B dodge, RT attack, LT block',
     );
     expect(playerControlsHint('keyboardMouse', { ...labels, move: 'ESDF' })).toMatch(
       /^Click to play: ESDF move, mouse look, wheel zoom, A jump/,

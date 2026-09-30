@@ -1,0 +1,16 @@
+{
+  "$schema": "../shield.schema.json",
+  "id": "wood-shield",
+  "name": "Wooden Shield",
+  "notes": "The knight's starting shield (mw-e04.6): absorbs 85% of physical damage (slash, pierce, blunt) and 30% of fire, stability 60. Blocks from 6 ticks (100 ms) after it is raised, across a frontal 120° arc, and the knight moves at half speed behind it.",
+  "absorption": {
+    "slash": 85,
+    "pierce": 85,
+    "blunt": 85,
+    "fire": 30
+  },
+  "stability": 60,
+  "raiseTicks": 6,
+  "arcDegrees": 120,
+  "moveSpeedScale": 0.5
+}

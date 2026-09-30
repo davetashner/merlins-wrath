@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique shield id, e.g. \"wood-shield\"."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Player-facing name."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the shield is for, and where its numbers come from."
+    },
+    "absorption": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "enum": [
+          "slash",
+          "pierce",
+          "blunt",
+          "fire",
+          "frost",
+          "shock",
+          "arcane",
+          "poison"
+        ]
+      },
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 100
+      },
+      "description": "Percentage of each damage type a blocked hit loses, 0–100; unlisted types pass through (0%). The rest of the hit (the unabsorbed remainder) still lands."
+    },
+    "stability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Stamina a block saves, 0–100: the blocker loses the hit’s staminaDamage × (1 − stability/100)."
+    },
+    "raiseTicks": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 60,
+      "description": "Sim ticks (60 Hz) the shield must be held up before it blocks (6 = 100 ms)."
+    },
+    "arcDegrees": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 360,
+      "description": "Width of the frontal arc the shield covers, degrees, centred on the facing."
+    },
+    "moveSpeedScale": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Movement speed while the shield is up, as a fraction of the run speed (0–1)."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "absorption",
+    "stability",
+    "raiseTicks",
+    "arcDegrees",
+    "moveSpeedScale"
+  ],
+  "additionalProperties": false
+}
