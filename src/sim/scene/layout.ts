@@ -11,6 +11,7 @@ import type { KitPurpose, KitShape, SceneYaw } from '@content/index';
 import type { RampRise } from '../character/greybox';
 import type { InteractableSpec } from '../interaction/affordance';
 import type { StaticColliderDesc } from '../physics/static-colliders';
+import type { WorldPropertyValues } from '../properties/spec';
 import type { Vec3 } from '../stimulus/shapes';
 
 /** A unit quaternion. */
@@ -39,6 +40,29 @@ export interface KitPieceSpec {
   readonly parts: readonly KitPartSpec[];
 }
 
+/** A horizontal side of a part: the face whose outward normal points along that axis. */
+export type LedgeSide = '+x' | '-x' | '+z' | '-z';
+
+/**
+ * Switches ledges of a placed piece off (`ledge: false`) or forces them on (`ledge: true`), for one
+ * part and side or for all of them (mw-e03.22). Sides are the piece's own (before yaw).
+ */
+export interface LedgeOverrideSpec {
+  readonly side?: LedgeSide | undefined;
+  /** Index of the part in the kit piece. */
+  readonly part?: number | undefined;
+  readonly ledge: boolean;
+}
+
+/**
+ * World properties a placement gives its piece over the level material (mw-e03.22): the data-file
+ * form, whose material is a reference.
+ */
+export type ScenePropertiesSpec = {
+  readonly [K in Exclude<keyof WorldPropertyValues, 'material'>]?:
+    WorldPropertyValues[K] | undefined;
+} & { readonly material?: { readonly id: string } | undefined };
+
 export interface ScenePlacementSpec {
   readonly piece: { readonly id: string };
   /** Grid cells. */
@@ -46,6 +70,10 @@ export interface ScenePlacementSpec {
   readonly yaw: SceneYaw;
   readonly scale: Triple;
   readonly purpose?: KitPurpose | undefined;
+  /** World properties of the piece over the level material (e.g. climbable ivy). */
+  readonly properties?: ScenePropertiesSpec | undefined;
+  /** Ledge overrides, applied in order. */
+  readonly ledges?: readonly LedgeOverrideSpec[] | undefined;
 }
 
 export interface SceneSpawnSpec {
@@ -101,6 +129,10 @@ export interface ScenePiecePlacement {
   readonly rotation: Quat;
   readonly min: Vec3;
   readonly max: Vec3;
+  /** The placement's world properties, when it sets any. */
+  readonly properties?: ScenePropertiesSpec;
+  /** The placement's ledge overrides, when it has any. */
+  readonly ledges?: readonly LedgeOverrideSpec[];
 }
 
 /** One spawn in world space. */
@@ -239,6 +271,8 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
         rotation: ROTATIONS[placement.yaw],
         min: own.map((p) => p.min).reduce(minOf),
         max: own.map((p) => p.max).reduce(maxOf),
+        ...(placement.properties !== undefined && { properties: placement.properties }),
+        ...(placement.ledges !== undefined && { ledges: placement.ledges }),
       }),
     );
   });

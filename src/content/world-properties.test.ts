@@ -134,7 +134,7 @@ describe('world properties data schema', () => {
       material: 'dry-wood',
       flammable: true,
       wetness: 0.2,
-      climbable: 2,
+      climbable: 'rough',
       lightEmitter: { intensity: 100, radius: 8 },
     };
     expect(issuesOf(properties)).toEqual([]);

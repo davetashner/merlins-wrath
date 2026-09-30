@@ -3,7 +3,9 @@
 //
 // - Level colliders: every placed kit piece with solid parts gets the level material's world
 //   properties (stone by default) and its colliders are bound to it, so an impact on a wall names
-//   the wall and "stone", and the colliders take stone's friction and bounciness.
+//   the wall and "stone", and the colliders take stone's friction and bounciness. A placement's own
+//   `properties` override the level material's (mw-e03.22: an ivy wall, a ladder, a wooden beam);
+//   a piece without solid parts gets only the properties its placement sets.
 // - Props: a spawn whose prop has a body becomes a dynamic body standing on the spawn point (the
 //   spawn is the middle of the body's base), turned by the spawn's yaw, with the prop's mass as its
 //   weight and its material's properties. From then on the sim moves it; the renderer draws it from
@@ -17,6 +19,7 @@
 // prop bodies and material presets in as plain lookups.
 
 import type { EntityId } from '../core/component';
+import { at } from '../geom/vec';
 import type { World } from '../core/world';
 import { addPhysicsObject, bindCollider } from '../physics/objects';
 import type { ColliderHandle } from '../physics/static-colliders';
@@ -27,7 +30,7 @@ import {
 } from '../properties/materials';
 import type { WorldPropertyInit } from '../properties/components';
 import type { Vec3 } from '../stimulus/shapes';
-import type { Quat } from './layout';
+import type { Quat, ScenePropertiesSpec } from './layout';
 import type { LoadedScene } from './loader';
 
 /** The material level geometry is made of unless the scene physics says otherwise. */
@@ -88,8 +91,13 @@ export function addScenePhysics<T>(
   const solids: EntityId[] = [];
   loaded.pieces.forEach((entity, placement) => {
     const colliders = owned.get(placement);
-    if (colliders === undefined) return;
-    addMaterialProperties(sim, entity, options.materials, { material: level });
+    const own = placementProperties(at(loaded.layout.pieces, placement).properties);
+    if (colliders === undefined) {
+      // A piece with no solid parts (a decal, a hanging vine) has only the properties it sets.
+      if (Object.keys(own).length > 0) addMaterialProperties(sim, entity, options.materials, own);
+      return;
+    }
+    addMaterialProperties(sim, entity, options.materials, { material: level, ...own });
     for (const collider of colliders) bindCollider(sim, entity, collider);
     solids.push(entity);
   });
@@ -101,6 +109,23 @@ export function addScenePhysics<T>(
     objects.push(entity);
   }
   return Object.freeze({ objects: Object.freeze(objects), solids: Object.freeze(solids) });
+}
+
+/**
+ * A placement's data-file properties as the sim takes them: the material reference becomes its id
+ * and absent fields are left out.
+ */
+export function placementProperties(
+  properties: ScenePropertiesSpec | undefined,
+): WorldPropertyInit {
+  if (properties === undefined) return {};
+  const { material, ...rest } = properties;
+  const init: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(rest)) {
+    if (value !== undefined) init[key] = value;
+  }
+  // The same keys and value types, the material as its id.
+  return material === undefined ? init : { ...init, material: material.id };
 }
 
 /**

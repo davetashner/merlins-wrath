@@ -15,7 +15,7 @@
     "soundDamping": 0.15,
     "impactAbsorb": 0.1,
     "opaque": true,
-    "climbable": 2,
+    "climbable": "rough",
     "surfaceHardness": "medium",
     "softAnchor": true
   },

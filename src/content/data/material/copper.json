@@ -12,7 +12,7 @@
     "friction": 0.4,
     "soundDamping": 0.02,
     "opaque": true,
-    "climbable": 3,
+    "climbable": "sheer",
     "surfaceHardness": "hard",
     "softAnchor": false
   }

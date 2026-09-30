@@ -1,0 +1,129 @@
+// Climbable surfaces (mw-e03.22). Whether a surface can be climbed comes only from world properties,
+// so every rule that changes those properties changes climbing with no special cases: ivy that burns
+// away takes its climb with it (its burnt state is `destroyed`), wood that burns out becomes charred
+// (climbable none), and anything frozen turns slippery. A rope arrow, a vines spell or a propped
+// ladder is just an entity with the `climbable` property.
+//
+// The grade is the `climbable` property; what each grade asks of the actor (a capability, from its
+// class or a tool) and how hard it is for nav agents is the rule table below. Queries read the
+// properties live on every call, so there is nothing to invalidate: a change made on one tick is
+// what the next tick's queries see (mw-e03.22 AC-3, AC-4). Climbing movement itself is mw-e02.13;
+// this module only says whether an actor may attach.
+
+import type { EntityId } from '../core/component';
+import type { World } from '../core/world';
+import { PhysicsColliderComponent, PhysicsObjectComponent } from '../physics/objects';
+import { readProperty } from '../properties/components';
+import type { ClimbGrade } from '../properties/spec';
+
+/** A grade an actor can climb (every grade but `none`). */
+export type ClimbableGrade = Exclude<ClimbGrade, 'none'>;
+
+/** What climbing a grade asks for. */
+export interface ClimbGradeRule {
+  /** Difficulty for nav agents' climb links (locomotion `maxGrade`): 1 easy … 3 needs a tool. */
+  readonly difficulty: 1 | 2 | 3;
+  /** Capability the actor needs to attach, or null when anyone can. */
+  readonly requires: string | null;
+}
+
+/** Capability that lets an actor climb rough stone and timber (the thief's). */
+export const CLIMB_ROUGH_CAPABILITY = 'climb.rough';
+/** Capability that lets an actor climb sheer faces (claws, tools: mw-e10). Nobody has it yet. */
+export const CLIMB_SHEER_CAPABILITY = 'climb.sheer';
+/** Capability that lets an actor climb a frozen, slippery surface (ice tools, future). */
+export const CLIMB_ICE_CAPABILITY = 'climb.ice';
+
+/**
+ * Per grade: nav difficulty and the capability needed. Ladders, ropes and ivy are for everyone;
+ * rough walls for climbers; sheer faces for nobody until climbing tools arrive.
+ */
+export const CLIMB_GRADE_RULES: Readonly<Record<ClimbableGrade, ClimbGradeRule>> = Object.freeze({
+  ladder: Object.freeze({ difficulty: 1, requires: null }),
+  rope: Object.freeze({ difficulty: 1, requires: null }),
+  ivy: Object.freeze({ difficulty: 1, requires: null }),
+  rough: Object.freeze({ difficulty: 2, requires: CLIMB_ROUGH_CAPABILITY }),
+  sheer: Object.freeze({ difficulty: 3, requires: CLIMB_SHEER_CAPABILITY }),
+});
+
+/**
+ * How a surface climbs right now: its grade, or `slippery` when it has a grade but is frozen.
+ * `none` for a surface without a grade or an entity that no longer exists.
+ */
+export type Climbability = ClimbGrade | 'slippery';
+
+/** How `entity` climbs right now (see Climbability). */
+export function climbabilityOf(world: World<never>, entity: EntityId): Climbability {
+  if (!world.isAlive(entity)) return 'none';
+  const grade = readProperty(world, entity, 'climbable');
+  if (grade === 'none') return grade;
+  return readProperty(world, entity, 'frozen') ? 'slippery' : grade;
+}
+
+/**
+ * The nav difficulty (1–3) of a surface's climbability, or 0 when nav agents cannot climb it
+ * (`none`; `slippery` counts as needing a tool, 3).
+ */
+export function climbDifficulty(climbability: Climbability): 0 | 1 | 2 | 3 {
+  if (climbability === 'none') return 0;
+  return climbability === 'slippery' ? 3 : CLIMB_GRADE_RULES[climbability].difficulty;
+}
+
+/** Why an actor may not attach to a surface. */
+export type ClimbRefusal =
+  /** The surface has no climbing grade (or is gone). */
+  | { readonly reason: 'not-climbable' }
+  /** It is frozen: only an actor with CLIMB_ICE_CAPABILITY holds on. */
+  | { readonly reason: 'slippery'; readonly capability: string }
+  /** The grade needs a capability the actor lacks. */
+  | { readonly reason: 'needs-capability'; readonly capability: string };
+
+/** Whether an actor may attach to a surface, and on which grade. */
+export type ClimbAttach =
+  | { readonly ok: true; readonly climbability: Exclude<Climbability, 'none'> }
+  | ({ readonly ok: false } & ClimbRefusal);
+
+/**
+ * Whether an actor with `capabilities` may start climbing `entity` right now (mw-e03.22 AC-4): the
+ * surface must have a grade, the actor must have the grade's capability, and a frozen surface also
+ * needs CLIMB_ICE_CAPABILITY.
+ */
+export function canAttachClimb(
+  world: World<never>,
+  entity: EntityId,
+  capabilities: readonly string[],
+): ClimbAttach {
+  const climbability = climbabilityOf(world, entity);
+  if (climbability === 'none') return { ok: false, reason: 'not-climbable' };
+  if (climbability === 'slippery') {
+    return capabilities.includes(CLIMB_ICE_CAPABILITY)
+      ? { ok: true, climbability }
+      : { ok: false, reason: 'slippery', capability: CLIMB_ICE_CAPABILITY };
+  }
+  const { requires } = CLIMB_GRADE_RULES[climbability];
+  if (requires !== null && !capabilities.includes(requires)) {
+    return { ok: false, reason: 'needs-capability', capability: requires };
+  }
+  return { ok: true, climbability };
+}
+
+/**
+ * The entity a collider or body handle belongs to (a collision query's `body`): a physics object
+ * whose body it is, or the entity it is bound to (`bindCollider`); undefined for unbound geometry.
+ */
+export function ownerOfCollider(world: World<never>, handle: number): EntityId | undefined {
+  let owner: EntityId | undefined;
+  world.query(PhysicsObjectComponent).forEach((entity, object) => {
+    if (owner === undefined && object.body === handle) owner = entity;
+  });
+  world.query(PhysicsColliderComponent).forEach((entity, { colliders }) => {
+    if (owner === undefined && colliders.includes(handle)) owner = entity;
+  });
+  return owner;
+}
+
+/** How the surface a collision query touched climbs (`none` for unbound geometry). */
+export function climbabilityOfCollider(world: World<never>, handle: number): Climbability {
+  const owner = ownerOfCollider(world, handle);
+  return owner === undefined ? 'none' : climbabilityOf(world, owner);
+}

@@ -59,7 +59,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `locomotion.modes.climb.speeds.sneak` | number > 0 | — | Sneak speed, m/s (investigate, stalk). |
 | `locomotion.modes.climb.speeds.walk` | number > 0 | — | Walk speed, m/s (patrol, idle); at least sneak. |
 | `locomotion.modes.climb.speeds.run` | number > 0 | — | Run speed, m/s (chase, combat, flee); at least walk. |
-| `locomotion.modes.climb.maxGrade` | integer 1–3 | — | Hardest `climbable` grade it climbs: 1 ladders and ivy, 2 rough walls, 3 sheer. |
+| `locomotion.modes.climb.maxGrade` | integer 1–3 | — | Hardest climb difficulty it climbs: 1 ladders, ropes and ivy, 2 rough walls, 3 sheer or frozen. |
 | `locomotion.modes.fly` | object or null | — | Kinematic flight at a height offset; also crosses gaps and water. Fields to override; null = cannot move this way. |
 | `locomotion.modes.fly.speeds` | object | — | Gait speeds to override, m/s. |
 | `locomotion.modes.fly.speeds.sneak` | number > 0 | — | Sneak speed, m/s (investigate, stalk). |
