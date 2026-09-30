@@ -18,6 +18,12 @@
 //    `training-dummy`, and the combat sandbox's dummies at spawns tagged `sandbox-dummy` /
 //    `sandbox-attacker`. With lock-on installed (by setupTestbedPlayer, before this), every dummy —
 //    the scene's and any the console spawns later — is a lock-on target (mw-e02.32).
+//    In a world with physics objects and stimuli (src/main.ts and the replay world, via
+//    installGamePhysics) the world is a weapon too (mw-e04.34): every character's placement follows
+//    its controller with its capsule as the sphere stimuli reach, force stimuli push characters
+//    through the impulse API, the player is pushable with its launch.mass, and the environmental
+//    damage rules (falls, wall strikes, crushing objects, burning hazards, from `environment-damage`
+//    content) resolve through the same damage model as every blow.
 //
 // The caller registers the hit-volume, damage and placement components (src/main.ts does at world
 // creation; installGamePhysics registers placement).
@@ -29,9 +35,14 @@ import {
   compileSandbox,
   compileShield,
   compileSocketTracks,
+  DEFAULT_ENVIRONMENT_DAMAGE_ID,
   HIT_STOP_ID,
   KNIGHT_SHIELD_ID,
+  PLAYER_CONTROLLER_ID,
   TRAINING_DUMMY_TARGETABLE_ID,
+  type ControllerTuning,
+  type EnvironmentDamageTuning,
+  type Frozen,
   type GameContent,
   type HitStopTable,
   type MoveTable,
@@ -51,10 +62,13 @@ import {
   hitVolumeSystem,
   hurtboxFacing,
   invulnerabilityRule,
+  installCharacterStimuli,
   installCombatSandbox,
+  installEnvironmentDamage,
   installHitReactions,
   installHitStop,
   installMeleeStrikes,
+  makePushable,
   MELEE_COMPONENTS,
   noAllies,
   PhysicsObjectComponent,
@@ -97,6 +111,10 @@ export interface TestbedCombat {
   readonly spawners: ReadonlyMap<string, Spawner>;
   /** Every dummy's lock-on profile (content `targetable` `training-dummy`, mw-e02.32). */
   readonly targetable: DummyLockProfile;
+  /** The characters' controller tuning (the player's): capsule and launch.mass (mw-e04.34). */
+  readonly character: Frozen<ControllerTuning>;
+  /** The environmental damage rules (mw-e04.34). */
+  readonly environment: Frozen<EnvironmentDamageTuning>;
 }
 
 /** Compiles the knight's combat from `content` (see the file header, step 1). */
@@ -119,6 +137,8 @@ export function prepareTestbedCombat(content: GameContent): TestbedCombat {
     sandbox,
     spawners: sandboxSpawners(sandbox),
     targetable,
+    character: content.get('controller', PLAYER_CONTROLLER_ID),
+    environment: content.get('environment-damage', DEFAULT_ENVIRONMENT_DAMAGE_ID),
   };
 }
 
@@ -172,6 +192,28 @@ function arm<TInput>(world: World<TInput>, combat: TestbedCombat, player: Entity
   giveHitReactions(w, player, DEFAULT_REACTION_PROFILE);
 }
 
+/**
+ * The world as a weapon (see the file header, step 2), when `world` has physics objects (and so
+ * stimuli, which installPhysicsObjects needs first); otherwise nothing (a bare combat world has
+ * nothing to push or fall on).
+ */
+function installWorldHarm<TInput>(
+  world: World<TInput>,
+  combat: TestbedCombat,
+  player: EntityId | undefined,
+): void {
+  if (!world.isRegistered(PhysicsObjectComponent)) return;
+  ensureRegistered(world, [CharacterController]);
+  const { character } = combat;
+  installCharacterStimuli(world, character);
+  installEnvironmentDamage(world, {
+    damage: combat.damage,
+    tuning: combat.environment,
+    capsule: character.capsule,
+  });
+  if (player !== undefined) makePushable(world, player, character);
+}
+
 /** What `startTestbedCombat` spawned. */
 export interface TestbedCombatants {
   /** The testbed's training dummies (spawns tagged `training-dummy`), in spawn order. */
@@ -209,6 +251,7 @@ export function startTestbedCombat<TInput>(
     facing: bodyFacing,
   });
   if (player !== undefined) arm(world, combat, player);
+  installWorldHarm(world, combat, player);
   return {
     dummies: trainingDummySpawns(spawns).map((spawn) =>
       spawnTrainingDummy(world, spawn, combat.targetable),

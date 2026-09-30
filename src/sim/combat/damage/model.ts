@@ -35,6 +35,7 @@ import {
 import { DamageApplied, Died, PoiseBroken, type DamageResult } from './events';
 import {
   createDamagePacket,
+  DAMAGE_TAGS,
   normalizeTags,
   totalDamage,
   type DamagePacket,
@@ -277,7 +278,12 @@ export class DamageModel {
       }
     }
     if (isPlayer(world, target)) {
-      hit = mapUnits(hit, (units) => scaleUnits(units, world.difficulty.damageTaken));
+      const { damageTaken, fallDamage } = world.difficulty;
+      hit = mapUnits(hit, (units) => scaleUnits(units, damageTaken));
+      // The environmental-damage assist (falls, crushes, hazards; mw-e04.34): 0 turns them off.
+      if (hit.tags.includes(DAMAGE_TAGS.environment)) {
+        hit = mapUnits(hit, (units) => scaleUnits(units, fallDamage));
+      }
     }
 
     const total = totalDamage(hit.amounts);

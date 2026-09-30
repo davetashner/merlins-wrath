@@ -21,9 +21,21 @@ import { ReplayRecorder } from '../replay/recorder';
 import { playReplay } from '../replay/player';
 import { hashWorld } from '../snapshot';
 import { DebugCheatsComponent, godModeModifier, hasCheat, NO_CHEATS } from './cheats';
+import { addProperties, registerWorldProperties } from '../properties/components';
+import { placeEntity } from '../stimulus/placement';
+import { STIMULUS_EDGE_FALLOFF } from '../stimulus/shapes';
 import {
+  impulseApplied,
+  installStimuli,
+  stimulusSystem,
+  type ImpulseApplied,
+} from '../stimulus/stimulus';
+import {
+  blastCommand,
   cheatCommand,
   DEBUG_COMMAND,
+  MAX_BLAST_INTENSITY,
+  MAX_BLAST_RADIUS,
   isDebugCommand,
   killCommand,
   MAX_SPAWN_COUNT,
@@ -335,5 +347,56 @@ describe('noclip on the player', () => {
       drive: () => [],
     });
     expect(outcome.status).toBe('passed');
+  });
+});
+
+describe('blast (mw-e04.34)', () => {
+  it('builds a JSON-safe command and rejects bad values at the call site', () => {
+    const blast = blastCommand({ x: -0, y: 1, z: 2 }, 4, 1500);
+    expect(blast).toEqual({
+      kind: DEBUG_COMMAND,
+      op: 'blast',
+      at: { x: 0, y: 1, z: 2 },
+      radius: 4,
+      intensity: 1500,
+    });
+    expect(Object.is(blast.at.x, 0)).toBe(true);
+    expect(isDebugCommand(blast)).toBe(true);
+    expect(() => blastCommand(ORIGIN, 0, 1)).toThrow(RangeError);
+    expect(() => blastCommand(ORIGIN, MAX_BLAST_RADIUS + 1, 1)).toThrow(/radius/);
+    expect(() => blastCommand(ORIGIN, 1, 0)).toThrow(/intensity/);
+    expect(() => blastCommand(ORIGIN, 1, MAX_BLAST_INTENSITY + 1)).toThrow(/intensity/);
+    expect(() => blastCommand(ORIGIN, Number.NaN, 1)).toThrow(RangeError);
+    expect(() => blastCommand({ x: Infinity, y: 0, z: 0 }, 1, 1)).toThrow(/finite/);
+  });
+
+  it('sets off a force stimulus that pushes what it reaches away from its centre', () => {
+    const world = installStimuli(registerWorldProperties(new World<unknown>({ seed: 3 })));
+    installDebugCommands(world, { spawners: new Map() });
+    world.addSystem(stimulusSystem());
+    const crate = world.spawn();
+    addProperties(world, crate, { pushable: true, weight: 10 });
+    placeEntity(world, crate, { x: 1, y: 0, z: 0 }, 0.5);
+    const pushes: ImpulseApplied[] = [];
+    world.events.on(impulseApplied, (push) => pushes.push(push));
+    world.step([blastCommand(ORIGIN, 3, 300)]);
+    expect(pushes).toHaveLength(1);
+    // 300 N·s at the centre, linear falloff: the crate's sphere is 0.5 m in, a sixth of the reach.
+    const share = 1 - (1 - STIMULUS_EDGE_FALLOFF) * (0.5 / 3);
+    expect(pushes[0]?.impulse.x).toBeCloseTo(300 * share);
+    expect(pushes[0]?.velocityChange.x).toBeCloseTo(30 * share);
+    expect(pushes[0]?.source).toBeNull();
+  });
+
+  it('is skipped in a world without stimuli', () => {
+    const world = debugWorld();
+    const before = hashWorld(world);
+    world.step([blastCommand(ORIGIN, 3, 300)]);
+    world.step([]);
+    const other = debugWorld();
+    other.step([]);
+    other.step([]);
+    expect(hashWorld(world)).toBe(hashWorld(other));
+    expect(before).not.toBe(hashWorld(world));
   });
 });

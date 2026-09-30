@@ -24,7 +24,13 @@ import { describe, expect, it } from 'vitest';
 import { FakeFrames } from '../loop/fake-frames';
 import { createFrameLoop } from '../loop/fixed-step';
 import { RenderSync } from '../loop/render-sync';
-import { DamageMeter, frameDataView, sandboxFrameData, type SandboxFrameData } from './frame-data';
+import {
+  DamageMeter,
+  environmentHarm,
+  frameDataView,
+  sandboxFrameData,
+  type SandboxFrameData,
+} from './frame-data';
 import {
   bindSandboxDummies,
   createSandboxHud,
@@ -100,6 +106,48 @@ describe('combat sandbox frame data (mw-e04.9)', () => {
       [`Dummy #${String(dummy?.entity)}`, '—', 'idle', ''],
     ]);
     expect(view.rows[1]).toMatchObject({ health: '1000/1000', poise: '40/40', dps: '' });
+  });
+
+  it('mw-e04.34: shows the latest harm the world dealt each fighter within the window', () => {
+    const { world, attacker } = sandbox();
+    const meter = new DamageMeter(w(world));
+    world.step([]);
+    const read = () => sandboxFrameData(w(world), { moves: combat.moves, meter }).fighters[0];
+    expect(read()?.environment).toBeNull();
+    combat.damage.apply(w(world), attacker, {
+      amounts: { blunt: 42 },
+      tags: ['environment', 'fall'],
+    });
+    world.step([]);
+    expect(read()?.environment).toEqual({ kind: 'fall', amount: 42, tick: 1 });
+    expect(
+      frameDataView({ ...sandboxFrameData(w(world), { moves: combat.moves, meter }) }).rows[0],
+    ).toMatchObject({ world: 'fall 42' });
+    // A blow is not the world's doing: the latest environmental harm stays.
+    combat.damage.apply(w(world), attacker, { amounts: { slash: 5 } });
+    world.step([]);
+    expect(read()?.environment?.kind).toBe('fall');
+    combat.damage.apply(w(world), attacker, {
+      amounts: { blunt: 12.5 },
+      tags: ['environment', 'fall', 'wall'],
+    });
+    world.step([]);
+    expect(
+      frameDataView(sandboxFrameData(w(world), { moves: combat.moves, meter })).rows[0],
+    ).toMatchObject({ world: 'wall 12.5' });
+    for (let i = 0; i < 300; i++) world.step([]);
+    expect(read()?.environment).toBeNull();
+    meter.dispose();
+    expect(sandboxFrameData(w(world), { moves: combat.moves }).fighters[0]?.environment).toBeNull();
+  });
+
+  it('mw-e04.34: names environmental harm from its tags', () => {
+    expect(environmentHarm(['fall'])).toBeUndefined();
+    expect(environmentHarm(['environment', 'fall'])).toBe('fall');
+    expect(environmentHarm(['environment', 'fall', 'wall'])).toBe('wall');
+    expect(environmentHarm(['crush', 'environment'])).toBe('crush');
+    expect(environmentHarm(['environment', 'hazard'])).toBe('hazard');
+    expect(environmentHarm(['environment'])).toBe('environment');
   });
 
   it('shows a reaction and its ticks left, a lock, hyperarmor, i-frames and damage per second', () => {

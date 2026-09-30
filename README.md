@@ -55,9 +55,12 @@ you every 2.0 s for block, parry and dodge practice. Click to take control (the 
 | `attacker --every 1 --parryable off --unblockable on`, `attacker off` | Retune every attacker's metronome |
 | `dummies --infinite off` | Mortal dummies (infinite ones refill 3 s after the last hit) |
 | `timescale 0.1`, `god`, `tp player-start` | The console's usual speed, cheat and teleport commands |
+| `blast [intensity 1500] [radius 4]` | Set off a force blast in front of you: it throws you (and props) back |
 
 The dummies and the knight's placeholder numbers are content: `src/content/data/sandbox/combat-sandbox.json`
-(all flagged placeholders to tune). `?frames` adds the overlay to any scene; the sandbox's sim seed is
+(all flagged placeholders to tune). The overlay's World column shows the latest harm the world dealt
+each fighter — a fall, a wall strike, a crushing object or a hazard — with falls priced by
+`src/content/data/environment-damage/default.json`. `?frames` adds the overlay to any scene; the sandbox's sim seed is
 fixed, so e2e tests and replays see the same arena every time.
 
 ## Layout

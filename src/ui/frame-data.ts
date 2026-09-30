@@ -1,10 +1,11 @@
 // The combat sandbox's frame-data overlay (mw-e04.9): one row per fighter — the knight, the attacker
 // dummies, the training dummies — showing the move it is performing, its phase and the tick within
 // the move, whether it is invulnerable (i-frames) or armored (hyperarmor) right now, the hit-stop
-// freezing it (mw-e04.11), the hit reaction holding it, its health and poise, and the damage per second it is taking. A header line
-// shows the world tick and the sim speed (slow motion). A HUD widget like the others: it shows a
-// view model the game derives from the sim after each tick (src/game/combat/frame-data.ts) and writes
-// the DOM only when a shown value changed.
+// freezing it (mw-e04.11), the hit reaction holding it, its health and poise, the damage per second
+// it is taking and the latest harm the world dealt it (a fall, a wall strike, a crushing object, a
+// hazard; mw-e04.34). A header line shows the world tick and the sim speed (slow motion). A HUD
+// widget like the others: it shows a view model the game derives from the sim after each tick
+// (src/game/combat/frame-data.ts) and writes the DOM only when a shown value changed.
 //
 // Readability over density: large monospace numbers, a coloured chip per phase (startup in the
 // hearth accent, active in ember, recovery muted), and i-frame / hyperarmor badges that light up only
@@ -37,6 +38,8 @@ export interface FrameDataRowModel {
   readonly poise: string;
   /** Damage per second taken ("34.5"), or ''. */
   readonly dps: string;
+  /** The latest harm the world dealt it, kind and damage ("fall 42"), or ''. */
+  readonly world: string;
 }
 
 /** What the overlay shows. */
@@ -57,6 +60,7 @@ const COLUMNS = [
   ['health', 'Health'],
   ['poise', 'Poise'],
   ['dps', 'DPS'],
+  ['world', 'World'],
 ] as const;
 
 type Column = (typeof COLUMNS)[number][0];
@@ -222,7 +226,17 @@ export class FrameDataPanel implements HudWidget<FrameDataModel> {
 
 function updateRow(view: RowView, row: FrameDataRowModel): void {
   const { cache: c, cells } = view;
-  const text = ['label', 'move', 'frame', 'hitStop', 'reaction', 'health', 'poise', 'dps'] as const;
+  const text = [
+    'label',
+    'move',
+    'frame',
+    'hitStop',
+    'reaction',
+    'health',
+    'poise',
+    'dps',
+    'world',
+  ] as const;
   for (const col of text) {
     c.set(col, row[col], (v) => {
       cells[col].textContent = v;

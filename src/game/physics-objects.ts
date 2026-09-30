@@ -3,14 +3,19 @@
 // only installs the layer, says where the player is (bodies near the player are never forced to
 // sleep) and reports `physicsBudgetExceeded`. Scene props become physics objects in the scene loader
 // (src/game/scene/scene-loader.ts), which also binds their render objects to the sim pose.
+//
+// The game world also accepts stimuli (mw-e04.34): the stimulus queue and its system, right after
+// the physics-object system, so a force stimulus pushes props and characters (src/game/combat wires
+// characters) before the player's controller steps.
 
 import type { GameContent } from '@content/index';
 import {
   CharacterController,
   installPhysicsObjects,
+  installStimuli,
   physicsBudgetExceeded,
-  PlacementComponent,
   registerWorldProperties,
+  stimulusSystem,
   type EntityId,
   type PhysicsBudgetExceeded,
   type PropBody,
@@ -27,14 +32,16 @@ export interface GamePhysicsOptions {
 }
 
 /**
- * Registers world properties and placements on `world`, whose physics must be a rigid-body port,
- * and installs physics objects. Call once at setup, before loading a scene.
+ * Registers world properties on `world`, whose physics must be a rigid-body port, installs stimuli
+ * (placements and the queue) and physics objects, and adds the stimulus system after the
+ * physics-object system. Call once at setup, before loading a scene.
  */
 export function installGamePhysics<T>(world: World<T>, options: GamePhysicsOptions = {}): World<T> {
   const sim = world as unknown as World<never>; // the physics layer never reads inputs
-  registerWorldProperties(sim).register(PlacementComponent);
+  installStimuli(registerWorldProperties(sim));
   const { focus, onBudgetExceeded } = options;
   installPhysicsObjects(sim, focus === undefined ? {} : { focus: () => focus() });
+  sim.addSystem(stimulusSystem());
   if (onBudgetExceeded !== undefined) sim.events.on(physicsBudgetExceeded, onBudgetExceeded);
   return world;
 }

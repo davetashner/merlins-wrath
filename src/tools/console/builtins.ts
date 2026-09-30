@@ -1,14 +1,17 @@
 // The debug console's built-in commands (mw-e33.1): help, spawn, give, god, noclip, kill, tp,
-// timescale, scene, set and seed. Everything that changes the sim goes out as a sim command through
+// timescale, scene, set and seed, and blast (mw-e04.34). Everything that changes the sim goes out as a sim command through
 // `host.submit` (applied next tick, recorded in replays); the host's other members only read the
 // sim or drive the page (time scale, scene reload), never sim state.
 
 import {
+  blastCommand,
   cheatCommand,
   DIFFICULTY_KEYS,
   DIFFICULTY_RANGES,
   difficultyCommand,
   killCommand,
+  MAX_BLAST_INTENSITY,
+  MAX_BLAST_RADIUS,
   MAX_SPAWN_COUNT,
   spawnCommand,
   teleportCommand,
@@ -71,6 +74,9 @@ function unknown(what: string, value: string, known: readonly string[]): Console
 }
 
 const onOff = z.enum(['on', 'off']).optional();
+
+/** A `blast` with no arguments: enough to launch the player standing next to it. */
+export const DEFAULT_BLAST = Object.freeze({ intensity: 1500, radius: 4 });
 
 /** `splitOptions` with its errors as console errors. */
 export function parsedOptions(tokens: readonly string[]): ReturnType<typeof splitOptions> {
@@ -205,6 +211,21 @@ export function registerBuiltins(registry: CommandRegistry<ConsoleHost>): void {
       }
       host.submit(teleportCommand(target, to));
       return `teleporting to ${String(to.x)} ${String(to.y)} ${String(to.z)}`;
+    },
+  });
+
+  registry.registerCommand({
+    name: 'blast',
+    summary: 'set off a force blast where spawn puts things (knocks back and launches)',
+    usage: `[intensity N·s, default ${String(DEFAULT_BLAST.intensity)}] [radius m, default ${String(DEFAULT_BLAST.radius)}]`,
+    args: z.tuple([
+      z.coerce.number<string>().positive().max(MAX_BLAST_INTENSITY).optional(),
+      z.coerce.number<string>().positive().max(MAX_BLAST_RADIUS).optional(),
+    ]),
+    run: ([intensity = DEFAULT_BLAST.intensity, radius = DEFAULT_BLAST.radius], host) => {
+      const at = host.spawnPoint();
+      host.submit(blastCommand(at, radius, intensity));
+      return `blast of ${String(intensity)} N·s, radius ${String(radius)} m at ${String(at.x)} ${String(at.y)} ${String(at.z)}`;
     },
   });
 

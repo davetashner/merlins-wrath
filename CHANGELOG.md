@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- The world can hurt you: falls from more than about 4 m cost health (a 14 m drop is fatal), being
+  thrown into a wall hurts the same way, and heavy objects falling on you crush. Blasts now throw the
+  knight back and up. In the testbed, `?frames` shows your health and the latest fall or blow the
+  world dealt you; with the debug console, `blast` sets one off in front of you.
 - You can lock on to the training dummy in the testbed room and to the combat sandbox's dummies
   (including ones the debug console spawns), and the knight's sword swings now turn toward the
   locked target as they wind up. Defeating the room dummy releases the lock.

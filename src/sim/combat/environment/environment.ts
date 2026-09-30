@@ -8,8 +8,8 @@
 //   share of max health from its equivalent drop height (speed² / 2g): none up to fall.safeHeight,
 //   rising linearly to all of it at fall.lethalHeight. The surface's impactAbsorb takes off its
 //   share (hay 0.8 → 80% less), and landing in liquid at least fall.deepWater deep costs nothing.
-//   Blunt damage; the instigator is whoever launched the character (null for a plain fall), the
-//   source the surface's entity.
+//   Blunt damage, tagged `fall` (and `wall` for a wall strike); the instigator is whoever launched
+//   the character (null for a plain fall), the source the surface's entity.
 // - Kinetic impacts: a physics object whose bounding sphere starts touching a creature's capsule at a
 //   relative speed above kinetic.minSpeed deals blunt ½·m·v² / kinetic.joulesPerPoint, with its
 //   momentum as the impulse (so hit reactions knock the creature about) and m·v per tick as the
@@ -57,6 +57,8 @@ import type { DamageAmounts, DamageType } from '../damage/types';
 export const ENVIRONMENT_TAGS = Object.freeze({
   /** A landing or a launched character striking a wall. */
   fall: 'fall',
+  /** With `fall`: the impact was a launched character striking a wall, not a landing. */
+  wall: 'wall',
   /** A physics object striking a creature. */
   crush: 'crush',
   /** A hazard volume (fire). */
@@ -163,7 +165,10 @@ export function resolveFall(
     instigator: impact.launch?.source ?? null,
     source: surface,
     direction: impact.normal,
-    tags: [DAMAGE_TAGS.environment, ENVIRONMENT_TAGS.fall],
+    tags:
+      impact.kind === 'wall'
+        ? [DAMAGE_TAGS.environment, ENVIRONMENT_TAGS.fall, ENVIRONMENT_TAGS.wall]
+        : [DAMAGE_TAGS.environment, ENVIRONMENT_TAGS.fall],
   });
   return blunt;
 }

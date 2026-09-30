@@ -64,7 +64,26 @@ export interface KillCommand {
   readonly target: EntityId;
 }
 
-export type DebugCommand = SpawnCommand | CheatCommand | TeleportCommand | KillCommand;
+/** Largest `blast` radius, metres. */
+export const MAX_BLAST_RADIUS = 20;
+/** Largest `blast` intensity, N·s. */
+export const MAX_BLAST_INTENSITY = 100_000;
+
+/**
+ * Sets off a force stimulus at `at` (mw-e04.34): a sphere of `radius` metres delivering `intensity`
+ * N·s at its centre, falling off linearly, with no source. Whatever it reaches — props, characters —
+ * is pushed away from its centre through the one stimulus API.
+ */
+export interface BlastCommand {
+  readonly kind: typeof DEBUG_COMMAND;
+  readonly op: 'blast';
+  readonly at: Vec3;
+  readonly radius: number;
+  readonly intensity: number;
+}
+
+export type DebugCommand =
+  SpawnCommand | CheatCommand | TeleportCommand | KillCommand | BlastCommand;
 
 /** A finite position with -0 folded to 0 (replays reject -0). */
 function position(what: string, v: Vec3): Vec3 {
@@ -132,6 +151,30 @@ export function teleportCommand(target: EntityId, to: Vec3): TeleportCommand {
 /** A kill. @throws RangeError for an invalid target. */
 export function killCommand(target: EntityId): KillCommand {
   return { kind: DEBUG_COMMAND, op: 'kill', target: entity(target) };
+}
+
+/**
+ * A blast. @throws RangeError for a non-finite position, a radius outside (0, MAX_BLAST_RADIUS] or
+ * an intensity outside (0, MAX_BLAST_INTENSITY].
+ */
+export function blastCommand(at: Vec3, radius: number, intensity: number): BlastCommand {
+  if (!(radius > 0 && radius <= MAX_BLAST_RADIUS)) {
+    throw new RangeError(
+      `blast radius must be above 0 and at most ${String(MAX_BLAST_RADIUS)}, got ${String(radius)}`,
+    );
+  }
+  if (!(intensity > 0 && intensity <= MAX_BLAST_INTENSITY)) {
+    throw new RangeError(
+      `blast intensity must be above 0 and at most ${String(MAX_BLAST_INTENSITY)}, got ${String(intensity)}`,
+    );
+  }
+  return {
+    kind: DEBUG_COMMAND,
+    op: 'blast',
+    at: position('blast position', at),
+    radius,
+    intensity,
+  };
 }
 
 /** True for a DebugCommand among arbitrary step inputs. */

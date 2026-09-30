@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { World } from '../core/world';
-import { PlacementComponent, placeEntity, placementOf, validatePlacement } from './placement';
+import {
+  boundingSphereOf,
+  PlacementCentreComponent,
+  PlacementComponent,
+  placeEntity,
+  placementOf,
+  setPlacementCentre,
+  validatePlacement,
+} from './placement';
 
-const world = () => new World<string>({ seed: 1 }).register(PlacementComponent);
+const world = () =>
+  new World<string>({ seed: 1 }).register(PlacementComponent, PlacementCentreComponent);
 
 describe('placement', () => {
   it('validates untyped placements', () => {
@@ -40,5 +49,42 @@ describe('placement', () => {
     expect(() => {
       copy.restore(bad as never);
     }).toThrow(/placement.y/);
+  });
+});
+
+describe('placement centre (mw-e04.34)', () => {
+  it('moves the sphere stimuli reach off a frame-origin placement, validated and frozen', () => {
+    const w = world();
+    const feet = { x: 1, y: 2, z: 3, radius: 0.35 };
+    const id = w.spawn();
+    expect(boundingSphereOf(w, id, feet)).toBe(feet);
+    setPlacementCentre(w, id, { x: 0, y: 0.9, z: 0 }, 0.9);
+    expect(boundingSphereOf(w, id, feet)).toEqual({ x: 1, y: 2.9, z: 3, radius: 0.9 });
+    setPlacementCentre(w, id, { x: 0, y: 0.5, z: 0 }, 0.5);
+    expect(w.get(id, PlacementCentreComponent)).toEqual({
+      offset: { x: 0, y: 0.5, z: 0 },
+      radius: 0.5,
+    });
+    expect(Object.isFrozen(w.get(id, PlacementCentreComponent)?.offset)).toBe(true);
+    expect(() => {
+      setPlacementCentre(w, id, { x: 0, y: Number.NaN, z: 0 }, 1);
+    }).toThrow(/centre.y/);
+    expect(() => {
+      setPlacementCentre(w, id, { x: 0, y: 0, z: 0 }, -1);
+    }).toThrow(/radius must be ≥ 0/);
+  });
+
+  it('round-trips through a snapshot and rejects invalid saved data', () => {
+    const w = world();
+    setPlacementCentre(w, w.spawn(), { x: 0, y: 0.9, z: 0 }, 0.9);
+    const copy = world();
+    copy.restore(w.snapshot());
+    expect(copy.snapshot()).toEqual(w.snapshot());
+    for (const value of [null, { radius: 1 }, { offset: { x: 1, y: 1, z: 1 } }]) {
+      const bad = { ...w.snapshot(), components: { 'spatial.centre': [[1, value]] } };
+      expect(() => {
+        copy.restore(bad as never);
+      }).toThrow(/centre\./);
+    }
   });
 });

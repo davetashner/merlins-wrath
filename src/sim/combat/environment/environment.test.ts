@@ -66,7 +66,7 @@ const TUNING: Frozen<ControllerTuning> = {
   jumpBufferMs: 150,
   stepHeight: 0.35,
   slopeLimit: 45,
-  launch: { airControl: 0.1, recoveryMs: 250 },
+  launch: { airControl: 0.1, recoveryMs: 250, mass: 90 },
 };
 
 /** Real-world gravity, which mw-e02.15's speeds (safe 8, lethal 20 m/s) were sketched at. */
@@ -262,6 +262,7 @@ describe('fall damage (mw-e04.19, mw-e02.15)', () => {
     expect(wall?.speed).toBeCloseTo(12, 3);
     const hit = s.hits.find((h) => h.packet.direction?.x === -1);
     expect(hit?.packet.instigator).toBe(troll);
+    expect(hit?.tags).toEqual(['environment', 'fall', 'wall']);
     expect(hit?.total).toBeCloseTo(
       100 * fallDamageFraction((12 * 12) / (2 * EARTH), RULES.fall),
       1,

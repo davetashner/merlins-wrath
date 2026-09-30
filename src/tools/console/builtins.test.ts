@@ -7,6 +7,7 @@ import {
   difficultyCommand,
   hashWorld,
   installDebugCommands,
+  blastCommand,
   killCommand,
   PlayerLook,
   registerSceneComponents,
@@ -20,7 +21,7 @@ import {
   type EntityId,
 } from '@sim/index';
 import { describe, expect, it, vi } from 'vitest';
-import { registerBuiltins, type ConsoleHost } from './builtins';
+import { DEFAULT_BLAST, registerBuiltins, type ConsoleHost } from './builtins';
 import { createGameHost } from './host';
 import { CommandRegistry } from './registry';
 
@@ -247,6 +248,21 @@ describe('built-in console commands', () => {
     expect(s.registry.execute('tp 1 Infinity 3').ok).toBe(false);
   });
 
+  it('mw-e04.34: blast sets off a force blast where spawn puts things, with defaults and bounds', () => {
+    const s = session({ withPlayer: true });
+    // The player's feet are at (1, 0, 1), looking along −z: two metres ahead is (1, 0, −1).
+    expect(s.registry.execute('blast').lines).toEqual([
+      `blast of ${String(DEFAULT_BLAST.intensity)} N·s, radius ${String(DEFAULT_BLAST.radius)} m at 1 0 -1`,
+    ]);
+    expect(s.registry.execute('blast 900 2.5').ok).toBe(true);
+    expect(s.queue.drain()).toEqual([
+      blastCommand({ x: 1, y: 0, z: -1 }, DEFAULT_BLAST.radius, DEFAULT_BLAST.intensity),
+      blastCommand({ x: 1, y: 0, z: -1 }, 2.5, 900),
+    ]);
+    expect(s.registry.execute('blast 0').ok).toBe(false);
+    expect(s.registry.execute('blast 100 99').ok).toBe(false);
+  });
+
   it('timescale shows and sets the loop speed within range', () => {
     const s = session();
     expect(s.registry.execute('timescale').lines).toEqual(['timescale 1']);
@@ -282,6 +298,7 @@ describe('built-in console commands', () => {
     expect(s.registry.execute('seed 1').ok).toBe(false);
     const help = s.registry.execute('help').lines;
     expect(help.map((line) => line.split(' ')[0])).toEqual([
+      'blast',
       'give',
       'god',
       'help',

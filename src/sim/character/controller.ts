@@ -209,12 +209,14 @@ export interface MovementState {
 
 /**
  * The defaults when a controller profile has no `launch` block: a self-cast push keeps 10% air
- * control, and a staggering launch's landing locks input for 250 ms. The shipped player profile
- * states its own (src/content/data/controller).
+ * control, a staggering launch's landing locks input for 250 ms, and the character weighs 90 kg (an
+ * armoured humanoid) for force stimuli. The shipped player profile states its own
+ * (src/content/data/controller).
  */
 export const DEFAULT_LAUNCH_TUNING: Frozen<LaunchTuning> = Object.freeze({
   airControl: 0.1,
   recoveryMs: 250,
+  mass: 90,
 });
 
 /** Values derived once from tuning and the tick rate. */
