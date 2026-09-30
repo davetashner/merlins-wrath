@@ -522,6 +522,18 @@ are better or cheaper (footsteps, UI, doors); same approval gate.
 Gameplay is never blocked by final audio. Placeholders come from CC0 packs (Kenney etc.) and follow the same
 naming, so integration is a file swap.
 
+The initial placeholder pack (mw-e28.2) is synthesised, not downloaded: `pnpm audio:placeholders`
+(`scripts/audio/gen-placeholders.ts`) renders filtered noise, tones and clicks into mono 16 kHz WAVs under
+the final asset ids in `public/assets/audio/<category>/`, and writes their entries, flagged
+`placeholder: true`, into the sound manifest `src/audio/data/sound-manifest.json`. The engine serves
+placeholder assets as `.wav` and everything else in the §5.2 formats, so integrating a final sound is:
+add its `.ogg`/`.m4a`, flip its entry to `placeholder: false` (the generator then leaves the id alone
+and removes the old WAVs), and record credits and approval. `pnpm audio:placeholder-report` lists what
+is still a placeholder; the `--check` mode (run by the unit tests) fails when a cue sheet can play an
+id the manifest lacks, a placeholder has no `CREDITS.md` row, or the pack exceeds 2 MB. Being original
+procedural output, the pack needs no owner approval; any CC0 placeholder clip would need its own
+`CREDITS.md` row.
+
 ### 9.4 SFX tool recommendation (input to `e38-sfx-tool-decision`)
 
 **ElevenLabs Sound Effects API as the primary source, CC0 libraries as fallback.**

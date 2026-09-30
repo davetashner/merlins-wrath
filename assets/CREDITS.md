@@ -65,7 +65,7 @@ non-commercial use are **placeholders only** and must be flagged `placeholder: y
 
 | Asset id | Type | Source | Tier | Date | Licence | Terms / URL | Author / attribution | Prompt file | Placeholder |
 |---|---|---|---|---|---|---|---|---|---|
-| _(none yet)_ | | | | | | | | | |
+| `sfx-*` — the synthesised placeholder pack: every `.wav` under `public/assets/audio/` (entries flagged `placeholder: true` in `src/audio/data/sound-manifest.json`) | sfx | original (procedural synthesis: `scripts/audio/gen-placeholders.ts`, mw-e28.2; no recordings, clips or generation APIs) | n/a | 2026-09-29 | ORIGINAL | n/a | The Vesper Bell project | n/a | yes |
 
 ## Fonts
 

@@ -108,14 +108,41 @@ export function assetCategory(assetId: string): string {
   return assetId.slice(0, assetId.indexOf('-'));
 }
 
+/**
+ * File format of the synthesised placeholder pack (mw-e28.2): 16-bit PCM WAV, which every browser
+ * decodes, so placeholders need no encoder. Final assets use the §5.2 formats.
+ */
+export const PLACEHOLDER_FORMAT = 'wav';
+
 /** Runtime URL of an asset file: `<base>/<category>/<asset-id>.<ext>` (audio bible §6). */
-export function assetUrl(base: string, assetId: string, ext: AudioFormat | 'json'): string {
+export function assetUrl(
+  base: string,
+  assetId: string,
+  ext: AudioFormat | typeof PLACEHOLDER_FORMAT | 'json',
+): string {
   return `${base}/${assetCategory(assetId)}/${assetId}.${ext}`;
+}
+
+/**
+ * URL resolution for a registry's assets under `base`: placeholder assets are the pack's WAVs,
+ * everything else the session's format (loop sidecars are JSON either way).
+ */
+export function registryAssetUrl(
+  registry: Pick<SoundRegistry, 'isPlaceholderAsset'>,
+  base: string,
+): (assetId: string, ext: AudioFormat | 'json') => string {
+  return (assetId, ext) =>
+    assetUrl(
+      base,
+      assetId,
+      ext !== 'json' && registry.isPlaceholderAsset(assetId) ? PLACEHOLDER_FORMAT : ext,
+    );
 }
 
 /** Id → definition lookup built from one or more validated manifests. */
 export class SoundRegistry {
   readonly #defs = new Map<string, SoundDef>();
+  readonly #placeholderAssets = new Set<string>();
 
   /** Validates and adds entries; throws a ZodError on bad data or an id already registered. */
   register(manifest: readonly SoundDefInput[]): this {
@@ -123,8 +150,16 @@ export class SoundRegistry {
     for (const def of defs) {
       if (this.#defs.has(def.id)) throw new Error(`sound id "${def.id}" is already registered`);
     }
-    for (const def of defs) this.#defs.set(def.id, def);
+    for (const def of defs) {
+      this.#defs.set(def.id, def);
+      if (def.placeholder) for (const asset of def.variants) this.#placeholderAssets.add(asset);
+    }
     return this;
+  }
+
+  /** Whether an asset id is a variant of a placeholder entry (served from the placeholder pack). */
+  isPlaceholderAsset(assetId: string): boolean {
+    return this.#placeholderAssets.has(assetId);
   }
 
   get(id: string): SoundDef | undefined {

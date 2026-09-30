@@ -12,6 +12,13 @@ export {
   type CuePlayer,
 } from './audio-bridge.ts';
 export {
+  attachGameAudio,
+  soundPositions,
+  type EntityTransformReader,
+  type GameAudioEngine,
+  type GameAudioOptions,
+} from './game-audio.ts';
+export {
   CUE_EVENT_BINDINGS,
   type CueAnchor,
   type CueEventBinding,

@@ -6,6 +6,8 @@ import {
   DEFAULT_LISTENER,
   distance,
   inverseDistanceGain,
+  listenerPose,
+  rotate,
   setPannerPosition,
 } from './spatial.ts';
 
@@ -75,5 +77,30 @@ describe('positional audio parameters', () => {
       applyListener(listener, DEFAULT_LISTENER);
       expect(listener.calls.map((c) => c.method)).toEqual(['setPosition']);
     }
+  });
+});
+
+describe('listener pose from a camera (mw-e28.2)', () => {
+  const close = (v: { x: number; y: number; z: number }, x: number, y: number, z: number) => {
+    expect(v.x).toBeCloseTo(x, 9);
+    expect(v.y).toBeCloseTo(y, 9);
+    expect(v.z).toBeCloseTo(z, 9);
+  };
+
+  it('an unrotated camera looks down -z with +y up, at its position', () => {
+    const pose = listenerPose({ x: 1, y: 2, z: 3 }, { x: 0, y: 0, z: 0, w: 1 });
+    expect(pose.position).toEqual({ x: 1, y: 2, z: 3 });
+    close(pose.forward, 0, 0, -1);
+    close(pose.up, 0, 1, 0);
+  });
+
+  it('a camera yawed 90° left looks down -x; pitched 90° down looks down -y', () => {
+    const s = Math.SQRT1_2;
+    const yaw = listenerPose({ x: 0, y: 0, z: 0 }, { x: 0, y: s, z: 0, w: s });
+    close(yaw.forward, -1, 0, 0);
+    close(yaw.up, 0, 1, 0);
+    const pitch = { x: -s, y: 0, z: 0, w: s };
+    close(rotate({ x: 0, y: 0, z: -1 }, pitch), 0, -1, 0);
+    close(rotate({ x: 0, y: 1, z: 0 }, pitch), 0, 0, -1);
   });
 });

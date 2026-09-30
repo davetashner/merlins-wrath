@@ -75,6 +75,18 @@ describe('browser wiring', () => {
     expect(handle?.state).toBe('playing');
   });
 
+  it('fetches placeholder assets as WAVs from the placeholder pack (mw-e28.2)', async () => {
+    const { urls } = stubBrowser('probably');
+    const engine = createBrowserAudioEngine({
+      registry: new SoundRegistry().register([
+        { id: 'sfx-ui-hover', variants: ['sfx-ui-hover-01'], bus: 'ui', placeholder: true },
+      ]),
+    });
+    engine.preload(['sfx-ui-hover']);
+    await settle();
+    expect(urls).toEqual([`${AUDIO_BASE_URL}/sfx/sfx-ui-hover-01.wav`]);
+  });
+
   it('accepts a custom URL resolver (testbeds with generated audio)', async () => {
     const { urls } = stubBrowser('probably');
     const engine = createBrowserAudioEngine({

@@ -1,4 +1,10 @@
 import {
+  createBrowserAudioEngine,
+  gameSoundRegistry,
+  installGestureUnlock,
+  listenerPose,
+} from '@audio/index';
+import {
   loadGameContent,
   materialPresets,
   PLAYER_CAMERA_ID,
@@ -16,6 +22,7 @@ import {
   TRAINING_DUMMY,
   type SandboxHud,
 } from '@game/combat/index';
+import { attachGameAudio, soundPositions } from '@game/cues/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
 import { debugConsoleEnabled } from '@game/debug-console-gate';
@@ -375,6 +382,42 @@ function startRenderer(root: HTMLElement): void {
         readPhysicsObjectTransform(world, entity) ?? readSceneTransform(world, entity),
     });
     const vfxView = createVfxRenderer(view.scene);
+
+    // Audio (mw-e28.2): the cue sheets turn sim events (hits, stagger, deaths, physics impacts) into
+    // sounds from the sound manifest — the synthesised placeholder pack until final SFX land. The
+    // context starts on the first click or key press (autoplay policy); until then nothing plays.
+    // Positional sounds follow their entity; the listener follows the camera each frame. The e2e
+    // reads the context state and the latest cues from #app[data-audio].
+    const sounds = gameSoundRegistry();
+    const audio = createBrowserAudioEngine({
+      registry: sounds,
+      dev: import.meta.env.DEV,
+      entityPosition: soundPositions(world, [
+        readPhysicsObjectTransform,
+        readDummyTransform, // any placed entity: the dummies and the player
+        readSceneTransform,
+      ]),
+    });
+    installGestureUnlock(document, audio);
+    const recentCues: string[] = [];
+    attachGameAudio({
+      world,
+      engine: audio,
+      registry: sounds,
+      sheets: content.all('cue-sheet'),
+      materials: content.all('material'),
+      now: () => performance.now(),
+      onPlay: (cue) => {
+        recentCues.push(cue);
+        if (recentCues.length > 10) recentCues.shift();
+      },
+    });
+    let publishedAudio = '';
+    const publishAudio = (): void => {
+      const { state, voices } = audio.stats();
+      const json = JSON.stringify({ state, voices, cues: recentCues });
+      if (json !== publishedAudio) root.dataset['audio'] = publishedAudio = json;
+    };
     const vfxMode = parseVfxParam(location.search);
     let vfxDemo: VfxDemo | undefined;
     let vfxStats: HTMLElement | undefined;
@@ -441,6 +484,8 @@ function startRenderer(root: HTMLElement): void {
         vfx.update(elapsedMs / 1000, camera.position);
         vfxView.draw(vfx.batches, vfx.markers);
         showVfxStats(elapsedMs);
+        audio.update(listenerPose(camera.position, camera.quaternion));
+        publishAudio();
         view.renderFrame(timeMs);
       },
     });

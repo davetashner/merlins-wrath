@@ -3,7 +3,7 @@
 // tested with stubbed globals and exercised for real by e2e/audio.spec.ts in Chromium, Firefox and
 // WebKit.
 import { AudioEngine, type AudioEngineOptions } from './engine.ts';
-import { assetUrl, pickFormat, type AudioFormat } from './manifest.ts';
+import { pickFormat, registryAssetUrl, type AudioFormat } from './manifest.ts';
 
 /** Where runtime audio lives (audio bible §6: `public/assets/audio/<category>/<asset-id>.<ext>`). */
 export const AUDIO_BASE_URL = '/assets/audio';
@@ -15,7 +15,10 @@ export type BrowserAudioOptions = Pick<
   AudioEngineOptions,
   'registry' | 'entityPosition' | 'quality' | 'dev' | 'warn' | 'cacheBytes'
 > & {
-  /** Override URL resolution (testbeds serving generated audio); default is the §6 layout. */
+  /**
+   * Override URL resolution (testbeds serving generated audio); default is the §6 layout, with
+   * placeholder assets served as the pack's WAVs.
+   */
   readonly resolveUrl?: AudioEngineOptions['resolveUrl'];
 };
 
@@ -39,7 +42,7 @@ export function createBrowserAudioEngine(options: BrowserAudioOptions): AudioEng
     ...options,
     createContext: () => new AudioContext({ latencyHint: 'interactive' }),
     fetchBytes,
-    resolveUrl: options.resolveUrl ?? ((id, ext) => assetUrl(AUDIO_BASE_URL, id, ext)),
+    resolveUrl: options.resolveUrl ?? registryAssetUrl(options.registry, AUDIO_BASE_URL),
     format,
     now: () => performance.now(),
   });
