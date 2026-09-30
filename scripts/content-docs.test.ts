@@ -181,6 +181,76 @@ describe('fieldRows / renderDoc', () => {
     expect(doc).toContain('| `list[].a` | number | required | multi line |');
     expect(doc.endsWith('|\n')).toBe(true);
   });
+
+  it('names $ref fields by their definition and documents each $defs entry by option (mw-e27.5)', () => {
+    const recursive: JsonSchemaNode = {
+      type: 'object',
+      properties: { when: { $ref: '#/$defs/node', description: 'Root.' } },
+      required: ['when'],
+      $defs: {
+        node: {
+          description: 'A node.',
+          anyOf: [
+            {
+              type: 'object',
+              description: 'A leaf.',
+              properties: { leaf: { type: 'string' } },
+            },
+            {
+              type: 'object',
+              properties: { kids: { type: 'array', items: { $ref: '#/$defs/node' } } },
+            },
+          ],
+        },
+        tagged: {
+          oneOf: [{ type: 'object', properties: { tag: { const: 'x' } } }],
+        },
+        plain: { type: 'object', properties: { n: { type: 'integer' } } },
+      },
+    };
+    expect(renderDoc('thing', recursive).split('\n').slice(9)).toEqual([
+      '| `when` | `node` | required | Root. |',
+      '',
+      '## `node`',
+      '',
+      'A node.',
+      '',
+      'A `node` is exactly one of these objects:',
+      '',
+      '### 1. A leaf.',
+      '',
+      '| Field | Type | Default | Description |',
+      '| --- | --- | --- | --- |',
+      '| `leaf` | string | — |  |',
+      '',
+      '### 2. node',
+      '',
+      '| Field | Type | Default | Description |',
+      '| --- | --- | --- | --- |',
+      '| `kids` | list of `node` | — |  |',
+      '',
+      '## `tagged`',
+      '',
+      'A `tagged` is exactly one of these objects:',
+      '',
+      '### 1. tagged',
+      '',
+      '| Field | Type | Default | Description |',
+      '| --- | --- | --- | --- |',
+      '| `tag` | `"x"` | — |  |',
+      '',
+      '## `plain`',
+      '',
+      'A `plain` is exactly one of these objects:',
+      '',
+      '### 1. plain',
+      '',
+      '| Field | Type | Default | Description |',
+      '| --- | --- | --- | --- |',
+      '| `n` | integer | — |  |',
+      '',
+    ]);
+  });
 });
 
 describe('renderMaterialsDoc', () => {

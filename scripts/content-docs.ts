@@ -46,6 +46,9 @@ export interface JsonSchemaNode {
   readonly propertyNames?: JsonSchemaNode;
   readonly additionalProperties?: JsonSchemaNode | boolean;
   readonly 'x-contentRef'?: string;
+  /** A reference to a shared definition, `#/$defs/<name>` (recursive schemas such as conditions). */
+  readonly $ref?: string;
+  readonly $defs?: Readonly<Record<string, JsonSchemaNode>>;
 }
 
 /** One row of the field table. */
@@ -75,6 +78,7 @@ function numberType(node: JsonSchemaNode): string {
 /** Human-readable type of a JSON Schema node, e.g. `ref → attack`, `number 0–3`, `list of id`. */
 export function typeOf(node: JsonSchemaNode): string {
   if (node['x-contentRef'] !== undefined) return `ref → ${node['x-contentRef']}`;
+  if (node.$ref !== undefined) return `\`${node.$ref.replace('#/$defs/', '')}\``;
   const options = node.anyOf ?? node.oneOf;
   if (options !== undefined) return [...new Set(options.map(typeOf))].join(' or ');
   if (node.enum !== undefined) return node.enum.map(code).join(' \\| ');
@@ -121,16 +125,40 @@ function nestedRows(node: JsonSchemaNode, field: string): Row[] {
 
 const cell = (text: string): string => text.replaceAll('\n', ' ');
 
-/** The Markdown field reference for content type `type`. */
-export function renderDoc(type: string, schema: JsonSchemaNode): string {
-  // Union options repeat their shared fields (every node has an `id`): list each row once.
-  const rows = [
+const TABLE_HEAD = ['| Field | Type | Default | Description |', '| --- | --- | --- | --- |'];
+
+/** Table rows for `node`'s fields; union options repeat shared fields (every node has an `id`), so each row is listed once. */
+function tableRows(node: JsonSchemaNode): string[] {
+  return [
     ...new Set(
-      fieldRows(schema).map(
+      fieldRows(node).map(
         (r) => `| \`${r.field}\` | ${r.type} | ${r.default} | ${cell(r.description)} |`,
       ),
     ),
   ];
+}
+
+/** A section per shared definition (`$defs`): its description, then a field table per union option. */
+function renderDefs(defs: Readonly<Record<string, JsonSchemaNode>>): string[] {
+  return Object.entries(defs).flatMap(([name, def]) => [
+    '',
+    `## \`${name}\``,
+    '',
+    ...(def.description === undefined ? [] : [def.description, '']),
+    `A \`${name}\` is exactly one of these objects:`,
+    ...(def.anyOf ?? def.oneOf ?? [def]).flatMap((option, i) => [
+      '',
+      `### ${String(i + 1)}. ${option.description ?? name}`,
+      '',
+      ...TABLE_HEAD,
+      ...tableRows(option),
+    ]),
+  ]);
+}
+
+/** The Markdown field reference for content type `type`. */
+export function renderDoc(type: string, schema: JsonSchemaNode): string {
+  const rows = tableRows(schema);
   return [
     `# \`${type}\` content schema`,
     '',
@@ -139,9 +167,9 @@ export function renderDoc(type: string, schema: JsonSchemaNode): string {
     `One JSON file per entry in \`src/content/data/${type}/\`. Fields marked "required" must be present;`,
     'every other field takes the default shown when omitted ("—" = stays absent).',
     '',
-    '| Field | Type | Default | Description |',
-    '| --- | --- | --- | --- |',
+    ...TABLE_HEAD,
     ...rows,
+    ...renderDefs(schema.$defs ?? {}),
     '',
   ].join('\n');
 }

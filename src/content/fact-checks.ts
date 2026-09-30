@@ -3,7 +3,8 @@
 // report keys declared twice across registry files, and every fact a content file names that the
 // registry does not declare (exactly or by an `entity:*` template), naming the file, the JSON pointer
 // and the fact. Each content type that names facts registers where it does so in FACT_USAGES:
-// signal graphs today; dialogue (mw-e22), quests (mw-e23) and conditions (mw-e27.5) add a line.
+// signal graphs today; dialogue (mw-e22) and quests (mw-e23) add a line. Facts named inside
+// conditions are checked, with their operators, by src/content/condition-checks.ts (mw-e27.5).
 
 import type { ContentCheck, ContentIssue, Frozen, LoadedEntry } from './loader.ts';
 import { FACT_KEY_PATTERN, factTemplateOf, type FactDef, type FactGroup } from './types/fact.ts';

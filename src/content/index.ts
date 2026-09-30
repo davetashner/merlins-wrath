@@ -143,6 +143,25 @@ export {
   type FactGroupInput,
 } from './types/fact.ts';
 export {
+  CONDITION_MAX_DEPTH,
+  CONDITION_OPERATORS,
+  COUNT_PATTERN,
+  conditionSchema,
+  namedConditionSchema,
+  type Condition,
+  type CountCondition,
+  type FactCondition,
+  type NamedCondition,
+  type NamedConditionInput,
+} from './types/condition.ts';
+export {
+  CONDITION_USAGES,
+  checkConditions,
+  conditionProblems,
+  type ConditionProblem,
+  type ConditionUsage,
+} from './condition-checks.ts';
+export {
   FACT_USAGES,
   checkFacts,
   factIndex,
