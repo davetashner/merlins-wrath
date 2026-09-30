@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { attachFrame, captureFrame, distinct } from './helpers/canvas';
 
 // mw-e00.19: the renderer + physics bootstrap against the production build (Chromium).
 
@@ -58,31 +59,11 @@ test('AC-1: the built app renders a non-blank first frame within 3 s with no con
   await expect(app).toHaveAttribute('data-physics-version', /^\d+\.\d+\.\d+/);
   await expect(page.getByTestId('physics-status')).toHaveCount(0);
 
-  // Screenshot the canvas alone (overlay text hidden) and keep it as the boot artifact.
-  await page.addStyleTag({ content: '#app > :not(canvas) { visibility: hidden; }' });
-  await nextFrames(page);
-  const shot = await page
-    .getByTestId('game-canvas')
-    .screenshot({ path: testInfo.outputPath('boot-frame.png') });
-  await testInfo.attach('boot-frame', { body: shot, contentType: 'image/png' });
-
-  // Pixel sample: decode the screenshot and count distinct colours on a coarse grid.
-  const distinct = await page.evaluate(async (png) => {
-    const bitmap = await createImageBitmap(
-      await (await fetch(`data:image/png;base64,${png}`)).blob(),
-    );
-    const sample = new OffscreenCanvas(64, 36);
-    const ctx = sample.getContext('2d');
-    if (!ctx) throw new Error('no 2d context');
-    ctx.drawImage(bitmap, 0, 0, 64, 36);
-    const { data } = ctx.getImageData(0, 0, 64, 36);
-    const colours = new Set<number>();
-    for (let i = 0; i < data.length; i += 4) {
-      colours.add(((data[i] ?? 0) << 16) | ((data[i + 1] ?? 0) << 8) | (data[i + 2] ?? 0));
-    }
-    return colours.size;
-  }, shot.toString('base64'));
-  expect(distinct).toBeGreaterThan(8);
+  // Capture the canvas alone, keep it as the boot artifact and count distinct colours on a coarse
+  // grid (in the page; a Playwright screenshot costs seconds on a loaded machine, mw-7ou).
+  const frame = await captureFrame(page, { png: true });
+  await attachFrame(testInfo, 'boot-frame', frame);
+  expect(distinct(frame)).toBeGreaterThan(8);
 
   expect(problems).toEqual([]);
 });
