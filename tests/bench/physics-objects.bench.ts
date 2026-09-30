@@ -4,6 +4,10 @@
 // budget), so the figure includes this layer's own cost on top of Rapier's. 200 crates tumble in the
 // arena and get kicked every 0.5 s so they never fall asleep; tinybench reports p75 and p99 but not
 // p95, so the bench times each tick itself. Run with `pnpm bench`.
+// The p95 is taken over a fixed number of ticks after a warm-up (mw-w3d): timing the tinybench run
+// itself mixed JIT warm-up and the initial pile settling into the samples, and a slower runner took
+// fewer samples, so those outliers plus the kicked ticks (one in 30, about twice a normal tick's
+// cost) filled the top 5% and the p95 jumped from normal ticks to kicked ones.
 // On the reference class (Apple silicon) it measures about 0.8 ms; the same budget is asserted on CI.
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, test } from 'vitest';
@@ -28,6 +32,8 @@ const BODIES = 200;
 const BUDGET_MS = 2.0;
 /** Ticks between kicks that keep every body awake. */
 const KICK_EVERY = 30;
+/** Ticks timed after the warm-up: 100 kick cycles. */
+const TIMED_TICKS = 100 * KICK_EVERY;
 
 function arena() {
   const content = loadGameContent();
@@ -79,22 +85,39 @@ describe('physics objects', () => {
       });
     };
     let awakeMin = BODIES;
-    const samples: number[] = [];
-    await bench('World.step() with 200 active physics objects', () => {
+    /** Before a tick: kick every body at the start of each cycle. */
+    const before = (): void => {
       if (world.tick % KICK_EVERY === 0) kick(world.tick);
-      const start = performance.now();
-      world.step();
-      samples.push(performance.now() - start);
+    };
+    /** After a tick: at the end of each cycle, count the bodies still awake. */
+    const after = (): void => {
       if (world.tick % KICK_EVERY === KICK_EVERY - 1) {
         const awake = bodies.filter(
           (e) => world.get(e, PhysicsObjectComponent)?.sleeping === false,
         );
         awakeMin = Math.min(awakeMin, awake.length);
       }
+    };
+    // tinybench's run is the warm-up: it tiers up the JIT and lets the initial pile settle, and
+    // how many ticks it manages depends on the runner. Its samples are discarded; then a fixed
+    // TIMED_TICKS ticks are timed one by one (only World.step(), not the kicks) and every sample is
+    // kept, so each runner's p95 is over the same workload (exactly one kicked tick in KICK_EVERY).
+    const result = await bench('World.step() with 200 active physics objects', () => {
+      before();
+      world.step();
+      after();
     }).run();
+    const samples: number[] = [];
+    for (let i = 0; i < TIMED_TICKS; i++) {
+      before();
+      const start = performance.now();
+      world.step();
+      samples.push(performance.now() - start);
+      after();
+    }
     const tickP95 = p95(samples);
     console.info(
-      `physics objects ×${String(BODIES)}: p95 ${tickP95.toFixed(4)} ms per tick over ${String(samples.length)} ticks; fewest awake ${String(awakeMin)}`,
+      `physics objects ×${String(BODIES)}: mean ${result.latency.mean.toFixed(4)} ms, p95 ${tickP95.toFixed(4)} ms per tick over ${String(samples.length)} ticks; fewest awake ${String(awakeMin)}`,
     );
     expect(awakeMin).toBe(BODIES); // every body stayed active
     expect(tickP95).toBeLessThanOrEqual(BUDGET_MS); // milliseconds

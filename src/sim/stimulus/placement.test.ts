@@ -11,6 +11,8 @@ describe('placement', () => {
     expect(validatePlacement(3)).toMatch(/must be an object/);
     expect(validatePlacement({ x: 1, y: 2, z: '3', radius: 0 })).toMatch(/placement.z/);
     expect(validatePlacement({ x: Number.NaN, y: 2, z: 3, radius: 0 })).toMatch(/placement.x/);
+    expect(validatePlacement({ x: 1, y: Infinity, z: 3, radius: 0 })).toMatch(/placement.y/);
+    expect(validatePlacement({ x: 1, y: 2, z: 3 })).toMatch(/placement.radius must be a finite/);
     expect(validatePlacement({ x: 1, y: 2, z: 3, radius: -1 })).toMatch(/radius must be ≥ 0/);
   });
 

@@ -302,8 +302,9 @@ export class RapierPhysics implements RigidBodyPort {
   /** Linear velocity just before a step of every awake body, by Rapier body handle. */
   private velocitiesBefore(): Map<number, Vec3> {
     const before = new Map<number, Vec3>();
+    // linvel() hands back a fresh vector, so it is stored as is (no copy).
     this.world.forEachActiveRigidBody((body) => {
-      before.set(body.handle, vec(body.linvel()));
+      before.set(body.handle, body.linvel());
     });
     return before;
   }
