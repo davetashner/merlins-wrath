@@ -1,5 +1,8 @@
 import {
   ACTION_TIMELINE_COMPONENTS,
+  applyHitReaction,
+  giveHitReactions,
+  HitReactionComponent,
   interruptAction,
   requestMove,
   setTimeScale,
@@ -23,6 +26,8 @@ describe('simAnimReader', () => {
         actionPhase: 'none',
         actionVerb: 'none',
         hitReact: false,
+        hitReaction: 'none',
+        hitDirection: 'none',
       },
       timeScale: 1,
       action: null,
@@ -49,6 +54,8 @@ describe('simAnimReader', () => {
         actionPhase: 'active',
         actionVerb: 'attack',
         hitReact: false,
+        hitReaction: 'none',
+        hitDirection: 'none',
       },
       timeScale: 0,
       action: {
@@ -72,5 +79,26 @@ describe('simAnimReader', () => {
     expect(simAnimReader({ moves: new Map() })(world, entity)?.action).toBeNull();
     interruptAction(world, entity, 10);
     expect(read(world, entity)?.values).toMatchObject({ hitReact: true, acting: false });
+  });
+
+  it('mw-e04.7: reads the sim-chosen hit reaction and its side when asked to', () => {
+    const { world, entity, moves } = timelineWorld();
+    world.register(HitReactionComponent);
+    giveHitReactions(world, entity);
+    const read = simAnimReader({ moves, reactions: true });
+    expect(read(world, entity)?.values).toMatchObject({
+      hitReaction: 'none',
+      hitDirection: 'none',
+    });
+    applyHitReaction(world, entity, { kind: 'stagger', direction: 'back' }, { moves });
+    expect(read(world, entity)?.values).toMatchObject({
+      hitReact: true,
+      hitReaction: 'stagger',
+      hitDirection: 'back',
+    });
+    expect(simAnimReader({ moves })(world, entity)?.values).toMatchObject({
+      hitReaction: 'none',
+      hitDirection: 'none',
+    });
   });
 });

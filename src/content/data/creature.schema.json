@@ -679,6 +679,56 @@
       },
       "additionalProperties": false
     },
+    "reactions": {
+      "description": "How it reacts to hits: flinch, stagger, knockback and knockdown (mw-e04.7).",
+      "default": {},
+      "type": "object",
+      "properties": {
+        "knockbackImpulse": {
+          "default": 300,
+          "description": "Hit impulse (N·s) at or above which a hit knocks it back (60 ticks, pushed).",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "knockdownImpulse": {
+          "default": 900,
+          "description": "Hit impulse (N·s) at or above which a hit knocks it down (90 ticks grounded, then 20 invulnerable wake-up ticks). Placeholder until the combat sandbox tunes it.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "launchSpeed": {
+          "default": 2,
+          "description": "Upward speed (m/s) a knockback or knockdown adds so the push leaves the ground and carries it over ledges. Placeholder until the combat sandbox tunes it.",
+          "type": "number",
+          "minimum": 0
+        },
+        "replace": {
+          "description": "Reactions it never takes, each replaced by another, e.g. a troll that is never knocked down: {\"knockdown\": \"knockback\"}.",
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "enum": [
+              "flinch",
+              "stagger",
+              "knockback",
+              "knockdown"
+            ]
+          },
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "none",
+              "flinch",
+              "stagger",
+              "knockback",
+              "knockdown"
+            ]
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "faction": {
       "description": "Faction it belongs to (e12.8); absent = the \"unaligned\" faction.",
       "type": "string",

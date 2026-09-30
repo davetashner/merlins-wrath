@@ -95,6 +95,7 @@ describe('creature schema', () => {
       properties: [],
       resistances: {},
       poiseRegen: { delayTicks: 120, percentPerSecond: 25 },
+      reactions: { knockbackImpulse: 300, knockdownImpulse: 900, launchSpeed: 2, replace: {} },
       disposition: {},
       fears: [],
       personality: {
@@ -194,6 +195,7 @@ describe('creature schema', () => {
       attacks: ['overhead-chop', 'lunging-thrust'],
       properties: ['brittle'],
       resistances: { blunt: 1.5, pierce: 0.5, poison: 0 },
+      reactions: { knockdownImpulse: 1200, replace: { knockdown: 'knockback' } },
       faction: 'forgotten',
       disposition: { towardPlayer: 'wary' },
       fears: [{ kind: 'property', stimulus: 'burning', intensity: 30 }],
@@ -219,6 +221,7 @@ describe('creature schema', () => {
       stats: { ...minimal.stats, health: 0 },
       locomotion: { base: 'goblin', agent: { radius: 0 } },
       resistances: { blunt: 3.5, holy: 1 },
+      reactions: { knockbackImpulse: 0, replace: { flinch: 'wobble', none: 'flinch' } },
       fears: [{ kind: 'property', stimulus: 'burning', intensity: 101 }],
       personality: { greed: 2 },
     });
@@ -227,6 +230,9 @@ describe('creature schema', () => {
       'locomotion.agent.radius',
       'resistances.blunt',
       'resistances', // unknown damage type "holy"
+      'reactions.knockbackImpulse',
+      'reactions.replace.flinch',
+      'reactions.replace', // "none" is not a tier
       'fears.0.intensity',
       'personality.greed',
     ]);

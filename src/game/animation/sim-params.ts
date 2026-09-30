@@ -1,11 +1,18 @@
 // Sim → animation parameters (mw-e02.20): reads, never writes, an entity's sim state into the
 // parameters animation graphs name (ANIM_PARAMETERS, src/content/types/anim-graph.ts). The action
 // timeline (mw-e04.4) supplies the move in progress, its phase and verb, the hit-reaction lock and
-// the entity's local time scale; a locomotion reader supplies speed, turn rate and grounded (the
+// the entity's local time scale; the hit-reaction rules (mw-e04.7) the reaction the sim chose and
+// the side it came from; a locomotion reader supplies speed, turn rate and grounded (the
 // player's controller, a creature's mover, or the testbed's demo rigs).
 
 import type { AnimParameterName, MoveTable, MoveVerb } from '@content/index';
-import { ActionTimelineComponent, phaseAt, type ActionPhase, type EntityId } from '@sim/index';
+import {
+  ActionTimelineComponent,
+  HitReactionComponent,
+  phaseAt,
+  type ActionPhase,
+  type EntityId,
+} from '@sim/index';
 import type { AnimParamValue } from '@render/animation/index';
 import type { SimView } from '../loop/render-sync';
 
@@ -51,13 +58,19 @@ export interface SimAnimSource {
   readonly moves: MoveTable;
   /** Speed, turn rate and grounded; without one the entity stands still. */
   readonly locomotion?: LocomotionReader;
+  /**
+   * Read the sim's chosen hit reaction and its side into `hitReaction`/`hitDirection` (mw-e04.7);
+   * the world must register HitReactionComponent. Without it both read none.
+   */
+  readonly reactions?: boolean;
 }
 
 /**
  * A reader of the sim-published parameters (the world must register the action timeline
  * components): speed/turnRate/grounded from `locomotion`, and
  * acting/actionPhase/actionVerb/hitReact plus the time scale and running move from the entity's
- * action timeline (idle and time scale 1 without one). Undefined when the entity is gone.
+ * action timeline (idle and time scale 1 without one), and hitReaction/hitDirection from its hit
+ * reaction when `reactions` is set (none otherwise). Undefined when the entity is gone.
  */
 export function simAnimReader(source: SimAnimSource): SimAnimReader {
   return (view, entity) => {
@@ -65,6 +78,8 @@ export function simAnimReader(source: SimAnimSource): SimAnimReader {
     const motion = source.locomotion?.(view, entity);
     const timeline = view.get(entity, ActionTimelineComponent);
     const current = timeline?.current ?? null;
+    const reaction =
+      source.reactions === true ? view.get(entity, HitReactionComponent)?.current : null;
     const move = current === null ? undefined : source.moves.get(current.move);
     const action: ActionStep | null =
       current === null || move === undefined
@@ -87,6 +102,8 @@ export function simAnimReader(source: SimAnimSource): SimAnimReader {
       actionPhase: action?.phase ?? 'none',
       actionVerb: action?.verb ?? 'none',
       hitReact: current === null && (timeline?.lockTicks ?? 0) > 0,
+      hitReaction: reaction?.kind ?? 'none',
+      hitDirection: reaction?.direction ?? 'none',
     };
     return { values, timeScale: timeline?.timeScale ?? 1, action };
   };

@@ -13,6 +13,7 @@
 import { z } from 'zod';
 import type { Frozen } from '../loader.ts';
 import { contentId, ref } from '../schema.ts';
+import { HIT_DIRECTIONS, HIT_REACTION_KINDS } from './damage.ts';
 
 /** How a layer combines with the layers below it. */
 export const ANIM_LAYER_MODES = ['override', 'additive'] as const;
@@ -23,6 +24,9 @@ export type AnimLayerMode = (typeof ANIM_LAYER_MODES)[number];
 export const ANIM_ACTION_PHASES = ['none', 'startup', 'active', 'recovery'] as const;
 /** Verbs the action parameters report (the sim's MoveVerb, plus none when idle). */
 export const ANIM_ACTION_VERBS = ['none', 'attack', 'dodge', 'parry'] as const;
+
+/** Directions the hit parameters report (the sim's hit quadrant, plus none when not reacting). */
+export const ANIM_HIT_DIRECTIONS = ['none', ...HIT_DIRECTIONS] as const;
 
 /** One sim-published parameter: a number, a flag, or one of a fixed set of strings. */
 export type AnimParameterSpec =
@@ -52,6 +56,18 @@ export const ANIM_PARAMETERS = {
   hitReact: {
     kind: 'boolean',
     description: 'Held in a hit reaction (the action timeline’s interrupt lock).',
+  },
+  hitReaction: {
+    kind: 'string',
+    values: HIT_REACTION_KINDS,
+    description:
+      'The hit reaction the sim chose and is playing (mw-e04.7), or none; a flinch during a ' +
+      'move’s active or recovery ticks plays without interrupting it (an additive layer).',
+  },
+  hitDirection: {
+    kind: 'string',
+    values: ANIM_HIT_DIRECTIONS,
+    description: 'Side of the entity the reacting hit came from, or none when not reacting.',
   },
 } as const satisfies Record<string, AnimParameterSpec>;
 

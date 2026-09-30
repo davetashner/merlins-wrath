@@ -54,3 +54,69 @@ export const poiseRegenSchema = z
   })
   .prefault({})
   .describe('How poise recovers after poise damage.');
+
+/**
+ * Hit reactions the sim chooses (mw-e04.7), weakest first: none (hyperarmor absorbed it, or it
+ * carried no poise damage or push), flinch, stagger, knockback, knockdown.
+ */
+export const HIT_REACTION_KINDS = ['none', 'flinch', 'stagger', 'knockback', 'knockdown'] as const;
+
+/** A hit reaction. */
+export type HitReactionKind = (typeof HIT_REACTION_KINDS)[number];
+
+/** The reactions a hit can cause, which a creature may replace (every kind but none). */
+export const HIT_REACTION_TIERS = ['flinch', 'stagger', 'knockback', 'knockdown'] as const;
+
+/** A reaction tier. */
+export type HitReactionTier = (typeof HIT_REACTION_TIERS)[number];
+
+/** Which side of the victim a hit came from, relative to its facing (mw-e04.7). */
+export const HIT_DIRECTIONS = ['front', 'back', 'left', 'right'] as const;
+
+/** A hit direction quadrant. */
+export type HitDirection = (typeof HIT_DIRECTIONS)[number];
+
+/**
+ * The hit-reaction defaults (mw-e04.7). `knockbackImpulse` comes from the bead; `knockdownImpulse`
+ * and `launchSpeed` are placeholder tuning until the combat sandbox (e04.9) tunes them.
+ */
+export const HIT_REACTION_DEFAULTS = Object.freeze({
+  knockbackImpulse: 300,
+  knockdownImpulse: 900,
+  launchSpeed: 2,
+});
+
+/** How a creature reacts to hits: the impulse thresholds and any replaced tiers. */
+export const hitReactionsSchema = z
+  .strictObject({
+    knockbackImpulse: z
+      .number()
+      .positive()
+      .default(HIT_REACTION_DEFAULTS.knockbackImpulse)
+      .describe('Hit impulse (N·s) at or above which a hit knocks it back (60 ticks, pushed).'),
+    knockdownImpulse: z
+      .number()
+      .positive()
+      .default(HIT_REACTION_DEFAULTS.knockdownImpulse)
+      .describe(
+        'Hit impulse (N·s) at or above which a hit knocks it down (90 ticks grounded, then ' +
+          '20 invulnerable wake-up ticks). Placeholder until the combat sandbox tunes it.',
+      ),
+    launchSpeed: z
+      .number()
+      .nonnegative()
+      .default(HIT_REACTION_DEFAULTS.launchSpeed)
+      .describe(
+        'Upward speed (m/s) a knockback or knockdown adds so the push leaves the ground and ' +
+          'carries it over ledges. Placeholder until the combat sandbox tunes it.',
+      ),
+    replace: z
+      .partialRecord(z.enum(HIT_REACTION_TIERS), z.enum(HIT_REACTION_KINDS))
+      .prefault({})
+      .describe(
+        'Reactions it never takes, each replaced by another, e.g. a troll that is never knocked ' +
+          'down: {"knockdown": "knockback"}.',
+      ),
+  })
+  .prefault({})
+  .describe('How it reacts to hits: flinch, stagger, knockback and knockdown (mw-e04.7).');

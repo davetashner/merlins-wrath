@@ -94,6 +94,11 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `poiseRegen` | object | `{}` | How poise recovers after poise damage. |
 | `poiseRegen.delayTicks` | integer ≥ 0 | `120` | Sim ticks (60 Hz) without poise damage before poise starts to regenerate. |
 | `poiseRegen.percentPerSecond` | number 0–100 | `25` | Poise regained per second once regenerating, as a percentage of max poise. |
+| `reactions` | object | `{}` | How it reacts to hits: flinch, stagger, knockback and knockdown (mw-e04.7). |
+| `reactions.knockbackImpulse` | number > 0 | `300` | Hit impulse (N·s) at or above which a hit knocks it back (60 ticks, pushed). |
+| `reactions.knockdownImpulse` | number > 0 | `900` | Hit impulse (N·s) at or above which a hit knocks it down (90 ticks grounded, then 20 invulnerable wake-up ticks). Placeholder until the combat sandbox tunes it. |
+| `reactions.launchSpeed` | number ≥ 0 | `2` | Upward speed (m/s) a knockback or knockdown adds so the push leaves the ground and carries it over ledges. Placeholder until the combat sandbox tunes it. |
+| `reactions.replace` | map of `"flinch"` \| `"stagger"` \| `"knockback"` \| `"knockdown"` → `"none"` \| `"flinch"` \| `"stagger"` \| `"knockback"` \| `"knockdown"` | `{}` | Reactions it never takes, each replaced by another, e.g. a troll that is never knocked down: {"knockdown": "knockback"}. |
 | `faction` | ref → faction | — | Faction it belongs to (e12.8); absent = the "unaligned" faction. |
 | `disposition` | object | `{}` | Default disposition; spawn points and runtime state can override it. |
 | `disposition.towardPlayer` | `"ally"` \| `"friendly"` \| `"neutral"` \| `"wary"` \| `"hostile"` \| `"prey"` \| `"predator"` | — | Starting stance toward the player that overrides its faction’s; absent = the faction’s. |

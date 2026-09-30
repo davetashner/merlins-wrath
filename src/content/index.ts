@@ -31,6 +31,7 @@ export {
 export {
   ANIM_ACTION_PHASES,
   ANIM_ACTION_VERBS,
+  ANIM_HIT_DIRECTIONS,
   ANIM_CONDITION_OPS,
   ANIM_LAYER_MODES,
   ANIM_PARAMETERS,
@@ -179,10 +180,18 @@ export {
 } from './types/scene.ts';
 export {
   DAMAGE_TYPES,
+  HIT_DIRECTIONS,
+  HIT_REACTION_DEFAULTS,
+  HIT_REACTION_KINDS,
+  HIT_REACTION_TIERS,
+  hitReactionsSchema,
   MAX_RESISTANCE,
   poiseRegenSchema,
   resistancesSchema,
   type DamageTypeName,
+  type HitDirection,
+  type HitReactionKind,
+  type HitReactionTier,
 } from './types/damage.ts';
 export {
   AREA_REQUIREMENTS,
