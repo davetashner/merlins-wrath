@@ -11,6 +11,7 @@ import { checkPuzzles } from './puzzle-checks.ts';
 import type { Catalogue, ContentCheck, EntryOf } from './loader.ts';
 import { animClipSchema } from './types/anim-clip.ts';
 import { animGraphSchema } from './types/anim-graph.ts';
+import { arrowSchema } from './types/arrow.ts';
 import { attackSchema } from './types/attack.ts';
 import { cameraSchema } from './types/camera.ts';
 import { capabilitySchema, checkCapabilities } from './types/capability.ts';
@@ -42,6 +43,7 @@ import { vfxEffectSchema } from './types/vfx-effect.ts';
 export const contentTypes = {
   'anim-clip': animClipSchema,
   'anim-graph': animGraphSchema,
+  arrow: arrowSchema,
   attack: attackSchema,
   camera: cameraSchema,
   capability: capabilitySchema,

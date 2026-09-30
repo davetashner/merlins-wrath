@@ -1,0 +1,24 @@
+{
+  "$schema": "../arrow.schema.json",
+  "id": "broadhead",
+  "name": "Broadhead Arrow",
+  "notes": "mw-e05.1: a wide cutting head trades penetration and drag for extra slash damage.",
+  "massGrams": 30,
+  "dragK": 0.00007,
+  "damage": {
+    "amounts": {
+      "pierce": 20,
+      "slash": 12
+    },
+    "poiseDamage": 18,
+    "impactForce": 0
+  },
+  "penetration": 15,
+  "onImpact": "stick",
+  "retrievable": true,
+  "payload": [],
+  "cues": {
+    "trailVfx": "vfx-arrow-trail-standard"
+  },
+  "tags": []
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "../arrow.schema.json",
+  "id": "standard",
+  "name": "Standard Arrow",
+  "notes": "mw-e05.1 baseline: pierce 20 sticks in wood (medium 10) and ricochets off stone (hard 40), per e05.2.",
+  "massGrams": 25,
+  "dragK": 0.00005,
+  "damage": {
+    "amounts": {
+      "pierce": 25
+    },
+    "poiseDamage": 15,
+    "impactForce": 0
+  },
+  "penetration": 20,
+  "onImpact": "stick",
+  "retrievable": true,
+  "payload": [],
+  "cues": {
+    "trailVfx": "vfx-arrow-trail-standard"
+  },
+  "tags": []
+}

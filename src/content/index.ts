@@ -54,6 +54,21 @@ export {
   type AnimTransitionDef,
 } from './types/anim-graph.ts';
 export {
+  ARROW_IMPACTS,
+  ARROW_PAYLOAD_OPS,
+  ARROW_SCHEMA_VERSION,
+  arrowSchema,
+  isTargetSpecificKey,
+  MAX_PENETRATION,
+  SURFACE_PENETRATION,
+  type ArrowDefinition,
+  type ArrowDefinitionInput,
+  type ArrowEntry,
+  type ArrowImpact,
+  type ArrowPayload,
+  type ArrowPayloadOpName,
+} from './types/arrow.ts';
+export {
   ANIM_MAX_MARKER_DRIFT_TICKS,
   ANIM_SIM_HZ,
   animMarkerDrift,
