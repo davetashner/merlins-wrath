@@ -1,0 +1,9 @@
+{
+  "$schema": "../environment-damage.schema.json",
+  "id": "default",
+  "name": "Default environmental damage",
+  "notes": "Numbers from mw-e04.19 (placeholders until the combat sandbox tunes them). Falls: no damage up to a 4 m drop, then linear to 100% of max health at 14 m, so a 9 m fall costs half; landing in liquid 1.5 m deep or more is safe. Heights are equivalent drops (speed² / 2g with the character's own gravity), which also prices launches and walls: at the player's 25 m/s² a landing is safe up to 14.1 m/s and lethal from 26.5 m/s (mw-e02.15 sketched 8 and 20 m/s at real-world gravity, where they are the same 3.3 m and 20 m drops). Kinetic impacts: a physics object striking a creature faster than 6 m/s deals blunt ½·m·v²/20, so a 40 kg chandelier dropped 5 m (about 9.9 m/s) deals about 98. Fire: anything burning deals 8 fire per second to creatures within 0.75 m of it (the fire rules' flame reach), in 250 ms pulses of 2.",
+  "fall": { "safeHeight": 4, "lethalHeight": 14, "deepWater": 1.5 },
+  "kinetic": { "minSpeed": 6, "joulesPerPoint": 20 },
+  "hazards": [{ "when": "burning", "perSecond": { "fire": 8 }, "reach": 0.75, "pulseMs": 250 }]
+}

@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Rule set id, e.g. \"default\"."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (debug tools and docs)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why these values (design targets, references), for owner review."
+    },
+    "fall": {
+      "type": "object",
+      "properties": {
+        "safeHeight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Equivalent drop at or below which a landing does no damage, m."
+        },
+        "lethalHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "description": "Equivalent drop that deals 100% of max health, m; damage rises linearly from safeHeight. Above safeHeight."
+        },
+        "deepWater": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "description": "Landing in liquid at least this deep takes no fall damage, m."
+        }
+      },
+      "required": [
+        "safeHeight",
+        "lethalHeight",
+        "deepWater"
+      ],
+      "additionalProperties": false,
+      "description": "Fall and wall-impact damage: a fraction of max health from the equivalent drop height. Soft ground (impactAbsorb) takes off its share."
+    },
+    "kinetic": {
+      "type": "object",
+      "properties": {
+        "minSpeed": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Relative speed a physics object must exceed to hurt a creature it strikes, m/s."
+        },
+        "joulesPerPoint": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Blunt damage = ½·m·v² / joulesPerPoint (kinetic energy of the strike, J)."
+        }
+      },
+      "required": [
+        "minSpeed",
+        "joulesPerPoint"
+      ],
+      "additionalProperties": false,
+      "description": "Falling and thrown physics objects striking creatures."
+    },
+    "hazards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "when": {
+            "type": "string",
+            "enum": [
+              "burning"
+            ],
+            "description": "The boolean world property that makes an entity this hazard (e.g. burning)."
+          },
+          "perSecond": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "slash",
+                "pierce",
+                "blunt",
+                "fire",
+                "frost",
+                "shock",
+                "arcane",
+                "poison"
+              ]
+            },
+            "additionalProperties": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "description": "Damage per second, per damage type, to a creature within reach."
+          },
+          "reach": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 10,
+            "description": "How far beyond the hazard entity’s bounding sphere it hurts, m."
+          },
+          "pulseMs": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 1000,
+            "description": "Damage lands in pulses this far apart, whole ms (perSecond × pulse length each)."
+          }
+        },
+        "required": [
+          "when",
+          "perSecond",
+          "reach",
+          "pulseMs"
+        ],
+        "additionalProperties": false,
+        "description": "A hazard volume: anything with the property hurts creatures that overlap it."
+      },
+      "description": "Hazard volumes, by the property that makes them."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "fall",
+    "kinetic",
+    "hazards"
+  ],
+  "additionalProperties": false
+}

@@ -18,6 +18,7 @@ import { namedConditionSchema } from './types/condition.ts';
 import { controllerSchema } from './types/controller.ts';
 import { creatureSchema } from './types/creature.ts';
 import { cueSheetSchema } from './types/cue-sheet.ts';
+import { environmentDamageSchema } from './types/environment-damage.ts';
 import { factSchema } from './types/fact.ts';
 import { factionSchema } from './types/faction.ts';
 import { kitSchema } from './types/kit.ts';
@@ -46,6 +47,7 @@ export const contentTypes = {
   controller: controllerSchema,
   creature: creatureSchema,
   'cue-sheet': cueSheetSchema,
+  'environment-damage': environmentDamageSchema,
   fact: factSchema,
   faction: factionSchema,
   kit: kitSchema,

@@ -26,6 +26,7 @@ const valid = {
   jumpBufferMs: 150,
   stepHeight: 0.35,
   slopeLimit: 45,
+  launch: { airControl: 0.1, recoveryMs: 250 },
 } satisfies ControllerDefInput;
 
 const problems = (value: unknown) =>

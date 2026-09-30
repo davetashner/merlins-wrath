@@ -33,6 +33,7 @@ const TUNING: Frozen<ControllerTuning> = {
   jumpBufferMs: 150,
   stepHeight: 0.35,
   slopeLimit: 45,
+  launch: { airControl: 0.1, recoveryMs: 250 },
 };
 
 const HZ = 60;
@@ -204,6 +205,8 @@ describe('controller params', () => {
       jumpBufferTicks: 9,
       accel: 5 / 0.15,
       decel: 5 / 0.1,
+      launchAirControl: 0.1,
+      recoveryTicks: 15,
     });
   });
 });
