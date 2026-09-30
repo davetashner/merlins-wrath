@@ -32,13 +32,14 @@ import {
   PhysicsObjectComponent,
   removePhysicsObject,
   rigidBodiesOf,
+  teleportPhysicsObject,
   type PhysicsBudgetExceeded,
   type PhysicsImpact,
   type PhysicsObject,
   type PhysicsObjectsOptions,
 } from './objects';
 import { RapierPhysics } from './rapier';
-import type { ColliderHandle } from './static-colliders';
+import { ColliderFanOut, InMemoryColliderSink, type ColliderHandle } from './static-colliders';
 
 const v = (x: number, y: number, z: number): Vec3 => ({ x, y, z });
 const HALF = 0.25;
@@ -464,8 +465,91 @@ describe('bound colliders', () => {
       return physics.rapierWorld.getCollider(row[1] ?? -1).friction();
     });
     expect(frictions.map((f) => Math.round(f * 100) / 100)).toEqual([0.05, 0.05]);
-    world.destroy(pillar); // the colliders are the scene's: they stay
-    expect(physics.count()).toBe(5);
+    world.destroy(pillar); // the pillar owns its colliders: they go with it (mw-e03.42)
+    expect(physics.count()).toBe(3);
+    expect([physics.has(left), physics.has(right)]).toEqual([false, false]);
+  });
+});
+
+describe('bound colliders go with their entity (mw-e03.42)', () => {
+  it('AC-1: destroying the owner during a step removes its colliders at the end of that tick', () => {
+    const { world, physics, floor, floorCollider } = setup();
+    world.addSystem({
+      name: 'burn',
+      run: ({ world: w }) => {
+        w.destroy(floor);
+      },
+    });
+    world.step();
+    expect(physics.has(floorCollider)).toBe(false);
+    expect(physics.count()).toBe(0);
+  });
+
+  it('removing the component removes them; a collider already gone is skipped', () => {
+    const { world, physics, floor, floorCollider } = setup();
+    const extra = physics.add(box(v(5, 0, 5), v(6, 1, 6)));
+    bindCollider(world, floor, extra);
+    physics.remove(floorCollider); // taken out by someone else first
+    expect(() => {
+      world.remove(floor, PhysicsColliderComponent);
+    }).not.toThrow();
+    expect(physics.count()).toBe(0);
+  });
+
+  it('removes them from the given level collider sink (physics and light together)', () => {
+    const physics = new RapierPhysics(RAPIER);
+    const light = new InMemoryColliderSink();
+    const level = new ColliderFanOut(physics, light);
+    const world = registerWorldProperties(new World<never>({ seed: 3, physics }));
+    installPhysicsObjects(world, { levelColliders: level });
+    const wall = world.spawn();
+    addProperties(world, wall, STONE);
+    bindCollider(world, wall, level.add(box(v(0, 0, 0), v(1, 2, 1))));
+    world.destroy(wall);
+    expect([physics.count(), light.count(), level.count()]).toEqual([0, 0, 0]);
+  });
+});
+
+describe('teleporting a physics object (mw-e33.17)', () => {
+  it('moves the body, stops and wakes it, and its pose and placement follow at once', () => {
+    const { world, physics } = setup();
+    const crate = spawnObject(world, v(0, 3, 0));
+    steps(world, 120);
+    const rested = objectOf(world, crate);
+    const to = v(4, 2, -1);
+    teleportPhysicsObject(world, crate, to);
+    const moved = objectOf(world, crate);
+    expect(moved).toMatchObject({ position: to, sleeping: false, rotation: rested.rotation });
+    expect(moved.awakeSince).toBe(rested.sleeping ? world.tick : rested.awakeSince);
+    expect(placementOf(world, crate)).toMatchObject(to);
+    expect(physics.motionOf(moved.body as ColliderHandle)).toMatchObject({
+      position: to,
+      linvel: v(0, 0, 0),
+      angvel: v(0, 0, 0),
+      sleeping: false,
+    });
+  });
+
+  it('a sleeping body wakes with a fresh awake-since tick', () => {
+    const { world, physics } = setup();
+    const crate = spawnObject(world, v(0, HALF, 0));
+    world.step();
+    physics.sleep(objectOf(world, crate).body as ColliderHandle);
+    world.set(crate, PhysicsObjectComponent, { ...objectOf(world, crate), sleeping: true });
+    steps(world, 3);
+    teleportPhysicsObject(world, crate, v(1, 1, 1));
+    expect(objectOf(world, crate)).toMatchObject({ sleeping: false, awakeSince: world.tick });
+  });
+
+  it('refuses an entity that is not a physics object, and a non-finite position', () => {
+    const { world, floor } = setup();
+    expect(() => {
+      teleportPhysicsObject(world, floor, v(0, 0, 0));
+    }).toThrow(/not a physics object/);
+    const crate = spawnObject(world, v(0, 3, 0));
+    expect(() => {
+      teleportPhysicsObject(world, crate, v(0, NaN, 0));
+    }).toThrow(RangeError);
   });
 });
 

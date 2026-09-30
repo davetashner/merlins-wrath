@@ -103,3 +103,9 @@ check enforces this).
 - The player in the testbed is now an animated grey-box figure instead of a capsule: it stands
   idle, walks, runs and sprints with its speed, crouches, jumps, falls, lands and rolls, following
   exactly what the game's movement is doing.
+
+### Fixed
+
+- A wall or other level piece that burns away (an ivy-covered wall, say) no longer leaves an
+  invisible wall behind: you can walk and see through where it stood. The debug console's `tp` now
+  moves physics props (crates) too, instead of leaving them where they were.

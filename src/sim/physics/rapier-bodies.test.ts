@@ -69,6 +69,35 @@ describe('Rapier dynamic bodies (mw-e03.10)', () => {
     }).toThrow('collider 99 is not in this port');
   });
 
+  it('moves a body at once, stopped and awake (mw-e33.17), and knows its handles', () => {
+    const { physics, floor } = floorWorld();
+    const ball = physics.addBody({ ...BALL, velocity: { x: 3, y: 0, z: 0 } });
+    expect([physics.has(floor), physics.has(ball), physics.has(99 as ColliderHandle)]).toEqual([
+      true,
+      true,
+      false,
+    ]);
+    physics.sleep(ball);
+    physics.moveBody(ball, { x: 2, y: 4, z: -1 });
+    expect(physics.motionOf(ball)).toMatchObject({
+      position: { x: 2, y: 4, z: -1 },
+      linvel: { x: 0, y: 0, z: 0 },
+      angvel: { x: 0, y: 0, z: 0 },
+      sleeping: false,
+    });
+    expect(() => {
+      physics.moveBody(ball, { x: Infinity, y: 0, z: 0 });
+    }).toThrow('body position must be finite');
+    expect(() => {
+      physics.moveBody(ball, { x: 0, y: 0, z: NaN });
+    }).toThrow(RangeError);
+    expect(() => {
+      physics.moveBody(floor, { x: 0, y: 0, z: 0 });
+    }).toThrow(`collider ${String(floor)} is not a body`);
+    physics.remove(ball);
+    expect(physics.has(ball)).toBe(false);
+  });
+
   it('restores bodies from a snapshot and goes on exactly as if never stopped', () => {
     const { physics } = floorWorld();
     const ball = physics.addBody({ ...BALL, velocity: { x: 1, y: 0, z: 0 } });

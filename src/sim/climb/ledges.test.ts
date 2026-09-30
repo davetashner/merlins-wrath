@@ -243,6 +243,7 @@ describe('ledge queries (mw-e03.22)', () => {
   const NO_COLLIDERS: StaticColliderSink = {
     add: () => 0 as ColliderHandle,
     remove: () => undefined,
+    has: () => false,
     count: () => 0,
   };
 

@@ -15,7 +15,8 @@
 // (src/sim/debug) use it too.
 //
 // Unloading needs nothing extra: destroying a spawn entity takes its body with it (mw-e03.41), and
-// the scene's colliders go with `unloadScene`. The sim never imports content: the game passes the
+// destroying a piece takes its bound colliders with it (mw-e03.42: an ivy wall that burns away leaves
+// no invisible wall); `unloadScene` removes the rest. The sim never imports content: the game passes the
 // prop bodies and material presets in as plain lookups.
 
 import type { EntityId } from '../core/component';

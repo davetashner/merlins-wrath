@@ -14,7 +14,9 @@ import { HealthComponent } from '../combat/damage/components';
 import { Died } from '../combat/damage/events';
 import type { DamageModel } from '../combat/damage/model';
 import type { ComponentType, EntityId } from '../core/component';
+import type { BodyShape } from '../physics/bodies';
 import type { System, World } from '../core/world';
+import { PhysicsObjectComponent, teleportPhysicsObject } from '../physics/objects';
 import { SceneSpawnComponent, SceneTransformComponent } from '../scene/loader';
 import { addPropPhysics, type ScenePhysicsOptions } from '../scene/physics';
 import type { Vec3 } from '../stimulus/shapes';
@@ -103,6 +105,24 @@ function teleport<TInput>(world: World<TInput>, target: EntityId, to: Vec3): voi
   const placed = read(world, target, SceneTransformComponent);
   if (placed !== undefined) {
     world.set(target, SceneTransformComponent, Object.freeze({ ...placed, position: to }));
+  }
+  // A physics object's pose lives in its body (mw-e33.17): it stands on `to` like a spawned prop.
+  const object = read(world, target, PhysicsObjectComponent);
+  if (object !== undefined) {
+    const lift = uprightHalfHeight(object.shape);
+    teleportPhysicsObject(world, target, { ...to, y: to.y + lift });
+  }
+}
+
+/** Half a body's height standing upright: its centre's height above the point it stands on. */
+function uprightHalfHeight(shape: BodyShape): number {
+  switch (shape.kind) {
+    case 'box':
+      return shape.halfExtents.y;
+    case 'sphere':
+      return shape.radius;
+    case 'capsule':
+      return shape.halfHeight + shape.radius;
   }
 }
 

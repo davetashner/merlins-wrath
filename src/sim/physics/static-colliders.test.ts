@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ColliderFanOut,
   InMemoryColliderSink,
   type ColliderHandle,
   type StaticColliderDesc,
@@ -31,7 +32,9 @@ describe('InMemoryColliderSink (mw-e00.21)', () => {
     const sink = new InMemoryColliderSink();
     const a = sink.add(box);
     sink.add(ramp);
+    expect(sink.has(a)).toBe(true);
     sink.remove(a);
+    expect(sink.has(a)).toBe(false);
     expect(sink.count()).toBe(1);
     expect(sink.all()).toEqual([ramp]);
     expect(() => {
@@ -40,5 +43,27 @@ describe('InMemoryColliderSink (mw-e00.21)', () => {
     expect(() => {
       sink.remove(999 as ColliderHandle);
     }).toThrow(/collider 999/);
+  });
+});
+
+describe('ColliderFanOut (mw-e03.42)', () => {
+  it('adds to and removes from every sink under the primary handle', () => {
+    const primary = new InMemoryColliderSink();
+    const light = new InMemoryColliderSink();
+    light.add(ramp); // the follower's handles differ from the primary's
+    const fan = new ColliderFanOut(primary, light);
+    const a = fan.add(box);
+    const b = fan.add(ramp);
+    expect([fan.count(), primary.count(), light.count()]).toEqual([2, 2, 3]);
+    expect(fan.has(a) && primary.has(a)).toBe(true);
+    fan.remove(a);
+    expect(fan.has(a)).toBe(false);
+    expect(primary.all()).toEqual([ramp]);
+    expect(light.all()).toEqual([ramp, ramp]);
+    fan.remove(b);
+    expect([fan.count(), primary.count(), light.count()]).toEqual([0, 0, 1]);
+    expect(() => {
+      fan.remove(a);
+    }).toThrow(/not in this sink/);
   });
 });

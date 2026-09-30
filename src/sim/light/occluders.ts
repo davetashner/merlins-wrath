@@ -249,6 +249,10 @@ export class StaticOccluders implements StaticColliderSink {
     this.changed();
   }
 
+  has(handle: ColliderHandle): boolean {
+    return this.shapes.has(handle);
+  }
+
   count(): number {
     return this.shapes.size;
   }

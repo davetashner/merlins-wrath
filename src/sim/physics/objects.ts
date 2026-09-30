@@ -12,7 +12,9 @@
 // - `material` names each side of an impact for sound, noise and breaking.
 // A `propertyChanged` of weight, friction or impactAbsorb (a soaked cloth gets heavier, a frozen
 // floor slippery) reaches the body before the next physics step. Level colliders take part through
-// `bindCollider`, which gives a static collider its entity's friction, bounciness and material.
+// `bindCollider`, which gives a static collider its entity's friction, bounciness and material; from
+// then on the entity owns them: when it goes (fire burns an ivy wall away), they leave the physics
+// world with it at the end of that tick (mw-e03.42), so no invisible wall stays behind.
 // Pushes come through the one stimulus API: a force stimulus's `impulseApplied` is applied to the
 // body, so no caller ever scripts a pair of objects.
 //
@@ -44,7 +46,7 @@ import {
   type ContactImpact,
   type RigidBodyPort,
 } from './bodies';
-import type { ColliderHandle } from './static-colliders';
+import type { ColliderHandle, StaticColliderSink } from './static-colliders';
 
 /** Default most awake bodies (AC-5). */
 export const DEFAULT_BODY_BUDGET = 300;
@@ -127,6 +129,12 @@ export interface PhysicsObjectsOptions {
   readonly focus?: (world: World<never>) => Vec3 | undefined;
   /** Distance from the focus a body must have to be forced to sleep, m; DEFAULT_REST_DISTANCE. */
   readonly restDistance?: number;
+  /**
+   * Where bound level colliders are removed from when their entity goes: the sink the scene was
+   * loaded into (a `ColliderFanOut` that also feeds the light model's occluders). Defaults to the
+   * world's physics port.
+   */
+  readonly levelColliders?: StaticColliderSink;
 }
 
 /** How a new physics object is placed. */
@@ -235,12 +243,37 @@ export function removePhysicsObject(world: World<never>, entity: EntityId): void
 }
 
 /**
+ * Teleports physics object `entity`: its body's centre goes to `position` at once, stopped and awake
+ * (its rotation is kept), and its `physics.object` pose and placement follow in the same tick, so
+ * every later system of the tick sees it there (the debug console's `tp`, mw-e33.17).
+ * @throws Error when `entity` is not a physics object; RangeError for a non-finite position.
+ */
+export function teleportPhysicsObject(world: World<never>, entity: EntityId, position: Vec3): void {
+  const object = world.get(entity, PhysicsObjectComponent);
+  if (object === undefined) throw new Error(`entity ${String(entity)} is not a physics object`);
+  rigidBodiesOf(world).moveBody(object.body as ColliderHandle, position);
+  const { x, y, z } = position;
+  world.set(
+    entity,
+    PhysicsObjectComponent,
+    frozenObject({
+      ...object,
+      position: Object.freeze({ x, y, z }),
+      sleeping: false,
+      awakeSince: object.sleeping ? world.tick : object.awakeSince,
+    }),
+  );
+  placeEntity(world, entity, position, boundingRadius(object.shape));
+}
+
+/**
  * Makes static collider `collider` (e.g. from `loadScene`) part of `entity`: impacts name the entity
  * and its material, and the collider takes the entity's friction and bounciness, now and whenever
  * they change. An entity may own several colliders; bind them between steps (during a step the
  * component change waits for the end of the tick, so a second bind in the same tick replaces the
- * first). The collider stays in the physics world when the entity goes: its owner (the scene) removes
- * it.
+ * first). The entity owns the collider from then on: destroying the entity, or removing its
+ * `physics.collider` component, removes the collider from the level collider sink (mw-e03.42;
+ * `unloadScene` skips colliders already gone).
  */
 export function bindCollider(
   world: World<never>,
@@ -404,6 +437,13 @@ export function installPhysicsObjects<W extends World<never>>(
   // A physics object's body goes with its component: removed, or destroyed with the entity.
   world.onRemove(PhysicsObjectComponent, (_entity, object) => {
     port.remove(object.body as ColliderHandle);
+  });
+  // Bound level colliders go with their entity too (mw-e03.42): skipped when already removed.
+  const level = options.levelColliders ?? port;
+  world.onRemove(PhysicsColliderComponent, (_entity, { colliders }) => {
+    for (const collider of colliders) {
+      if (level.has(collider as ColliderHandle)) level.remove(collider as ColliderHandle);
+    }
   });
   world.events.on(impulseApplied, ({ entity, impulse }) => {
     const object = world.get(entity, PhysicsObjectComponent);

@@ -164,7 +164,8 @@ export function sceneEntities(loaded: LoadedScene): EntityId[] {
 
 /**
  * Removes a loaded scene: destroys its entities that are still alive (a system may already have
- * destroyed a spawned prop) and removes its colliders.
+ * destroyed a spawned prop or burnt a piece away) and removes its colliders that are still in
+ * `colliders` (a piece's bound colliders go with the piece, mw-e03.42), each exactly once.
  */
 export function unloadScene<T>(
   world: World<T>,
@@ -174,7 +175,9 @@ export function unloadScene<T>(
   for (const entity of sceneEntities(loaded)) {
     if (world.isAlive(entity)) world.destroy(entity);
   }
-  for (const handle of loaded.colliders) colliders.remove(handle);
+  for (const handle of loaded.colliders) {
+    if (colliders.has(handle)) colliders.remove(handle);
+  }
 }
 
 /** Entities in `world` created by a scene load (optionally only those of scene `id`). */

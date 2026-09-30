@@ -97,6 +97,12 @@ export interface RigidBodyPort extends PhysicsPort {
   isSleeping(handle: ColliderHandle): boolean;
   /** A body's current motion. */
   motionOf(handle: ColliderHandle): BodyMotion;
+  /**
+   * Moves a body's centre to `position` at once (a teleport), stopping it and waking it; its
+   * rotation is kept.
+   * @throws RangeError for a non-finite position or a handle that is not a body.
+   */
+  moveBody(handle: ColliderHandle, position: Vec3): void;
   /** Puts a body to sleep now (it wakes again when something touches or pushes it). */
   sleep(handle: ColliderHandle): void;
   /** Contacts that started during the last step, in the engine's deterministic order. */

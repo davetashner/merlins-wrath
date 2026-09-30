@@ -201,6 +201,10 @@ export class RapierPhysics implements RigidBodyPort {
     this.bodyByCollider.delete(entry.collider);
   }
 
+  has(handle: ColliderHandle): boolean {
+    return this.entries.has(handle);
+  }
+
   /** Records one of this port's colliders in the handle tables. */
   private track(
     handle: ColliderHandle,
@@ -282,6 +286,20 @@ export class RapierPhysics implements RigidBodyPort {
 
   sleep(handle: ColliderHandle): void {
     this.bodyOf(handle).sleep();
+  }
+
+  moveBody(handle: ColliderHandle, position: Vec3): void {
+    if (!(
+      Number.isFinite(position.x) &&
+      Number.isFinite(position.y) &&
+      Number.isFinite(position.z)
+    )) {
+      throw new RangeError('body position must be finite');
+    }
+    const body = this.bodyOf(handle);
+    body.setTranslation(vec(position), true);
+    body.setLinvel(vec(ZERO), true);
+    body.setAngvel(vec(ZERO), true);
   }
 
   impacts(): readonly ContactImpact[] {
