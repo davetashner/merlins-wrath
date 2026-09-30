@@ -1,0 +1,46 @@
+{
+  "$schema": "../arrow.schema.json",
+  "id": "fire",
+  "name": "Fire Arrow",
+  "notes": "mw-e05.1/e05.8: burns in flight (3 s of fuel, then burns out); on impact applies burning in 0.3 m and a small heat stimulus, so only flammable things there react.",
+  "massGrams": 32,
+  "dragK": 0.00008,
+  "damage": {
+    "amounts": {
+      "pierce": 15,
+      "fire": 5
+    },
+    "poiseDamage": 12,
+    "impactForce": 0
+  },
+  "penetration": 15,
+  "onImpact": "stick",
+  "retrievable": true,
+  "properties": {
+    "flammable": true,
+    "burning": true,
+    "fuel": 3,
+    "lightEmitter": {
+      "intensity": 40,
+      "radius": 3
+    }
+  },
+  "payload": [
+    {
+      "op": "applyProperty",
+      "property": "burning",
+      "radius": 0.3
+    },
+    {
+      "op": "stimulus",
+      "element": "heat",
+      "intensity": 400,
+      "radius": 0.3
+    }
+  ],
+  "cues": {
+    "trailVfx": "vfx-arrow-trail-fire",
+    "impactSfx": "sfx-arrow-fire-ignite"
+  },
+  "tags": ["trick", "fire"]
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "../arrow.schema.json",
+  "id": "water",
+  "name": "Water Arrow",
+  "notes": "mw-e05.1/e05.9: shatters on any impact, soaking 1.5 m and removing burning inside it; never sticks, never retrievable.",
+  "massGrams": 45,
+  "dragK": 0.0001,
+  "damage": {
+    "amounts": {
+      "blunt": 2
+    },
+    "poiseDamage": 5,
+    "impactForce": 0
+  },
+  "penetration": 0,
+  "onImpact": "shatter",
+  "retrievable": false,
+  "payload": [
+    {
+      "op": "applyProperty",
+      "property": "wetness",
+      "value": 1,
+      "radius": 1.5
+    },
+    {
+      "op": "applyProperty",
+      "property": "burning",
+      "value": false,
+      "radius": 1.5
+    }
+  ],
+  "cues": {
+    "trailVfx": "vfx-arrow-trail-water",
+    "impactVfx": "vfx-arrow-impact-water",
+    "impactSfx": "sfx-arrow-water-splash"
+  },
+  "tags": ["trick", "water"]
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "../arrow.schema.json",
+  "id": "noise",
+  "name": "Noise Arrow",
+  "notes": "mw-e05.1/e05.11: rattles at loudness 70 for 2 s where it lands; blunt head, 1 damage.",
+  "massGrams": 30,
+  "dragK": 0.00009,
+  "damage": {
+    "amounts": {
+      "blunt": 1
+    },
+    "poiseDamage": 0,
+    "impactForce": 0
+  },
+  "penetration": 0,
+  "onImpact": "bounce",
+  "retrievable": true,
+  "payload": [
+    {
+      "op": "noise",
+      "loudness": 70,
+      "duration": 2
+    }
+  ],
+  "cues": {
+    "trailVfx": "vfx-arrow-trail-standard",
+    "impactSfx": "sfx-arrow-noise-rattle"
+  },
+  "tags": ["trick", "stealth"]
+}

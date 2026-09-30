@@ -1,0 +1,29 @@
+{
+  "$schema": "../arrow.schema.json",
+  "id": "blunt",
+  "name": "Blunt Arrow",
+  "notes": "mw-e05.1/e05.12: penetration 0, poise damage x2.5 of the standard arrow (15 -> 37.5), impactForceMul 2.5; never sticks.",
+  "massGrams": 35,
+  "dragK": 0.00008,
+  "damage": {
+    "amounts": {
+      "blunt": 10
+    },
+    "poiseDamage": 37.5,
+    "impactForce": 50
+  },
+  "penetration": 0,
+  "onImpact": "bounce",
+  "retrievable": true,
+  "payload": [
+    {
+      "op": "impactForceMul",
+      "factor": 2.5
+    }
+  ],
+  "cues": {
+    "trailVfx": "vfx-arrow-trail-standard",
+    "impactSfx": "sfx-arrow-blunt-thud"
+  },
+  "tags": ["trick", "non-lethal"]
+}

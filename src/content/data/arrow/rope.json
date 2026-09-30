@@ -1,0 +1,31 @@
+{
+  "$schema": "../arrow.schema.json",
+  "id": "rope",
+  "name": "Rope Arrow",
+  "notes": "mw-e05.1/e05.10: anchors only in softAnchor surfaces and spawns an 8 m rope; elsewhere it bounces.",
+  "massGrams": 60,
+  "dragK": 0.00012,
+  "damage": {
+    "amounts": {
+      "pierce": 8
+    },
+    "poiseDamage": 5,
+    "impactForce": 0
+  },
+  "penetration": 25,
+  "onImpact": "stick",
+  "retrievable": true,
+  "payload": [
+    {
+      "op": "spawn",
+      "entity": "rope",
+      "length": 8,
+      "anchor": "softAnchor"
+    }
+  ],
+  "cues": {
+    "trailVfx": "vfx-arrow-trail-rope",
+    "impactSfx": "sfx-arrow-rope-unfurl"
+  },
+  "tags": ["trick", "traversal"]
+}
