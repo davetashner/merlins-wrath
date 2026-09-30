@@ -8,7 +8,7 @@ import {
 } from '@sim/index';
 import type { Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
-import { compactProbe, setupAnimationDemo, TESTBED_ANIM_DEMO } from './setup';
+import { compactProbe, playerAnimationProbe, setupAnimationDemo, TESTBED_ANIM_DEMO } from './setup';
 
 /** Steps `world` and the demo for `ticks` ticks; returns each rig's state history. */
 function run(
@@ -96,5 +96,26 @@ describe('setupAnimationDemo', () => {
     // Each rig is a hierarchy of grey-box bones under the entity's object.
     expect(bound[0]?.getObjectByName('sword')?.parent?.name).toBe('forearm-r');
     expect(bound[1]?.getObjectByName('jaw')?.parent?.name).toBe('head');
+  });
+});
+
+describe('playerAnimationProbe', () => {
+  it('publishes each layer’s state and clip with both histories', () => {
+    expect(
+      playerAnimationProbe({
+        rig: 'greybox-humanoid',
+        layers: [
+          { id: 'base', state: 'move', weights: { move: 1 }, clip: 'anim-humanoid-run' },
+          { id: 'action', state: 'none', weights: { none: 1 }, clip: null },
+        ],
+        history: ['idle', 'move'],
+        clipHistory: ['anim-humanoid-idle', 'anim-humanoid-run'],
+      }),
+    ).toEqual({
+      layers: { base: 'move', action: 'none' },
+      clips: { base: 'anim-humanoid-run', action: null },
+      history: ['idle', 'move'],
+      clipHistory: ['anim-humanoid-idle', 'anim-humanoid-run'],
+    });
   });
 });

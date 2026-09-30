@@ -2,7 +2,7 @@
   "$schema": "../controller.schema.json",
   "id": "player",
   "name": "Player (all classes)",
-  "notes": "Starting numbers from mw-e02.2, tuned for tight, weighty third-person movement. Run 5.0 m/s matches a humanoid guard's run, so outpacing a chase takes sprint (7.5); crouch 2.2. Reaches run speed in 0.15 s and stops in 0.10 s so the player never feels on ice. Gravity 25 m/s² (about 2.5 g) gives a 1.2 m jump a quick 0.31 s rise: weight over floatiness. Air control 30% lets the player correct a jump without steering like a bird. Coyote 120 ms and jump buffer 150 ms forgive edge and landing timing; both are the design ceilings. Steps 0.35 m (stairs and kerbs, not waist-high crates) and walks 45° slopes. Capsule 0.35 m radius, 1.8 m tall standing (the humanoid agent size), 1.0 m crouched so the player fits under 1.2 m gaps. Per-class overrides arrive with mw-e02.3.",
+  "notes": "Starting numbers from mw-e02.2, tuned for tight, weighty third-person movement. Run 5.0 m/s matches a humanoid guard's run, so outpacing a chase takes sprint (7.5); crouch 2.2. Reaches run speed in 0.15 s and stops in 0.10 s so the player never feels on ice. Gravity 25 m/s² (about 2.5 g) gives a 1.2 m jump a quick 0.31 s rise: weight over floatiness. Air control 30% lets the player correct a jump without steering like a bird. Coyote 120 ms and jump buffer 150 ms forgive edge and landing timing; both are the design ceilings. Steps 0.35 m (stairs and kerbs, not waist-high crates) and walks 45° slopes. Capsule 0.35 m radius, 1.8 m tall standing (the humanoid agent size), 1.0 m crouched so the player fits under 1.2 m gaps. Per-class overrides arrive with mw-e02.3. Gait (mw-e02.6, starting defaults to tune in play): the published locomotion state is idle below 0.2 m/s, walk from 0.2 and run from 2.5 m/s (half the run speed, so a light stick push reads as a walk); a landing of 6 m/s or more (a drop of about 0.7 m, so every full jump) shows 150 ms of landing; footsteps fall every 0.7 / 1.0 / 1.25 / 0.5 m walking / running / sprinting / crouching.",
   "capsule": { "radius": 0.35, "height": 1.8, "crouchHeight": 1.0 },
   "speeds": { "run": 5.0, "sprint": 7.5, "crouch": 2.2 },
   "accelTime": 0.15,
@@ -14,5 +14,12 @@
   "coyoteMs": 120,
   "jumpBufferMs": 150,
   "stepHeight": 0.35,
-  "slopeLimit": 45
+  "slopeLimit": 45,
+  "gait": {
+    "walkFrom": 0.2,
+    "runFrom": 2.5,
+    "landingMs": 150,
+    "hardLanding": 6,
+    "footstep": { "walk": 0.7, "run": 1.0, "sprint": 1.25, "crouch": 0.5 }
+  }
 }

@@ -60,7 +60,12 @@ describe('AnimationController: crossfades', () => {
     // Halfway, the legs are halfway between idle (0°) and run (90°).
     anim.update(0, running);
     expect(weightsAt[12]).toEqual([0, 1]);
-    expect(anim.probe().layers[0]).toEqual({ id: 'base', state: 'run', weights: { run: 1 } });
+    expect(anim.probe().layers[0]).toEqual({
+      id: 'base',
+      state: 'run',
+      weights: { run: 1 },
+      clip: 'anim-run',
+    });
   });
 
   it('AC-2: the blended pose follows the weights', () => {
@@ -109,7 +114,9 @@ describe('AnimationController: layers', () => {
       id: 'action',
       state: 'attack',
       weights: { attack: 1 },
+      clip: 'anim-swing',
     });
+    expect(anim.probe().layers[2]?.clip).toBeNull(); // hit: none
 
     anim.update(FRAME, params({ values: { hitReact: true, speed: 4 } }));
     anim.evaluate(pose);
@@ -262,9 +269,13 @@ describe('AnimationController: blends', () => {
     const markers: MarkerEvent[] = [];
     anim.onMarker = (e) => markers.push(e);
     const pose = createPose(3);
+    expect(anim.probe().layers[0]?.clip).toBe('anim-idle'); // not yet advanced: the first point
     anim.update(0.1, params({ values: { speed: 1 } }));
     anim.evaluate(pose);
     expect(pitchOf(pose, LEGS)).toBeCloseTo(45, 6);
+    anim.update(0, params({ values: { speed: 1.5 } }));
+    // mw-e02.6: the probe names the blend's heaviest clip.
+    expect(anim.probe().layers[0]?.clip).toBe('anim-run');
     // Idle is the heaviest clip at speed 0.5: its footstep (0.5 of its 1 s) fires as the phase passes it.
     for (let i = 0; i < 60; i++) anim.update(FRAME, params({ values: { speed: 0.5 } }));
     expect(markers.map((m) => [m.state, m.clip, m.kind])).toContainEqual([
@@ -277,6 +288,7 @@ describe('AnimationController: blends', () => {
     anim.evaluate(pose);
     expect(pitchOf(pose, LEGS)).toBeCloseTo(90, 6);
     expect(anim.probe().layers[0]?.state).toBe('strafe');
+    expect(anim.probe().layers[0]?.clip).toBe('anim-run');
   });
 });
 

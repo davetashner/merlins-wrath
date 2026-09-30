@@ -17,6 +17,12 @@ export interface GreyboxRig {
   readonly root: Object3D;
   /** Copies a pose's local rotations into the bones. */
   apply(pose: Pose): void;
+  /**
+   * Lowers the root bone (the pelvis) `metres` below its rest offset, for poses that sink the body
+   * (a crouch, mw-e02.6): rotations alone cannot bring the hips down to bent knees. Presentation
+   * only; the entity's transform is still the sim's.
+   */
+  lower(metres: number): void;
 }
 
 /** Builds the placeholder view of `rig`, its boxes tinted `colour`. */
@@ -53,6 +59,11 @@ export function createGreyboxRig(rig: Rig, colour: number): GreyboxRig {
           pose[o + 3] ?? 1,
         );
       }
+    },
+    lower(metres) {
+      const pelvis = bones[0];
+      const rest = rig.defs[0]?.offset[1] ?? 0;
+      if (pelvis !== undefined) pelvis.position.y = rest - metres;
     },
   };
 }

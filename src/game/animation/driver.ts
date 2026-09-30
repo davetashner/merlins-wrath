@@ -10,7 +10,8 @@
 // LOD: characters farther than `lod.near` metres from the focus (the camera) update only every
 // `lod.interval` frames, with the time they skipped, staggered so they do not all update on the same
 // frame. The dev state probe (`probe`) reports each character's layer states and the order states
-// were entered in, for the e2e test.
+// were entered in, and the clips layers switched to (mw-e02.6: run vs walk inside a speed blend),
+// for the e2e tests.
 
 import type { EntityId } from '@sim/index';
 import {
@@ -52,6 +53,8 @@ export interface AnimatedCharacter {
 /** A character's probe: its layers now and the states it entered, oldest first. */
 export interface CharacterProbe extends AnimProbe {
   readonly history: readonly string[];
+  /** The clips its layers switched to (other than none), oldest first. */
+  readonly clipHistory: readonly string[];
 }
 
 interface Entry {
@@ -63,6 +66,8 @@ interface Entry {
   pending: number;
   readonly entered: string[];
   readonly states: string[];
+  readonly clipsEntered: string[];
+  readonly clips: (string | null)[];
 }
 
 /** Per-frame counts, for the perf budget and tests. */
@@ -103,6 +108,8 @@ export class AnimationDriver {
       pending: 0,
       entered: [],
       states: [],
+      clipsEntered: [],
+      clips: [],
     });
   }
 
@@ -161,6 +168,7 @@ export class AnimationDriver {
       out[entry.character.name] = {
         ...entry.character.controller.probe(),
         history: [...entry.entered],
+        clipHistory: [...entry.clipsEntered],
       };
     }
     return out;
@@ -175,16 +183,24 @@ export class AnimationDriver {
     return dx * dx + dy * dy + dz * dz > this.lod.near * this.lod.near;
   }
 
-  /** Appends each layer's newly entered state (other than "none") to the history. */
+  /** Appends each layer's newly entered state and clip (other than none) to the histories. */
   private record(entry: Entry, probe: AnimProbe): void {
     probe.layers.forEach((layer, i) => {
+      if (entry.clips[i] !== layer.clip) {
+        entry.clips[i] = layer.clip;
+        if (layer.clip !== null) remember(entry.clipsEntered, layer.clip);
+      }
       if (entry.states[i] === layer.state) return;
       entry.states[i] = layer.state;
-      if (layer.state === 'none') return;
-      entry.entered.push(layer.state);
-      if (entry.entered.length > PROBE_HISTORY) entry.entered.shift();
+      if (layer.state !== 'none') remember(entry.entered, layer.state);
     });
   }
+}
+
+/** Appends `item`, keeping the most recent PROBE_HISTORY. */
+function remember(history: string[], item: string): void {
+  history.push(item);
+  if (history.length > PROBE_HISTORY) history.shift();
 }
 
 /**

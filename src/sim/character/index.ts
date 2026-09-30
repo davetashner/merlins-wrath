@@ -1,4 +1,5 @@
-// The player's kinematic character controller (mw-e02.2) and the collision interface it runs on.
+// The player's kinematic character controller (mw-e02.2), the collision interface it runs on and the
+// locomotion state and events it publishes (mw-e02.6).
 // Not exported here, by design: collision-world.contract.ts (Vitest only).
 export type { BodyId, Capsule, CollisionHit, CollisionWorld } from './collision-world';
 export {
@@ -41,3 +42,27 @@ export {
   type TraversalHook,
   type TraversalMode,
 } from './traversal';
+export {
+  CharacterLocomotion,
+  classifyLocomotion,
+  DEFAULT_GAIT_TUNING,
+  giveLocomotion,
+  impactSpeed,
+  initialLocomotion,
+  LOCOMOTION_STATES,
+  LocomotionEvents,
+  locomotionOf,
+  locomotionSystem,
+  stepLocomotion,
+  type Foot,
+  type FootstepGait,
+  type Locomotion,
+  type LocomotionContext,
+  type LocomotionEvent,
+  type LocomotionEventKind,
+  type LocomotionInputs,
+  type LocomotionSnapshot,
+  type LocomotionState,
+  type LocomotionSystemOptions,
+  type LocomotionTick,
+} from './locomotion';

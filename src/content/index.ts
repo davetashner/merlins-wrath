@@ -34,6 +34,7 @@ export {
   ANIM_HIT_DIRECTIONS,
   ANIM_CONDITION_OPS,
   ANIM_LAYER_MODES,
+  ANIM_LOCOMOTION_STATES,
   ANIM_PARAMETERS,
   ANIM_PARAMETER_NAMES,
   ANIM_RESTART_FADE,
@@ -91,9 +92,11 @@ export {
   PLAYER_CONTROLLER_ID,
   controllerSchema,
   controllerTuningSchema,
+  gaitTuningSchema,
   type ControllerDef,
   type ControllerDefInput,
   type ControllerTuning,
+  type GaitTuning,
 } from './types/controller.ts';
 export {
   CREATURE_FAMILIES,

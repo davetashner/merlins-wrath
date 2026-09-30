@@ -245,6 +245,7 @@ describe('AnimationDriver: frames', () => {
     run(40);
     const probe = driver.probe()['swordsman'];
     expect(probe?.history).toEqual(['idle', 'run', 'idle', 'attack']);
+    expect(probe?.clipHistory).toEqual(['anim-idle', 'anim-run', 'anim-idle', 'anim-swing']);
     expect(probe?.layers.map((l) => l.state)).toEqual(['idle', 'none', 'none']);
     expect(probe?.rig).toBe('test-rig');
     // The history keeps the most recent PROBE_HISTORY entries.
@@ -253,6 +254,7 @@ describe('AnimationDriver: frames', () => {
       run(15);
     }
     expect(driver.probe()['swordsman']?.history).toHaveLength(PROBE_HISTORY);
+    expect(driver.probe()['swordsman']?.clipHistory).toHaveLength(PROBE_HISTORY);
   });
 });
 

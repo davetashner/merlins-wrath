@@ -79,6 +79,23 @@ describe('controller schema', () => {
       'capsule.crouchHeight: capsule.crouchHeight (0.5 m) must be between 2 × radius and height',
     ]);
   });
+
+  it('mw-e02.6: takes optional gait thresholds, landing and footstep spacing; run above walk', () => {
+    const gait = {
+      walkFrom: 0.2,
+      runFrom: 2.5,
+      landingMs: 150,
+      hardLanding: 6,
+      footstep: { walk: 0.7, run: 1, sprint: 1.25, crouch: 0.5 },
+    };
+    expect(controllerSchema.parse({ ...valid, gait }).gait).toEqual(gait);
+    expect(problems({ ...valid, gait: { ...gait, runFrom: 0.2 } })).toEqual([
+      'gait.runFrom: gait.runFrom must be higher than gait.walkFrom',
+    ]);
+    expect(problems({ ...valid, gait: { ...gait, landingMs: 1.5 } })).toEqual([
+      'gait.landingMs: Invalid input: expected int, received number',
+    ]);
+  });
 });
 
 describeContent(

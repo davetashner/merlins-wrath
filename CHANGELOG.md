@@ -73,3 +73,6 @@ check enforces this).
   camera, or to backstep with no direction held. A roll costs 20 stamina and a backstep 12; both
   have short invulnerability windows that attacks pass straight through. On a controller, crouch
   moves to D-pad Down.
+- The player in the testbed is now an animated grey-box figure instead of a capsule: it stands
+  idle, walks, runs and sprints with its speed, crouches, jumps, falls, lands and rolls, following
+  exactly what the game's movement is doing.

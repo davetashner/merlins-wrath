@@ -1,0 +1,99 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-humanoid-jump",
+  "rig": "greybox-humanoid",
+  "duration": 0.3,
+  "notes": "Grey-box placeholder (mw-e02.6): take-off, legs tucking and arms swinging up; plays once and holds while rising.",
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [5, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [-5, 0, 0]
+      }
+    ],
+    "thigh-l": [
+      {
+        "t": 0,
+        "rot": [-10, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [60, 0, 0]
+      }
+    ],
+    "thigh-r": [
+      {
+        "t": 0,
+        "rot": [10, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [40, 0, 0]
+      }
+    ],
+    "shin-l": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [-90, 0, 0]
+      }
+    ],
+    "shin-r": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [-70, 0, 0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [20, 0, -10]
+      },
+      {
+        "t": 0.3,
+        "rot": [-60, 0, -20]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [20, 0, 10]
+      },
+      {
+        "t": 0.3,
+        "rot": [-60, 0, 20]
+      }
+    ],
+    "forearm-l": [
+      {
+        "t": 0,
+        "rot": [20, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [30, 0, 0]
+      }
+    ],
+    "forearm-r": [
+      {
+        "t": 0,
+        "rot": [20, 0, 0]
+      },
+      {
+        "t": 0.3,
+        "rot": [30, 0, 0]
+      }
+    ]
+  }
+}

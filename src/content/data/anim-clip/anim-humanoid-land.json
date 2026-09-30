@@ -1,0 +1,121 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-humanoid-land",
+  "rig": "greybox-humanoid",
+  "duration": 0.25,
+  "notes": "Grey-box placeholder (mw-e02.6): a hard landing, knees and back absorbing the impact and straightening again; plays once over the sim's landing state.",
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.08,
+        "rot": [20, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [5, 0, 0]
+      }
+    ],
+    "head": [
+      {
+        "t": 0,
+        "rot": [0, 0, 0]
+      },
+      {
+        "t": 0.08,
+        "rot": [-15, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [0, 0, 0]
+      }
+    ],
+    "thigh-l": [
+      {
+        "t": 0,
+        "rot": [20, 0, 0]
+      },
+      {
+        "t": 0.08,
+        "rot": [45, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [10, 0, 0]
+      }
+    ],
+    "thigh-r": [
+      {
+        "t": 0,
+        "rot": [20, 0, 0]
+      },
+      {
+        "t": 0.08,
+        "rot": [45, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [10, 0, 0]
+      }
+    ],
+    "shin-l": [
+      {
+        "t": 0,
+        "rot": [-30, 0, 0]
+      },
+      {
+        "t": 0.08,
+        "rot": [-70, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [-15, 0, 0]
+      }
+    ],
+    "shin-r": [
+      {
+        "t": 0,
+        "rot": [-30, 0, 0]
+      },
+      {
+        "t": 0.08,
+        "rot": [-70, 0, 0]
+      },
+      {
+        "t": 0.25,
+        "rot": [-15, 0, 0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [-10, 0, -30]
+      },
+      {
+        "t": 0.08,
+        "rot": [20, 0, -25]
+      },
+      {
+        "t": 0.25,
+        "rot": [0, 0, -8]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [-10, 0, 30]
+      },
+      {
+        "t": 0.08,
+        "rot": [20, 0, 25]
+      },
+      {
+        "t": 0.25,
+        "rot": [0, 0, 8]
+      }
+    ]
+  }
+}

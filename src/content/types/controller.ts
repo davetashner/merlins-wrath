@@ -41,6 +41,56 @@ const speedsSchema = z
   })
   .describe('Top ground speeds, m/s. Analog input scales them (half deflection = half speed).');
 
+const footstepSchema = z
+  .strictObject({
+    walk: metres.max(5).describe('Walking, m.'),
+    run: metres.max(5).describe('Running, m.'),
+    sprint: metres.max(5).describe('Sprinting, m.'),
+    crouch: metres.max(5).describe('Crouching, m.'),
+  })
+  .describe(
+    'Ground distance between footsteps per gait, m (half a stride): footstep events come from the ' +
+      'distance travelled, not from animation.',
+  );
+
+/**
+ * How the sim names what the character is doing (mw-e02.6): the speeds at which the published
+ * locomotion state turns from idle to walk to run, how long a hard landing shows, and how far apart
+ * footsteps fall. Presentation reads these states and events; movement itself never does.
+ */
+export const gaitTuningSchema = z
+  .strictObject({
+    walkFrom: z
+      .number()
+      .positive()
+      .max(10)
+      .describe(
+        'Horizontal speed from which a character with move input walks (below: idle), m/s.',
+      ),
+    runFrom: z
+      .number()
+      .positive()
+      .max(20)
+      .describe('Horizontal speed from which it runs (below: walk), m/s; above walkFrom.'),
+    landingMs: z
+      .int()
+      .min(0)
+      .max(1000)
+      .describe('How long the landing state lasts after a hard landing, whole ms.'),
+    hardLanding: z
+      .number()
+      .min(0)
+      .max(50)
+      .describe('Impact speed from which a landing counts as hard (shows the landing state), m/s.'),
+    footstep: footstepSchema,
+  })
+  .describe(
+    'Locomotion states and events (mw-e02.6): gait speed thresholds, landing and footstep spacing.',
+  );
+
+/** Gait thresholds, landing and footstep spacing (see gaitTuningSchema). */
+export type GaitTuning = z.output<typeof gaitTuningSchema>;
+
 /** Every tuning value the controller reads (a profile without its id, name and notes). */
 const tuningShape = {
   capsule: capsuleSchema,
@@ -85,6 +135,9 @@ const tuningShape = {
     .gt(0)
     .lt(90)
     .describe('Steepest walkable slope, degrees; steeper ground is a wall the player slides off.'),
+  gait: gaitTuningSchema
+    .optional()
+    .describe('Locomotion states and events; absent = the sim’s defaults (DEFAULT_GAIT_TUNING).'),
 };
 
 /**
@@ -123,6 +176,9 @@ function checkTuning(t: TuningFields, ctx: z.RefinementCtx): void {
   }
   if (t.stepHeight >= crouchHeight) {
     issue(['stepHeight'], 'stepHeight must be lower than capsule.crouchHeight');
+  }
+  if (t.gait !== undefined && t.gait.runFrom <= t.gait.walkFrom) {
+    issue(['gait', 'runFrom'], 'gait.runFrom must be higher than gait.walkFrom');
   }
 }
 

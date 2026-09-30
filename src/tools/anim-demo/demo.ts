@@ -171,12 +171,16 @@ export function animDemoTransform(
   };
 }
 
-/** A demo character's locomotion, for the animation parameters. */
+/**
+ * A demo character's locomotion, for the animation parameters: walking while it moves, idle
+ * otherwise (the state the sim's locomotion system would publish at MOVE_SPEED, mw-e02.6).
+ */
 export function animDemoLocomotion(
   view: Pick<World, 'get'>,
   entity: EntityId,
-): { speed: number; turnRate: number; grounded: boolean } | undefined {
+): { speed: number; turnRate: number; grounded: boolean; state: 'idle' | 'walk' } | undefined {
   const demo = view.get(entity, AnimDemoComponent);
   if (demo === undefined) return undefined;
-  return { speed: demo.speed, turnRate: demo.turnRate, grounded: true };
+  const state = demo.speed > 0 ? 'walk' : 'idle';
+  return { speed: demo.speed, turnRate: demo.turnRate, grounded: true, state };
 }

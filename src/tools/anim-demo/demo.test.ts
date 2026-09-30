@@ -69,6 +69,7 @@ describe('animation demo characters', () => {
       speed: MOVE_SPEED,
       turnRate: expect.closeTo(Math.PI, 9) as number,
       grounded: true,
+      state: 'walk',
     });
     const moving = animDemoTransform(world, entity);
     expect(moving?.position.x).not.toBe(1);
@@ -81,7 +82,7 @@ describe('animation demo characters', () => {
       position: { x: 1, y: 0, z: 2 },
       rotation: { x: 0, y: 0, z: 0, w: 1 },
     });
-    expect(animDemoLocomotion(world, entity)?.speed).toBe(0);
+    expect(animDemoLocomotion(world, entity)).toMatchObject({ speed: 0, state: 'idle' });
     const stranger = world.spawn();
     expect(animDemoTransform(world, stranger)).toBeUndefined();
     expect(animDemoLocomotion(world, stranger)).toBeUndefined();

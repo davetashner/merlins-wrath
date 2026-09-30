@@ -140,6 +140,81 @@
       "exclusiveMinimum": 0,
       "exclusiveMaximum": 90,
       "description": "Steepest walkable slope, degrees; steeper ground is a wall the player slides off."
+    },
+    "gait": {
+      "description": "Locomotion states and events; absent = the sim’s defaults (DEFAULT_GAIT_TUNING).",
+      "type": "object",
+      "properties": {
+        "walkFrom": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "description": "Horizontal speed from which a character with move input walks (below: idle), m/s."
+        },
+        "runFrom": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "description": "Horizontal speed from which it runs (below: walk), m/s; above walkFrom."
+        },
+        "landingMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "How long the landing state lasts after a hard landing, whole ms."
+        },
+        "hardLanding": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 50,
+          "description": "Impact speed from which a landing counts as hard (shows the landing state), m/s."
+        },
+        "footstep": {
+          "type": "object",
+          "properties": {
+            "walk": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 5,
+              "description": "Walking, m."
+            },
+            "run": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 5,
+              "description": "Running, m."
+            },
+            "sprint": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 5,
+              "description": "Sprinting, m."
+            },
+            "crouch": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 5,
+              "description": "Crouching, m."
+            }
+          },
+          "required": [
+            "walk",
+            "run",
+            "sprint",
+            "crouch"
+          ],
+          "additionalProperties": false,
+          "description": "Ground distance between footsteps per gait, m (half a stride): footstep events come from the distance travelled, not from animation."
+        }
+      },
+      "required": [
+        "walkFrom",
+        "runFrom",
+        "landingMs",
+        "hardLanding",
+        "footstep"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

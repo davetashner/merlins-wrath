@@ -37,7 +37,8 @@ import { createRenderBootstrap } from '@render/bootstrap/index';
 import { createTrainingDummy } from '@render/combat/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
-import { createPlayerCapsule } from '@render/player/index';
+import { AnimationController, compileGraph } from '@render/animation/index';
+import { createPlayerBody } from '@render/player/index';
 import { createVfxRenderer } from '@render/vfx/index';
 import {
   DAMAGE_COMPONENTS,
@@ -58,7 +59,12 @@ import {
   type EntityId,
   type RapierPhysics,
 } from '@sim/index';
-import { compactProbe, setupAnimationDemo, type AnimDemo } from '@tools/anim-demo/setup';
+import {
+  compactProbe,
+  playerAnimationProbe,
+  setupAnimationDemo,
+  type AnimDemo,
+} from '@tools/anim-demo/setup';
 import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
@@ -77,6 +83,9 @@ import {
   unsupportedMessage,
   type MissingFeature,
 } from '@ui/unsupported';
+
+/** The player's placeholder rig: the grey-box humanoid's animation graph (mw-e02.6). */
+const PLAYER_RIG_ID = 'greybox-humanoid';
 
 /** Placeholder world seed until new-game/save flows choose one. */
 const BOOT_SEED = 1;
@@ -363,6 +372,7 @@ function startRenderer(root: HTMLElement): void {
       sampleCommands: commands.sampler(bridge.sampleCommands),
       simPaused: bridge.simPaused,
       onStep: () => {
+        player?.onStep();
         animation?.driver.capture();
         for (const hook of afterStep) hook();
       },
@@ -429,6 +439,13 @@ function startRenderer(root: HTMLElement): void {
         camera.fov = cameraTuning.fov;
         camera.near = cameraTuning.near;
         camera.updateProjectionMatrix();
+        // The player's body is the grey-box humanoid, animated from its sim locomotion (mw-e02.6).
+        const graph = compileGraph(
+          content.get('anim-graph', PLAYER_RIG_ID),
+          content.all('anim-clip'),
+        );
+        const body = createPlayerBody(graph.rig);
+        let publishedPlayerProbe = '';
         player = setupTestbedPlayer({
           world,
           scene: loaded,
@@ -440,7 +457,24 @@ function startRenderer(root: HTMLElement): void {
           // shield (mw-e04.6) are playable.
           moves: combat.moves,
           melee: combat.melee,
-          object: createPlayerCapsule(tuning.capsule),
+          object: body.root,
+          animation: {
+            controller: new AnimationController(graph),
+            apply: (pose) => {
+              body.apply(pose);
+            },
+            lower: (metres) => {
+              body.lower(metres);
+            },
+            // The e2e animation probe (mw-e02.6 AC-4): each layer's state and clip, and the states
+            // and clips entered, oldest first.
+            publish: (probe) => {
+              const json = JSON.stringify(playerAnimationProbe(probe));
+              if (json !== publishedPlayerProbe) {
+                root.dataset['playerAnimation'] = publishedPlayerProbe = json;
+              }
+            },
+          },
           binding: (object, read) => {
             view.scene.add(object);
             return object3DBinding(object, read);
