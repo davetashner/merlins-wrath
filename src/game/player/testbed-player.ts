@@ -24,7 +24,9 @@
 //
 // With `lockOn` (mw-e02.16) the player also gets lock-on (src/sim/targeting): the scene's targetable
 // spawns become lock targets, and while locked the orbit camera frames the player and target together
-// (LockFraming, presentation only). `lockTarget()` tells the HUD where the lock marker goes.
+// (LockFraming, presentation only). `lockTarget()` tells the HUD where the lock marker goes. With
+// `melee` too, the knight's attacks turn toward the locked target during startup (mw-e02.31),
+// located as lock-on locates it.
 
 import type {
   CameraTuning,
@@ -44,6 +46,8 @@ import {
   installInteraction,
   installLockOn,
   installPlayer,
+  lockedTarget,
+  placedTargetPosition,
   interacted,
   interactionPrompt,
   LockOnComponent,
@@ -110,7 +114,7 @@ export interface TestbedLockOn {
   readonly sight: Pick<LineOfSight, 'ray'>;
   /** The targetable profile a scene spawn names (content `targetable`). */
   readonly profile: (id: string) => Frozen<TargetableDef> | undefined;
-  /** Where targets are; defaults to their scene position. */
+  /** Where targets are; defaults to their placement, else their scene position. */
   readonly locate?: TargetLocator;
   /** Which targets are defeated (zeroHealth where the damage model is registered). */
   readonly defeated?: DefeatedCheck;
@@ -307,6 +311,12 @@ export function setupTestbedPlayer<TObject, TCommand>(
   const { world, scene, sync, camera, publish, publishCamera, collision, tuning } = options;
   const cameraTuning = options.cameraTuning;
   const look = lookSettings(cameraTuning);
+  const { lockOn } = options;
+  // With lock-on, attacks face the locked target during startup (mw-e02.31).
+  const melee =
+    options.melee === undefined || lockOn === undefined
+      ? options.melee
+      : { ...options.melee, target: lockedTarget, locate: lockOn.locate ?? placedTargetPosition };
   const entity = installPlayer(world, {
     spawns: scene.layout.spawns,
     collision,
@@ -319,7 +329,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
     ...(options.moves !== undefined && {
       combat: {
         moves: options.moves,
-        ...(options.melee !== undefined && { melee: options.melee }),
+        ...(melee !== undefined && { melee }),
       },
     }),
   });
@@ -341,13 +351,12 @@ export function setupTestbedPlayer<TObject, TCommand>(
     }
   }
   const hasMoves = options.moves !== undefined;
-  const { lockOn } = options;
   let framing: LockFraming | undefined;
   if (lockOn !== undefined) {
     installLockOn(world, entity, {
       tuning: lockOn.tuning,
       sight: lockOn.sight,
-      ...(lockOn.locate !== undefined && { locate: lockOn.locate }),
+      locate: lockOn.locate ?? placedTargetPosition,
       ...(lockOn.defeated !== undefined && { defeated: lockOn.defeated }),
     });
     for (const { entity: target, spawn } of scene.spawns) {

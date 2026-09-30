@@ -7,11 +7,14 @@ import {
   PLAYER_CONTROLLER_ID,
   PLAYER_LOCK_ON_ID,
 } from '@content/index';
+import { markExercised } from '@content/testing';
 import { AnimationController, compileGraph } from '@render/animation/index';
 import {
   box,
   CharacterController,
+  CombatFacingComponent,
   DAMAGE_COMPONENTS,
+  HealthComponent,
   HIT_VOLUME_COMPONENTS,
   StaminaComponent,
   FakeCollisionWorld,
@@ -19,6 +22,7 @@ import {
   interacted,
   LineOfSight,
   PlacementComponent,
+  placeEntity,
   PlayerLook,
   RapierSightWorld,
   registerWorldProperties,
@@ -29,11 +33,12 @@ import {
   registerSceneComponents,
   SKIN,
   World,
+  zeroHealth,
   type ActionFrame,
   type Interaction,
 } from '@sim/index';
 import { ActionSampler } from '../input';
-import { prepareTestbedCombat, startTestbedCombat } from '../combat';
+import { prepareTestbedCombat, startTestbedCombat, TRAINING_DUMMY } from '../combat';
 import { createGameLoop, FakeFrames, RenderSync, type SceneBinding, type Transform } from '../loop';
 import { readSceneTransform, SceneLoader } from '../scene';
 import { lookForward, toRadians } from '../camera';
@@ -229,6 +234,106 @@ describe('testbed player with sword and shield (mw-e04.6)', () => {
     world.remove(player.entity, StaminaComponent);
     step();
     expect(player.readout()?.combat).toMatchObject({ stamina: 0, blocking: false });
+  });
+});
+
+describe('the room training dummy as a lock target (mw-e02.31, mw-e02.32)', () => {
+  /** The testbed with sword and shield, lock-on (zeroHealth) and the room's training dummy. */
+  function room() {
+    const combat = prepareTestbedCombat(content);
+    const physics = new RapierPhysics(RAPIER);
+    const world = registerSceneComponents(new World<ActionFrame>({ seed: 1, physics })).register(
+      ...HIT_VOLUME_COMPONENTS,
+      ...DAMAGE_COMPONENTS,
+      PlacementComponent,
+    );
+    const sync = new RenderSync(world);
+    const loader = new SceneLoader({
+      world,
+      sync,
+      colliders: physics,
+      content,
+      objects: { staticGeometry: () => ({}), spawn: () => ({}) },
+      binding: (object: Box) => binding(object, readSceneTransform),
+    });
+    const scene = loader.load('testbed');
+    const player = setupTestbedPlayer({
+      world,
+      scene,
+      sync,
+      tuning,
+      cameraTuning,
+      collision: new RapierCollisionWorld(physics),
+      object: {},
+      binding,
+      camera: fakeCamera(),
+      moves: combat.moves,
+      melee: combat.melee,
+      lockOn: {
+        tuning: content.get('lock-on', PLAYER_LOCK_ON_ID),
+        sight: new LineOfSight({ world: new RapierSightWorld(physics) }),
+        profile: (id: string) => content.get('targetable', id),
+        defeated: zeroHealth,
+      },
+    });
+    const { dummies } = startTestbedCombat(world, combat, scene.layout.spawns, player.entity);
+    const [dummy] = dummies;
+    if (dummy === undefined) throw new Error('no room dummy');
+    const sampler = new ActionSampler();
+    const step = (codes: readonly string[] = []) => {
+      for (const code of codes) sampler.down(code);
+      world.step(sampler.sampleCommands(world.tick));
+      for (const code of codes) sampler.up(code);
+    };
+    for (let i = 0; i < 30; i++) step(); // settle
+    return { world, player, dummy, step };
+  }
+
+  it('AC-1 (mw-e02.32): Q facing the room dummy locks it, and the marker sits on its chest', ({
+    task,
+  }) => {
+    markExercised(task, 'targetable', 'training-dummy');
+    const { player, dummy, step } = room();
+    expect(player.readout()?.lock).toBeNull();
+    step(['KeyQ']);
+    expect(player.readout()?.lock).toBe(dummy);
+    // The room dummy stands at the origin; the profile's first lock point is its chest.
+    expect(player.lockTarget()).toEqual({ entity: dummy, point: { x: 0, y: 1.3, z: 0 } });
+  });
+
+  it('AC-2 (mw-e02.32): when its health reaches 0, the lock releases (no other target within 10 m)', () => {
+    const { world, player, dummy, step } = room();
+    step(['KeyQ']);
+    expect(player.readout()?.lock).toBe(dummy);
+    const health = world.get(dummy, HealthComponent);
+    if (health === undefined) throw new Error('no health');
+    world.set(dummy, HealthComponent, { ...health, current: 0 });
+    step();
+    expect(player.readout()?.lock).toBeNull();
+    expect(player.lockTarget()).toBeUndefined();
+  });
+
+  it('AC-1 (mw-e02.31): a swing turns toward the locked dummy at 6° a startup tick, wherever it has gone', () => {
+    const { world, player, dummy, step } = room();
+    step(['KeyQ']);
+    const degrees = () => {
+      const f = world.get(player.entity, CombatFacingComponent)?.facing;
+      if (f === undefined) throw new Error('no facing');
+      return (Math.atan2(f.x, f.z) * 180) / Math.PI; // from +z (the dummy) toward +x
+    };
+    expect(degrees()).toBeCloseTo(0, 6);
+    // Knocked round to the knight's side (+x, 90° from where it faces and looks) as the swing starts.
+    const at = world.get(player.entity, PlacementComponent);
+    if (at === undefined) throw new Error('no placement');
+    placeEntity(world, dummy, { x: at.x + 1, y: 0, z: at.z }, TRAINING_DUMMY.radius);
+    step(['Mouse0']);
+    expect(player.readout()?.combat?.action).toBe('sword-light-1');
+    // The look has not turned yet (lock-on turns it after the facing rule), so this is the lock.
+    expect(degrees()).toBeCloseTo(6, 6);
+    for (let tick = 1; tick < 12; tick++) step();
+    expect(degrees()).toBeCloseTo(72, 6); // end of startup: 12 turns of 6°
+    step();
+    expect(degrees()).toBeCloseTo(72, 6); // first active tick: locked
   });
 });
 

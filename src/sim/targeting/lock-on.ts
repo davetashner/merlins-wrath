@@ -35,6 +35,7 @@ import { atan2, cos, sin } from '../math';
 import { PlayerLook, ViewAnchor, wrapYaw } from '../player/player';
 import { SceneTransformComponent } from '../scene/loader';
 import type { LineOfSight } from '../sight/line-of-sight';
+import { PlacementComponent } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import {
   LockOnComponent,
@@ -55,6 +56,26 @@ export type DefeatedCheck = <T>(world: World<T>, entity: EntityId) => boolean;
 /** The default locator: a scene entity's static position (SceneTransform must be registered). */
 export const sceneTargetPosition: TargetLocator = (world, entity) =>
   world.get(entity, SceneTransformComponent)?.position;
+
+/**
+ * Where a target is when it may move: its placement (a combatant's feet, kept up to date as it is
+ * knocked about) when it has one, else its static scene position. The lock-on default.
+ */
+export const placedTargetPosition: TargetLocator = (world, entity) => {
+  const placed = world.isRegistered(PlacementComponent)
+    ? world.get(entity, PlacementComponent)
+    : undefined;
+  return placed ?? sceneTargetPosition(world, entity);
+};
+
+/**
+ * The entity `locker` is locked on to, or undefined when it is not (or has no lock, or the world has
+ * no lock-on yet): what the player's attacks face during startup (mw-e02.31).
+ */
+export const lockedTarget = <T>(world: World<T>, locker: EntityId): EntityId | undefined =>
+  world.isRegistered(LockOnComponent)
+    ? (world.get(locker, LockOnComponent)?.target ?? undefined)
+    : undefined;
 
 /** Defeated at zero health (the damage model's Health must be registered). */
 export const zeroHealth: DefeatedCheck = (world, entity) =>
@@ -314,7 +335,7 @@ export interface LockOnOptions {
   readonly tuning: Frozen<LockOnTuning>;
   /** Line of sight from the locker's eye to lock points (LineOfSight over the physics world). */
   readonly sight: Pick<LineOfSight, 'ray'>;
-  /** Where targets are; defaults to sceneTargetPosition. */
+  /** Where targets are; defaults to placedTargetPosition. */
   readonly locate?: TargetLocator;
   /** Which targets are defeated; defaults to none (pass zeroHealth once targets have Health). */
   readonly defeated?: DefeatedCheck;
@@ -366,7 +387,7 @@ function steer<T>(
 
 /** The lock-on system (see the file header). Add it after the character controller. */
 export function lockOnSystem<T>(options: LockOnOptions): System<T> {
-  const locate = options.locate ?? sceneTargetPosition;
+  const locate = options.locate ?? placedTargetPosition;
   const defeated = options.defeated ?? neverDefeated;
   let params: LockOnParams | undefined;
   return {

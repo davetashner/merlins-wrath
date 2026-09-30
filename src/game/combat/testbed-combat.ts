@@ -16,7 +16,8 @@
 //    break's stagger, mw-e04.31) with pushes through the controller and physics, the player as a
 //    combatant that can be struck and react, a training dummy at every spawn tagged
 //    `training-dummy`, and the combat sandbox's dummies at spawns tagged `sandbox-dummy` /
-//    `sandbox-attacker`.
+//    `sandbox-attacker`. With lock-on installed (by setupTestbedPlayer, before this), every dummy —
+//    the scene's and any the console spawns later — is a lock-on target (mw-e02.32).
 //
 // The caller registers the hit-volume, damage and placement components (src/main.ts does at world
 // creation; installGamePhysics registers placement).
@@ -30,6 +31,7 @@ import {
   compileSocketTracks,
   HIT_STOP_ID,
   KNIGHT_SHIELD_ID,
+  TRAINING_DUMMY_TARGETABLE_ID,
   type GameContent,
   type HitStopTable,
   type MoveTable,
@@ -66,6 +68,7 @@ import {
   withAttackerVariants,
   type CombatSandboxOptions,
   type ComponentType,
+  type DummyLockProfile,
   type EntityId,
   type FacingReader,
   type PlayerMeleeOptions,
@@ -92,6 +95,8 @@ export interface TestbedCombat {
   readonly sandbox: CombatSandboxOptions;
   /** The debug console's spawners for the sandbox's dummies (`dummy`, `attacker-dummy`). */
   readonly spawners: ReadonlyMap<string, Spawner>;
+  /** Every dummy's lock-on profile (content `targetable` `training-dummy`, mw-e02.32). */
+  readonly targetable: DummyLockProfile;
 }
 
 /** Compiles the knight's combat from `content` (see the file header, step 1). */
@@ -99,7 +104,12 @@ export function prepareTestbedCombat(content: GameContent): TestbedCombat {
   const damage = new DamageModel();
   damage.register(shieldGuard());
   const moves = withAttackerVariants(compileMoves(content.all('move')));
-  const sandbox = { tuning: compileSandbox(content.get('sandbox', COMBAT_SANDBOX_ID)), moves };
+  const targetable = content.get('targetable', TRAINING_DUMMY_TARGETABLE_ID);
+  const sandbox = {
+    tuning: compileSandbox(content.get('sandbox', COMBAT_SANDBOX_ID)),
+    moves,
+    targetable,
+  };
   return {
     moves,
     tracks: compileSocketTracks(content.all('socket-track')),
@@ -108,6 +118,7 @@ export function prepareTestbedCombat(content: GameContent): TestbedCombat {
     hitStop: compileHitStop(content.get('hit-stop', HIT_STOP_ID)),
     sandbox,
     spawners: sandboxSpawners(sandbox),
+    targetable,
   };
 }
 
@@ -199,7 +210,9 @@ export function startTestbedCombat<TInput>(
   });
   if (player !== undefined) arm(world, combat, player);
   return {
-    dummies: trainingDummySpawns(spawns).map((spawn) => spawnTrainingDummy(world, spawn)),
+    dummies: trainingDummySpawns(spawns).map((spawn) =>
+      spawnTrainingDummy(world, spawn, combat.targetable),
+    ),
     sandboxDummies: spawnSceneDummies(world, spawns, combat.sandbox),
   };
 }

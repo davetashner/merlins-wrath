@@ -28,19 +28,27 @@ export type FacingRule = (world: World<never>, entity: EntityId) => Vec3 | undef
 /** The rule that never turns anyone. */
 export const keepFacing: FacingRule = () => undefined;
 
+/** Where an entity is (its feet or origin), or undefined when it cannot be located. */
+export type EntityLocator = (world: World<never>, entity: EntityId) => Vec3 | undefined;
+
+/** The default target locator: the entity's placement. */
+const placementOf: EntityLocator = (world, entity) => world.get(entity, PlacementComponent);
+
 /**
  * Faces the entity `target` names (lock-on, an AI's quarry): the horizontal direction from the
- * fighter's placement to the target's. No answer without a target, without placements, or when the
- * two stand on the same spot.
+ * fighter's placement to where `locate` puts the target (its placement by default; lock-on passes
+ * its own locator, so a target with only a scene transform is faced too). No answer without a
+ * target, without a position for either, or when the two stand on the same spot.
  */
 export function faceTarget(
   target: (world: World<never>, entity: EntityId) => EntityId | undefined,
+  locate: EntityLocator = placementOf,
 ): FacingRule {
   return (world, entity) => {
     const other = target(world, entity);
     if (other === undefined) return undefined;
     const from = world.get(entity, PlacementComponent);
-    const to = world.get(other, PlacementComponent);
+    const to = locate(world, other);
     if (from === undefined || to === undefined) return undefined;
     const x = to.x - from.x;
     const z = to.z - from.z;

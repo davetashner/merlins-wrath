@@ -17,9 +17,11 @@ import {
   Died,
   drainStamina,
   HitReaction,
+  LockOnComponent,
   PoiseComponent,
   ResistancesComponent,
   SandboxDummyComponent,
+  TargetableComponent,
   teleportCommand,
   type ActionStartInfo,
   type DamageResult,
@@ -213,5 +215,31 @@ describe('the knight takes hits and blocks them (mw-e04.31)', () => {
       [18, 'flinch'],
       [138, 'stagger'],
     ]);
+  });
+});
+
+describe('lock-on in the combat sandbox (mw-e02.32)', () => {
+  it('the scene’s dummies and console-spawned ones are lock-on targets', () => {
+    const s = sandbox();
+    const sampler = new ActionSampler();
+    const press = (code: string) => {
+      sampler.down(code);
+      s.world.step([...s.queue.drain(), ...sampler.sampleCommands(s.world.tick)]);
+      sampler.up(code);
+      s.steps(1);
+    };
+    s.steps(30); // settle
+    for (const id of s.combatants.sandboxDummies) {
+      expect(s.world.has(id, TargetableComponent)).toBe(true);
+    }
+    press('KeyQ');
+    const locked = s.world.get(s.player, LockOnComponent)?.target;
+    expect(s.combatants.sandboxDummies).toContain(locked);
+    const before = new Set(s.dummies(false));
+    s.console.execute('spawn dummy');
+    s.steps(1);
+    const [spawned] = s.dummies(false).filter((id) => !before.has(id));
+    if (spawned === undefined) throw new Error('no dummy spawned');
+    expect(s.world.has(spawned, TargetableComponent)).toBe(true);
   });
 });

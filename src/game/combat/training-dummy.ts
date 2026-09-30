@@ -2,15 +2,18 @@
 // (mw-e04.9) brings real dummy creatures. A scene spawn tagged `training-dummy` becomes a sim entity
 // with a placement at its feet, one torso hurtbox (multiplier 1, so a hit deals its damage exactly)
 // and health, and nothing else: it does not move, block, stagger or fight back. Its health is
-// published for the HUD-less e2e (`dummyReadout`).
+// published for the HUD-less e2e (`dummyReadout`). Given a targetable profile, and where the world
+// has lock-on, it is also a lock-on target (mw-e02.32), located by its placement.
 
-import type { EntityId, SceneSpawnPlacement, World } from '@sim/index';
+import type { DummyLockProfile, EntityId, SceneSpawnPlacement, World } from '@sim/index';
 import {
   giveCombatant,
   giveHurtboxes,
+  giveTargetable,
   healthOf,
   placeEntity,
   PlacementComponent,
+  TargetableComponent,
 } from '@sim/index';
 import type { SimView, Transform } from '../loop/render-sync';
 
@@ -35,10 +38,15 @@ export function trainingDummySpawns(
 }
 
 /**
- * Spawns a training dummy at `spawn`. Register the hit-volume, damage and placement components
- * first; call between steps.
+ * Spawns a training dummy at `spawn`, lockable with `targetable` when the world has lock-on
+ * (TargetableComponent registered). Register the hit-volume, damage and placement components first;
+ * call between steps.
  */
-export function spawnTrainingDummy(world: World<never>, spawn: SceneSpawnPlacement): EntityId {
+export function spawnTrainingDummy(
+  world: World<never>,
+  spawn: SceneSpawnPlacement,
+  targetable?: DummyLockProfile,
+): EntityId {
   const { radius, torso, health } = TRAINING_DUMMY;
   const entity = world.spawn();
   placeEntity(world, entity, spawn.position, radius);
@@ -60,6 +68,9 @@ export function spawnTrainingDummy(world: World<never>, spawn: SceneSpawnPlaceme
     ],
   });
   giveCombatant(world, entity, { health });
+  if (targetable !== undefined && world.isRegistered(TargetableComponent)) {
+    giveTargetable(world, entity, targetable);
+  }
   return entity;
 }
 

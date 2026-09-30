@@ -23,7 +23,7 @@
 // (params.ts), facing the player. The console's `attacker` and `dummies` commands reconfigure the
 // dummies already there through SandboxCommand, applied inside the tick like every debug command.
 
-import type { MoveTable, RuntimeMove, RuntimeSandbox } from '@content/index';
+import type { Frozen, MoveTable, RuntimeMove, RuntimeSandbox, TargetableDef } from '@content/index';
 import type { EntityId } from '../../core/component';
 import type { System, World } from '../../core/world';
 import type { SpawnParams } from '../../debug/commands';
@@ -33,6 +33,7 @@ import type { SceneSpawnPlacement } from '../../scene/layout';
 import type { Vec3 } from '../../stimulus/shapes';
 import { cos, sin } from '../../math';
 import { PlacementComponent, placeEntity } from '../../stimulus/placement';
+import { giveTargetable, TargetableComponent } from '../../targeting/components';
 import { horizontalAim } from '../attacks/frame';
 import {
   giveCombatant,
@@ -135,9 +136,17 @@ export function withAttackerVariants(moves: MoveTable): MoveTable {
   return out;
 }
 
+/** A lock-on profile (content `targetable`): lock points and pick priority. */
+export type DummyLockProfile = Frozen<Pick<TargetableDef, 'points' | 'priority'>>;
+
 /** What spawning a dummy needs besides its spec: the sandbox tuning. */
 export interface DummyBodyOptions {
   readonly tuning: RuntimeSandbox;
+  /**
+   * Makes the dummy a lock-on target with this profile (mw-e02.32) where the world has lock-on
+   * (TargetableComponent registered); absent = not lockable.
+   */
+  readonly targetable?: DummyLockProfile;
   /** Direction it faces (horizontal part; default +z). */
   readonly facing?: Vec3;
 }
@@ -185,6 +194,9 @@ export function spawnSandboxDummy(
     }),
   );
   if (spec.infiniteHealth) world.add(entity, UndyingComponent, true);
+  if (options.targetable !== undefined && world.isRegistered(TargetableComponent)) {
+    giveTargetable(world, entity, options.targetable);
+  }
   return entity;
 }
 
@@ -219,6 +231,8 @@ export interface CombatSandboxOptions {
   readonly tuning: RuntimeSandbox;
   /** The action timeline's move table, with the attacker variants (`withAttackerVariants`). */
   readonly moves: MoveTable;
+  /** The dummies' lock-on profile (see DummyBodyOptions.targetable); absent = not lockable. */
+  readonly targetable?: DummyLockProfile;
 }
 
 /** Spawns a dummy at every spawn tagged SANDBOX_DUMMY_TAG or SANDBOX_ATTACKER_TAG, in spawn order. */
@@ -227,11 +241,15 @@ export function spawnSceneDummies(
   spawns: readonly SceneSpawnPlacement[],
   options: CombatSandboxOptions,
 ): readonly EntityId[] {
-  const { tuning } = options;
+  const { tuning, targetable } = options;
   const spec = dummySpecFrom(tuning.dummy, {});
   const out: EntityId[] = [];
   for (const spawn of spawns) {
-    const body = { tuning, facing: spawnFacing(spawn) };
+    const body = {
+      tuning,
+      facing: spawnFacing(spawn),
+      ...(targetable !== undefined && { targetable }),
+    };
     if (spawn.tags.includes(SANDBOX_ATTACKER_TAG)) {
       const attacker = attackerFromTuning(tuning.attacker);
       out.push(spawnAttackerDummy(world, spawn.position, spec, attacker, body));
@@ -315,7 +333,11 @@ export function sandboxSpawners(options: CombatSandboxOptions): Map<string, Spaw
     (world, at, params) => {
       const w: World<never> = world;
       const { dummy, attacker } = specsFor(options, content, params, w.clock.hz);
-      const body = { tuning: options.tuning, facing: towardPlayer(w, at) ?? FORWARD_FACING };
+      const body = {
+        tuning: options.tuning,
+        facing: towardPlayer(w, at) ?? FORWARD_FACING,
+        ...(options.targetable !== undefined && { targetable: options.targetable }),
+      };
       return attacker === undefined
         ? spawnSandboxDummy(w, at, dummy, body)
         : spawnAttackerDummy(w, at, dummy, attacker, body);

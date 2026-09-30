@@ -46,21 +46,21 @@
     [39,[{"kind":"input.actions","move":{"x":0,"y":1},"look":{"x":0,"y":0},"lookStick":{"x":0,"y":0},"jump":{"pressed":false,"held":false,"released":false},"sprint":{"pressed":false,"held":false,"released":false},"crouch":{"pressed":false,"held":false,"released":false},"dodge":{"pressed":false,"held":false,"released":false},"interact":{"pressed":false,"held":false,"released":false},"lockOn":{"pressed":false,"held":false,"released":false},"cycleTarget":{"pressed":false,"held":false,"released":false},"primaryAttack":{"pressed":false,"held":false,"released":false},"secondaryAttack":{"pressed":false,"held":true,"released":false},"ability1":{"pressed":false,"held":false,"released":false},"ability2":{"pressed":false,"held":false,"released":false},"ability3":{"pressed":false,"held":false,"released":false},"ability4":{"pressed":false,"held":false,"released":false},"inventory":{"pressed":false,"held":false,"released":false},"pause":{"pressed":false,"held":false,"released":false}}]]
   ],
   "checkpoints": [
-    {"tick":0,"hash":"b331e541"},
-    {"tick":60,"hash":"ea29edac"},
-    {"tick":120,"hash":"8386fe1d"},
-    {"tick":180,"hash":"94f34e61"},
-    {"tick":240,"hash":"cb466d73"},
-    {"tick":300,"hash":"740ad55a"},
-    {"tick":360,"hash":"1c116c0b"},
-    {"tick":420,"hash":"c8d485aa"},
-    {"tick":480,"hash":"1863d2da"},
-    {"tick":540,"hash":"0032b8ca"},
-    {"tick":600,"hash":"b49fa9e8"},
-    {"tick":660,"hash":"e66c8eb5"},
-    {"tick":720,"hash":"1975e317"},
-    {"tick":780,"hash":"c3ce8559"},
-    {"tick":784,"hash":"177fc2fa"}
+    {"tick":0,"hash":"130540ef"},
+    {"tick":60,"hash":"4263f0da"},
+    {"tick":120,"hash":"64c36ad9"},
+    {"tick":180,"hash":"65e2442e"},
+    {"tick":240,"hash":"59f88d60"},
+    {"tick":300,"hash":"893a19c3"},
+    {"tick":360,"hash":"b88dae33"},
+    {"tick":420,"hash":"8155c815"},
+    {"tick":480,"hash":"6fcc2887"},
+    {"tick":540,"hash":"792541d6"},
+    {"tick":600,"hash":"dbc96add"},
+    {"tick":660,"hash":"8d8817d9"},
+    {"tick":720,"hash":"edb27897"},
+    {"tick":780,"hash":"0260659d"},
+    {"tick":784,"hash":"8202a9c5"}
   ],
-  "finalHash": "177fc2fa"
+  "finalHash": "8202a9c5"
 }

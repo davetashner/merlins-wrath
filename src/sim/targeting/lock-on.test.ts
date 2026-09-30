@@ -21,14 +21,17 @@ import type { SceneSpawnPlacement } from '../scene/layout';
 import { hashWorld } from '../snapshot';
 import { FakeSightWorld } from '../sight/fake-sight-world';
 import { LineOfSight } from '../sight/line-of-sight';
+import { PlacementComponent, placeEntity } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import { giveTargetable, LockOnComponent, NO_LOCK, TargetableComponent } from './components';
 import {
   bearing,
   flickDirection,
   installLockOn,
+  lockedTarget,
   lockOnParams,
   lookAtRest,
+  placedTargetPosition,
   sceneTargetPosition,
   Targeting,
   turnTowards,
@@ -523,5 +526,36 @@ describe('lock-on helpers (mw-e02.16)', () => {
     world.set(a, HealthComponent, { max: 10, current: 0 });
     steps(LOCK);
     expect(lock()).toBe(a);
+  });
+});
+
+describe('lock-on on moving targets (mw-e02.32)', () => {
+  it('the default locator follows a placement (a knocked-back dummy), else the scene position', () => {
+    const { world, target, lock, steps, player } = arena();
+    if (!world.isRegistered(PlacementComponent)) world.register(PlacementComponent);
+    const scenic = target(4, -6);
+    const placed = world.spawn();
+    placeEntity(world, placed, v(0, 0, -4), 0.35);
+    giveTargetable(world, placed, DUMMY);
+    world.step([IDLE]);
+    expect(placedTargetPosition(world, scenic)).toEqual(v(4, 0, -6));
+    expect(placedTargetPosition(world, placed)).toMatchObject(v(0, 0, -4));
+    steps(LOCK);
+    expect(lock()).toBe(placed);
+    expect(lockedTarget(world, player)).toBe(placed);
+    placeEntity(world, placed, v(-1, 0, -5), 0.35); // knocked back
+    steps(IDLE);
+    expect(world.get(player, ViewAnchor)?.point).toEqual(v(-1, 1.3, -5));
+    steps(LOCK); // released
+    expect(lockedTarget(world, player)).toBeUndefined();
+    expect(lockedTarget(world, scenic)).toBeUndefined(); // not a locker
+  });
+
+  it('without placements registered, the default locator reads the scene position', () => {
+    const world = registerSceneComponents(new World({ seed: 1 }));
+    const id = world.spawn();
+    world.add(id, SceneTransformComponent, { position: v(3, 0, 4), rotation: IDENTITY });
+    expect(world.isRegistered(PlacementComponent)).toBe(false);
+    expect(placedTargetPosition(world, id)).toEqual(v(3, 0, 4));
   });
 });
