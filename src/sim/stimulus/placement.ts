@@ -13,21 +13,19 @@ export interface Placement extends Vec3 {
   readonly radius: number;
 }
 
+const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n);
+
 /** Why `value` is not a valid placement, or undefined when it is. Accepts untyped input. */
 export function validatePlacement(value: unknown): string | undefined {
   if (typeof value !== 'object' || value === null) return 'placement must be an object';
   const { x, y, z, radius } = value as Record<string, unknown>;
-  for (const [name, n] of [
-    ['x', x],
-    ['y', y],
-    ['z', z],
-    ['radius', radius],
-  ] as const) {
-    if (typeof n !== 'number' || !Number.isFinite(n)) {
-      return `placement.${name} must be a finite number`;
-    }
-  }
-  return (radius as number) < 0 ? 'placement.radius must be ≥ 0' : undefined;
+  // Checked one by one rather than looping over a list: physics objects place every moving body
+  // every tick, so this stays allocation-free.
+  if (!finite(x)) return 'placement.x must be a finite number';
+  if (!finite(y)) return 'placement.y must be a finite number';
+  if (!finite(z)) return 'placement.z must be a finite number';
+  if (!finite(radius)) return 'placement.radius must be a finite number';
+  return radius < 0 ? 'placement.radius must be ≥ 0' : undefined;
 }
 
 function frozenPlacement(value: unknown): Placement {
