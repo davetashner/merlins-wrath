@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { box, rampAt } from '../character/greybox';
+import { box, rampAt, type GreyboxShape } from '../character/greybox';
 import type { EntityId } from '../core/component';
 import { World } from '../core/world';
 import {
@@ -26,6 +26,7 @@ import {
   type LightEnvironment,
 } from './field';
 import { installLightField, lightFieldSystem } from './install';
+import { occluderOf, segmentHits } from './occluders';
 
 const at = (x: number, y: number, z: number): Vec3 => ({ x, y, z });
 
@@ -527,5 +528,121 @@ describe('light field determinism', () => {
     expect(a).toEqual(b);
     expect(a.some((v) => v === 0)).toBe(true);
     expect(a.some((v) => v > 0)).toBe(true);
+  });
+});
+
+describe('light field regression (mw-64w)', () => {
+  /** FNV-1a over the exact bits of every number (and the source of every contribution). */
+  function digest(samples: readonly ReturnType<LightField['sample']>[]): string {
+    const bits = new DataView(new ArrayBuffer(8));
+    let h = 0x811c9dc5;
+    const mix = (n: number) => {
+      bits.setFloat64(0, n);
+      for (let i = 0; i < 8; i++) h = Math.imul(h ^ bits.getUint8(i), 0x01000193) >>> 0;
+    };
+    for (const s of samples) {
+      mix(s.level);
+      mix(s.ambient);
+      mix(s.contributions.length);
+      for (const c of s.contributions) {
+        mix(c.level);
+        const { source } = c;
+        mix(source.kind === 'emitter' ? source.entity : source.kind === 'stimulus' ? -1 : -2);
+      }
+    }
+    return h.toString(16);
+  }
+
+  it('answers every feature of the model exactly as before the hot-path rework', () => {
+    const { world, field } = lightWorld({ defaultAmbient: 0.05 });
+    room(field);
+    field.statics.add(box(at(-1, 0, -1), at(1, 2, 1))); // a block in the middle
+    field.statics.add(rampAt(at(2, 0, -4), Math.PI / 8, 1.5, 2));
+    field.setEnvironment({
+      ambientZones: [{ id: 'cellar', min: at(-5, 0, -5), max: at(-2, 3, -2), level: 0.02 }],
+      directional: [{ id: 'moon', direction: at(1, -2, 0.5), level: 0.15, reach: 40 }],
+    });
+    lamp(world, at(-3, 1.5, -3), 100, 9);
+    lamp(world, at(3.3, 2.2, 3.1), 60, 6);
+    const spot = lamp(world, at(0, 2.8, 3), 100, 7);
+    setLightCone(world, spot, { direction: at(0.3, -1, -0.4), halfAngle: Math.PI / 5 });
+    thing(world, at(4, 1, -1), { flammable: true, burning: true }, 0.3);
+    thing(world, at(-2.5, 1, 2.5), { opaque: true }, 0.8); // a wardrobe
+    const crate = thing(world, at(2, 0.5, 1.5), { opaque: true }, 0.5);
+    setLightOccluderBox(world, crate, at(0.5, 0.5, 0.5));
+    lamp(world, at(0, 1, 5_000_000), 100, 20); // beyond the packable cell range
+    world.step();
+    const samples: ReturnType<LightField['sample']>[] = [];
+    for (let i = 0; i < 1500; i++) {
+      samples.push(
+        field.sample(
+          at(((i * 37) % 113) / 10 - 5.6, ((i * 13) % 37) / 10 - 0.2, ((i * 53) % 109) / 10 - 5.4),
+        ),
+      );
+    }
+    for (let i = 0; i < 40; i++) samples.push(field.sample(at(i / 4 - 5, 1, 5_000_000 + i / 3)));
+    expect(samples.filter((s) => s.contributions.length > 1).length).toBeGreaterThan(100);
+    expect(digest(samples)).toBe('2897220e');
+  });
+
+  it('matches a brute-force reference (every emitter, every static occluder, no cache)', () => {
+    const { world, field } = lightWorld();
+    const shapes: GreyboxShape[] = [
+      box(at(-6, -0.2, -6), at(6, 0, 6)),
+      box(at(-1, 0, -1), at(1, 2, 1)),
+      box(at(2.3, 0.4, -3.1), at(2.6, 2.7, 1.9)),
+      box(at(-4.2, 1.2, 0.3), at(-1.7, 1.5, 3.3)),
+      rampAt(at(-3, 0, -4), 30, 1.8, 2),
+      rampAt(at(3, 0, 3), 40, 1.2, 1.5),
+    ];
+    for (const shape of shapes) field.statics.add(shape);
+    const occluders = shapes.map(occluderOf);
+    const lamps = [
+      { at: at(-3.3, 1.5, -2.7), intensity: 100, radius: 9 },
+      { at: at(3.1, 2.2, 3.4), intensity: 70, radius: 7 },
+      { at: at(0.2, 2.9, -3.6), intensity: 100, radius: 8 },
+      { at: at(-0.4, 0.6, 2.2), intensity: 40, radius: 5 },
+      { at: at(-1.5, 0.5, -6.5), intensity: 80, radius: 6 }, // low, looking along the ramp
+      { at: at(-1.5, 1.2, -6.4), intensity: 80, radius: 6 }, // above the ramp's surface
+    ];
+    for (const l of lamps) lamp(world, l.at, l.intensity, l.radius);
+    world.step();
+    let lit = 0;
+    let dark = 0;
+    const points: Vec3[] = [];
+    for (let i = 0; i < 3000; i++) {
+      points.push(
+        at(
+          ((i * 7919) % 1201) / 100 - 6,
+          ((i * 131) % 311) / 100 - 0.1,
+          ((i * 104_729) % 1193) / 100 - 6,
+        ),
+      );
+    }
+    // Paths along one axis only, which run parallel to a ramp's slope plane.
+    for (const l of lamps) {
+      for (let t = -l.radius; t <= l.radius; t += 0.05) {
+        points.push(at(l.at.x + t, l.at.y, l.at.z), at(l.at.x, l.at.y, l.at.z + t));
+      }
+    }
+    for (const p of points) {
+      let expected = 0;
+      for (const l of lamps) {
+        const dx = p.x - l.at.x;
+        const dy = p.y - l.at.y;
+        const dz = p.z - l.at.z;
+        const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 >= l.radius * l.radius) continue;
+        if (occluders.some((o) => segmentHits(o, l.at.x, l.at.y, l.at.z, p.x, p.y, p.z))) continue;
+        const falloff = 1 - Math.sqrt(d2) / l.radius;
+        expected += (l.intensity / 100) * falloff * falloff;
+      }
+      const level = field.levelAt(p);
+      expect(level, JSON.stringify(p)).toBe(expected >= 1 ? 1 : expected);
+      if (level > 0) lit++;
+      else dark++;
+    }
+    expect(lit).toBeGreaterThan(500);
+    expect(dark).toBeGreaterThan(100);
   });
 });

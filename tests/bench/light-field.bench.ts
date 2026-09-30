@@ -57,6 +57,12 @@ function litTestbed() {
   return { world, field, samples, scene };
 }
 
+/** The 95th percentile of `samples` (nearest rank). */
+function p95(samples: number[]): number {
+  const sorted = [...samples].sort((a, b) => a - b);
+  return sorted[Math.ceil(0.95 * sorted.length) - 1] ?? Infinity;
+}
+
 describe('light field', () => {
   test('AC-6: 64 dynamic emitters and 500 samples per tick stay ≤ 0.5 ms p95', async ({
     bench,
@@ -71,19 +77,22 @@ describe('light field', () => {
       const drift = ((tick++ % 120) - 60) / 60; // ±1 m over two seconds
       for (const p of samples) sink += field.levelAt({ x: p.x + drift, y: p.y, z: p.z - drift });
     };
+    // tinybench reports p75 and p99 but not p95, so after its run (which also warms the JIT and
+    // the baked cells) 4000 more ticks are timed one by one and every sample is kept.
     const result = await bench('update + 500 samples', tickOnce).run();
-    // tinybench keeps no samples and reports no p95, so time ticks directly for the percentile.
     const times: number[] = [];
-    for (let i = 0; i < 2200; i++) {
+    for (let i = 0; i < 4000; i++) {
       const start = performance.now();
       tickOnce();
-      if (i >= 200) times.push(performance.now() - start);
+      times.push(performance.now() - start);
     }
-    times.sort((a, b) => a - b);
-    const p95 = times[Math.floor(0.95 * (times.length - 1))] ?? Infinity;
+    const tickP95 = p95(times);
+    console.info(
+      `light field: mean ${result.latency.mean.toFixed(4)} ms, p95 ${tickP95.toFixed(4)} ms per tick over ${String(times.length)} ticks`,
+    );
     expect(field.emitterCount).toBe(EMITTERS);
     expect(sink).toBeGreaterThan(0);
     expect(result.latency.mean).toBeLessThanOrEqual(0.5); // milliseconds
-    expect(p95).toBeLessThanOrEqual(0.5);
+    expect(tickP95).toBeLessThanOrEqual(0.5);
   });
 });

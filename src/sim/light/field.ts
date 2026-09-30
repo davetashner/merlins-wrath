@@ -22,7 +22,9 @@
 // straight path from a source to the position; a blocked source contributes 0. An emitter never
 // blocks its own light. Static occlusion is baked lazily per source into a 1 m grid: for each
 // cell a sample falls in, the source keeps the few static occluders that could lie between it and
-// any point of the cell, so later samples there only test those. The cache only speeds things up —
+// any point of the cell, so later samples there only test those. An emitter's cell that is neither
+// wholly shadowed nor wholly clear is split into 0.25 m sub-cells, most of which are, so few
+// samples run a segment test at all (mw-64w). The cache only speeds things up —
 // every answer is exact and depends only on the world, the level and the environment, never on
 // what was sampled before. It is dropped when the level geometry changes or the emitter moves.
 
@@ -66,6 +68,8 @@ export const DEFAULT_LIGHT_CONFIG: LightConfig = Object.freeze({
 });
 
 const finite = (n: number): boolean => Number.isFinite(n);
+/** `items[index]`, typed for an index the caller knows is in range. */
+const item = <T>(items: ArrayLike<T>, index: number): T => items[index] as T;
 const unitRange = (n: number): boolean => n >= 0 && n <= 1;
 
 function check(ok: boolean, problem: string): void {
@@ -162,29 +166,50 @@ const Y_LIMIT = 1024;
  * are in it, the whole cell is.
  */
 const IN_SHADOW: readonly Occluder[] = Object.freeze([]);
+/** Marks a region no static occluder can shadow (shared, so the hot loop never reads a fresh list). */
+const IN_THE_CLEAR: readonly Occluder[] = Object.freeze([]);
 
 /**
- * Whether `o` blocks the path to every corner of cell (ix, iy, iz). The path to a corner starts at
- * the source (cx, cy, cz), or, when `moving` (a directional light), at the corner shifted by the
- * source's offset from the cell centre.
+ * An emitter's baked cell: one of the two shared cells below, or its 64 sub-cells (0.25 m cubes)
+ * packed into one typed array. Sub-cell (i, j, k), each 0…3 along x, y, z, has its entry at
+ * 16i + 4j + k: −1 when one occluder shadows it all, 0 when no candidate can shadow any of it, or
+ * the index of its first candidate, with the candidate count just before it. A candidate is
+ * OCCLUDER_SIZE numbers: its box, cut (1 or 0), plane normal and offset. Sub-cells with the same
+ * candidates share them.
+ */
+type EmitterCell = Float64Array;
+/** A cell wholly in one static occluder's shadow. */
+const SHADED_CELL: EmitterCell = new Float64Array(0);
+/** A cell no static occluder can shadow. */
+const CLEAR_CELL: EmitterCell = new Float64Array(0);
+/** Sub-cells per cell, and numbers per packed candidate. */
+const SUB_CELLS = 64;
+const OCCLUDER_SIZE = 11;
+
+/**
+ * Whether `o` blocks the path to every corner of the cube of edge `size` at (ix, iy, iz). The path
+ * to a corner starts at the source (cx, cy, cz), or, when `moving` (a directional light), at the
+ * corner shifted by the source's offset from the cube's centre.
  */
 function shadowsCell(
   o: Occluder,
   ix: number,
   iy: number,
   iz: number,
+  size: number,
   cx: number,
   cy: number,
   cz: number,
   moving: boolean,
 ): boolean {
-  const ox = cx - ix - 0.5;
-  const oy = cy - iy - 0.5;
-  const oz = cz - iz - 0.5;
+  const half = size / 2;
+  const ox = cx - ix - half;
+  const oy = cy - iy - half;
+  const oz = cz - iz - half;
   for (let corner = 0; corner < 8; corner++) {
-    const px = ix + (corner & 1);
-    const py = iy + ((corner >> 1) & 1);
-    const pz = iz + ((corner >> 2) & 1);
+    const px = ix + size * (corner & 1);
+    const py = iy + size * ((corner >> 1) & 1);
+    const pz = iz + size * ((corner >> 2) & 1);
     const hit = moving
       ? blocksSegment(o, px + ox, py + oy, pz + oz, px, py, pz)
       : blocksSegment(o, cx, cy, cz, px, py, pz);
@@ -198,23 +223,24 @@ function shadowsCell(
  * spans [i, i + 1) × [j, j + 1) × [k, k + 1)). Cells inside the source's reach live in a dense
  * array; any others in a map. Cells too far out to key are not kept (recomputed per sample).
  */
-class CellCache {
-  private readonly dense: (readonly Occluder[] | undefined)[];
-  private readonly sparse = new Map<number, readonly Occluder[]>();
+class CellCache<T> {
+  // The dense grid and its bounds are read directly by `LightField.measure`'s hot loop.
+  readonly dense: (T | undefined)[];
+  private readonly sparse = new Map<number, T>();
 
   private constructor(
-    private readonly x0: number,
-    private readonly y0: number,
-    private readonly z0: number,
-    private readonly nx: number,
-    private readonly ny: number,
-    private readonly nz: number,
+    readonly x0: number,
+    readonly y0: number,
+    readonly z0: number,
+    readonly nx: number,
+    readonly ny: number,
+    readonly nz: number,
   ) {
-    this.dense = new Array<readonly Occluder[] | undefined>(nx * ny * nz).fill(undefined);
+    this.dense = new Array<T | undefined>(nx * ny * nz).fill(undefined);
   }
 
   /** A cache for everything a light at (x, y, z) reaching `radius` metres can light. */
-  static around(x: number, y: number, z: number, radius: number): CellCache {
+  static around<T>(x: number, y: number, z: number, radius: number): CellCache<T> {
     const x0 = Math.floor(x - radius);
     const y0 = Math.floor(y - radius);
     const z0 = Math.floor(z - radius);
@@ -222,13 +248,13 @@ class CellCache {
     const ny = Math.floor(y + radius) - y0 + 1;
     const nz = Math.floor(z + radius) - z0 + 1;
     return nx * ny * nz <= MAX_DENSE_CELLS
-      ? new CellCache(x0, y0, z0, nx, ny, nz)
-      : CellCache.unbounded();
+      ? new CellCache<T>(x0, y0, z0, nx, ny, nz)
+      : CellCache.unbounded<T>();
   }
 
   /** A cache with no dense region (directional lights reach everywhere). */
-  static unbounded(): CellCache {
-    return new CellCache(0, 0, 0, 0, 0, 0);
+  static unbounded<T>(): CellCache<T> {
+    return new CellCache<T>(0, 0, 0, 0, 0, 0);
   }
 
   private denseIndex(ix: number, iy: number, iz: number): number {
@@ -239,12 +265,12 @@ class CellCache {
     return (i * this.ny + j) * this.nz + k;
   }
 
-  get(ix: number, iy: number, iz: number): readonly Occluder[] | undefined {
-    const index = this.denseIndex(ix, iy, iz);
-    return index >= 0 ? this.dense[index] : this.sparse.get(sparseKey(ix, iy, iz));
+  /** A cell outside the dense grid (the hot loop reads the dense grid itself). */
+  outside(ix: number, iy: number, iz: number): T | undefined {
+    return this.sparse.get(sparseKey(ix, iy, iz));
   }
 
-  set(ix: number, iy: number, iz: number, candidates: readonly Occluder[]): void {
+  set(ix: number, iy: number, iz: number, candidates: T): void {
     const index = this.denseIndex(ix, iy, iz);
     if (index >= 0) {
       this.dense[index] = candidates;
@@ -279,11 +305,13 @@ interface Emitter {
   readonly reach2: number;
   /** intensity / fullIntensity. */
   readonly scale: number;
-  /** Unit axis and cos(half-angle) of a spotlight. */
-  readonly cone:
-    | { readonly x: number; readonly y: number; readonly z: number; readonly cos: number }
-    | undefined;
-  readonly cells: CellCache;
+  /** Whether it is a spotlight: then (ax, ay, az) is its unit axis and `cos` its cos(half-angle). */
+  readonly spot: boolean;
+  readonly ax: number;
+  readonly ay: number;
+  readonly az: number;
+  readonly cos: number;
+  readonly cells: CellCache<EmitterCell>;
   /** Opaque entities that could stand between it and anything it reaches. */
   readonly occluders: readonly DynamicOccluder[];
 }
@@ -295,7 +323,7 @@ interface Directional {
   readonly by: number;
   readonly bz: number;
   readonly level: number;
-  readonly cells: CellCache;
+  readonly cells: CellCache<readonly Occluder[]>;
 }
 
 /**
@@ -307,7 +335,10 @@ interface Directional {
 const CELL_GROW = 0.501;
 
 function checkVec(what: string, v: Vec3): void {
-  check(finite(v.x) && finite(v.y) && finite(v.z), `${what} must have finite coordinates`);
+  // Tested before the message is built: every light sample checks its position.
+  if (!(finite(v.x) && finite(v.y) && finite(v.z))) {
+    throw new RangeError(`${what} must have finite coordinates`);
+  }
 }
 
 function checkZone(zone: AmbientZone): AmbientZone {
@@ -344,7 +375,7 @@ function toDirectional(light: DirectionalLight): Directional {
     by: -y * light.reach,
     bz: -z * light.reach,
     level: light.level,
-    cells: CellCache.unbounded(),
+    cells: CellCache.unbounded<readonly Occluder[]>(),
   };
 }
 
@@ -415,11 +446,12 @@ function clipT(range: [number, number], k: number, r: number): boolean {
 }
 
 /**
- * Whether `o`'s box meets the hull of point e and the 1 m cell centred on c, i.e. every segment
- * from e into the cell. The hull is the union over t ∈ [0, 1] of the cell scaled by t about e: a
- * cube centred on e + t·(c − e) with half-size t / 2. Per axis, overlap with the box is two linear
- * inequalities in t, so this is exact for boxes (a ramp is tested as its box). Half-sizes are grown
- * by a millimetre so rounding can only add candidates, never drop one.
+ * Whether `o`'s box meets the hull of point e and the cube centred on c with half-size `h` (half
+ * its edge plus a millimetre), i.e. every segment from e into the cube. The hull is the union over
+ * t ∈ [0, 1] of the cube scaled by t about e: a cube centred on e + t·(c − e) with half-size t·h.
+ * Per axis, overlap with the box is two linear inequalities in t, so this is exact for boxes (a
+ * ramp is tested as its box). The millimetre means rounding can only add candidates, never drop
+ * one.
  */
 function hullMeets(
   o: Occluder,
@@ -429,8 +461,8 @@ function hullMeets(
   cx: number,
   cy: number,
   cz: number,
+  h: number,
 ): boolean {
-  const h = CELL_GROW;
   const t: [number, number] = [0, 1];
   return (
     clipT(t, cx - ex - h, o.maxX - ex) &&
@@ -440,6 +472,106 @@ function hullMeets(
     clipT(t, cz - ez - h, o.maxZ - ez) &&
     clipT(t, ez - cz - h, ez - o.minZ)
   );
+}
+
+/**
+ * Whether the open box of `o` overlaps the bounding box of every path from a source within
+ * `spread` metres per axis of c into the cube of edge `size` at (ix, iy, iz).
+ */
+function boxMeets(
+  o: Occluder,
+  ix: number,
+  iy: number,
+  iz: number,
+  size: number,
+  cx: number,
+  cy: number,
+  cz: number,
+  spread: number,
+): boolean {
+  return (
+    o.minX < Math.max(ix + size, cx + spread) &&
+    o.maxX > Math.min(ix, cx - spread) &&
+    o.minY < Math.max(iy + size, cy + spread) &&
+    o.maxY > Math.min(iy, cy - spread) &&
+    o.minZ < Math.max(iz + size, cz + spread) &&
+    o.maxZ > Math.min(iz, cz - spread)
+  );
+}
+
+/**
+ * The occluders of `list` that could block a path from an emitter at c into the cube of edge
+ * `size` at (ix, iy, iz), or IN_SHADOW when one of them blocks every such path.
+ */
+function refine(
+  list: readonly Occluder[],
+  ix: number,
+  iy: number,
+  iz: number,
+  size: number,
+  cx: number,
+  cy: number,
+  cz: number,
+): readonly Occluder[] {
+  const half = size / 2;
+  const near = list.filter(
+    (o) =>
+      boxMeets(o, ix, iy, iz, size, cx, cy, cz, 0) &&
+      hullMeets(o, cx, cy, cz, ix + half, iy + half, iz + half, half + 0.001),
+  );
+  return near.some((o) => shadowsCell(o, ix, iy, iz, size, cx, cy, cz, false)) ? IN_SHADOW : near;
+}
+
+/**
+ * Packs cell (ix, iy, iz) of an emitter at c, whose candidates are `near`, into its sub-cells (see
+ * EmitterCell). Each half-cell is refined first, so a shadowed one needs no further tests.
+ */
+function packCell(
+  near: readonly Occluder[],
+  ix: number,
+  iy: number,
+  iz: number,
+  cx: number,
+  cy: number,
+  cz: number,
+): EmitterCell {
+  const packed: number[] = new Array<number>(SUB_CELLS).fill(0);
+  const lists: (readonly Occluder[])[] = [];
+  const starts: number[] = [];
+  for (let half = 0; half < 8; half++) {
+    const hx = (half >> 2) & 1;
+    const hy = (half >> 1) & 1;
+    const hz = half & 1;
+    const inHalf = refine(near, ix + hx / 2, iy + hy / 2, iz + hz / 2, 0.5, cx, cy, cz);
+    for (let quarter = 0; quarter < 8; quarter++) {
+      const i = 2 * hx + ((quarter >> 2) & 1);
+      const j = 2 * hy + ((quarter >> 1) & 1);
+      const k = 2 * hz + (quarter & 1);
+      const list =
+        inHalf === IN_SHADOW
+          ? IN_SHADOW
+          : refine(inHalf, ix + i / 4, iy + j / 4, iz + k / 4, 0.25, cx, cy, cz);
+      let entry = list === IN_SHADOW ? -1 : 0;
+      if (list !== IN_SHADOW && list.length > 0) {
+        const same = lists.findIndex(
+          (l) => l.length === list.length && l.every((o, n) => o === list[n]),
+        );
+        if (same >= 0) entry = item(starts, same);
+        else {
+          packed.push(list.length);
+          entry = packed.length;
+          for (const o of list) {
+            packed.push(o.minX, o.minY, o.minZ, o.maxX, o.maxY, o.maxZ);
+            packed.push(o.cut ? 1 : 0, o.nx, o.ny, o.nz, o.d);
+          }
+          lists.push(list);
+          starts.push(entry);
+        }
+      }
+      packed[16 * i + 4 * j + k] = entry;
+    }
+  }
+  return Float64Array.from(packed);
 }
 
 /** Whether any of `occluders` blocks the segment a → b. */
@@ -538,7 +670,7 @@ interface Baked {
   readonly y: number;
   readonly z: number;
   readonly radius: number;
-  readonly cells: CellCache;
+  readonly cells: CellCache<EmitterCell>;
 }
 
 /**
@@ -646,7 +778,7 @@ export class LightField {
               y: at.y,
               z: at.z,
               radius,
-              cells: CellCache.around(at.x, at.y, at.z, radius),
+              cells: CellCache.around<EmitterCell>(at.x, at.y, at.z, radius),
             };
       kept.set(entity, baked);
       const cone = world.get(entity, LightConeComponent);
@@ -668,7 +800,7 @@ export class LightField {
           resolution.stimulus.intensity,
           light.radius,
           light.cone,
-          CellCache.around(light.at.x, light.at.y, light.at.z, light.radius),
+          CellCache.around<EmitterCell>(light.at.x, light.at.y, light.at.z, light.radius),
         ),
       );
     }
@@ -684,8 +816,9 @@ export class LightField {
     intensity: number,
     radius: number,
     cone: { readonly direction: Vec3; readonly halfAngle: number } | undefined,
-    cells: CellCache,
+    cells: CellCache<EmitterCell>,
   ): Emitter {
+    const axis = cone === undefined ? undefined : spot(cone);
     return {
       source,
       entity,
@@ -695,7 +828,11 @@ export class LightField {
       radius,
       reach2: radius * radius,
       scale: intensity / this.config.fullIntensity,
-      cone: cone === undefined ? undefined : spot(cone),
+      spot: axis !== undefined,
+      ax: axis?.x ?? 0,
+      ay: axis?.y ?? 0,
+      az: axis?.z ?? 0,
+      cos: axis?.cos ?? 0,
       cells,
       occluders: this.occluders.filter((o) => boxNear(o.box, at.x, at.y, at.z, radius)),
     };
@@ -732,23 +869,105 @@ export class LightField {
     const ix = Math.floor(x);
     const iy = Math.floor(y);
     const iz = Math.floor(z);
+    // The sample's sub-cell in any emitter's split cell. x − ix rounds monotonically, so it is
+    // ≥ a quarter exactly when x is; one rounded up to 1 stays in the last quarter.
+    const sub =
+      16 * Math.min(3, Math.floor(4 * (x - ix))) +
+      4 * Math.min(3, Math.floor(4 * (y - iy))) +
+      Math.min(3, Math.floor(4 * (z - iz)));
 
-    for (const e of this.buckets.get(bucketOf(x, z)) ?? NO_EMITTERS) {
+    emitters: for (const e of this.buckets.get(bucketOf(x, z)) ?? NO_EMITTERS) {
       const dx = x - e.x;
       const dy = y - e.y;
       const dz = z - e.z;
       const d2 = dx * dx + dy * dy + dz * dz;
       if (d2 >= e.reach2) continue;
       const d = Math.sqrt(d2);
-      if (
-        e.cone !== undefined &&
-        d > 0 &&
-        dx * e.cone.x + dy * e.cone.y + dz * e.cone.z < e.cone.cos * d
-      ) {
-        continue;
+      if (e.spot && d > 0 && dx * e.ax + dy * e.ay + dz * e.az < e.cos * d) continue;
+      // The cell's baked occlusion, read straight from the dense grid when it holds the cell.
+      const cells = e.cells;
+      const ci = ix - cells.x0;
+      const cj = iy - cells.y0;
+      const ck = iz - cells.z0;
+      const cell =
+        (ci >= 0 && cj >= 0 && ck >= 0 && ci < cells.nx && cj < cells.ny && ck < cells.nz
+          ? cells.dense[(ci * cells.ny + cj) * cells.nz + ck]
+          : cells.outside(ix, iy, iz)) ?? this.bakeEmitterCell(cells, ix, iy, iz, e.x, e.y, e.z);
+      if (cell === SHADED_CELL) continue;
+      if (cell !== CLEAR_CELL) {
+        const entry = item(cell, sub);
+        if (entry < 0) continue;
+        if (entry > 0) {
+          // Does any candidate packed from `entry` (count at entry − 1) block e → (x, y, z)? This
+          // is `segmentHits` on packed numbers, written out here so the hot loop reads one flat
+          // array and makes no calls (V8 will not inline a slab test this size); `segmentHits`
+          // stays the reference, and the regression tests hold the two to the same answers.
+          const ax = e.x;
+          const ay = e.y;
+          const az = e.z;
+          const loX = ax < x ? ax : x;
+          const hiX = ax < x ? x : ax;
+          const loY = ay < y ? ay : y;
+          const hiY = ay < y ? y : ay;
+          const loZ = az < z ? az : z;
+          const hiZ = az < z ? z : az;
+          for (
+            let at = entry, end = entry + item(cell, entry - 1) * OCCLUDER_SIZE;
+            at < end;
+            at += OCCLUDER_SIZE
+          ) {
+            const minX = item(cell, at);
+            const minY = item(cell, at + 1);
+            const minZ = item(cell, at + 2);
+            const maxX = item(cell, at + 3);
+            const maxY = item(cell, at + 4);
+            const maxZ = item(cell, at + 5);
+            if (
+              hiX <= minX ||
+              loX >= maxX ||
+              hiY <= minY ||
+              loY >= maxY ||
+              hiZ <= minZ ||
+              loZ >= maxZ
+            )
+              continue;
+            let t0 = 0;
+            let t1 = 1;
+            if (dx !== 0) {
+              const enter = (minX - ax) / dx;
+              const exit = (maxX - ax) / dx;
+              t0 = enter < exit ? enter : exit;
+              t1 = enter < exit ? exit : enter;
+              if (t0 < 0) t0 = 0;
+              if (t1 > 1) t1 = 1;
+            }
+            if (dy !== 0) {
+              const enter = (minY - ay) / dy;
+              const exit = (maxY - ay) / dy;
+              const lo = enter < exit ? enter : exit;
+              const hi = enter < exit ? exit : enter;
+              if (lo > t0) t0 = lo;
+              if (hi < t1) t1 = hi;
+            }
+            if (dz !== 0) {
+              const enter = (minZ - az) / dz;
+              const exit = (maxZ - az) / dz;
+              const lo = enter < exit ? enter : exit;
+              const hi = enter < exit ? exit : enter;
+              if (lo > t0) t0 = lo;
+              if (hi < t1) t1 = hi;
+            }
+            if (!(t0 < t1)) continue;
+            if (cell[at + 6] === 0) continue emitters;
+            const nx = item(cell, at + 7);
+            const ny = item(cell, at + 8);
+            const nz = item(cell, at + 9);
+            const g0 = nx * ax + ny * ay + nz * az - item(cell, at + 10);
+            const gd = nx * dx + ny * dy + nz * dz;
+            if (gd === 0 ? g0 < 0 : gd > 0 ? t0 < -g0 / gd : -g0 / gd < t1) continue emitters;
+          }
+        }
       }
-      const near = e.cells.get(ix, iy, iz) ?? this.bake(e.cells, ix, iy, iz, e.x, e.y, e.z, 0);
-      if (near === IN_SHADOW || anyHit(near, e.x, e.y, e.z, x, y, z)) continue;
       if (e.occluders.length > 0 && dynamicBlocks(e.occluders, e.entity, e.x, e.y, e.z, x, y, z)) {
         continue;
       }
@@ -767,7 +986,7 @@ export class LightField {
       const cy = iy + 0.5 + light.by;
       const cz = iz + 0.5 + light.bz;
       const near =
-        light.cells.get(ix, iy, iz) ?? this.bake(light.cells, ix, iy, iz, cx, cy, cz, 0.5);
+        light.cells.outside(ix, iy, iz) ?? this.bake(light.cells, ix, iy, iz, cx, cy, cz);
       if (near === IN_SHADOW || anyHit(near, fx, fy, fz, x, y, z)) continue;
       if (dynamicBlocks(this.occluders, null, fx, fy, fz, x, y, z)) continue;
       total += light.level;
@@ -778,13 +997,51 @@ export class LightField {
   }
 
   /**
-   * Bakes and returns the static candidates of cell (ix, iy, iz) for a source at c — fixed for an
-   * emitter (`spread` 0) or, for a directional light, within `spread` (0.5) metres per axis of c
-   * for every sample in the cell, since its source moves with the sample. Candidates are the
-   * occluders any such path could meet, or IN_SHADOW when one of them blocks the whole cell.
+   * Bakes and returns the static candidates of cell (ix, iy, iz) for a directional light, whose
+   * source c moves with the sample (see `candidates`).
    */
   private bake(
-    cells: CellCache,
+    cells: CellCache<readonly Occluder[]>,
+    ix: number,
+    iy: number,
+    iz: number,
+    cx: number,
+    cy: number,
+    cz: number,
+  ): readonly Occluder[] {
+    const near = this.candidates(ix, iy, iz, cx, cy, cz, 0.5);
+    cells.set(ix, iy, iz, near);
+    return near;
+  }
+
+  /** Bakes and returns cell (ix, iy, iz) of an emitter at c: shaded, clear or split. */
+  private bakeEmitterCell(
+    cells: CellCache<EmitterCell>,
+    ix: number,
+    iy: number,
+    iz: number,
+    cx: number,
+    cy: number,
+    cz: number,
+  ): EmitterCell {
+    const near = this.candidates(ix, iy, iz, cx, cy, cz, 0);
+    const cell =
+      near === IN_SHADOW
+        ? SHADED_CELL
+        : near === IN_THE_CLEAR
+          ? CLEAR_CELL
+          : packCell(near, ix, iy, iz, cx, cy, cz);
+    cells.set(ix, iy, iz, cell);
+    return cell;
+  }
+
+  /**
+   * The static candidates of cell (ix, iy, iz) for a source at c — fixed for an emitter (`spread`
+   * 0) or, for a directional light, within `spread` (0.5) metres per axis of c for every sample in
+   * the cell, since its source moves with the sample. Candidates are the occluders any such path
+   * could meet: IN_SHADOW when one of them blocks the whole cell, IN_THE_CLEAR when there are none.
+   */
+  private candidates(
     ix: number,
     iy: number,
     iz: number,
@@ -794,27 +1051,14 @@ export class LightField {
     spread: number,
   ): readonly Occluder[] {
     // Grown test against the centre's path, then the bounding box of the swept region.
-    const lx = Math.min(ix, cx - spread);
-    const ly = Math.min(iy, cy - spread);
-    const lz = Math.min(iz, cz - spread);
-    const hx = Math.max(ix + 1, cx + spread);
-    const hy = Math.max(iy + 1, cy + spread);
-    const hz = Math.max(iz + 1, cz + spread);
     const near = this.statics
       .along(cx, cy, cz, ix + 0.5, iy + 0.5, iz + 0.5, CELL_GROW)
       .filter(
         (o) =>
-          o.minX < hx &&
-          o.maxX > lx &&
-          o.minY < hy &&
-          o.maxY > ly &&
-          o.minZ < hz &&
-          o.maxZ > lz &&
-          (spread > 0 || hullMeets(o, cx, cy, cz, ix + 0.5, iy + 0.5, iz + 0.5)),
+          boxMeets(o, ix, iy, iz, 1, cx, cy, cz, spread) &&
+          (spread > 0 || hullMeets(o, cx, cy, cz, ix + 0.5, iy + 0.5, iz + 0.5, CELL_GROW)),
       );
-    const shadowed = near.some((o) => shadowsCell(o, ix, iy, iz, cx, cy, cz, spread > 0));
-    const candidates = shadowed ? IN_SHADOW : near;
-    cells.set(ix, iy, iz, candidates);
-    return candidates;
+    if (near.some((o) => shadowsCell(o, ix, iy, iz, 1, cx, cy, cz, spread > 0))) return IN_SHADOW;
+    return near.length === 0 ? IN_THE_CLEAR : near;
   }
 }
