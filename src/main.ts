@@ -1,4 +1,9 @@
-import { loadGameContent, PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
+import {
+  loadGameContent,
+  materialPresets,
+  PLAYER_CAMERA_ID,
+  PLAYER_CONTROLLER_ID,
+} from '@content/index';
 import {
   dummyReadout,
   prepareTestbedCombat,
@@ -16,7 +21,12 @@ import {
   object3DBinding,
 } from '@game/loop/index';
 import { bootPhysics } from '@game/physics-loader';
-import { formatBudgetWarning, installGamePhysics, playerFocus } from '@game/physics-objects';
+import {
+  formatBudgetWarning,
+  installGamePhysics,
+  playerFocus,
+  propBodies,
+} from '@game/physics-objects';
 import { createUiGameBridge } from '@game/ui/index';
 import {
   attachPlayerInput,
@@ -300,8 +310,13 @@ function startRenderer(root: HTMLElement): void {
     const world = registerSceneComponents(new World<GameCommand>({ seed: BOOT_SEED, physics }));
     const content = loadGameContent();
     // Debug commands first (mw-e33.1), so a teleport or cheat is what every later system sees. The
-    // sim side is always present; only the console that issues them is dev/playtest-only.
-    const spawners = testPropSpawners(content.all('testprop').map((prop) => prop.id));
+    // sim side is always present; only the console that issues them is dev/playtest-only. Props with
+    // a body spawn as physics objects (mw-e33.16), like the scene's own movable props.
+    const props = propBodies(content);
+    const spawners = testPropSpawners(
+      content.all('testprop').map((prop) => prop.id),
+      { props, materials: materialPresets(content.all('material')) },
+    );
     installDebugCommands(world, { spawners });
     const commands = new CommandQueue<GameCommand>();
     const afterStep: (() => void)[] = [];
@@ -582,10 +597,20 @@ function startRenderer(root: HTMLElement): void {
             root.dataset['debugConsole'] = open ? 'open' : 'closed';
           },
         });
-        // Props the console spawned get grey-box objects like the scene's own props.
+        // Props the console spawned get grey-box objects like the scene's own props: a movable one
+        // a body-sized box following its physics pose.
         afterStep.push(() => {
           for (const { entity, placement } of unboundDebugSpawns(world, (id) => sync.has(id))) {
-            sync.bind(entity, object3DBinding(greybox.spawn(placement), readSceneTransform));
+            const size =
+              placement.prop !== undefined && world.has(entity, PhysicsObjectComponent)
+                ? props(placement.prop)?.size
+                : undefined;
+            sync.bind(
+              entity,
+              size === undefined
+                ? object3DBinding(greybox.spawn(placement), readSceneTransform)
+                : object3DBinding(greybox.body(placement, size), readPhysicsObjectTransform),
+            );
           }
         });
         root.dataset['debugConsole'] = 'closed';

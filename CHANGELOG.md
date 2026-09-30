@@ -62,6 +62,8 @@ check enforces this).
   of a playtest build, to type commands such as `spawn testprop-crate 3`, `god`, `noclip`,
   `tp player-start`, `timescale 0.5`, `scene kit-gallery` and `help`. Tab completes, Up/Down recall
   earlier commands, and Esc closes it. Without the flag nothing loads.
+- Crates and other movable props spawned from the developer console are now physics objects like the
+  scene's own: `spawn testprop-crate 3` drops three wooden crates that fall, stack and tumble.
 
 - The landing page at [thevesperbell.com](https://thevesperbell.com) with the title key art and the
   rest-lamp icon.

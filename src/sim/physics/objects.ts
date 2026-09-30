@@ -32,7 +32,7 @@ import { defineEvent } from '../core/events';
 import type { System, TickContext, World } from '../core/world';
 import { hypot } from '../math';
 import { propertyChanged, readProperty } from '../properties/components';
-import { WORLD_PROPERTY_SPECS } from '../properties/spec';
+import { WORLD_PROPERTY_SPECS, type WorldPropertyValues } from '../properties/spec';
 import type { Quat } from '../scene/layout';
 import { placeEntity } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
@@ -137,7 +137,15 @@ export interface PhysicsObjectSpec {
   readonly rotation?: Quat;
   /** Initial velocity (a thrown object), m/s; defaults to zero. */
   readonly velocity?: Vec3;
+  /**
+   * The entity's body properties, for an entity whose properties were added this tick and so are
+   * not readable yet (e.g. spawned during a step); defaults to reading them from the entity.
+   */
+  readonly properties?: BodyProperties;
 }
+
+/** The world properties a body is made from. */
+export type BodyProperties = Pick<WorldPropertyValues, 'weight' | 'friction' | 'impactAbsorb'>;
 
 const IDENTITY: Quat = Object.freeze({ x: 0, y: 0, z: 0, w: 1 });
 
@@ -148,15 +156,22 @@ export function rigidBodiesOf(world: World<never>): RigidBodyPort {
   return port as RigidBodyPort;
 }
 
+const massFrom = (weight: number): number => Math.max(MIN_BODY_MASS, weight);
+
 const massOf = (world: World<never>, entity: EntityId): number =>
-  Math.max(MIN_BODY_MASS, readProperty(world, entity, 'weight'));
+  massFrom(readProperty(world, entity, 'weight'));
+
+const materialFrom = (friction: number, impactAbsorb: number): BodyMaterial => ({
+  friction,
+  restitution: MAX_RESTITUTION * (1 - impactAbsorb),
+});
 
 /** Friction and restitution of `entity` from its properties (see the file header). */
 export function bodyMaterialOf(world: World<never>, entity: EntityId): BodyMaterial {
-  return {
-    friction: readProperty(world, entity, 'friction'),
-    restitution: MAX_RESTITUTION * (1 - readProperty(world, entity, 'impactAbsorb')),
-  };
+  return materialFrom(
+    readProperty(world, entity, 'friction'),
+    readProperty(world, entity, 'impactAbsorb'),
+  );
 }
 
 const frozenObject = (value: PhysicsObject): PhysicsObject => Object.freeze(value);
@@ -164,7 +179,8 @@ const frozenObject = (value: PhysicsObject): PhysicsObject => Object.freeze(valu
 /**
  * Gives `entity` a dynamic body from its properties (weight, friction, impactAbsorb) at `spec`'s
  * pose. The body exists at once; the component is a structural change (end of tick during a step),
- * so give the entity its properties first. Returns the body's handle.
+ * so give the entity its properties first, or, when they were added in the same step, pass their
+ * values as `spec.properties`. Returns the body's handle.
  * @throws Error when the world has no rigid-body physics or `entity` already is a physics object.
  */
 export function addPhysicsObject(
@@ -177,13 +193,16 @@ export function addPhysicsObject(
     throw new Error(`entity ${String(entity)} already is a physics object`);
   }
   const rotation = spec.rotation ?? IDENTITY;
+  const given = spec.properties;
   const body = port.addBody({
     shape: spec.shape,
     position: spec.position,
     rotation,
     ...(spec.velocity !== undefined && { velocity: spec.velocity }),
-    mass: massOf(world, entity),
-    ...bodyMaterialOf(world, entity),
+    mass: given === undefined ? massOf(world, entity) : massFrom(given.weight),
+    ...(given === undefined
+      ? bodyMaterialOf(world, entity)
+      : materialFrom(given.friction, given.impactAbsorb)),
   });
   const { x, y, z } = spec.position;
   world.add(

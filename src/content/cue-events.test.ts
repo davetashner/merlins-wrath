@@ -64,6 +64,16 @@ describe('cue event vocabulary', () => {
     ]);
   });
 
+  it('AC-3: a physicsImpact rule may match material facts but not unknown or number facts', () => {
+    expect(
+      problems({ event: 'physicsImpact', match: { entity: 'wood', otherMaterial: 'stone' } }),
+    ).toEqual([]);
+    expect(problems({ event: 'physicsImpact', match: { mass: 'heavy', energy: 'big' } })).toEqual([
+      expect.stringMatching(/^match.mass: physicsImpact has no fact "mass"; it has: entity,/),
+      'match.energy: "energy" is a number fact: scale by it with volumeBy, don\'t match it',
+    ]);
+  });
+
   it('rejects a layer that is not kebab-case', () => {
     expect(problems({ event: 'Died', layer: 'Main' })).toEqual([
       'layer: must be lowercase kebab-case',
