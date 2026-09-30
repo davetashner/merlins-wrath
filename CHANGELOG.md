@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Debug builds can put creatures into the grey-box scenes from data: the new creature pen
+  (`?scene=creature-pen`) places two test hounds, a patrolling guard and a sentinel as placeholder
+  capsules, and the debug console spawns any creature by id (`spawn fixture-hound 3`, or
+  `at-cursor` to drop them where the view centre looks) and clears them with `despawn all`.
+  Creatures can be struck and locked on to; they have no AI yet and stand where they spawn.
 - The world can hurt you: falls from more than about 4 m cost health (a 14 m drop is fatal), being
   thrown into a wall hurts the same way, and heavy objects falling on you crush. Blasts now throw the
   knight back and up. In the testbed, `?frames` shows your health and the latest fall or blow the

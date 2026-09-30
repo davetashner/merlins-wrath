@@ -1,0 +1,212 @@
+// Creatures in the grey-box scenes (mw-e12.4): the game's side of the sim's creature spawner
+// (src/sim/creatures). In two halves, like the testbed's combat (src/game/combat/testbed-combat.ts):
+//
+// 1. `prepareCreatures` (before the debug commands are installed): compiles every creature in
+//    content (senses and locomotion resolved), the faction table and the creature attack table, and
+//    makes the debug console's spawners, one per creature id (`spawn fixture-hound 3`).
+// 2. `startCreatures` (after startTestbedCombat, so the hit volumes, reactions and lock-on are in):
+//    registers the creature components, installs factions and the creature attack executor (with
+//    the shared invulnerability rule, mw-e04.28) and spawns the scene's creature spawns. Creatures
+//    have no AI yet (e11): they stand where they spawned and take hits.
+//
+// With no creature in content (the game's own content until the bestiary, E13) there is nothing to
+// install: the world, its entity ids and its state hashes stay exactly as before. Debug builds load
+// the frozen fixture creatures (src/content/dev-content.ts), so the testbed can spawn them.
+//
+// `bindCreatures` gives every creature without one a render proxy after each step (scene, console
+// and respawned creatures alike); render sync drops a despawned creature's proxy on the next frame.
+
+import {
+  compileAttacks,
+  compileCreatures,
+  type AttackTable,
+  type CreatureTable,
+  type GameContent,
+  type NavAgent,
+} from '@content/index';
+import {
+  ATTACK_COMPONENTS,
+  AttackerComponent,
+  buildFactionTable,
+  creatureSpawners,
+  CreatureComponent,
+  creaturesInstalled,
+  CreatureNavComponent,
+  factionSpecFromDef,
+  installAttacks,
+  installFactions,
+  invulnerabilityRule,
+  PlacementComponent,
+  registerCreatureComponents,
+  spawnErrorMessage,
+  spawnSceneCreatures,
+  type CreatureSpawnOptions,
+  type EntityId,
+  type RapierPhysics,
+  type SceneCreatures,
+  type SceneSpawnPlacement,
+  type Spawner,
+  type Vec3,
+  type World,
+} from '@sim/index';
+import type { TestbedCombat } from '../combat/testbed-combat';
+import type { RenderSync, SceneBinding } from '../loop/render-sync';
+
+/** The first half of the creature wiring (see the file header). */
+export interface GameCreatures {
+  /** Spawnable creatures by id. */
+  readonly table: CreatureTable;
+  /** What the sim's spawner needs: the creatures and the faction table. */
+  readonly spawn: CreatureSpawnOptions;
+  /** The creatures' attacks (the attack executor's table). */
+  readonly attacks: AttackTable;
+  /** The debug console's spawners, keyed by creature id. */
+  readonly spawners: ReadonlyMap<string, Spawner>;
+}
+
+/** Compiles the creatures, factions and creature attacks in `content` (step 1). */
+export function prepareCreatures(content: GameContent, combat: TestbedCombat): GameCreatures {
+  const table = compileCreatures(content.all('creature'), content);
+  const factions = buildFactionTable(content.all('faction').map(factionSpecFromDef));
+  const spawn = { creatures: table, factions };
+  return {
+    table,
+    spawn,
+    attacks: compileAttacks(content.all('attack'), combat.moves),
+    spawners: creatureSpawners(spawn),
+  };
+}
+
+/**
+ * Installs creatures into `world` and spawns the creature spawns among `spawns` (step 2). Does
+ * nothing when content has no creatures. Failed spawns come back in `errors` (never thrown).
+ */
+export function startCreatures<TInput>(
+  world: World<TInput>,
+  creatures: GameCreatures,
+  combat: TestbedCombat,
+  spawns: readonly SceneSpawnPlacement[],
+): SceneCreatures {
+  if (creatures.table.size === 0) return { entities: [], errors: [] };
+  const w: World<never> = world;
+  // Once per world: nothing else installs the creature attack executor or factions yet.
+  installFactions(registerCreatureComponents(w).register(...ATTACK_COMPONENTS));
+  installAttacks(world, {
+    attacks: creatures.attacks,
+    damage: combat.damage,
+    invulnerable: invulnerabilityRule(combat.moves),
+  });
+  return spawnSceneCreatures(w, creatures.spawn, spawns);
+}
+
+/** One line per failed scene spawn, for the browser console. */
+export function sceneCreatureErrors(result: SceneCreatures): string[] {
+  return result.errors.map(
+    ({ point, error }) => `creature spawn "${point}": ${spawnErrorMessage(error)}`,
+  );
+}
+
+/** What a creature's render proxy is built from. */
+export interface CreatureLook {
+  readonly id: string;
+  readonly nav: NavAgent;
+  /** It has attacks (drawn differently). */
+  readonly armed: boolean;
+}
+
+/**
+ * Binds a render object to every creature not bound yet (call after each sim step): `create` builds
+ * it from the creature's look. Returns how many it bound. Call after `startCreatures`.
+ */
+export function bindCreatures<TObject>(
+  world: World<never>,
+  sync: RenderSync,
+  create: (entity: EntityId, look: CreatureLook) => SceneBinding<TObject>,
+): number {
+  if (!creaturesInstalled(world)) return 0;
+  const unbound: [EntityId, CreatureLook][] = [];
+  world.query(CreatureComponent, CreatureNavComponent).forEach((entity, creature, nav) => {
+    if (sync.has(entity)) return;
+    const armed = world.has(entity, AttackerComponent);
+    unbound.push([entity, { id: creature.origin.creature, nav, armed }]);
+  });
+  for (const [entity, look] of unbound) sync.bind(entity, create(entity, look));
+  return unbound.length;
+}
+
+/** The creatures now, for the e2e: how many, how many are drawn and in view, and of which kinds. */
+export interface CreatureReadout {
+  readonly count: number;
+  /** How many have a render proxy. */
+  readonly drawn: number;
+  /** How many of those are inside the camera's view (their middle projects on screen). */
+  readonly inView: number;
+  /** Creature id → how many. */
+  readonly kinds: Readonly<Record<string, number>>;
+}
+
+/** Normalised device coordinates of a world point (−1…1 on screen and between the clip planes). */
+export type ProjectToNdc = (point: Vec3) => Vec3;
+
+const onScreen = ({ x, y, z }: Vec3): boolean =>
+  Math.max(Math.abs(x), Math.abs(y), Math.abs(z)) <= 1;
+
+/**
+ * `world`'s creature readout (all zero when creatures are not installed). Without `project`, none
+ * counts as in view.
+ */
+export function creatureReadout(
+  world: World<never>,
+  isBound: (entity: EntityId) => boolean,
+  project: ProjectToNdc = () => ({ x: 2, y: 2, z: 2 }),
+): CreatureReadout {
+  const kinds: Record<string, number> = {};
+  let count = 0;
+  let drawn = 0;
+  let inView = 0;
+  if (!creaturesInstalled(world)) return { count, drawn, inView, kinds };
+  world
+    .query(CreatureComponent, CreatureNavComponent, PlacementComponent)
+    .forEach((entity, creature, nav, at) => {
+      count++;
+      const id = creature.origin.creature;
+      kinds[id] = (kinds[id] ?? 0) + 1;
+      if (!isBound(entity)) return;
+      drawn++;
+      if (onScreen(project({ x: at.x, y: at.y + nav.height / 2, z: at.z }))) inView++;
+    });
+  return { count, drawn, inView, kinds };
+}
+
+/** A camera pose: position and orientation (a unit quaternion). */
+export interface ViewPose {
+  readonly position: Vec3;
+  readonly quaternion: {
+    readonly x: number;
+    readonly y: number;
+    readonly z: number;
+    readonly w: number;
+  };
+}
+
+/** How far `viewCentrePoint` looks, metres. */
+export const VIEW_POINT_RANGE = 60;
+
+/**
+ * The point at the centre of the view (`spawn … at-cursor`): where the camera's forward ray (−z in
+ * camera space) first meets a collider in the sim's physics world within VIEW_POINT_RANGE, or
+ * undefined when it meets none. A read-only query; the sim is not touched.
+ */
+export function viewCentrePoint(physics: RapierPhysics, view: ViewPose): Vec3 | undefined {
+  const { x, y, z, w } = view.quaternion;
+  const dir = { x: -2 * (x * z + w * y), y: -2 * (y * z - w * x), z: -(1 - 2 * (x * x + y * y)) };
+  const origin = view.position;
+  const ray = new physics.rapier.Ray(
+    { x: origin.x, y: origin.y, z: origin.z },
+    { x: dir.x, y: dir.y, z: dir.z },
+  );
+  const hit = physics.rapierWorld.castRay(ray, VIEW_POINT_RANGE, true);
+  if (hit === null) return undefined;
+  const t = hit.timeOfImpact;
+  return { x: origin.x + dir.x * t, y: origin.y + dir.y * t, z: origin.z + dir.z * t };
+}

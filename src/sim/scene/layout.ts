@@ -87,6 +87,12 @@ export interface SceneSpawnSpec {
   readonly interact?: InteractableSpec | undefined;
   /** Makes the spawned entity a lock-on target with this profile (mw-e02.16). */
   readonly targetable?: { readonly id: string } | undefined;
+  /** A creature to spawn here (mw-e12.4). */
+  readonly creature?: { readonly id: string } | undefined;
+  /** The faction the creature joins instead of its definition's. */
+  readonly faction?: { readonly id: string } | undefined;
+  /** The creature's patrol route, grid cells. */
+  readonly patrol?: readonly Triple[] | undefined;
 }
 
 /** A scene as the layout needs it; `GameEntry<'scene'>` satisfies it. */
@@ -149,6 +155,12 @@ export interface SceneSpawnPlacement {
   readonly interact?: InteractableSpec | undefined;
   /** Its lock-on target profile, when it is targetable (see src/sim/targeting). */
   readonly targetable?: string | undefined;
+  /** The creature spawned here (see src/sim/creatures), when there is one. */
+  readonly creature?: string;
+  /** The faction that creature joins instead of its definition's. */
+  readonly faction?: string;
+  /** That creature's patrol route, world metres. */
+  readonly patrol?: readonly Vec3[];
 }
 
 export interface SceneLayout {
@@ -290,6 +302,11 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       tags: Object.freeze([...spawn.tags]),
       interact: spawn.interact,
       targetable: spawn.targetable?.id,
+      ...(spawn.creature !== undefined && { creature: spawn.creature.id }),
+      ...(spawn.faction !== undefined && { faction: spawn.faction.id }),
+      ...(spawn.patrol !== undefined && {
+        patrol: Object.freeze(spawn.patrol.map((at) => gridToWorld(at, scene.grid))),
+      }),
     }),
   );
   return Object.freeze({

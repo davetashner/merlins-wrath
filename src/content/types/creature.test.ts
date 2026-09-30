@@ -4,7 +4,10 @@ import { ContentLoadError, loadContent, type ContentSource } from '../loader.ts'
 import { contentTypes } from '../registry.ts';
 import { ContentRef, serializeContent } from '../schema.ts';
 import type { AttackDefInput } from './attack.ts';
-import { creatureSchema, type CreatureDefInput } from './creature.ts';
+import { loadFixtureContent } from '../test-fixtures.ts';
+import { compileCreatures, creatureSchema, type CreatureDefInput } from './creature.ts';
+import { deriveNavAgent, resolveLocomotion } from './locomotion.ts';
+import { resolveSenses } from './sense.ts';
 import type { MoveDefInput } from './move.ts';
 
 const sight = {
@@ -236,5 +239,23 @@ describe('creature schema', () => {
       'fears.0.intensity',
       'personality.greed',
     ]);
+  });
+});
+
+describe('compileCreatures (mw-e12.4)', () => {
+  it('resolves each creature’s senses and nav agent, frozen, keyed and ordered by id', () => {
+    const content = loadFixtureContent();
+    const defs = content.all('creature');
+    const table = compileCreatures([...defs].reverse(), content);
+    expect([...table.keys()]).toEqual([...defs.map((d) => d.id)].sort());
+    const hound = table.get('fixture-hound');
+    const def = content.get('creature', 'fixture-hound');
+    expect(hound?.def).toBe(def);
+    expect(hound?.senses).toEqual(resolveSenses(def.senses, content));
+    expect(hound?.nav).toEqual(deriveNavAgent(resolveLocomotion(def.locomotion, content)));
+    expect(hound?.nav).toMatchObject({ radius: 0.4, height: 0.9 });
+    expect(Object.isFrozen(hound)).toBe(true);
+    expect(Object.isFrozen(hound?.senses)).toBe(true);
+    expect(Object.isFrozen(hound?.nav)).toBe(true);
   });
 });

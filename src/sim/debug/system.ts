@@ -15,6 +15,7 @@ import { HealthComponent } from '../combat/damage/components';
 import { Died } from '../combat/damage/events';
 import type { DamageModel } from '../combat/damage/model';
 import type { ComponentType, EntityId } from '../core/component';
+import { despawnAllCreatures } from '../creatures/spawn';
 import type { BodyShape } from '../physics/bodies';
 import type { System, World } from '../core/world';
 import { PhysicsObjectComponent, teleportPhysicsObject } from '../physics/objects';
@@ -179,6 +180,10 @@ export function debugCommandSystem<TInput>(options: DebugCommandOptions): System
             element: 'force',
             intensity,
           });
+          continue;
+        }
+        if (command.op === 'despawn') {
+          despawnAllCreatures(world);
           continue;
         }
         if (!world.isAlive(command.target)) continue;

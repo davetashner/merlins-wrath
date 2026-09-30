@@ -33,6 +33,8 @@ export interface GameHostOptions {
     options: Readonly<Record<string, string>>,
   ) => string | undefined;
   readonly bookmarks: () => ReadonlyMap<string, Vec3>;
+  /** The point under the cursor (ConsoleHost.cursorPoint); without it `at-cursor` is unavailable. */
+  readonly cursorPoint?: () => Vec3 | undefined;
   readonly scenes: readonly string[];
   readonly loadScene: (id: string) => void;
   /** The frame loop (its time scale). */
@@ -65,6 +67,12 @@ export function createGameHost(options: GameHostOptions): ConsoleHost {
     },
     spawnables: options.spawnables,
     ...(options.checkSpawn !== undefined && { checkSpawn: options.checkSpawn }),
+    ...(options.cursorPoint !== undefined && {
+      cursorPoint: (): Vec3 | undefined => {
+        const point = options.cursorPoint?.();
+        return point === undefined ? undefined : { x: mm(point.x), y: mm(point.y), z: mm(point.z) };
+      },
+    }),
     bookmarks: options.bookmarks,
     scenes: options.scenes,
     loadScene: options.loadScene,

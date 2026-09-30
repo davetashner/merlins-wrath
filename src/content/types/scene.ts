@@ -89,6 +89,19 @@ export const sceneSpawnSchema = z.strictObject({
   targetable: ref('targetable')
     .optional()
     .describe('Makes the spawned entity a lock-on target with this profile (mw-e02.16).'),
+  creature: ref('creature')
+    .optional()
+    .describe('Creature to spawn here (mw-e12.4); faces the spawn’s yaw.'),
+  faction: ref('faction')
+    .optional()
+    .describe('Faction the spawned creature joins instead of its definition’s (needs creature).'),
+  patrol: z
+    .array(gridPosition)
+    .min(1)
+    .optional()
+    .describe(
+      'Patrol route for the spawned creature: waypoints in grid cells, walked in order (needs creature; AI, e11, walks it).',
+    ),
 });
 
 const cameraSchema = z.strictObject({
@@ -117,6 +130,15 @@ export const sceneSchema = z
         });
       }
       seen.add(spawn.id);
+      if (spawn.creature !== undefined) return;
+      for (const key of ['faction', 'patrol'] as const) {
+        if (spawn[key] === undefined) continue;
+        ctx.addIssue({
+          code: 'custom',
+          path: ['spawns', index, key],
+          message: `spawn "${spawn.id}" sets ${key} but spawns no creature`,
+        });
+      }
     });
   });
 

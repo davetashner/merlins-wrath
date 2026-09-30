@@ -82,8 +82,20 @@ export interface BlastCommand {
   readonly intensity: number;
 }
 
+/** Removes every spawned creature (mw-e12.4: the console's `despawn all`). */
+export interface DespawnCommand {
+  readonly kind: typeof DEBUG_COMMAND;
+  readonly op: 'despawn';
+  readonly what: 'creatures';
+}
+
 export type DebugCommand =
-  SpawnCommand | CheatCommand | TeleportCommand | KillCommand | BlastCommand;
+  | SpawnCommand
+  | CheatCommand
+  | TeleportCommand
+  | KillCommand
+  | BlastCommand
+  | DespawnCommand;
 
 /** A finite position with -0 folded to 0 (replays reject -0). */
 function position(what: string, v: Vec3): Vec3 {
@@ -175,6 +187,11 @@ export function blastCommand(at: Vec3, radius: number, intensity: number): Blast
     radius,
     intensity,
   };
+}
+
+/** A despawn of every creature. */
+export function despawnCreaturesCommand(): DespawnCommand {
+  return { kind: DEBUG_COMMAND, op: 'despawn', what: 'creatures' };
 }
 
 /** True for a DebugCommand among arbitrary step inputs. */

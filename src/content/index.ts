@@ -138,9 +138,14 @@ export {
   PERSONALITY_TRAITS,
   SIZE_CLASSES,
   STANCES,
+  compileCreature,
+  compileCreatures,
   creatureSchema,
   type CreatureDef,
   type CreatureDefInput,
+  type CreatureProfileLookup,
+  type CreatureTable,
+  type RuntimeCreature,
 } from './types/creature.ts';
 export {
   DEFAULT_ENVIRONMENT_DAMAGE_ID,

@@ -58,6 +58,28 @@ describe('scene schema (mw-e00.21)', () => {
     ]);
   });
 
+  it('mw-e12.4: a creature spawn takes a faction override and a patrol; a marker takes neither', () => {
+    const den = {
+      id: 'den',
+      at: [1, 0, 1],
+      creature: 'fixture-hound',
+      faction: 'unaligned',
+      patrol: [
+        [1, 0, 1],
+        [3, 0, 1],
+      ],
+    };
+    expect(problems({ ...room, spawns: [den] })).toEqual([]);
+    const marker = { id: 'marker', at: [0, 0, 0], faction: 'unaligned', patrol: [[0, 0, 0]] };
+    expect(problems({ ...room, spawns: [marker] })).toEqual([
+      'spawns.0.faction: spawn "marker" sets faction but spawns no creature',
+      'spawns.0.patrol: spawn "marker" sets patrol but spawns no creature',
+    ]);
+    expect(problems({ ...room, spawns: [{ ...den, patrol: [] }] })).toEqual([
+      expect.stringMatching(/^spawns\.0\.patrol: Too small/),
+    ]);
+  });
+
   it('mw-e03.22 AC-5: a level file with a climbable grade not in the enum fails validation', () => {
     const scene = (climbable: unknown) => ({
       ...room,

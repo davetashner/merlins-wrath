@@ -8,8 +8,12 @@ import { attachFrame, captureFrame, distinct } from './helpers/canvas';
 // Driver performance notices from the GPU process are not our errors (see e2e/render-boot.spec.ts).
 const DRIVER_PERF_NOTICE = /^\[\.WebGL-[^\]]+\]GL Driver Message \([^)]*\bPerformance\b/;
 
-/** Every scene id in the content (one JSON file per scene). */
-const SCENES = readdirSync('src/content/data/scene')
+/**
+ * Every scene id in the content (one JSON file per scene): the game's, plus the dev-only scenes a
+ * debug build adds (mw-e12.4; the e2e build has the debug console built in).
+ */
+const SCENES = ['src/content/data/scene', 'src/content/fixtures/dev/scene']
+  .flatMap((dir) => readdirSync(dir))
   .filter((file) => file.endsWith('.json'))
   .map((file) => file.slice(0, -'.json'.length))
   .sort();

@@ -261,7 +261,7 @@ export function spawnSceneDummies(
 }
 
 /** The direction from `at` towards the player combatant, horizontally; undefined without one. */
-function towardPlayer(world: World<never>, at: Vec3): Vec3 | undefined {
+export function towardPlayer(world: World<never>, at: Vec3): Vec3 | undefined {
   let toward: Vec3 | undefined;
   world.query(PlayerCombatantComponent, PlacementComponent).forEach((_entity, _marker, placed) => {
     const x = placed.x - at.x;
