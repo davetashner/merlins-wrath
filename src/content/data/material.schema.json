@@ -26,6 +26,27 @@
       "maximum": 20,
       "description": "Footstep loudness offset relative to stone, dB."
     },
+    "footstepSurface": {
+      "description": "Footstep surface (audio bible §7.3) walking on it sounds like, e.g. \"wood\"; absent = no footstep set yet (footsteps fall back to stone and warn once in dev).",
+      "type": "string",
+      "enum": [
+        "stone",
+        "wood",
+        "wood-hollow",
+        "dirt",
+        "grass",
+        "gravel",
+        "mud",
+        "water-shallow",
+        "snow-ice",
+        "metal-grate",
+        "straw",
+        "carpet",
+        "bone-litter",
+        "leaves",
+        "glass-shards"
+      ]
+    },
     "impactSound": {
       "type": "string",
       "pattern": "^sfx-impact-[a-z0-9]+(?:-[a-z0-9]+)*$",

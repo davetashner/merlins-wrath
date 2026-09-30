@@ -228,6 +228,14 @@ describe('material presets', () => {
     expect(materialSchema.safeParse({ ...base, impactSound: 'wood' }).success).toBe(false);
   });
 
+  it('mw-e28.6: a material may name its footstep surface, one of the audio bible §7.3 ids', () => {
+    expect(materialSchema.safeParse({ ...base, footstepSurface: 'wood-hollow' }).success).toBe(
+      true,
+    );
+    expect(materialSchema.safeParse({ ...base, footstepSurface: 'marble' }).success).toBe(false);
+    expect(materialSchema.parse(base).footstepSurface).toBeUndefined();
+  });
+
   it('AC-3: an object referencing an unknown material fails naming the id and file', () => {
     const schemas = {
       ...contentTypes,

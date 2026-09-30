@@ -46,8 +46,16 @@ export const CUE_EVENTS = {
     anchors: ['target', 'instigator', 'source'],
     facts: {
       ...HIT_FACTS,
-      /** The damage type that dealt the most, e.g. "slash". */
+      /** The damage type that dealt the most, e.g. "slash" (the attacker side of the impact matrix). */
       damageType: 'string',
+      /**
+       * How the hit met the target (mw-e28.4): "blocked" (a raised shield took it), "immune" (only
+       * damage types the target ignores) or "hit" (a clean hit), so block, glance and impact rules
+       * never compete on specificity.
+       */
+      contact: 'string',
+      /** Shield id of a blocked hit's blocker, e.g. "wood-shield". */
+      shield: 'string',
       /** Hurtbox region struck, e.g. "head". */
       region: 'string',
       tags: 'list',
@@ -65,6 +73,46 @@ export const CUE_EVENTS = {
   Died: {
     anchors: ['target', 'killer', 'source'],
     facts: { target: 'string', targetMaterial: 'string', tags: 'list' },
+  },
+  GuardBroken: {
+    /** `entity` is the blocker whose guard broke. */
+    anchors: ['entity', 'instigator', 'source'],
+    facts: { shield: 'string' },
+  },
+  DodgedHit: {
+    /** `target` is the dodger (the swing whiffed through its i-frames), `attacker` who swung. */
+    anchors: ['target', 'attacker'],
+    facts: { hitbox: 'string', region: 'string' },
+  },
+  ActionPhaseChanged: {
+    anchors: ['entity'],
+    /**
+     * `phase` is startup, active or recovery; `sound` is the move's own presentation audio cue
+     * (its `presentation.audioCue`): a rule plays it with `cue: "{sound}"`, e.g. the swing whoosh.
+     */
+    facts: { move: 'string', phase: 'string', sound: 'string' },
+  },
+  LocomotionEvents: {
+    anchors: ['entity'],
+    facts: {
+      /** footstep, land, jumpStart, mantleStart or ledgeGrab. */
+      kind: 'string',
+      /** left or right (footsteps). */
+      foot: 'string',
+      /** walk, run, sprint or crouch (footsteps). */
+      gait: 'string',
+      /**
+       * Footstep surface under the character (audio bible §7.3), from the ground collider's material
+       * (its `footstepSurface`); unknown surfaces read "stone" (footsteps and landings).
+       */
+      surface: 'string',
+      /** Armour weight class of the character's armour layer, e.g. "plate", when it wears one. */
+      armor: 'string',
+      /** "light" or "heavy" (landings; heavy from the default hard-landing impact speed). */
+      landing: 'string',
+      /** Downward speed at touchdown, m/s (landings): scale volume by it. */
+      impactSpeed: 'number',
+    },
   },
   AttackTelegraph: {
     anchors: ['attacker'],

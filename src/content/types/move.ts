@@ -46,7 +46,7 @@ export const REACH_CLASSES = ['close', 'short', 'medium', 'long'] as const;
 
 /** Animation clip ids (style bible §15.1), e.g. `anim-knight-sword-light-1`. */
 export const ANIM_ID_PATTERN = /^anim-[a-z0-9]+(?:-[a-z0-9]+)*$/;
-/** Audio cue ids (audio bible §6, without the round-robin number), e.g. `sfx-knight-swing-light`. */
+/** Audio cue ids (audio bible §6, without the round-robin number), e.g. `sfx-knight-sword-swing-light`. */
 export const AUDIO_CUE_PATTERN = /^sfx-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** VFX cue ids (style bible §15.1), e.g. `vfx-sword-trail-light`. */
 export const VFX_CUE_PATTERN = /^vfx-[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -240,10 +240,10 @@ const presentationSchema = z
       .describe('Animation clip id (style bible §15.1), e.g. "anim-knight-sword-light-1".'),
     audioCue: z
       .string()
-      .regex(AUDIO_CUE_PATTERN, 'must be an audio cue id, e.g. "sfx-knight-swing-light"')
+      .regex(AUDIO_CUE_PATTERN, 'must be an audio cue id, e.g. "sfx-knight-sword-swing-light"')
       .optional()
       .describe(
-        'Audio cue id (audio bible §6) of the move’s sound, e.g. "sfx-knight-swing-light".',
+        'Audio cue id (audio bible §6) of the move’s sound, e.g. "sfx-knight-sword-swing-light".',
       ),
     vfxCue: z
       .string()

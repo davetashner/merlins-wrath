@@ -29,6 +29,6 @@
   },
   "presentation": {
     "anim": "anim-knight-dodge-roll",
-    "audioCue": "sfx-knight-roll"
+    "audioCue": "sfx-knight-dodge-roll-armor"
   }
 }

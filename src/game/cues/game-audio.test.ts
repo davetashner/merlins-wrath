@@ -1,6 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { cueRuleSchema } from '@content/index';
-import { addProperties, Died, registerWorldProperties, World, type EntityId } from '@sim/index';
+import {
+  ActionPhaseChanged,
+  addProperties,
+  Died,
+  LocomotionEvents,
+  registerWorldProperties,
+  World,
+  type EntityId,
+} from '@sim/index';
 import { attachGameAudio, soundPositions, type GameAudioEngine } from './game-audio.ts';
 
 function setup() {
@@ -95,6 +103,48 @@ describe('game audio wiring (mw-e28.2)', () => {
     });
     world.step();
     expect(play).toHaveBeenCalledWith('sfx-death', expect.any(Object));
+  });
+
+  it('passes moves and the armour lookup to the cue lookups (swing whooshes, armour layers)', () => {
+    const world = registerWorldProperties(new World({ seed: 1 }));
+    const play = vi.fn(() => null);
+    attachGameAudio({
+      world,
+      engine: { context: { state: 'running' }, play },
+      registry: { get: () => undefined },
+      sheets: [
+        {
+          rules: [
+            cueRuleSchema.parse({ event: 'ActionPhaseChanged', cue: '{sound}' }),
+            cueRuleSchema.parse({
+              event: 'LocomotionEvents',
+              match: { armor: 'plate' },
+              cue: 'sfx-armor-plate-layer',
+            }),
+          ],
+        },
+      ],
+      materials: [],
+      moves: [
+        { id: 'kick', presentation: { anim: 'anim-knight-kick', audioCue: 'sfx-knight-kick' } },
+      ],
+      armorOf: () => 'plate',
+      now: () => 0,
+    });
+    const knight = world.spawn();
+    world.events.emit(ActionPhaseChanged, {
+      tick: 0,
+      entity: knight,
+      move: 'kick',
+      phase: 'active',
+      moveTick: 3,
+    });
+    world.events.emit(LocomotionEvents, { tick: 0, entity: knight, kind: 'jumpStart' });
+    world.step();
+    expect(play.mock.calls.map((call) => (call as unknown[])[0])).toEqual([
+      'sfx-knight-kick',
+      'sfx-armor-plate-layer',
+    ]);
   });
 
   it('soundPositions asks each transform reader in turn', () => {

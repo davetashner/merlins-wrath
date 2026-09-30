@@ -44,7 +44,7 @@
   },
   "presentation": {
     "anim": "anim-knight-roll-attack",
-    "audioCue": "sfx-knight-swing-light",
+    "audioCue": "sfx-knight-sword-swing-light",
     "vfxCue": "vfx-sword-trail-light"
   }
 }

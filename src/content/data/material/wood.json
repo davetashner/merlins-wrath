@@ -4,6 +4,7 @@
   "name": "Wood (seasoned)",
   "notes": "Seasoned hardwood such as oak furniture, crates, beams and doors. Ignition 300 °C is the textbook piloted-ignition figure for wood. Fuel 120 s is a crate- or plank-sized piece; larger objects override it. Density 700 kg/m³ (oak about 600–900), so it floats. Wood takes damage (hp) rather than shattering from a single blow, so it keeps the unbreakable fragile default. Friction 0.5 is dry wood on leather. Footsteps are slightly louder than stone (+2 dB, audio bible §7.3: wood above stone). Burns to charred remains (mw-e03.5). Medium surface that rope arrows embed in (softAnchor). (mw-e03.31)",
   "footstepLoudness": 2,
+  "footstepSurface": "wood",
   "impactSound": "sfx-impact-wood",
   "properties": {
     "flammable": true,

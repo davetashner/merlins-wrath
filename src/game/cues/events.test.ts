@@ -7,6 +7,25 @@ const CLASSES: Record<string, string> = { iron: 'metal', bone: 'bone' };
 const lookups: CueLookups = {
   materialOf: (e) => MATERIALS[e],
   impactClassOf: (m) => CLASSES[m],
+  shieldOf: (e) => (e === 1 ? 'wood-shield' : undefined),
+  moveSoundOf: (m) => (m === 'sword-light-1' ? 'sfx-knight-sword-swing-light' : undefined),
+  surfaceUnder: () => 'wood',
+  armorOf: (e) => (e === 4 ? 'plate' : undefined),
+};
+/** Only the two required lookups: every optional fact is absent. */
+const bare: CueLookups = { materialOf: lookups.materialOf, impactClassOf: lookups.impactClassOf };
+
+const hitbox = {
+  tick: 1,
+  attacker: 4,
+  hitbox: 'sword-light-1',
+  activeTick: 2,
+  target: 1,
+  hurtbox: 'torso',
+  region: 'torso',
+  multiplier: 1,
+  armored: false,
+  direction: { x: 0, y: 0, z: 1 },
 };
 
 const origin = { x: 1, y: 2, z: 3 };
@@ -36,6 +55,10 @@ const SAMPLES: Record<CueEventName, unknown> = {
     died: false,
   },
   PoiseBroken: { tick: 1, target: 1, instigator: 4, source: null },
+  GuardBroken: { tick: 1, entity: 1, instigator: 4, source: null, staggerTicks: 60 },
+  DodgedHit: hitbox,
+  ActionPhaseChanged: { tick: 1, entity: 4, move: 'sword-light-1', phase: 'active', moveTick: 13 },
+  LocomotionEvents: { tick: 1, entity: 4, kind: 'footstep', foot: 'left', gait: 'walk' },
   Died: { tick: 1, target: 1, killer: null, source: 2, tags: ['backstab'] },
   AttackTelegraph: { tick: 1, attacker: 4, attack: 'guard-strike', cue: 'guard-strike-windup' },
   AttackHit: {
@@ -134,6 +157,7 @@ describe('cue event bindings', () => {
         weapon: 'metal',
         weaponMaterial: 'iron',
         damageType: 'slash',
+        contact: 'hit',
         region: 'head',
         tags: ['critical'],
         immune: false,
@@ -276,5 +300,65 @@ describe('cue event bindings', () => {
     });
     expect(unbound.anchors['other']).toBeUndefined();
     expect(unbound.facts).toMatchObject({ entity: 'bone', other: 'generic' });
+  });
+
+  it('mw-e28.4: tell a clean hit from a blocked one (with the blocker’s shield) and an immune one', () => {
+    const damage = (extra: object, look = lookups) =>
+      read('DamageApplied', { ...(SAMPLES.DamageApplied as object), ...extra }, look).facts;
+    expect(damage({ tags: ['blocked'] })).toMatchObject({
+      contact: 'blocked',
+      shield: 'wood-shield',
+    });
+    expect(damage({ tags: ['blocked', 'guard-break'] })['contact']).toBe('blocked');
+    expect(damage({ tags: ['blocked'] }, bare)['shield']).toBeUndefined();
+    expect(damage({ immune: true, tags: [] })).toMatchObject({ contact: 'immune' });
+    expect(damage({ immune: true, tags: [] })['shield']).toBeUndefined();
+  });
+
+  it('mw-e28.4: read guard breaks, dodged swings and move phases (with the move’s own sound)', () => {
+    expect(read('GuardBroken', SAMPLES.GuardBroken)).toEqual({
+      anchors: { entity: { entity: 1 }, instigator: { entity: 4 }, source: undefined },
+      facts: { shield: 'wood-shield' },
+    });
+    expect(read('DodgedHit', SAMPLES.DodgedHit)).toEqual({
+      anchors: { target: { entity: 1 }, attacker: { entity: 4 } },
+      facts: { hitbox: 'sword-light-1', region: 'torso' },
+    });
+    expect(read('ActionPhaseChanged', SAMPLES.ActionPhaseChanged)).toEqual({
+      anchors: { entity: { entity: 4 } },
+      facts: { move: 'sword-light-1', phase: 'active', sound: 'sfx-knight-sword-swing-light' },
+    });
+    expect(read('ActionPhaseChanged', SAMPLES.ActionPhaseChanged, bare).facts['sound']).toBe(
+      undefined,
+    );
+    expect(read('GuardBroken', SAMPLES.GuardBroken, bare).facts['shield']).toBeUndefined();
+  });
+
+  it('mw-e28.6: read footsteps and landings with the surface underfoot and the armour layer', () => {
+    expect(read('LocomotionEvents', SAMPLES.LocomotionEvents)).toEqual({
+      anchors: { entity: { entity: 4 } },
+      facts: { kind: 'footstep', foot: 'left', gait: 'walk', surface: 'wood', armor: 'plate' },
+    });
+    const land = (impactSpeed: number) =>
+      read('LocomotionEvents', { tick: 1, entity: 5, kind: 'land', impactSpeed }).facts;
+    expect(land(4)).toEqual({
+      kind: 'land',
+      impactSpeed: 4,
+      landing: 'light',
+      surface: 'wood',
+      armor: undefined,
+    });
+    expect(land(6)['landing']).toBe('heavy');
+    // Airborne events have no surface; without the optional lookups there is no surface or armour.
+    expect(read('LocomotionEvents', { tick: 1, entity: 4, kind: 'jumpStart' }).facts).toEqual({
+      kind: 'jumpStart',
+      surface: undefined,
+      armor: 'plate',
+    });
+    expect(read('LocomotionEvents', SAMPLES.LocomotionEvents, bare).facts).toEqual({
+      kind: 'footstep',
+      foot: 'left',
+      gait: 'walk',
+    });
   });
 });

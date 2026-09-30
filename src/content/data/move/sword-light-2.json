@@ -45,7 +45,7 @@
   "chainNext": "sword-light-3",
   "presentation": {
     "anim": "anim-knight-sword-light-2",
-    "audioCue": "sfx-knight-swing-light",
+    "audioCue": "sfx-knight-sword-swing-light",
     "vfxCue": "vfx-sword-trail-light"
   }
 }

@@ -4,6 +4,7 @@
   "name": "Stone (rough)",
   "notes": "Rough field stone and bedrock: walls, boulders, cave floors. Non-flammable. Density 2600 kg/m³ (granite about 2650). Very tough (400 hp) and never shatters from one impact. Friction 0.6 is the spec's reference for stone. Hard surfaces reflect sound (damping 0.05). Rough faces are a climb for climbers (grade rough). It is the 0 dB footstep reference. Hard surface: arrows ricochet and rope arrows do not embed. (mw-e03.31)",
   "footstepLoudness": 0,
+  "footstepSurface": "stone",
   "impactSound": "sfx-impact-stone",
   "properties": {
     "density": 2600,

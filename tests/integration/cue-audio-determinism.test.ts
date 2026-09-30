@@ -43,7 +43,8 @@ const TICKS = 60 * HZ; // 60 s
 
 /** Every cue the combat sheet can play in this fight, so the engine starts real voices. */
 const SOUNDS = [
-  'sfx-impact-flesh',
+  'sfx-blade-impact-flesh',
+  'sfx-blunt-impact-flesh',
   'sfx-combat-critical',
   'sfx-combat-stagger',
   'sfx-combat-death-flesh',
@@ -141,7 +142,9 @@ describe('cue sheets never influence the sim', () => {
       const silent = await run(false);
       const loud = await run(true);
       // Audio really ran: the combat sheet resolved hits, staggers and telegraphs into cues.
-      expect(loud.played).toContain('sfx-impact-flesh');
+      // Each hit is two packets: the 18 slash (blade × flesh), then the 4 blunt knock.
+      expect(loud.played).toContain('sfx-blade-impact-flesh');
+      expect(loud.played).toContain('sfx-blunt-impact-flesh');
       expect(loud.played).toContain('sfx-combat-stagger');
       expect(loud.played).toContain('sfx-telegraph-fixture-guard-strike-windup');
       expect(loud.ctx?.sources.length).toBeGreaterThan(0);

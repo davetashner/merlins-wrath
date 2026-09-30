@@ -58,7 +58,7 @@
   },
   "presentation": {
     "anim": "anim-knight-sword-heavy-charged",
-    "audioCue": "sfx-knight-swing-charged",
+    "audioCue": "sfx-knight-sword-swing-heavy",
     "vfxCue": "vfx-sword-trail-charged"
   }
 }

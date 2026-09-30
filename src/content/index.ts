@@ -295,6 +295,7 @@ export {
 } from './types/locomotion.ts';
 export {
   FOOTSTEP_LOUDNESS_RANGE,
+  FOOTSTEP_SURFACES,
   IMPACT_SOUND_PATTERN,
   BURNT_DESTROYED,
   burntMaterials,
@@ -303,6 +304,7 @@ export {
   materialPropertiesSchema,
   materialSchema,
   type MaterialDef,
+  type FootstepSurface,
   type MaterialDefInput,
   type MaterialProperties,
 } from './types/material.ts';

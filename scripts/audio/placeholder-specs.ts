@@ -1,8 +1,9 @@
 // The placeholder sound set (mw-e28.2): one entry per cue id, written under the final asset ids so
 // that swapping in a real sound is a file replacement plus clearing `placeholder` (audio bible §6,
 // §9.3). The set covers every id the cue sheets can play (the material impact classes and their
-// death variants, the generic combat cues) plus the initial combat, archery, footsteps and UI ids the
-// SFX asset groups will deliver (prompt beads mw-e38.12, mw-e38.28, mw-e38.20 and mw-e38.36).
+// death variants, the generic combat cues, the weapon × material impact matrix of mw-e28.4) plus the
+// initial combat, archery, footsteps, armour and UI ids the SFX asset groups will deliver (prompt
+// beads mw-e38.12, mw-e38.28, mw-e38.20, mw-e38.24 and mw-e38.36).
 //
 // Every sound is synthesised here from filtered noise, tones and clicks: no downloaded clips, no
 // generation APIs. They are stand-ins, not the palette of audio bible §7; they only need to read as
@@ -141,6 +142,15 @@ function deathSpecs(): PlaceholderSpec[] {
   }));
 }
 
+/** A whoosh: band-passed noise sweeping up then fading (sword swings, flybys). */
+const whoosh = (from: number, to: number, duration: number, peakDb = SFX_PEAK): Recipe => ({
+  duration,
+  peakDb,
+  layers: [
+    noise('bandpass', from, 1, { to, q: 1.5, attack: duration * 0.45, decay: duration * 0.2 }),
+  ],
+});
+
 /** The generic combat cues of cue-sheet/combat.json. */
 const COMBAT: readonly PlaceholderSpec[] = [
   {
@@ -189,6 +199,14 @@ const COMBAT: readonly PlaceholderSpec[] = [
     },
   },
   {
+    // A swing that passed through a dodge's i-frames (DodgedHit): a close, bright miss.
+    id: 'sfx-combat-whiff',
+    bus: 'combat',
+    spatial: true,
+    variants: 2,
+    recipe: whoosh(900, 3000, 0.22, -6),
+  },
+  {
     id: 'sfx-combat-stamina-wheeze',
     bus: 'combat',
     spatial: true,
@@ -217,14 +235,53 @@ const COMBAT: readonly PlaceholderSpec[] = [
   },
 ];
 
-/** A whoosh: band-passed noise sweeping up then fading (sword swings, flybys). */
-const whoosh = (from: number, to: number, duration: number, peakDb = SFX_PEAK): Recipe => ({
-  duration,
-  peakDb,
-  layers: [
-    noise('bandpass', from, 1, { to, q: 1.5, attack: duration * 0.45, decay: duration * 0.2 }),
+/**
+ * Attacker sides of the impact matrix (mw-e28.4), picked by a hit's dominant damage type: slash is a
+ * blade, blunt a club or shield, pierce a point (arrows reuse the archery impacts). Each is a
+ * transient layered over the struck material's body (audio bible §7.1's three-layer impacts).
+ */
+export const STRIKE_CLASSES = ['blade', 'blunt', 'pierce'] as const;
+export type StrikeClass = (typeof STRIKE_CLASSES)[number];
+
+const STRIKE_LAYERS: Readonly<Record<StrikeClass, readonly Layer[]>> = {
+  blade: [
+    noise('highpass', 4200, 0.8, { decay: 0.03 }),
+    tone(2600, 0.25, { to: 1900, decay: 0.03 }),
   ],
-});
+  blunt: [tone(72, 1, { to: 50, decay: 0.07 }), noise('lowpass', 320, 0.8, { decay: 0.05 })],
+  pierce: [click(1), noise('bandpass', 2600, 0.6, { q: 3, decay: 0.02 })],
+};
+
+/** Target materials with their own blade and blunt pair (others fall back to the generic strike). */
+export const MATRIX_TARGETS = ['flesh', 'bone', 'metal', 'wood', 'stone'] as const;
+
+/** `sfx-<strike>-impact` (generic) and `sfx-<blade|blunt>-impact-<target>` (pairs). */
+function matrixSpecs(): PlaceholderSpec[] {
+  const generic = STRIKE_CLASSES.map((cls) => ({
+    id: `sfx-${cls}-impact`,
+    recipe: {
+      duration: 0.18,
+      peakDb: SFX_PEAK,
+      layers: [...STRIKE_LAYERS[cls], tone(120, 0.5, { decay: 0.04 })],
+    },
+  }));
+  const pairs = (['blade', 'blunt'] as const).flatMap((cls) =>
+    MATRIX_TARGETS.map((target) => ({
+      id: `sfx-${cls}-impact-${target}`,
+      recipe: {
+        duration: target === 'metal' ? 0.3 : 0.18,
+        peakDb: SFX_PEAK,
+        layers: [...STRIKE_LAYERS[cls], ...IMPACT_LAYERS[target]],
+      },
+    })),
+  );
+  return [...generic, ...pairs].map((spec) => ({
+    ...spec,
+    bus: 'combat',
+    spatial: true,
+    variants: 2,
+  }));
+}
 
 /** Knight combat (mw-e38.12's 14 ids); swings and blocks get 3 variants. */
 const KNIGHT: readonly PlaceholderSpec[] = [
@@ -346,6 +403,19 @@ const KNIGHT: readonly PlaceholderSpec[] = [
       peakDb: -6,
       layers: [
         noise('bandpass', 1000, 1, { to: 550, q: 1.2, attack: 0.1, hold: 0.15, decay: 0.12 }),
+      ],
+    },
+  },
+  {
+    // The backstep's scuff (move backstep's own sound; not in mw-e38.12's list yet).
+    id: 'sfx-knight-backstep',
+    variants: 1,
+    recipe: {
+      duration: 0.3,
+      peakDb: -6,
+      layers: [
+        noise('lowpass', 800, 1, { attack: 0.06, decay: 0.08 }),
+        tone(80, 0.5, { start: 0.2, decay: 0.04 }),
       ],
     },
   },
@@ -542,6 +612,9 @@ const GAIT_DURATION: Readonly<Record<FootstepGait, number>> = { sneak: 0.1, walk
 export const footstepPeak = (surface: FootstepSurface, gait: FootstepGait): number =>
   GAIT_PEAK[gait] + SURFACE_OFFSET[surface];
 
+/** Armour layer peaks: under a walk step's body, plate above chain. */
+export const ARMOUR_PEAK = { plate: -15, chain: -18 } as const;
+
 /** Landing peaks, above any run step. */
 export const LANDING_PEAK = { light: -7, heavy: -4 } as const;
 
@@ -570,7 +643,37 @@ function footstepSpecs(): PlaceholderSpec[] {
       ],
     },
   }));
-  return [...steps, ...landings].map((spec) => ({ ...spec, bus: 'footsteps', spatial: true }));
+  // Armour layers (mw-e38.24) play on top of each footstep; plate is the loudest (audio bible §7.3).
+  const armour = [
+    {
+      id: 'sfx-armor-plate-layer',
+      variants: 2,
+      recipe: {
+        duration: 0.15,
+        peakDb: ARMOUR_PEAK.plate,
+        layers: [
+          click(0.4),
+          tone(1900, 0.3, { decay: 0.05 }),
+          tone(3100, 0.2, { decay: 0.035 }),
+          noise('highpass', 4000, 0.3, { decay: 0.03 }),
+        ],
+      },
+    },
+    {
+      id: 'sfx-armor-chain-layer',
+      variants: 2,
+      recipe: {
+        duration: 0.15,
+        peakDb: ARMOUR_PEAK.chain,
+        layers: [noise('highpass', 5000, 1, { attack: 0.01, hold: 0.04, decay: 0.04, grain: 0.3 })],
+      },
+    },
+  ];
+  return [...steps, ...landings, ...armour].map((spec) => ({
+    ...spec,
+    bus: 'footsteps',
+    spatial: true,
+  }));
 }
 
 /** UI (mw-e38.36's 14 ids): paper, leather and brass, all short except the heartbeat loop. */
@@ -690,6 +793,7 @@ export function placeholderSpecs(): PlaceholderSpec[] {
   return [
     ...impactSpecs(),
     ...deathSpecs(),
+    ...matrixSpecs(),
     ...COMBAT,
     ...KNIGHT,
     ...ARCHERY,

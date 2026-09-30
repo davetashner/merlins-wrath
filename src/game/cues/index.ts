@@ -4,12 +4,15 @@
 export {
   AudioCueBridge,
   DEFAULT_CUE_SEED,
+  DEFAULT_FOOTSTEP_SURFACE,
   soundVariantCount,
   worldCueLookups,
   type AudioCueBridgeOptions,
   type CueEventSource,
+  type CueMaterial,
   type CuePlay,
   type CuePlayer,
+  type WorldCueLookupOptions,
 } from './audio-bridge.ts';
 export {
   attachGameAudio,

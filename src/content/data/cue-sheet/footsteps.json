@@ -1,0 +1,112 @@
+{
+  "id": "footsteps",
+  "notes": "Footstep cue rules (mw-e28.6). Every footstep the sim's locomotion emits (spaced by ground distance per gait: 0.7 m walking, 1.0 m running for the player; animation foot plants can replace the spacing later) plays the surface under the character, read from the material of the collider it stands on (the material's footstepSurface): stone, wood, dirt, grass, gravel or shallow water, 4 round-robin variants each. A surface with no set yet plays stone (and warns once in dev). Walking and running play their own sets; sprinting is the run set 3 dB up and crouching the walk set 10 dB down. Characters in armour add its layer on every step (plate clank, chain jingle) once the armour weight class exists (mw-e04.16); landings thud harder and louder the faster the fall, heavy from the hard-landing speed. Creatures with locomotion use the same rules with their own surface; audio never emits sim noise (e09 does).",
+  "rules": [
+    {
+      "event": "LocomotionEvents",
+      "match": {
+        "kind": "footstep"
+      },
+      "layer": "step",
+      "cue": "sfx-foot-{surface}-walk",
+      "pitchJitter": 0.04,
+      "volumeJitterDb": 1,
+      "priority": 30
+    },
+    {
+      "event": "LocomotionEvents",
+      "match": {
+        "kind": "footstep",
+        "gait": "run"
+      },
+      "layer": "step",
+      "cue": "sfx-foot-{surface}-run",
+      "pitchJitter": 0.04,
+      "volumeJitterDb": 1,
+      "priority": 30
+    },
+    {
+      "event": "LocomotionEvents",
+      "match": {
+        "kind": "footstep",
+        "gait": "sprint"
+      },
+      "layer": "step",
+      "cue": "sfx-foot-{surface}-run",
+      "pitchJitter": 0.04,
+      "volumeJitterDb": 1,
+      "volumeDb": 3,
+      "priority": 30
+    },
+    {
+      "event": "LocomotionEvents",
+      "match": {
+        "kind": "footstep",
+        "gait": "crouch"
+      },
+      "layer": "step",
+      "cue": "sfx-foot-{surface}-walk",
+      "pitchJitter": 0.04,
+      "volumeJitterDb": 1,
+      "volumeDb": -10,
+      "priority": 30
+    },
+    {
+      "event": "LocomotionEvents",
+      "match": {
+        "kind": "footstep",
+        "armor": "plate"
+      },
+      "layer": "armor",
+      "cue": "sfx-armor-plate-layer",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1,
+      "priority": 25
+    },
+    {
+      "event": "LocomotionEvents",
+      "match": {
+        "kind": "footstep",
+        "armor": "chain"
+      },
+      "layer": "armor",
+      "cue": "sfx-armor-chain-layer",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1,
+      "priority": 25
+    },
+    {
+      "event": "LocomotionEvents",
+      "match": {
+        "kind": "land"
+      },
+      "layer": "step",
+      "cue": "sfx-foot-land-light",
+      "pitchJitter": 0.04,
+      "volumeBy": {
+        "fact": "impactSpeed",
+        "min": 2,
+        "max": 6,
+        "floorDb": -12
+      },
+      "priority": 40
+    },
+    {
+      "event": "LocomotionEvents",
+      "match": {
+        "kind": "land",
+        "landing": "heavy"
+      },
+      "layer": "step",
+      "cue": "sfx-foot-land-heavy",
+      "pitchJitter": 0.04,
+      "volumeBy": {
+        "fact": "impactSpeed",
+        "min": 6,
+        "max": 14,
+        "floorDb": -6
+      },
+      "priority": 45
+    }
+  ]
+}

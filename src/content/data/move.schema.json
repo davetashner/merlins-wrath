@@ -567,7 +567,7 @@
           "description": "Animation clip id (style bible §15.1), e.g. \"anim-knight-sword-light-1\"."
         },
         "audioCue": {
-          "description": "Audio cue id (audio bible §6) of the move’s sound, e.g. \"sfx-knight-swing-light\".",
+          "description": "Audio cue id (audio bible §6) of the move’s sound, e.g. \"sfx-knight-sword-swing-light\".",
           "type": "string",
           "pattern": "^sfx-[a-z0-9]+(?:-[a-z0-9]+)*$"
         },
