@@ -3,6 +3,12 @@
 // is its centre plus a bounding-sphere radius; the physics layer (mw-e03.10) is expected to keep it in
 // step with rigid bodies, while static objects are placed once from level data. Entities without a
 // placement are only reachable by contact stimuli.
+//
+// Some placements are a frame origin rather than a centre: a character's is its feet, the frame its
+// swings and hurtboxes are placed in (mw-e04.2). Such an entity also carries a placement centre
+// (mw-e04.34): where its bounding sphere sits relative to the placement. Stimuli reach and push that
+// sphere (`boundingSphereOf`), so a blast at a character's feet lifts it rather than pushing it into
+// the ground.
 
 import { defineComponent, type EntityId } from '../core/component';
 import type { World } from '../core/world';
@@ -57,6 +63,56 @@ export function placeEntity(
   } else {
     world.add(entity, PlacementComponent, placement);
   }
+}
+
+/** An entity's bounding sphere relative to its placement (see the file header). */
+export interface PlacementCentre {
+  /** From the placement to the sphere's centre, metres. */
+  readonly offset: Vec3;
+  /** The sphere's radius, metres (≥ 0); replaces the placement's radius for stimuli. */
+  readonly radius: number;
+}
+
+function frozenCentre(value: unknown): PlacementCentre {
+  const { offset, radius } = (value ?? {}) as Record<string, unknown>;
+  const problem = validatePlacement({ ...(offset as object | undefined), radius });
+  if (problem !== undefined) throw new RangeError(problem.replace('placement.', 'centre.'));
+  const { x, y, z } = offset as Vec3;
+  return Object.freeze({ offset: Object.freeze({ x, y, z }), radius: radius as number });
+}
+
+/** The placement centre component (`spatial.centre`; a snapshot and save key, never renamed). */
+export const PlacementCentreComponent = defineComponent<PlacementCentre>('spatial.centre', {
+  deserialize: frozenCentre,
+});
+
+/**
+ * Gives `entity` a placement centre (validated like a placement: a RangeError for non-finite numbers
+ * or a negative radius). Structural when first added, like `placeEntity`.
+ */
+export function setPlacementCentre(
+  world: World<never>,
+  entity: EntityId,
+  offset: Vec3,
+  radius: number,
+): void {
+  const centre = frozenCentre({ offset, radius });
+  if (world.has(entity, PlacementCentreComponent)) {
+    world.set(entity, PlacementCentreComponent, centre);
+  } else {
+    world.add(entity, PlacementCentreComponent, centre);
+  }
+}
+
+/**
+ * The sphere stimuli reach on an entity placed at `at`: `at` itself, or its centre's sphere when it
+ * has one. Needs PlacementCentreComponent registered (`installStimuli` does).
+ */
+export function boundingSphereOf(world: World<never>, entity: EntityId, at: Placement): Placement {
+  const centre = world.get(entity, PlacementCentreComponent);
+  if (centre === undefined) return at;
+  const { offset, radius } = centre;
+  return { x: at.x + offset.x, y: at.y + offset.y, z: at.z + offset.z, radius };
 }
 
 /** The placement of `entity`, or undefined when it has none. */

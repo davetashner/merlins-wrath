@@ -348,6 +348,16 @@ describe('damage model', () => {
       expect(s.hit({ amounts: { fire: 10 }, instigator: player }, player)?.total).toBe(5);
     });
 
+    it('fallDamage scales environmental damage the player takes, on top of damageTaken; 0 turns it off', () => {
+      const s = setup({ health: 100, player: true }, { damageTaken: 2, fallDamage: 0.5 });
+      expect(s.hit({ amounts: { blunt: 10 }, tags: ['environment', 'fall'] })?.total).toBe(10);
+      expect(s.hit({ amounts: { blunt: 10 } })?.total).toBe(20);
+      const off = setup({ health: 100, player: true }, { fallDamage: 0 });
+      expect(off.hit({ amounts: { fire: 8 }, tags: ['environment', 'hazard'] })?.total).toBe(0);
+      const creature = setup({ health: 100 }, { fallDamage: 0 });
+      expect(creature.hit({ amounts: { blunt: 10 }, tags: ['environment'] })?.total).toBe(10);
+    });
+
     it('damageTaken applies after armor', () => {
       const s = setup({ health: 100, player: true, armor: { slash: 4 } }, { damageTaken: 2 });
       expect(s.hit({ amounts: { slash: 10 } })?.total).toBe(12);

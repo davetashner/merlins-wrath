@@ -110,6 +110,13 @@ export const launchTuningSchema = z
       .describe(
         `After a staggering launch lands, movement and jump input are ignored this long, whole ms (≤ ${String(MAX_LAUNCH_RECOVERY_MS)}).`,
       ),
+    mass: z
+      .number()
+      .positive()
+      .max(1000)
+      .describe(
+        'The character’s mass for force stimuli (its `weight` world property), kg: a blast’s impulse in N·s over this is the velocity change it gets.',
+      ),
   })
   .describe(
     'Being thrown by an impulse (mw-e02.15): explosions, Gust, Thunderclap and heavy blows launch the character into a ragdoll-free airborne state.',

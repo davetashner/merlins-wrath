@@ -3,8 +3,9 @@
 // querying RapierCollisionWorld); a creature stands on the arena's 2 m platform 0.5 m from its edge
 // as a character on the same controller, and a knockback hit toward the edge goes through the damage
 // model, the reaction rules and physics: it is launched over the edge, falls the 2 m and lands on the
-// arena floor, where the environmental fall-damage rules (mw-e04.19) price the impacts: the launch
-// is blamed on the hit's instigator, and a 2 m drop is below the shipped rules' 4 m safe height.
+// arena floor, where the environmental fall-damage rules (mw-e04.19, installed by the game's own
+// wiring since mw-e04.34) price the impacts: the launch is blamed on the hit's instigator, and a 2 m
+// drop is below the shipped rules' 4 m safe height.
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
 import {
@@ -12,7 +13,6 @@ import {
   DEFAULT_ENVIRONMENT_DAMAGE_ID,
   HIT_REACTION_DEFAULTS,
   loadGameContent,
-  PLAYER_CONTROLLER_ID,
   type CreatureDefInput,
   type EnvironmentDamageTuning,
   type Frozen,
@@ -29,7 +29,6 @@ import {
   giveHitReactions,
   healthOf,
   HitReaction,
-  installEnvironmentDamage,
   reactionOf,
   reactionProfileFromCreature,
   SKIN,
@@ -82,16 +81,14 @@ function must<T>(value: T | undefined): T {
 
 const content = loadGameContent();
 const RULES = content.get('environment-damage', DEFAULT_ENVIRONMENT_DAMAGE_ID);
-const CAPSULE = content.get('controller', PLAYER_CONTROLLER_ID).capsule;
 
 function shove(rules: Frozen<EnvironmentDamageTuning> = RULES) {
   // The testbed's combat (mw-e04.6) registers the action timeline, stamina, damage and hit-volume
   // components, and installs hit reactions on the game's damage model with the character and
   // physics-object pushers (mw-e04.31).
-  const game = createGameWorld<never>(RAPIER, { seed: 1, hz: 60 });
+  const game = createGameWorld<never>(RAPIER, { seed: 1, hz: 60, environment: rules });
   const { world } = game;
   const { damage } = game.combat;
-  installEnvironmentDamage(world, { damage, tuning: rules, capsule: CAPSULE });
   const knight = world.spawn();
   const goblin: EntityId = spawnCharacter(world, {
     x: LEDGE.edgeX - 0.5,
@@ -179,9 +176,14 @@ describe('hit reactions in the greybox testbed (mw-e04.7)', () => {
     const { goblin, knight, impacts, hits } = shove(harsh);
     const falls = hits.filter((h) => h.tags.includes('fall'));
     expect(falls).toHaveLength(2);
+    // The first is the wall it clips (tagged `wall` too, mw-e04.34), the second the landing.
+    expect(falls.map((h) => h.tags)).toEqual([
+      ['environment', 'fall', 'wall'],
+      ['environment', 'fall'],
+    ]);
     falls.forEach((fall, i) => {
       expect(fall.target).toBe(goblin);
-      expect(fall.packet).toMatchObject({ instigator: knight, tags: ['environment', 'fall'] });
+      expect(fall.packet.instigator).toBe(knight);
       expect(fall.total).toBeCloseTo((60 * ((impacts[i]?.height ?? 0) - 1)) / 2, 1);
     });
   });

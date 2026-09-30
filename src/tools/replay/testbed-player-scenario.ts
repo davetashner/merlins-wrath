@@ -13,7 +13,13 @@
 //   TESTBED_PLAYER_RECORD=1 pnpm vitest run tests/integration/testbed-player.test.ts
 
 import { loadGameContent } from '@content/game-content';
-import { PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID, PLAYER_LOCK_ON_ID } from '@content/index';
+import {
+  PLAYER_CAMERA_ID,
+  PLAYER_CONTROLLER_ID,
+  PLAYER_LOCK_ON_ID,
+  type EnvironmentDamageTuning,
+  type Frozen,
+} from '@content/index';
 import {
   installSandboxRules,
   prepareTestbedCombat,
@@ -155,12 +161,24 @@ export function createTestbedWorld(
  */
 export function createGameWorld<TInput>(
   rapier: RapierModule,
-  { seed, hz, scene: sceneId = 'testbed' }: { seed: number; hz: number; scene?: string },
+  {
+    seed,
+    hz,
+    scene: sceneId = 'testbed',
+    environment,
+  }: {
+    seed: number;
+    hz: number;
+    scene?: string;
+    /** Environmental damage rules in place of content's (tests of other curves). */
+    environment?: Frozen<EnvironmentDamageTuning>;
+  },
 ): HeadlessGame<TInput> {
   const content = loadGameContent();
   const physics = new RapierPhysics(rapier);
   const world = registerSceneComponents(new World<TInput>({ seed, hz, physics }));
-  const combat = prepareTestbedCombat(content);
+  const prepared = prepareTestbedCombat(content);
+  const combat = environment === undefined ? prepared : { ...prepared, environment };
   const props = testPropSpawners(content.all('testprop').map((prop) => prop.id));
   installDebugCommands(world, {
     spawners: new Map([...props, ...combat.spawners]),

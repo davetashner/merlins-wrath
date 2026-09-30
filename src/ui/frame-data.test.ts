@@ -15,6 +15,7 @@ const row = (key: string, patch: Partial<FrameDataRowModel> = {}): FrameDataRowM
   health: '1000/1000',
   poise: '40/40',
   dps: '0.0',
+  world: '',
   ...patch,
 });
 
@@ -45,10 +46,18 @@ describe('frame-data overlay (mw-e04.9)', () => {
     expect(cell(panel, '7', 'phase').textContent).toBe('startup');
     expect(cell(panel, '7', 'phase').querySelector('span')?.dataset['phase']).toBe('startup');
     expect(cell(panel, '7', 'frame').textContent).toBe('5/42');
-    expect(panel.element.querySelectorAll('th')).toHaveLength(10);
+    expect(panel.element.querySelectorAll('th')).toHaveLength(11);
     expect(document.getElementById('vb-frame-data-styles')).not.toBeNull();
     new FrameDataPanel(); // the stylesheet is installed once
     expect(document.querySelectorAll('#vb-frame-data-styles')).toHaveLength(1);
+  });
+
+  it('shows the latest harm the world dealt a fighter (mw-e04.34)', () => {
+    const panel = new FrameDataPanel();
+    panel.update(model([row('1', { world: 'fall 42' })]));
+    expect(cell(panel, '1', 'world').textContent).toBe('fall 42');
+    panel.update(model([row('1')]));
+    expect(cell(panel, '1', 'world').textContent).toBe('');
   });
 
   it('lights the i-frame and hyperarmor badges only while they apply', () => {

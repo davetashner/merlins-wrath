@@ -45,6 +45,12 @@ export {
   type CharacterImpulse,
 } from './impulse';
 export {
+  characterCentre,
+  characterPlacementSystem,
+  installCharacterStimuli,
+  makePushable,
+} from './stimuli';
+export {
   CharacterController,
   CharacterImpacted,
   characterControllerSystem,

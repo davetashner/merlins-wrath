@@ -1,7 +1,12 @@
+import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
 import { KNIGHT_SHIELD_ID, loadGameContent } from '@content/index';
 import {
+  BlameComponent,
+  CharacterController,
   DAMAGE_COMPONENTS,
+  EnvironmentContactsComponent,
+  RapierPhysics,
   DEFAULT_REACTION_PROFILE,
   giveCombatant,
   healthOf,
@@ -14,6 +19,7 @@ import {
   World,
   type SceneSpawnPlacement,
 } from '@sim/index';
+import { installGamePhysics } from '../physics-objects';
 import { prepareTestbedCombat, startTestbedCombat } from './testbed-combat';
 import {
   dummyReadout,
@@ -109,5 +115,21 @@ describe('training dummy (mw-e04.6)', () => {
     // Already a combatant: left as it was.
     expect(healthOf(again, other)).toEqual({ max: 5, current: 5 });
     expect(again.has(other, HurtboxComponent)).toBe(false);
+  });
+
+  it('mw-e04.34: a physics world without a player still gets the world-as-weapon rules', () => {
+    const combat = prepareTestbedCombat(loadGameContent());
+    const w = new World<never>({ seed: 1, physics: new RapierPhysics(RAPIER) });
+    w.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS);
+    installGamePhysics(w);
+    startTestbedCombat(w, combat, []);
+    expect(w.isRegistered(CharacterController)).toBe(true);
+    expect(w.isRegistered(BlameComponent)).toBe(true);
+    expect(w.query(EnvironmentContactsComponent).ids()).toHaveLength(1);
+    w.step();
+    // A bare combat world (no physics objects) gets none of it.
+    const bare = world();
+    startTestbedCombat(bare, prepareTestbedCombat(loadGameContent()), []);
+    expect(bare.isRegistered(BlameComponent)).toBe(false);
   });
 });

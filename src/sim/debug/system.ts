@@ -1,4 +1,5 @@
-// Applies debug commands inside the tick (mw-e33.1). `installDebugCommands` registers the cheat
+// Applies debug commands inside the tick (mw-e33.1; blasts, mw-e04.34, go through the stimulus API and
+// resolve where the world's stimulus system runs). `installDebugCommands` registers the cheat
 // component and adds the system; install it right after creating the world, before other systems,
 // so a teleport or a cheat toggle is what every later system of that tick sees. Structural changes
 // follow the world's usual rule: entities a spawn command creates, and a first cheat component, go
@@ -20,6 +21,7 @@ import { PhysicsObjectComponent, teleportPhysicsObject } from '../physics/object
 import { SceneSpawnComponent, SceneTransformComponent } from '../scene/loader';
 import { addPropPhysics, type ScenePhysicsOptions } from '../scene/physics';
 import type { Vec3 } from '../stimulus/shapes';
+import { applyStimulus, StimulusQueueComponent } from '../stimulus/stimulus';
 import { DebugCheatsComponent, godModeModifier, NO_CHEATS, type DebugCheats } from './cheats';
 import {
   isDebugCommand,
@@ -166,6 +168,17 @@ export function debugCommandSystem<TInput>(options: DebugCommandOptions): System
           } catch (error) {
             if (!(error instanceof RangeError)) throw error;
           }
+          continue;
+        }
+        if (command.op === 'blast') {
+          // Only a world with stimuli installed has anything to push.
+          if (!world.isRegistered(StimulusQueueComponent)) continue;
+          const { at, radius, intensity } = command;
+          applyStimulus(world, {
+            shape: { kind: 'sphere', center: at, radius },
+            element: 'force',
+            intensity,
+          });
           continue;
         }
         if (!world.isAlive(command.target)) continue;

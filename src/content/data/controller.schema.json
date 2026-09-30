@@ -231,11 +231,18 @@
           "minimum": 0,
           "maximum": 1000,
           "description": "After a staggering launch lands, movement and jump input are ignored this long, whole ms (≤ 1000)."
+        },
+        "mass": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000,
+          "description": "The character’s mass for force stimuli (its `weight` world property), kg: a blast’s impulse in N·s over this is the velocity change it gets."
         }
       },
       "required": [
         "airControl",
-        "recoveryMs"
+        "recoveryMs",
+        "mass"
       ],
       "additionalProperties": false
     },

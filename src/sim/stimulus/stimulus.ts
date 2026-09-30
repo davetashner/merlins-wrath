@@ -31,7 +31,7 @@ import type { System, World } from '../core/world';
 import { hasProperty, readProperty, setProperty } from '../properties/components';
 import { PROPERTY_ID_PATTERN, WORLD_PROPERTY_SPECS } from '../properties/spec';
 import { encodeCanonical } from '../snapshot';
-import { PlacementComponent } from './placement';
+import { boundingSphereOf, PlacementCentreComponent, PlacementComponent } from './placement';
 import {
   isDegenerateShape,
   normalize,
@@ -238,11 +238,11 @@ export interface ImpulseApplied {
 export const impulseApplied = defineEvent<ImpulseApplied>('impulseApplied');
 
 /**
- * Makes `world` accept stimuli: registers the placement and queue components and creates the queue.
- * Call once at setup, after `registerWorldProperties` and outside a step.
+ * Makes `world` accept stimuli: registers the placement, placement centre and queue components and
+ * creates the queue. Call once at setup, after `registerWorldProperties` and outside a step.
  */
 export function installStimuli<W extends World<never>>(world: W): W {
-  world.register(PlacementComponent, StimulusQueueComponent);
+  world.register(PlacementComponent, PlacementCentreComponent, StimulusQueueComponent);
   world.add(world.spawn(), StimulusQueueComponent, { entries: [] });
   return world;
 }
@@ -316,8 +316,9 @@ function reach(
     return alive ? [{ entity: shape.target, falloff: 1 }] : [];
   }
   const found: { entity: EntityId; falloff: number }[] = [];
-  world.query(PlacementComponent).forEach((entity, at) => {
+  world.query(PlacementComponent).forEach((entity, placement) => {
     if (!isTarget(world, effect, entity)) return;
+    const at = boundingSphereOf(world, entity, placement);
     const falloff = shapeFalloff(shape, stimulus.falloff, at, at.radius);
     if (falloff !== undefined) found.push({ entity, falloff });
   });
@@ -345,7 +346,8 @@ function applyImpulse(
   entity: EntityId,
   amount: number,
 ): boolean {
-  const at = world.get(entity, PlacementComponent);
+  const placed = world.get(entity, PlacementComponent);
+  const at = placed === undefined ? undefined : boundingSphereOf(world, entity, placed);
   const direction =
     stimulus.direction ?? (at === undefined ? undefined : shapePush(stimulus.shape, at));
   if (direction === undefined) return false;

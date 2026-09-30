@@ -14,7 +14,9 @@ import type { MoveTable } from '@content/index';
 import {
   actionOf,
   AttackerDummyComponent,
+  DAMAGE_TAGS,
   DamageApplied,
+  ENVIRONMENT_TAGS,
   healthOf,
   hitStopOf,
   HitStopComponent,
@@ -34,20 +36,51 @@ import type { FrameDataModel, FramePhase } from '@ui/index';
 /** Sim ticks the damage-per-second window covers (5 s at 60 Hz). */
 export const DPS_WINDOW_TICKS = 300;
 
-/** Tracks the damage every entity takes, for damage-per-second readouts. */
+/** What kind of environmental harm a packet was, from its tags (see src/sim/combat/environment). */
+export type EnvironmentHarm = 'fall' | 'wall' | 'crush' | 'hazard' | 'environment';
+
+/** The kind of environmental harm `tags` describe, or undefined when it is not environmental. */
+export function environmentHarm(tags: readonly string[]): EnvironmentHarm | undefined {
+  if (!tags.includes(DAMAGE_TAGS.environment)) return undefined;
+  if (tags.includes(ENVIRONMENT_TAGS.wall)) return 'wall';
+  for (const kind of [ENVIRONMENT_TAGS.fall, ENVIRONMENT_TAGS.crush, ENVIRONMENT_TAGS.hazard]) {
+    if (tags.includes(kind)) return kind;
+  }
+  return 'environment';
+}
+
+/** The latest environmental harm an entity took. */
+export interface EnvironmentHit {
+  readonly kind: EnvironmentHarm;
+  /** Damage dealt, after the damage model. */
+  readonly amount: number;
+  /** The tick it landed on. */
+  readonly tick: number;
+}
+
+/** Tracks the damage every entity takes, for damage-per-second and environmental readouts. */
 export class DamageMeter {
   readonly #hits = new Map<EntityId, { tick: number; total: number }[]>();
+  readonly #environment = new Map<EntityId, EnvironmentHit>();
   readonly #off: () => void;
 
   constructor(
     world: World<never>,
     readonly windowTicks = DPS_WINDOW_TICKS,
   ) {
-    this.#off = world.events.on(DamageApplied, ({ target, tick, total }) => {
+    this.#off = world.events.on(DamageApplied, ({ target, tick, total, tags }) => {
       const list = this.#hits.get(target) ?? [];
       list.push({ tick, total });
       this.#hits.set(target, list);
+      const kind = environmentHarm(tags);
+      if (kind !== undefined) this.#environment.set(target, { kind, amount: total, tick });
     });
+  }
+
+  /** The latest environmental harm `entity` took within the window ending at `tick`, or null. */
+  environment(entity: EntityId, tick: number): EnvironmentHit | null {
+    const hit = this.#environment.get(entity);
+    return hit !== undefined && hit.tick > tick - this.windowTicks ? hit : null;
   }
 
   /** Damage per second `entity` took over the window ending at `tick` (0 without hits). */
@@ -62,6 +95,7 @@ export class DamageMeter {
   dispose(): void {
     this.#off();
     this.#hits.clear();
+    this.#environment.clear();
   }
 }
 
@@ -85,6 +119,8 @@ export interface FighterFrame {
   readonly poise: { readonly current: number; readonly max: number } | null;
   /** Damage per second taken (a DamageMeter's window), or null without a meter. */
   readonly dps: number | null;
+  /** The latest environmental harm taken in the meter's window, or null (also without a meter). */
+  readonly environment: EnvironmentHit | null;
 }
 
 /** The frame data of one tick. */
@@ -150,6 +186,7 @@ function fighter(
     health: health === undefined ? null : { current: health.current, max: health.max },
     poise: poise === undefined ? null : { current: poise.current, max: poise.max },
     dps: meter === undefined ? null : meter.dps(entity, world.tick, world.clock.hz),
+    environment: meter?.environment(entity, world.tick) ?? null,
   };
 }
 
@@ -205,6 +242,7 @@ export function frameDataView(data: SandboxFrameData): FrameDataModel {
       health: meter(f.health),
       poise: meter(f.poise),
       dps: f.dps === null ? '' : f.dps.toFixed(1),
+      world: f.environment === null ? '' : `${f.environment.kind} ${points(f.environment.amount)}`,
     })),
   };
 }

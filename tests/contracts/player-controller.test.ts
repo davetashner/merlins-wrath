@@ -136,7 +136,7 @@ describe('shipped player tuning (mw-e02.2)', () => {
     expect(must(trace.at(-1)).crouched).toBe(false);
   });
 
-  it('mw-e02.15: the shipped launch tuning is the sim’s default (10% air control, 250 ms recovery)', () => {
+  it('mw-e02.15: the shipped launch tuning is the sim’s default (10% air control, 250 ms recovery, 90 kg)', () => {
     expect(tuning.launch).toEqual(DEFAULT_LAUNCH_TUNING);
   });
 });

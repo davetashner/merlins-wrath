@@ -11,7 +11,7 @@ import {
 } from '../properties/components';
 import { hashWorld } from '../snapshot';
 import { recordStimulusLog } from './log';
-import { placeEntity } from './placement';
+import { placeEntity, setPlacementCentre } from './placement';
 import { ORIGIN, STIMULUS_EDGE_FALLOFF, type Vec3 } from './shapes';
 import {
   applyStimulus,
@@ -143,6 +143,35 @@ describe('applyStimulus / resolveStimuli', () => {
       { entity: barrel, impulse: v(-50), velocityChange: v(-2.5), source: crate },
     ]);
     expect(log.entries[0]?.hits.map((hit) => hit.entity)).toEqual([crate, barrel]);
+  });
+
+  it('mw-e04.34: a placement centre is what a force reaches and pushes, not the frame origin', () => {
+    const w = world();
+    const seen = impulses(w);
+    // A character: placed at its feet, its capsule's bounding sphere 0.9 m up.
+    const knight = thing(w, { pushable: true, weight: 90 }, v(2), 0.35);
+    setPlacementCentre(w, knight, v(0, 0.9), 0.9);
+    // A crate with the same placement and no centre.
+    const crate = thing(w, { pushable: true, weight: 90 }, v(-2), 0.35);
+    w.step();
+    // A blast on the ground between them, reaching 1.6 m: the crate's sphere is 1.65 m away (out of
+    // reach), the knight's body about 1.29 m.
+    run(w, {
+      shape: { kind: 'sphere', center: ORIGIN, radius: 1.6 },
+      element: 'force',
+      intensity: 900,
+    });
+    expect(seen.map((i) => i.entity)).toEqual([knight]);
+    const push = seen[0]?.impulse ?? v(0);
+    const reach = Math.sqrt(2 * 2 + 0.9 * 0.9) - 0.9;
+    const share = 1 - (1 - STIMULUS_EDGE_FALLOFF) * (reach / 1.6);
+    expect(Math.sqrt(push.x * push.x + push.y * push.y + push.z * push.z)).toBeCloseTo(
+      900 * share,
+      6,
+    );
+    // Pushed up and away from the blast, along the line to the body's centre.
+    expect(push.y / push.x).toBeCloseTo(0.9 / 2, 9);
+    expect(crate).toBeGreaterThan(0);
   });
 
   it('AC-3: an explicit direction overrides the shape push, and contacts need one', () => {
