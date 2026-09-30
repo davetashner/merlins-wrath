@@ -28,6 +28,7 @@ export {
   type RampRise,
   type GreyboxRamp,
 } from './greybox';
+export { NOCLIP_BOOST, stepNoclip } from './noclip';
 export {
   CharacterController,
   characterControllerSystem,

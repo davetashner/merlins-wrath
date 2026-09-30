@@ -200,6 +200,11 @@ export class World<TInput = unknown> {
     return this;
   }
 
+  /** Whether exactly this component type is registered (optional features check before reading). */
+  isRegistered(type: ComponentType<unknown>): boolean {
+    return this.stores.get(type.name)?.type === type;
+  }
+
   /** Appends a system; systems run in the order they were added. */
   addSystem(system: System<TInput>): this {
     if (this.systems.some((s) => s.name === system.name)) {

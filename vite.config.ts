@@ -29,6 +29,9 @@ export default defineConfig({
   plugins: [wasm() as Plugin],
   define: {
     __BUILD_SHA__: JSON.stringify(buildSha()),
+    // The debug console (mw-e33.1) is built in unless VESPER_DEBUG_CONSOLE=off (a release build);
+    // even then it only loads in dev builds or with ?debug=1 (src/game/debug-console-gate.ts).
+    __DEBUG_CONSOLE__: JSON.stringify(process.env['VESPER_DEBUG_CONSOLE'] !== 'off'),
   },
   resolve: {
     tsconfigPaths: true,

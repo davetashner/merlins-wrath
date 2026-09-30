@@ -15,6 +15,7 @@ import {
   type CharacterInput,
   type CharacterState,
 } from './controller';
+import { stepNoclip } from './noclip';
 import type { TraversalHook } from './traversal';
 
 /** A character moved by the kinematic controller. */
@@ -34,6 +35,8 @@ export interface CharacterSystemOptions<TInput> {
   readonly hooks?: readonly TraversalHook[];
   /** This tick's input for `entity`, picked from the tick's commands; undefined = idle. */
   readonly input: (inputs: readonly TInput[], entity: EntityId) => CharacterInput | undefined;
+  /** Whether `entity` flies free of collision and gravity this tick (the noclip cheat, mw-e33.1). */
+  readonly noclip?: (entity: EntityId) => boolean;
 }
 
 /** A system stepping every CharacterController once per tick. */
@@ -48,7 +51,11 @@ export function characterControllerSystem<TInput>(
       const context = { world: collision, tuning, params, hooks };
       world.query(CharacterController).forEach((id, state) => {
         const input = options.input(inputs, id) ?? IDLE_INPUT;
-        world.set(id, CharacterController, stepCharacter(state, input, context));
+        const next =
+          options.noclip?.(id) === true
+            ? stepNoclip(state, input, tuning, params)
+            : stepCharacter(state, input, context);
+        world.set(id, CharacterController, next);
       });
     },
   };

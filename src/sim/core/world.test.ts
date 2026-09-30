@@ -266,6 +266,13 @@ describe('World entities and deferred structural changes', () => {
     expect(() => w.query(Impostor)).toThrow(/"Health" is not registered/);
   });
 
+  it('isRegistered tells whether exactly this component type is registered', () => {
+    const w = world();
+    expect(w.isRegistered(Position)).toBe(true);
+    expect(w.isRegistered(defineComponent<Vec>('Position'))).toBe(false);
+    expect(w.isRegistered(defineComponent<Vec>('Unknown'))).toBe(false);
+  });
+
   it('keeps named RNG streams persistent across calls and independent of each other', () => {
     const w = world(42);
     const a1 = w.random('ai').nextU32();

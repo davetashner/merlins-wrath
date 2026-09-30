@@ -39,6 +39,7 @@ import {
 import { actionTimelineSystem } from '../combat/timeline/timeline';
 import { defineComponent, type EntityId } from '../core/component';
 import type { System, World } from '../core/world';
+import { hasCheat } from '../debug/cheats';
 import { actionFrameOf, type ActionVector } from '../input/action-frame';
 import { cos, pow, sin } from '../math';
 import type { SceneSpawnPlacement } from '../scene/layout';
@@ -280,6 +281,7 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
           ? { actions, cameraYaw: look.yaw }
           : { actions, cameraYaw: look.yaw, motion };
       },
+      noclip: (entity) => hasCheat(world, entity, 'noclip'),
     }),
   );
   const { x, y, z } = start.position;

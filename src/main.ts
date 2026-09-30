@@ -6,7 +6,13 @@ import {
 } from '@content/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
-import { browserFrameSources, createGameLoop, object3DBinding } from '@game/loop/index';
+import { debugConsoleEnabled } from '@game/debug-console-gate';
+import {
+  browserFrameSources,
+  CommandQueue,
+  createGameLoop,
+  object3DBinding,
+} from '@game/loop/index';
 import { bootPhysics } from '@game/physics-loader';
 import { formatBudgetWarning, installGamePhysics, playerFocus } from '@game/physics-objects';
 import { createUiGameBridge } from '@game/ui/index';
@@ -34,6 +40,7 @@ import {
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
   hitVolumeSystem,
+  installDebugCommands,
   noAllies,
   physicsBodiesOf,
   PhysicsObjectComponent,
@@ -42,8 +49,12 @@ import {
   RapierSightWorld,
   registerSceneComponents,
   SceneSpawnComponent,
+  testPropSpawners,
   World,
   type ActionFrame,
+  type DebugCommand,
+  type DifficultyCommand,
+  type EntityId,
   type RapierPhysics,
 } from '@sim/index';
 import { compactProbe, setupAnimationDemo, type AnimDemo } from '@tools/anim-demo/setup';
@@ -68,6 +79,9 @@ import {
 
 /** Placeholder world seed until new-game/save flows choose one. */
 const BOOT_SEED = 1;
+
+/** Everything the game feeds `World.step`: sampled input plus queued debug-console commands. */
+type GameCommand = ActionFrame | DebugCommand | DifficultyCommand;
 
 const app = document.querySelector<HTMLElement>('#app');
 if (app) {
@@ -270,7 +284,14 @@ function startRenderer(root: HTMLElement): void {
   // world starts once the physics module has loaded; the dynamic import keeps Rapier and its WASM
   // out of the initial bundle.
   const startWorld = (physics: RapierPhysics): void => {
-    const world = registerSceneComponents(new World<ActionFrame>({ seed: BOOT_SEED, physics }));
+    const world = registerSceneComponents(new World<GameCommand>({ seed: BOOT_SEED, physics }));
+    const content = loadGameContent();
+    // Debug commands first (mw-e33.1), so a teleport or cheat is what every later system sees. The
+    // sim side is always present; only the console that issues them is dev/playtest-only.
+    const spawners = testPropSpawners(content.all('testprop').map((prop) => prop.id));
+    installDebugCommands(world, { spawners });
+    const commands = new CommandQueue<GameCommand>();
+    const afterStep: (() => void)[] = [];
     // Swept hitboxes and region-tagged hurtboxes (mw-e04.2). No faction table is loaded yet, so
     // nobody counts as an ally; ?hitboxes draws what the system tests each tick.
     world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS);
@@ -290,8 +311,6 @@ function startRenderer(root: HTMLElement): void {
     hitOverlay.enabled = new URLSearchParams(location.search).has('hitboxes');
     view.scene.add(hitOverlay.object);
     root.dataset['hitboxOverlay'] = hitOverlay.enabled ? 'on' : 'off';
-
-    const content = loadGameContent();
 
     // VFX (mw-e29.1): effects from content, simulated each frame after the sim and the camera have
     // moved, drawn by src/render/vfx. Presentation only: the system reads entity transforms and never
@@ -329,10 +348,12 @@ function startRenderer(root: HTMLElement): void {
     const { loop, sync } = createGameLoop({
       world,
       sources,
-      sampleCommands: bridge.sampleCommands,
+      // Queued debug-console commands pass even while a UI screen withholds gameplay frames.
+      sampleCommands: commands.sampler(bridge.sampleCommands),
       simPaused: bridge.simPaused,
       onStep: () => {
         animation?.driver.capture();
+        for (const hook of afterStep) hook();
       },
       draw: (frame) => {
         uiInput.poll();
@@ -367,12 +388,13 @@ function startRenderer(root: HTMLElement): void {
     // The scene loader fills the world from content (mw-e00.21); static colliders go into the
     // sim's Rapier world, bound to stone piece entities, and movable props become physics objects
     // drawn from their sim pose (mw-e03.39).
+    const greybox = createGreyboxView(view.renderer, view.scene);
     const scenes = new SceneLoader({
       world,
       sync,
       colliders: physics,
       content,
-      objects: createGreyboxView(view.renderer, view.scene),
+      objects: greybox,
       binding: (object, read) => object3DBinding(object, read),
       physics: {},
     });
@@ -464,6 +486,49 @@ function startRenderer(root: HTMLElement): void {
     } else {
       label.textContent = `No scene · build ${__BUILD_SHA__}`;
       showSceneError(root, request.requested, request.available);
+    }
+    // The debug console (mw-e33.1): its own chunk, loaded only in dev builds or with ?debug=1.
+    const consoleGate = {
+      built: __DEBUG_CONSOLE__,
+      dev: import.meta.env.DEV,
+      search: location.search,
+    };
+    if (__DEBUG_CONSOLE__ && debugConsoleEnabled(consoleGate)) {
+      void import('@tools/console/start').then(({ startDebugConsole, unboundDebugSpawns }) => {
+        const bookmarks = new Map(
+          (scenes.current?.layout.spawns ?? []).map((spawn) => [spawn.id, spawn.position] as const),
+        );
+        startDebugConsole({
+          world,
+          submit: (command) => {
+            commands.push(command as GameCommand);
+          },
+          player: (): EntityId | undefined => player?.entity,
+          spawnables: [...spawners.keys()].sort(),
+          bookmarks: () => bookmarks,
+          scenes: scenes.available(),
+          loadScene: (id) => {
+            const params = new URLSearchParams(location.search);
+            params.set('scene', id);
+            location.search = params.toString();
+          },
+          loop,
+          // A UI screen (mw-e00.23): while open it captures input, so the player gets no action
+          // frames and pointer lock is released; the sim keeps running.
+          dom: { document, keys: globalThis.window, screens: ui },
+          storage: globalThis.localStorage,
+          onToggle: (open) => {
+            root.dataset['debugConsole'] = open ? 'open' : 'closed';
+          },
+        });
+        // Props the console spawned get grey-box objects like the scene's own props.
+        afterStep.push(() => {
+          for (const { entity, placement } of unboundDebugSpawns(world, (id) => sync.has(id))) {
+            sync.bind(entity, object3DBinding(greybox.spawn(placement), readSceneTransform));
+          }
+        });
+        root.dataset['debugConsole'] = 'closed';
+      });
     }
     // Debug attribute (mw-e03.35 AC-4): colliders registered in the physics world.
     root.dataset['colliders'] = String(physics.count());
