@@ -9,6 +9,7 @@
 
 import { z } from 'zod';
 import { contentId, ref } from '../schema.ts';
+import { worldPropertiesSchema } from '../world-properties.ts';
 import { interactableSchema } from './interaction.ts';
 import { KIT_PURPOSES, vec3Schema } from './kit.ts';
 
@@ -32,6 +33,30 @@ const yaw = z
   .default(0)
   .describe('Rotation about +y in degrees: 0, 90, 180 or 270.');
 
+/** Horizontal sides of a part, in the piece's own axes (before the placement's yaw). */
+export const LEDGE_SIDES = ['+x', '-x', '+z', '-z'] as const;
+
+/**
+ * Switches auto-detected ledges off, or forces them on, for one edge or several (mw-e03.22). Ledges
+ * are the top edges of solid boxes with a drop beneath them; see src/sim/climb/ledges.ts.
+ */
+export const ledgeOverrideSchema = z.strictObject({
+  side: z
+    .enum(LEDGE_SIDES)
+    .optional()
+    .describe(
+      'Top edge on this side of the piece (its own axes, before yaw); omit for every side.',
+    ),
+  part: z
+    .int()
+    .min(0)
+    .optional()
+    .describe('Index of the part in the kit piece; omit for every part.'),
+  ledge: z
+    .boolean()
+    .describe('false: never a ledge (decoration); true: always a ledge (the whole edge).'),
+});
+
 export const scenePlacementSchema = z.strictObject({
   piece: ref('kit').describe('Id of the kit piece.'),
   at: gridPosition,
@@ -41,6 +66,15 @@ export const scenePlacementSchema = z.strictObject({
     .default([1, 1, 1])
     .describe('Stretch along the piece’s own x, y, z (e.g. a 2 m floor tile scaled 5× is 10 m).'),
   purpose: z.enum(KIT_PURPOSES).optional().describe('Overrides the piece’s purpose (colour code).'),
+  properties: worldPropertiesSchema
+    .optional()
+    .describe(
+      'World properties of the piece over the level material, e.g. { "climbable": "ivy" } or a wooden material.',
+    ),
+  ledges: z
+    .array(ledgeOverrideSchema)
+    .optional()
+    .describe('Ledge overrides, applied in order (a later one wins over an earlier one).'),
 });
 
 export const sceneSpawnSchema = z.strictObject({

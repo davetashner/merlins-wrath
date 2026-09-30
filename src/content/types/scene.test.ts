@@ -58,6 +58,59 @@ describe('scene schema (mw-e00.21)', () => {
     ]);
   });
 
+  it('mw-e03.22 AC-5: a level file with a climbable grade not in the enum fails validation', () => {
+    const scene = (climbable: unknown) => ({
+      ...room,
+      placements: [{ piece: 'wall', at: [0, 0, 0], properties: { climbable } }],
+    });
+    expect(problems(scene('ivy'))).toEqual([]);
+    expect(problems(scene('vertical'))).toEqual([
+      expect.stringMatching(/^placements\.0\.properties\.climbable: /),
+    ]);
+    expect(problems(scene(2))).toEqual([
+      expect.stringMatching(/^placements\.0\.properties\.climbable: /),
+    ]);
+    // Through the content loader too: the file and path are named.
+    const load = () =>
+      loadContent(
+        contentTypes,
+        [...gameContentSources(), source('fixtures/scene/room.json', scene('slippery'))],
+        contentChecks,
+      );
+    expect(load).toThrow(ContentLoadError);
+    expect(load).toThrow(/fixtures\/scene\/room\.json[\s\S]*placements\/0\/properties\/climbable/);
+  });
+
+  it('mw-e03.22: placements take world properties and ledge overrides', () => {
+    const parsed = sceneSchema.parse({
+      ...room,
+      placements: [
+        {
+          piece: 'wall',
+          at: [0, 0, 0],
+          properties: { material: 'wood', climbable: 'ladder' },
+          ledges: [{ ledge: false }, { side: '+z', part: 0, ledge: true }],
+        },
+      ],
+    });
+    expect(parsed.placements[0]).toMatchObject({
+      properties: { material: new ContentRef('material', 'wood'), climbable: 'ladder' },
+      ledges: [{ ledge: false }, { side: '+z', part: 0, ledge: true }],
+    });
+    expect(
+      problems({
+        ...room,
+        placements: [{ piece: 'wall', at: [0, 0, 0], ledges: [{ side: 'north', ledge: false }] }],
+      }),
+    ).toEqual([expect.stringMatching(/^placements\.0\.ledges\.0\.side: /)]);
+    expect(
+      problems({
+        ...room,
+        placements: [{ piece: 'wall', at: [0, 0, 0], ledges: [{ part: -1, ledge: true }] }],
+      }),
+    ).toEqual([expect.stringMatching(/^placements\.0\.ledges\.0\.part: /)]);
+  });
+
   it('AC-3: a scene using a kit piece or prop that does not exist fails to load, naming it', () => {
     const broken = {
       ...room,

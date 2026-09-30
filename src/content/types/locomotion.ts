@@ -16,8 +16,8 @@
 // capability bitfield, so nav queries stay cheap bitwise tests. Off-mesh links (jump, drop, climb,
 // door, fly, burrow) and nav areas each require capability bits (`LINK_REQUIREMENTS`,
 // `AREA_REQUIREMENTS`); the bake can store those masks on the navmesh, and `canTraverseLink` /
-// `canEnterArea` add the numeric limits (jump rise, drop height, climbable grade 1–3 from the world
-// property `climbable`, diggable `material` presets). Pathfinding itself is e11.4's job in src/sim.
+// `canEnterArea` add the numeric limits (jump rise, drop height, climb difficulty 1–3 of the world
+// property `climbable` via `climbDifficulty` in src/sim/climb, diggable `material` presets). Pathfinding itself is e11.4's job in src/sim.
 //
 // Units: metres, metres per second, degrees. Cost multipliers are unitless (1 = neutral).
 
@@ -136,7 +136,9 @@ const climbShape = {
     .int()
     .min(1)
     .max(3)
-    .describe('Hardest `climbable` grade it climbs: 1 ladders and ivy, 2 rough walls, 3 sheer.'),
+    .describe(
+      'Hardest climb difficulty it climbs: 1 ladders, ropes and ivy, 2 rough walls, 3 sheer or frozen.',
+    ),
 };
 
 const wallcrawlShape = {
@@ -511,7 +513,7 @@ export interface NavAgent {
   readonly maxDrop: number;
   /** Deepest water waded, m (0 when it does not walk). */
   readonly wadeDepth: number;
-  /** Hardest `climbable` grade climbed, 1–3 (0 when it does not climb). */
+  /** Hardest climb difficulty climbed, 1–3 (0 when it does not climb). */
   readonly maxClimbGrade: number;
   /** Highest flight above the ground, m (0 when it does not fly). */
   readonly maxAltitude: number;
@@ -551,7 +553,10 @@ export function deriveNavAgent(profile: Frozen<LocomotionProfile>): NavAgent {
 export type NavLink =
   | { readonly kind: 'jump'; /** Height gained, m. */ readonly rise: number }
   | { readonly kind: 'drop'; /** Height lost, m. */ readonly fall: number }
-  | { readonly kind: 'climb'; /** The surface's `climbable` grade, 1–3. */ readonly grade: number }
+  | {
+      readonly kind: 'climb';
+      /** Climb difficulty of the surface's `climbable` grade, 1–3. */ readonly grade: number;
+    }
   | { readonly kind: 'door' }
   | { readonly kind: 'fly' }
   | { readonly kind: 'burrow'; /** Material preset id dug through. */ readonly material: string };

@@ -4,6 +4,7 @@
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
 import { World } from '../core/world';
+import { at } from '../geom/vec';
 import {
   installPhysicsObjects,
   physicsImpact,
@@ -13,13 +14,20 @@ import {
 } from '../physics/objects';
 import { RapierPhysics } from '../physics/rapier';
 import type { ColliderHandle } from '../physics/static-colliders';
-import { readProperty, registerWorldProperties } from '../properties/components';
+import { hasProperty, readProperty, registerWorldProperties } from '../properties/components';
+import { climbabilityOfCollider } from '../climb/surfaces';
 import type { MaterialPresets } from '../properties/materials';
 import { hashWorld } from '../snapshot';
 import { PlacementComponent } from '../stimulus/placement';
 import { TEST_SCENE, testKit } from './fixtures';
 import { loadScene, registerSceneComponents, unloadScene, type LoadedScene } from './loader';
-import { addScenePhysics, DEFAULT_LEVEL_MATERIAL, type PropBody } from './physics';
+import type { SceneSpec } from './layout';
+import {
+  addScenePhysics,
+  DEFAULT_LEVEL_MATERIAL,
+  placementProperties,
+  type PropBody,
+} from './physics';
 
 const MATERIALS: MaterialPresets = new Map([
   ['stone', { friction: 0.6 }],
@@ -149,5 +157,56 @@ describe('scene physics (mw-e03.39)', () => {
     expect(a.physics.count()).toBe(0);
     a.world.step();
     expect(a.world.query(PhysicsObjectComponent).ids()).toEqual([]);
+  });
+});
+
+describe('scene placement properties (mw-e03.22)', () => {
+  it('a placement’s properties override the level material; a non-solid piece gets only its own', () => {
+    const physics = new RapierPhysics(RAPIER);
+    const world = registerWorldProperties(
+      registerSceneComponents(new World<never>({ seed: 5, physics })),
+    );
+    world.register(PlacementComponent);
+    installPhysicsObjects(world);
+    const [floor, doorway, ramp, decal] = TEST_SCENE.placements;
+    const scene = {
+      ...TEST_SCENE,
+      placements: [
+        floor,
+        { ...doorway, properties: { climbable: 'ivy', material: { id: 'wood' } } },
+        { ...ramp, properties: { climbable: undefined } },
+        { ...decal, properties: { climbable: 'ladder' } },
+      ],
+    } as SceneSpec;
+    const loaded = loadScene(world, scene, testKit, physics);
+    addScenePhysics(world, loaded, { props: () => undefined, materials: MATERIALS });
+    const floorEntity = at(loaded.pieces, 0);
+    const doorwayEntity = at(loaded.pieces, 1);
+    const rampEntity = at(loaded.pieces, 2);
+    const decalEntity = at(loaded.pieces, 3);
+    expect(readProperty(world, floorEntity, 'material')).toBe('stone');
+    expect(readProperty(world, doorwayEntity, 'material')).toBe('wood');
+    expect(readProperty(world, doorwayEntity, 'climbable')).toBe('ivy');
+    expect(readProperty(world, doorwayEntity, 'flammable')).toBe(true);
+    expect(readProperty(world, rampEntity, 'material')).toBe('stone');
+    expect(hasProperty(world, decalEntity, 'material')).toBe(false);
+    expect(readProperty(world, decalEntity, 'climbable')).toBe('ladder');
+    // A collision query's collider names its piece, and so its climbing grade.
+    const doorwayCollider = world.get(doorwayEntity, PhysicsColliderComponent)?.colliders[0];
+    expect(doorwayCollider).toBeDefined();
+    expect(climbabilityOfCollider(world, doorwayCollider ?? -1)).toBe('ivy');
+  });
+
+  it('a piece without solid parts and without properties gets none', () => {
+    const physics = new RapierPhysics(RAPIER);
+    const world = registerWorldProperties(
+      registerSceneComponents(new World<never>({ seed: 5, physics })),
+    );
+    world.register(PlacementComponent);
+    installPhysicsObjects(world);
+    const loaded = loadScene(world, TEST_SCENE, testKit, physics);
+    addScenePhysics(world, loaded, { props: () => undefined, materials: MATERIALS });
+    expect(hasProperty(world, at(loaded.pieces, 3), 'material')).toBe(false);
+    expect(placementProperties(undefined)).toEqual({});
   });
 });

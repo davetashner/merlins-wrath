@@ -382,7 +382,10 @@ describe('renderWorldPropertiesDoc (mw-e03.31)', () => {
     expect(doc).toContain(
       '| `lightEmitter` | record | `intensity` 0–100,000 light; `radius` 0–100 m |',
     );
-    expect(doc).toContain('| `climbable` | number | whole 1–3 grade | 1 |');
+    expect(doc).toContain('| `support` | number | whole 0–9,007,199,254,740,991 entity | 0 |');
+    expect(doc).toContain(
+      '| `climbable` | one of | `none`, `ladder`, `rope`, `ivy`, `rough`, `sheer` | none | ',
+    );
     expect(doc).toContain('| `wetness` | number | 0–1 | 0 |');
     expect(doc).toContain('| `material` | id | kebab-case id | generic |');
     expect(doc).toContain('| `hidden` | flag | true, false | false |');

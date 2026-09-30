@@ -29,7 +29,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `modes.climb.speeds.sneak` | number > 0 | required | Sneak speed, m/s (investigate, stalk). |
 | `modes.climb.speeds.walk` | number > 0 | required | Walk speed, m/s (patrol, idle); at least sneak. |
 | `modes.climb.speeds.run` | number > 0 | required | Run speed, m/s (chase, combat, flee); at least walk. |
-| `modes.climb.maxGrade` | integer 1–3 | required | Hardest `climbable` grade it climbs: 1 ladders and ivy, 2 rough walls, 3 sheer. |
+| `modes.climb.maxGrade` | integer 1–3 | required | Hardest climb difficulty it climbs: 1 ladders, ropes and ivy, 2 rough walls, 3 sheer or frozen. |
 | `modes.fly` | object | — | Kinematic flight at a height offset; also crosses gaps and water. |
 | `modes.fly.speeds` | object | required | Speed per gait, m/s. |
 | `modes.fly.speeds.sneak` | number > 0 | required | Sneak speed, m/s (investigate, stalk). |

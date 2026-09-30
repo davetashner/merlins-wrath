@@ -89,11 +89,10 @@ export const worldPropertiesSchema = z
         .max(100_000)
         .describe('Density, kg/m³; below 1000 it floats in water.'),
       climbable: z
-        .number()
-        .int()
-        .min(1)
-        .max(3)
-        .describe('Climbing grade: 1 easy, 2 needs stamina, 3 needs skill or a tool.'),
+        .enum(['none', 'ladder', 'rope', 'ivy', 'rough', 'sheer'])
+        .describe(
+          'Climbing grade: none, ladder, rope, ivy (easy), rough (needs a climber), sheer (needs a tool).',
+        ),
       liftable: flag('Can be picked up and carried.'),
       pushable: flag('Can be pushed or dragged.'),
       hideable: flag('An actor can hide in or behind it.'),

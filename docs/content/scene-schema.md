@@ -20,6 +20,66 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `placements[].yaw` | `0` \| `90` \| `180` \| `270` | `0` | Rotation about +y in degrees: 0, 90, 180 or 270. |
 | `placements[].scale` | list of any (at least 3) | `[1,1,1]` | Stretch along the piece’s own x, y, z (e.g. a 2 m floor tile scaled 5× is 10 m). |
 | `placements[].purpose` | `"walkable"` \| `"blocking"` \| `"climbable"` \| `"interactive"` \| `"hazard"` | — | Overrides the piece’s purpose (colour code). |
+| `placements[].properties` | object | — | World properties of the piece over the level material, e.g. { "climbable": "ivy" } or a wooden material. |
+| `placements[].properties.material` | ref → material | — | Material preset id (a material content entry). |
+| `placements[].properties.temperature` | number -273.15–10000 | — | Current temperature, °C. |
+| `placements[].properties.flammable` | boolean | — | Fire can ignite it. |
+| `placements[].properties.ignitionPoint` | number -273.15–10000 | — | Temperature at which it ignites, °C. |
+| `placements[].properties.fuel` | number 0–86400 | — | Seconds of burning left. |
+| `placements[].properties.burning` | boolean | — | On fire right now. |
+| `placements[].properties.wetness` | number 0–1 | — | How soaked it is (dry … saturated), 0 … 1. |
+| `placements[].properties.frozen` | boolean | — | Frozen solid. |
+| `placements[].properties.freezePoint` | number -273.15–10000 | — | Temperature at or below which it freezes, °C. |
+| `placements[].properties.conductive` | boolean | — | Conducts electric charge. |
+| `placements[].properties.charge` | number 0–1000000 | — | Stored electric charge. |
+| `placements[].properties.weight` | number 0–1000000 | — | Mass, kg. |
+| `placements[].properties.fragile` | number 0–1000000000 | — | Impact energy that breaks it, J. |
+| `placements[].properties.hp` | number 0–1000000 | — | Structural hit points. |
+| `placements[].properties.density` | number 0.01–100000 | — | Density, kg/m³; below 1000 it floats in water. |
+| `placements[].properties.climbable` | `"none"` \| `"ladder"` \| `"rope"` \| `"ivy"` \| `"rough"` \| `"sheer"` | — | Climbing grade: none, ladder, rope, ivy (easy), rough (needs a climber), sheer (needs a tool). |
+| `placements[].properties.liftable` | boolean | — | Can be picked up and carried. |
+| `placements[].properties.pushable` | boolean | — | Can be pushed or dragged. |
+| `placements[].properties.hideable` | boolean | — | An actor can hide in or behind it. |
+| `placements[].properties.reflective` | boolean | — | Reflects light beams and bolts. |
+| `placements[].properties.transparent` | boolean | — | Light and sight pass through it. |
+| `placements[].properties.opaque` | boolean | — | Fully blocks light and sight. |
+| `placements[].properties.lightEmitter` | object | — | Emits light. |
+| `placements[].properties.lightEmitter.intensity` | number 0–100000 | required | Light output (a torch is about 100). |
+| `placements[].properties.lightEmitter.radius` | number 0–100 | required | Reach, m. |
+| `placements[].properties.soundDamping` | number 0–1 | — | Fraction of sound it absorbs, 0 … 1. |
+| `placements[].properties.friction` | number 0–2 | — | Surface friction coefficient. |
+| `placements[].properties.impactAbsorb` | number 0–1 | — | Fraction of impact energy it absorbs, 0 … 1. |
+| `placements[].properties.owner` | id | — | Ownership tag (faction or owner id). |
+| `placements[].properties.liquid` | boolean | — | A liquid: it pours, puddles and can have a water surface. |
+| `placements[].properties.flammableGas` | boolean | — | A gas that ignites (flares or explodes) when fire reaches it. |
+| `placements[].properties.extinguishable` | boolean | — | A fire or light source that water, force or an interaction puts out. |
+| `placements[].properties.waterSurface` | boolean | — | Top surface of a body of liquid: cold freezes it into walkable ice (needs a liquid material). |
+| `placements[].properties.unstable` | number 0–1000000000 | — | Force of one push, blast or quake that topples it, J. |
+| `placements[].properties.suspended` | boolean | — | Hangs from its support; falls when the support breaks, burns or is cut. |
+| `placements[].properties.support` | integer ≥ 0 | — | Entity a suspended object hangs from (0 = none); set when the level spawns. |
+| `placements[].properties.breakable` | boolean | — | A single hit at or above its toughness for that kind of hit breaks it. |
+| `placements[].properties.toughness` | object | — | Per kind of hit, the single-hit energy that breaks a breakable object; a kind left out never does. |
+| `placements[].properties.toughness.blunt` | number 0–1000000000 | — | Blunt hit energy that breaks it, J. |
+| `placements[].properties.toughness.slash` | number 0–1000000000 | — | Slash hit energy that breaks it, J. |
+| `placements[].properties.toughness.pierce` | number 0–1000000000 | — | Pierce hit energy that breaks it, J. |
+| `placements[].properties.toughness.force` | number 0–1000000000 | — | Force (blast, quake, boulder) energy that breaks it, J. |
+| `placements[].properties.bashable` | boolean | — | A shield bash or kick shoves it (or breaks it when breakable). |
+| `placements[].properties.cuttable` | boolean | — | Slash or pierce damage severs it. |
+| `placements[].properties.shootable` | number 0–1000000 | — | Projectile impulse that fires its signal, N·s. |
+| `placements[].properties.softAnchor` | boolean | — | Rope arrows and hooks embed in it. |
+| `placements[].properties.surfaceHardness` | `"soft"` \| `"medium"` \| `"hard"` | — | Footstep loudness and whether arrows stick (soft, medium) or ricochet (hard). |
+| `placements[].properties.chargeActivated` | number 0–1000000000 | — | Stored charge at which the mechanism fires. |
+| `placements[].properties.lightActivated` | number 0–1000000000 | — | Light level on it at which the mechanism fires. |
+| `placements[].properties.hidden` | boolean | — | Not perceivable or targetable until revealed. |
+| `placements[].properties.trapped` | boolean | — | Interacting with it triggers its trap unless disarmed first (needs a trap). |
+| `placements[].properties.trap` | id | — | Trap definition id a trapped object triggers. |
+| `placements[].properties.container` | boolean | — | Holds items (contents live in the e18 container component). |
+| `placements[].properties.remains` | boolean | — | Inert skeletal or corpse remains that summoning can raise. |
+| `placements[].properties.noiseMultiplier` | number 0.2–3 | — | Multiplier on its wearer's noise; an actor's is the product of its equipment's. |
+| `placements[].ledges` | list of object | — | Ledge overrides, applied in order (a later one wins over an earlier one). |
+| `placements[].ledges[].side` | `"+x"` \| `"-x"` \| `"+z"` \| `"-z"` | — | Top edge on this side of the piece (its own axes, before yaw); omit for every side. |
+| `placements[].ledges[].part` | integer ≥ 0 | — | Index of the part in the kit piece; omit for every part. |
+| `placements[].ledges[].ledge` | boolean | required | false: never a ledge (decoration); true: always a ledge (the whole edge). |
 | `spawns` | list of object | — | Entity spawns: markers and props. |
 | `spawns[].id` | id | required | Name of the spawn, unique in the scene (e.g. player-start). |
 | `spawns[].at` | list of any (at least 3) | required | Position in grid cells (x, y, z), snapped to SCENE_SNAP_STEP. |

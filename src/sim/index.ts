@@ -2,6 +2,7 @@
 export const layer = 'sim' as const;
 
 export * from './character';
+export * from './climb';
 export * from './combat';
 export { DEFAULT_TICK_RATE_HZ, SimClock, type ClockState, type ReadonlyClock } from './clock';
 export {

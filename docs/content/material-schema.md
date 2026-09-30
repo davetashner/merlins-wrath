@@ -25,7 +25,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `properties.fragile` | number 0–1000000000 | — | Impact energy that breaks it, J. |
 | `properties.hp` | number 0–1000000 | — | Structural hit points. |
 | `properties.density` | number 0.01–100000 | — | Density, kg/m³; below 1000 it floats in water. |
-| `properties.climbable` | integer 1–3 | — | Climbing grade: 1 easy, 2 needs stamina, 3 needs skill or a tool. |
+| `properties.climbable` | `"none"` \| `"ladder"` \| `"rope"` \| `"ivy"` \| `"rough"` \| `"sheer"` | — | Climbing grade: none, ladder, rope, ivy (easy), rough (needs a climber), sheer (needs a tool). |
 | `properties.liftable` | boolean | — | Can be picked up and carried. |
 | `properties.pushable` | boolean | — | Can be pushed or dragged. |
 | `properties.hideable` | boolean | — | An actor can hide in or behind it. |

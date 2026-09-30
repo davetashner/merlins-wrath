@@ -1,0 +1,184 @@
+import { describe, expect, it } from 'vitest';
+import type { EntityId } from '../core/component';
+import { World } from '../core/world';
+import type { FieldConfigInput } from '../field/config';
+import { installElementField, elementFieldSystem } from '../field/install';
+import { fireRules, type BurntMaterials } from '../elements/fire';
+import { ElementRuleSet, elementRulesSystem } from '../elements/rules';
+import { PhysicsColliderComponent, PhysicsObjectComponent } from '../physics/objects';
+import {
+  addProperties,
+  assignProperty,
+  readProperty,
+  registerWorldProperties,
+  type WorldPropertyInit,
+} from '../properties/components';
+import { addMaterialProperties, type MaterialPresets } from '../properties/materials';
+import { installStimuli, stimulusSystem } from '../stimulus/stimulus';
+import {
+  canAttachClimb,
+  CLIMB_GRADE_RULES,
+  CLIMB_ICE_CAPABILITY,
+  CLIMB_ROUGH_CAPABILITY,
+  CLIMB_SHEER_CAPABILITY,
+  climbabilityOf,
+  climbabilityOfCollider,
+  climbDifficulty,
+  ownerOfCollider,
+  type Climbability,
+} from './surfaces';
+
+const THIEF = [CLIMB_ROUGH_CAPABILITY];
+const KNIGHT: readonly string[] = [];
+
+function world(): World<never> {
+  return registerWorldProperties(new World<never>({ seed: 1 }));
+}
+
+function surface(w: World<never>, init: WorldPropertyInit): EntityId {
+  const entity = w.spawn();
+  addProperties(w, entity, init);
+  return entity;
+}
+
+describe('climbable surfaces (mw-e03.22)', () => {
+  it('a surface climbs by its grade; without one, or once gone, it is not climbable', () => {
+    const w = world();
+    const plain = surface(w, { material: 'stone' });
+    const ladder = surface(w, { climbable: 'ladder' });
+    expect(climbabilityOf(w, plain)).toBe('none');
+    expect(climbabilityOf(w, ladder)).toBe('ladder');
+    w.destroy(ladder);
+    expect(climbabilityOf(w, ladder)).toBe('none');
+  });
+
+  it('every grade has a rule: ladders, ropes and ivy for all, rough for climbers, sheer for tools', () => {
+    expect(CLIMB_GRADE_RULES).toEqual({
+      ladder: { difficulty: 1, requires: null },
+      rope: { difficulty: 1, requires: null },
+      ivy: { difficulty: 1, requires: null },
+      rough: { difficulty: 2, requires: CLIMB_ROUGH_CAPABILITY },
+      sheer: { difficulty: 3, requires: CLIMB_SHEER_CAPABILITY },
+    });
+    const difficulties = (
+      ['none', 'ladder', 'rope', 'ivy', 'rough', 'sheer', 'slippery'] as Climbability[]
+    ).map(climbDifficulty);
+    expect(difficulties).toEqual([0, 1, 1, 1, 2, 3, 3]);
+  });
+
+  it('any class attaches to a ladder; rough needs climb.rough; sheer needs a tool', () => {
+    const w = world();
+    const ladder = surface(w, { climbable: 'ladder' });
+    const rough = surface(w, { climbable: 'rough' });
+    const sheer = surface(w, { climbable: 'sheer' });
+    const bare = surface(w, {});
+    expect(canAttachClimb(w, ladder, KNIGHT)).toEqual({ ok: true, climbability: 'ladder' });
+    expect(canAttachClimb(w, rough, KNIGHT)).toEqual({
+      ok: false,
+      reason: 'needs-capability',
+      capability: CLIMB_ROUGH_CAPABILITY,
+    });
+    expect(canAttachClimb(w, rough, THIEF)).toEqual({ ok: true, climbability: 'rough' });
+    expect(canAttachClimb(w, sheer, THIEF)).toEqual({
+      ok: false,
+      reason: 'needs-capability',
+      capability: CLIMB_SHEER_CAPABILITY,
+    });
+    expect(canAttachClimb(w, bare, THIEF)).toEqual({ ok: false, reason: 'not-climbable' });
+  });
+
+  it('AC-4: a surface that becomes frozen returns slippery and refuses a climb attach (edge)', () => {
+    const w = world();
+    const ivy = surface(w, { climbable: 'ivy', frozen: false });
+    expect(canAttachClimb(w, ivy, THIEF).ok).toBe(true);
+    assignProperty(w, ivy, 'frozen', true);
+    expect(climbabilityOf(w, ivy)).toBe('slippery');
+    expect(canAttachClimb(w, ivy, THIEF)).toEqual({
+      ok: false,
+      reason: 'slippery',
+      capability: CLIMB_ICE_CAPABILITY,
+    });
+    // Ice tools (future) hold on; a frozen surface with no grade stays unclimbable.
+    expect(canAttachClimb(w, ivy, [CLIMB_ICE_CAPABILITY])).toEqual({
+      ok: true,
+      climbability: 'slippery',
+    });
+    const frozenWall = surface(w, { frozen: true });
+    expect(climbabilityOf(w, frozenWall)).toBe('none');
+    // Thawing gives the grade back.
+    assignProperty(w, ivy, 'frozen', false);
+    expect(climbabilityOf(w, ivy)).toBe('ivy');
+  });
+
+  it('a collision query’s collider or body names its owner and so its grade', () => {
+    const w = world();
+    w.register(PhysicsObjectComponent, PhysicsColliderComponent);
+    const rope = surface(w, { climbable: 'rope' });
+    const wall = surface(w, { climbable: 'rough' });
+    w.add(rope, PhysicsObjectComponent, { body: 7 } as never);
+    w.add(wall, PhysicsColliderComponent, { colliders: [3, 4] });
+    expect(ownerOfCollider(w, 7)).toBe(rope);
+    expect(ownerOfCollider(w, 4)).toBe(wall);
+    expect(ownerOfCollider(w, 9)).toBeUndefined();
+    expect(climbabilityOfCollider(w, 7)).toBe('rope');
+    expect(climbabilityOfCollider(w, 3)).toBe('rough');
+    expect(climbabilityOfCollider(w, 9)).toBe('none');
+  });
+});
+
+describe('climbability after fire (mw-e03.22 AC-3)', () => {
+  const PRESETS: MaterialPresets = new Map<string, WorldPropertyInit>([
+    ['ivy', { flammable: true, ignitionPoint: 350, fuel: 1, climbable: 'ivy' }],
+    ['wood', { flammable: true, ignitionPoint: 300, fuel: 1, climbable: 'rough' }],
+    ['charred', { flammable: false, climbable: 'none' }],
+  ]);
+  const BURNT: BurntMaterials = new Map([
+    ['ivy', null],
+    ['wood', 'charred'],
+  ]);
+  const FIELD: FieldConfigInput = { maxChunks: 8 };
+
+  function fireWorld() {
+    const w = installElementField(installStimuli(world()), FIELD);
+    w.addSystem(stimulusSystem())
+      .addSystem(
+        elementRulesSystem(new ElementRuleSet(fireRules({ presets: PRESETS, burnt: BURNT }))),
+      )
+      .addSystem(elementFieldSystem());
+    return w;
+  }
+
+  function burning(w: World<never>, material: string): EntityId {
+    const entity = w.spawn();
+    addMaterialProperties(w, entity, PRESETS, { material, burning: true, temperature: 400 });
+    return entity;
+  }
+
+  /** Steps until `entity` stops burning (burnt out), at most 5 s. */
+  function burnOut(w: World<never>, entity: EntityId): void {
+    for (let i = 0; i < 5 * w.clock.hz; i++) {
+      w.step();
+      if (!w.isAlive(entity) || !readProperty(w, entity, 'burning')) return;
+    }
+    throw new Error('never burnt out');
+  }
+
+  it('AC-3: ivy that burns out is gone: its grade is none and a climb attach is refused', () => {
+    const w = fireWorld();
+    const ivy = burning(w, 'ivy');
+    expect(canAttachClimb(w, ivy, KNIGHT).ok).toBe(true);
+    burnOut(w, ivy);
+    expect(w.isAlive(ivy)).toBe(false);
+    expect(climbabilityOf(w, ivy)).toBe('none');
+    expect(canAttachClimb(w, ivy, THIEF)).toEqual({ ok: false, reason: 'not-climbable' });
+  });
+
+  it('AC-3: timber that burns out to charred loses its rough climb through burnt-state data', () => {
+    const w = fireWorld();
+    const beam = burning(w, 'wood');
+    expect(climbabilityOf(w, beam)).toBe('rough');
+    burnOut(w, beam);
+    expect(readProperty(w, beam, 'material')).toBe('charred');
+    expect(climbabilityOf(w, beam)).toBe('none');
+  });
+});

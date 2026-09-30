@@ -2,7 +2,7 @@
   "$schema": "../material.schema.json",
   "id": "rope",
   "name": "Rope",
-  "notes": "Hemp and manila rope: bridges, hoists, washing lines, nets. Burns like cloth (260 °C, 40 s for a length) so fire can cut a support. Density 650 kg/m³: dry hemp rope floats. Weak to cutting (30 hp). Grippy (0.8) and an easy climb (grade 1). Burns away completely (mw-e03.5), so a burning rope drops what it holds. Soft surface; slash or pierce damage severs it (cuttable), which is how ropes are shot down. (mw-e03.31)",
+  "notes": "Hemp and manila rope: bridges, hoists, washing lines, nets. Burns like cloth (260 °C, 40 s for a length) so fire can cut a support. Density 650 kg/m³: dry hemp rope floats. Weak to cutting (30 hp). Grippy (0.8) and an easy climb (grade rope). Burns away completely (mw-e03.5), so a burning rope drops what it holds. Soft surface; slash or pierce damage severs it (cuttable), which is how ropes are shot down. (mw-e03.31)",
   "footstepLoudness": -2,
   "impactSound": "sfx-impact-rope",
   "properties": {
@@ -14,7 +14,7 @@
     "friction": 0.8,
     "soundDamping": 0.3,
     "impactAbsorb": 0.3,
-    "climbable": 1,
+    "climbable": "rope",
     "cuttable": true,
     "surfaceHardness": "soft",
     "softAnchor": false

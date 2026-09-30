@@ -88,7 +88,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `nodes[].on.fragile` | number 0–1000000000 | — | Impact energy that breaks it, J. |
 | `nodes[].on.hp` | number 0–1000000 | — | Structural hit points. |
 | `nodes[].on.density` | number 0.01–100000 | — | Density, kg/m³; below 1000 it floats in water. |
-| `nodes[].on.climbable` | integer 1–3 | — | Climbing grade: 1 easy, 2 needs stamina, 3 needs skill or a tool. |
+| `nodes[].on.climbable` | `"none"` \| `"ladder"` \| `"rope"` \| `"ivy"` \| `"rough"` \| `"sheer"` | — | Climbing grade: none, ladder, rope, ivy (easy), rough (needs a climber), sheer (needs a tool). |
 | `nodes[].on.liftable` | boolean | — | Can be picked up and carried. |
 | `nodes[].on.pushable` | boolean | — | Can be pushed or dragged. |
 | `nodes[].on.hideable` | boolean | — | An actor can hide in or behind it. |
@@ -143,7 +143,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `nodes[].off.fragile` | number 0–1000000000 | — | Impact energy that breaks it, J. |
 | `nodes[].off.hp` | number 0–1000000 | — | Structural hit points. |
 | `nodes[].off.density` | number 0.01–100000 | — | Density, kg/m³; below 1000 it floats in water. |
-| `nodes[].off.climbable` | integer 1–3 | — | Climbing grade: 1 easy, 2 needs stamina, 3 needs skill or a tool. |
+| `nodes[].off.climbable` | `"none"` \| `"ladder"` \| `"rope"` \| `"ivy"` \| `"rough"` \| `"sheer"` | — | Climbing grade: none, ladder, rope, ivy (easy), rough (needs a climber), sheer (needs a tool). |
 | `nodes[].off.liftable` | boolean | — | Can be picked up and carried. |
 | `nodes[].off.pushable` | boolean | — | Can be pushed or dragged. |
 | `nodes[].off.hideable` | boolean | — | An actor can hide in or behind it. |

@@ -11,7 +11,7 @@ import {
 describe('world property spec', () => {
   it('is a closed, versioned set: changing the keys means bumping the version', () => {
     // Update both together; a save migration (e30) keys off WORLD_PROPERTIES_VERSION.
-    expect(WORLD_PROPERTIES_VERSION).toBe(2);
+    expect(WORLD_PROPERTIES_VERSION).toBe(3);
     expect(WORLD_PROPERTY_KEYS).toEqual([
       'bashable',
       'breakable',
@@ -100,8 +100,16 @@ describe('world property spec', () => {
   });
 
   it('enforces whole-number properties', () => {
-    expect(validateProperty('climbable', 2)).toBeUndefined();
-    expect(validateProperty('climbable', 1.5)).toBe('climbable must be a whole number, got 1.5');
+    expect(validateProperty('support', 2)).toBeUndefined();
+    expect(validateProperty('support', 1.5)).toBe('support must be a whole number, got 1.5');
+  });
+
+  it('mw-e03.22: climbable is a named grade, defaulting to none', () => {
+    expect(WORLD_PROPERTY_SPECS.climbable.default).toBe('none');
+    expect(validateProperty('climbable', 'ivy')).toBeUndefined();
+    expect(validateProperty('climbable', 2)).toBe(
+      'climbable must be one of none, ladder, rope, ivy, rough, sheer',
+    );
   });
 
   it('checks booleans and ids', () => {
