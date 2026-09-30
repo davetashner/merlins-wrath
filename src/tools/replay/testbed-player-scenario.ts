@@ -39,6 +39,7 @@ import {
   RapierSightWorld,
   registerSceneComponents,
   World,
+  zeroHealth,
   type ActionFrame,
   type RapierModule,
   type ReplayScenario,
@@ -195,11 +196,13 @@ export function createGameWorld<TInput>(
     },
     moves: combat.moves,
     melee: combat.melee,
-    // No damage model here, so nothing is ever defeated (src/main.ts passes zeroHealth).
+    // A target at zero health is defeated, as in src/main.ts (mw-e02.32: the dummy's death hands
+    // the lock on).
     lockOn: {
       tuning: content.get('lock-on', PLAYER_LOCK_ON_ID),
       sight: new LineOfSight({ world: new RapierSightWorld(physics) }),
       profile: (id) => content.get('targetable', id),
+      defeated: zeroHealth,
     },
   }).entity;
   focus.entity = player;

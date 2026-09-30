@@ -50,6 +50,9 @@ export const targetableSchema = z
     });
   });
 
+/** The training dummies' profile: the room's and arena's dummies and the combat sandbox's. */
+export const TRAINING_DUMMY_TARGETABLE_ID = 'training-dummy';
+
 /** A targetable profile as written in a data file. */
 export type TargetableDefInput = z.input<typeof targetableSchema>;
 /** A loaded targetable profile. */

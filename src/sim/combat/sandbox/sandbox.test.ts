@@ -7,6 +7,7 @@ import { installDebugCommands } from '../../debug/system';
 import type { SceneSpawnPlacement } from '../../scene/layout';
 import { hashWorld } from '../../snapshot';
 import { PlacementComponent, placeEntity } from '../../stimulus/placement';
+import { TargetableComponent } from '../../targeting/components';
 import {
   DAMAGE_COMPONENTS,
   giveCombatant,
@@ -49,6 +50,7 @@ import {
   spawnSandboxDummy,
   spawnSceneDummies,
   withAttackerVariants,
+  type CombatSandboxOptions,
 } from './dummies';
 import {
   ATTACKER_OPTIONS,
@@ -137,12 +139,13 @@ const TUNING: RuntimeSandbox = Object.freeze({
 
 const OPTIONS = { tuning: TUNING, moves: MOVES };
 
-function sandboxWorld() {
+function sandboxWorld(options: CombatSandboxOptions = OPTIONS, lockOn = false) {
   const world = new World<unknown>({ seed: 5 });
   world.register(...DAMAGE_COMPONENTS, ...HIT_VOLUME_COMPONENTS, ...MELEE_COMPONENTS);
   world.register(...ACTION_TIMELINE_COMPONENTS, PlacementComponent, StaminaComponent);
-  installDebugCommands(world, { spawners: sandboxSpawners(OPTIONS) });
-  const uninstall = installCombatSandbox(world, OPTIONS);
+  if (lockOn) world.register(TargetableComponent);
+  installDebugCommands(world, { spawners: sandboxSpawners(options) });
+  const uninstall = installCombatSandbox(world, options);
   world.addSystem(actionTimelineSystem({ moves: MOVES }));
   const started: ActionStartInfo[] = [];
   world.events.on(ActionStarted, (e) => started.push(e));
@@ -415,6 +418,58 @@ describe('sandbox dummies', () => {
     expect(facingOf(w(s.world), attacker)).toEqual(v(1, 0, 0));
     expect(s.world.has(dummy, AttackerDummyComponent)).toBe(false);
     expect(s.world.get(attacker, AttackerDummyComponent)?.move).toBe('swing');
+  });
+});
+
+describe('lockable sandbox dummies (mw-e02.32)', () => {
+  const PROFILE = Object.freeze({
+    points: Object.freeze([Object.freeze({ id: 'chest', at: [0, 1.3, 0] as const })]),
+    priority: 0,
+  });
+  const LOCKABLE = { ...OPTIONS, targetable: PROFILE };
+  const scene = (tags: string[]): SceneSpawnPlacement => ({
+    id: tags[0] ?? 'spawn',
+    position: v(1, 0, 1),
+    yaw: 0,
+    rotation: { x: 0, y: 0, z: 0, w: 1 },
+    prop: undefined,
+    tags,
+  });
+
+  it('with a profile and lock-on, every dummy — console-spawned or from the scene — is targetable', () => {
+    const s = sandboxWorld(LOCKABLE, true);
+    s.steps(1, [
+      spawnCommand(DUMMY_SPAWNABLE, 1, v(0, 0, 2)),
+      spawnCommand(ATTACKER_SPAWNABLE, 1, v(0, 0, 4)),
+    ]);
+    spawnSceneDummies(
+      w(s.world),
+      [scene([SANDBOX_DUMMY_TAG]), scene([SANDBOX_ATTACKER_TAG])],
+      LOCKABLE,
+    );
+    s.steps(1);
+    const ids = sandboxEntities(s.world); // every dummy, attackers included
+    expect(ids).toHaveLength(4);
+    for (const id of ids) {
+      expect(s.world.get(id, TargetableComponent)).toEqual({
+        points: [v(0, 1.3, 0)],
+        priority: 0,
+      });
+    }
+  });
+
+  it('without a profile, or in a world without lock-on, dummies are not targetable', () => {
+    const plain = sandboxWorld(OPTIONS, true);
+    plain.steps(1, [spawnCommand(DUMMY_SPAWNABLE, 1, v(0, 0, 2))]);
+    const [a] = spawnSceneDummies(w(plain.world), [scene([SANDBOX_DUMMY_TAG])], OPTIONS);
+    plain.steps(1);
+    for (const id of [...sandboxEntities(plain.world), a ?? 0]) {
+      expect(plain.world.has(id, TargetableComponent)).toBe(false);
+    }
+    const unlocked = sandboxWorld(LOCKABLE);
+    unlocked.steps(1, [spawnCommand(DUMMY_SPAWNABLE, 1, v(0, 0, 2))]);
+    expect(sandboxEntities(unlocked.world)).toHaveLength(1);
+    expect(unlocked.world.isRegistered(TargetableComponent)).toBe(false);
   });
 });
 

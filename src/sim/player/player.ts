@@ -57,7 +57,13 @@ import {
 import { actionTimelineSystem } from '../combat/timeline/timeline';
 import { giveHitboxes } from '../combat/hits/components';
 import { giveFacing, giveGuard, MELEE_COMPONENTS } from '../combat/melee/components';
-import { faceTarget, facingSystem, firstFacing, type FacingRule } from '../combat/melee/facing';
+import {
+  faceTarget,
+  facingSystem,
+  firstFacing,
+  type EntityLocator,
+  type FacingRule,
+} from '../combat/melee/facing';
 import { blockSystem, locomotionScale } from '../combat/melee/guard';
 import { placeEntity } from '../stimulus/placement';
 import { defineComponent, type EntityId } from '../core/component';
@@ -257,6 +263,8 @@ export interface PlayerMeleeOptions {
   readonly lightAttack?: string;
   /** The lock-on target to face during startup (lock-on, e02.16); none by default. */
   readonly target?: (world: World<never>, entity: EntityId) => EntityId | undefined;
+  /** Where the target is (lock-on's locator, mw-e02.31); defaults to its placement. */
+  readonly locate?: EntityLocator;
 }
 
 /** The player's combat (mw-e04.8): what its action timeline can perform. */
@@ -352,9 +360,9 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     }
     world.addSystem(actionTimelineSystem({ moves }));
     if (melee !== undefined) {
-      const { target } = melee;
+      const { target, locate } = melee;
       const desired =
-        target === undefined ? lookFacing : firstFacing(faceTarget(target), lookFacing);
+        target === undefined ? lookFacing : firstFacing(faceTarget(target, locate), lookFacing);
       world.addSystem(facingSystem({ moves, desired }));
     }
     world.addSystem(dodgeMotionSystem({ moves, facing: lookFacing }));

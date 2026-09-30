@@ -111,6 +111,7 @@ export {
 } from './types/lock-on.ts';
 export {
   targetableSchema,
+  TRAINING_DUMMY_TARGETABLE_ID,
   type TargetableDef,
   type TargetableDefInput,
 } from './types/targetable.ts';

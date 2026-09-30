@@ -37,7 +37,10 @@ import {
 } from '../input/action-frame';
 import { atan2 } from '../math';
 import type { SceneSpawnPlacement } from '../scene/layout';
+import { SceneTransformComponent } from '../scene/loader';
 import { PlacementComponent, placeEntity } from '../stimulus/placement';
+import { LockOnComponent } from '../targeting/components';
+import { lockedTarget, placedTargetPosition } from '../targeting/lock-on';
 import {
   installPlayer,
   KNIGHT_LIGHT_ATTACK,
@@ -294,6 +297,42 @@ describe('the knight player (mw-e04.6)', () => {
     // 11 startup ticks after the start tick itself (which already turned 6°): 72° from −z toward +x.
     expect(atan2(f.x, -f.z) * (180 / Math.PI)).toBeCloseTo(72, 6);
     expect(liveHitboxes(k.world, k.player)).toEqual([]);
+  });
+
+  it('AC-1 (mw-e02.31): with lock-on 90° to the side, a light attack turns 6° a startup tick toward it, then locks', () => {
+    const k = knight({ target: lockedTarget, locate: placedTargetPosition });
+    k.world.register(SceneTransformComponent, LockOnComponent);
+    // A lock target with only a scene transform (like the arena's dummies), 5 m to the knight's right.
+    const target = k.world.spawn();
+    k.world.add(target, SceneTransformComponent, {
+      position: { x: 5, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0, w: 1 },
+    });
+    k.run(1);
+    expect(facingOf(k.world, k.player).z).toBeCloseTo(-1, 12); // no lock: faces its look (−z)
+    k.world.add(k.player, LockOnComponent, { target, unseenTicks: 0, armed: true });
+    const degrees = () => {
+      const f = facingOf(k.world, k.player);
+      return atan2(f.x, -f.z) * (180 / Math.PI);
+    };
+    const turned: number[] = [];
+    k.run(1, frame(['primaryAttack'])); // sword-light-1: 12 startup ticks, from the start tick
+    turned.push(degrees());
+    for (let tick = 1; tick < 12; tick++) {
+      k.run(1);
+      turned.push(degrees());
+    }
+    turned.forEach((angle, i) => {
+      expect(angle).toBeCloseTo(6 * (i + 1), 6);
+    });
+    // Active from move tick 12: the facing stays where startup left it through recovery.
+    for (let tick = 12; tick < 34; tick++) {
+      k.run(1);
+      expect(degrees()).toBeCloseTo(72, 6);
+    }
+    // Idle again, it turns straight to the target.
+    k.run(1);
+    expect(degrees()).toBeCloseTo(90, 6);
   });
 
   it('restrainMovement leaves full-speed input untouched and a destroyed player unplaced', () => {

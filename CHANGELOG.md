@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- You can lock on to the training dummy in the testbed room and to the combat sandbox's dummies
+  (including ones the debug console spawns), and the knight's sword swings now turn toward the
+  locked target as they wind up. Defeating the room dummy releases the lock.
 - Hits have weight: when a blade connects, the attacker and the one struck freeze for a few frames
   (a light hit 3, a heavy 5, a charged heavy 6) while everything else keeps moving. The combat
   sandbox's frame-data overlay shows the freeze counting down in a new Hit-stop column.
