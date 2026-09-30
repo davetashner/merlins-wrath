@@ -44,6 +44,11 @@ export interface Projectile {
   readonly direction: Vec3;
   /** Metres flown so far. */
   readonly travelled: number;
+  /**
+   * Targets it flew through during their i-frames (each got one DodgedHit), ascending; absent until
+   * the first (mw-e04.28).
+   */
+  readonly dodged?: readonly EntityId[];
 }
 
 /** The attacker component (`combat.attacker`; a snapshot and save key, never renamed). */

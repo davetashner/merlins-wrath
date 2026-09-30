@@ -1,7 +1,8 @@
 // The hit-volume system (mw-e04.2): each tick, every open hitbox sweeps from its previous pose to this
 // tick's pose and is tested against every living entity's hurtboxes. A target is struck at most once
 // per hitbox window; the hurtbox that wins region priority names the region, multiplier and armor of
-// the hit. A target invulnerable on that tick (a dodge's i-frames, mw-e04.8) gets DodgedHit instead
+// the hit. A target invulnerable on that tick (a dodge's i-frames, mw-e04.8, or wake-up i-frames after
+// a knockdown, mw-e04.30: the `invulnerable` rule) gets DodgedHit instead
 // of HitboxHit, and counts as struck for the window: a swing dodged once cannot catch it later. Allies (by the ally rule) are skipped unless the hitbox has friendly fire, so a creature
 // lured into a swing meant for the player can hit its packmate. A dead attacker's hitboxes close
 // without hitting; a destroyed one's vanish with it.
@@ -70,11 +71,20 @@ export function alliesByStance(table: FactionTable): AllyRule {
   return (world, attacker, target) => isFriendlyStance(relation(world, table, attacker, target));
 }
 
-/** Whether `target` is invulnerable this tick (a dodge's i-frames: `iframeRule`, mw-e04.8). */
+/**
+ * Whether `target` is invulnerable this tick: a dodge's i-frames (`iframeRule`, mw-e04.8), wake-up
+ * i-frames after a knockdown (`hasWakeIframes`, mw-e04.7), or both (`invulnerabilityRule`, the one
+ * rule the hit-volume system and the creature attack executor share).
+ */
 export type InvulnerabilityRule = (world: World<never>, target: EntityId) => boolean;
 
 /** Nobody is ever invulnerable (worlds without dodges). */
 export const noInvulnerability: InvulnerabilityRule = () => false;
+
+/** Invulnerable when any of `rules` says so (asked in order, stopping at the first yes). */
+export function anyInvulnerability(...rules: readonly InvulnerabilityRule[]): InvulnerabilityRule {
+  return (world, target) => rules.some((rule) => rule(world, target));
+}
 
 /** Options of the hit-volume system. */
 export interface HitVolumeOptions {
@@ -85,7 +95,7 @@ export interface HitVolumeOptions {
   readonly isAlly: AllyRule;
   /**
    * Who is invulnerable this tick: a hit on them is DodgedHit, not HitboxHit. Defaults to nobody;
-   * `iframeRule(moves)` gives the action timeline's i-frames (run the timeline first).
+   * `invulnerabilityRule(moves)` gives dodge and wake-up i-frames (run the timeline first).
    */
   readonly invulnerable?: InvulnerabilityRule;
 }

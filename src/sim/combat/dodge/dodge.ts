@@ -19,8 +19,9 @@
 // (`CharacterInput.motion`), so walls stop a roll and ledges drop it; the i-frames run on regardless.
 //
 // I-frames. While the running move's tick is inside its `flags.iframes` range, the entity is
-// invulnerable: the hit-volume system (hits/system.ts, given `iframeRule`) turns every hurtbox hit on
-// it into DodgedHit instead of HitboxHit, so no damage, poise or hit reaction follows. For the player
+// invulnerable: the hit-volume system (hits/system.ts) and the creature attack executor, given
+// `invulnerabilityRule` (combat/invulnerability.ts: these i-frames or wake-up i-frames), turn every
+// hit on it into DodgedHit instead of damage, so no damage, poise or hit reaction follows. For the player
 // the range's length is scaled by the difficulty's `dodgeWindow` (rounded, at least one tick, never
 // past the move's last tick); every other entity uses the authored range.
 //
