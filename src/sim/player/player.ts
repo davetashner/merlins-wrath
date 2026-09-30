@@ -8,12 +8,21 @@
 // held direction relative to the view yaw, or backsteps), the action timeline, and dodge motion,
 // whose root-motion velocity the controller travels at while a roll or backstep runs.
 //
+// With `combat.melee` (mw-e04.6) the player is also a knight: the attack button starts the light
+// chain, the block button holds its shield up, and it has a combat facing, hitboxes and a placement
+// at its feet (the frame its swings are placed in). Three more systems join: block (just before the
+// timeline), facing (after it: idle the knight faces where it looks — or its lock-on target — and a
+// move's startup turns at 360°/s, then locks) and, after the controller, placement. While it swings
+// the knight is planted and while its shield is up it walks at the shield's speed without sprinting
+// (`locomotionScale`). The caller registers the hit-volume, damage and placement components, and
+// adds the hit-volume system and `installMeleeStrikes` itself (they are world-wide, not the player's).
+//
 // The view yaw and pitch live in the sim (not in the camera) so a replay of ActionFrames alone
 // reproduces every turn: the recorded look input (mouse counts, stick deflection) is their only source. Pitch does not move
 // the player today, but aiming will (bow, spells: mw-e05.3, mw-e06.15), so it is clamped here once,
 // as a rule, rather than in the camera. The orbit camera (src/game/camera, mw-e02.4) only reads them.
 
-import type { ControllerTuning, Frozen, MoveTable } from '@content/index';
+import type { ControllerTuning, Frozen, MoveTable, RuntimeShield } from '@content/index';
 import { SKIN } from '../character/controller';
 import type { CollisionWorld } from '../character/collision-world';
 import { radians } from '../character/greybox';
@@ -37,10 +46,20 @@ import {
   giveActionTimeline,
 } from '../combat/timeline/components';
 import { actionTimelineSystem } from '../combat/timeline/timeline';
+import { giveHitboxes } from '../combat/hits/components';
+import { giveFacing, giveGuard, MELEE_COMPONENTS } from '../combat/melee/components';
+import { faceTarget, facingSystem, firstFacing, type FacingRule } from '../combat/melee/facing';
+import { blockSystem, locomotionScale } from '../combat/melee/guard';
+import { placeEntity } from '../stimulus/placement';
 import { defineComponent, type EntityId } from '../core/component';
 import type { System, World } from '../core/world';
 import { hasCheat } from '../debug/cheats';
-import { actionFrameOf, type ActionVector } from '../input/action-frame';
+import {
+  actionButton,
+  actionFrameOf,
+  type ActionFrame,
+  type ActionVector,
+} from '../input/action-frame';
 import { cos, pow, sin } from '../math';
 import type { SceneSpawnPlacement } from '../scene/layout';
 
@@ -204,6 +223,19 @@ export function playerLookSystem<TInput>(
 /** The knight's dodge moves (src/content/data/move). */
 export const KNIGHT_DODGE: DodgeMoves = Object.freeze({ roll: 'dodge-roll', backstep: 'backstep' });
 
+/** The move the knight's attack button starts: the root of its light chain (mw-e04.6). */
+export const KNIGHT_LIGHT_ATTACK = 'sword-light-1';
+
+/** The knight's sword and shield (mw-e04.6). */
+export interface PlayerMeleeOptions {
+  /** The shield the block button raises (content `shield`, e.g. the wood shield). */
+  readonly shield: RuntimeShield;
+  /** The move the attack button starts; defaults to KNIGHT_LIGHT_ATTACK. */
+  readonly lightAttack?: string;
+  /** The lock-on target to face during startup (lock-on, e02.16); none by default. */
+  readonly target?: (world: World<never>, entity: EntityId) => EntityId | undefined;
+}
+
 /** The player's combat (mw-e04.8): what its action timeline can perform. */
 export interface PlayerCombatOptions {
   /** Every move the player may perform (`compileMoves` of the game content). */
@@ -212,6 +244,8 @@ export interface PlayerCombatOptions {
   readonly dodge?: DodgeMoves;
   /** The stamina pool the moves draw on; defaults to DEFAULT_STAMINA_PROFILE. */
   readonly stamina?: StaminaProfile;
+  /** Sword and shield (mw-e04.6); absent = no attacks or block. */
+  readonly melee?: PlayerMeleeOptions;
 }
 
 /** The horizontal direction a look yaw faces (yaw 0 faces −z). */
@@ -220,10 +254,35 @@ export function yawForward(yaw: number): { readonly x: number; readonly y: 0; re
 }
 
 /** The player's facing for dodge input: its look yaw (the camera), until lock-on exists. */
-const lookFacing: DodgeFacing = (world, entity) => {
+const lookFacing: DodgeFacing & FacingRule = (world, entity) => {
   const look = world.get(entity, PlayerLook);
   return look === undefined ? undefined : yawForward(look.yaw);
 };
+
+const UP = actionButton(false, false, false);
+
+/** `actions` as the controller may use them at `scale` of normal speed (see `locomotionScale`). */
+export function restrainMovement(actions: ActionFrame, scale: number): ActionFrame {
+  if (scale === 1) return actions;
+  const { x, y } = actions.move;
+  return {
+    ...actions,
+    move: { x: x * scale, y: y * scale },
+    sprint: UP,
+    jump: scale === 0 ? UP : actions.jump,
+  };
+}
+
+/** Keeps the player's placement at its feet (the frame its swings are placed in), after it moves. */
+function playerPlacementSystem<TInput>(entity: EntityId, radius: number): System<TInput> {
+  return {
+    name: 'player-placement',
+    run: ({ world }) => {
+      const state = world.get(entity, CharacterController);
+      if (state !== undefined) placeEntity(world, entity, state.position, radius);
+    },
+  };
+}
 
 export interface PlayerOptions {
   /** The loaded scene's spawns; the player starts at the one tagged `player-start`. */
@@ -259,23 +318,36 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
   const { combat } = options;
   world.register(CharacterController, PlayerLook);
   world.addSystem(playerLookSystem(look));
+  const melee = combat?.melee;
   if (combat !== undefined) {
     const { moves } = combat;
     world.register(StaminaComponent, ...ACTION_TIMELINE_COMPONENTS, DodgeComponent);
-    world
-      .addSystem(staminaSystem())
-      .addSystem(dodgeInputSystem({ facing: lookFacing }))
-      .addSystem(actionTimelineSystem({ moves }))
-      .addSystem(dodgeMotionSystem({ moves, facing: lookFacing }));
+    world.addSystem(staminaSystem()).addSystem(dodgeInputSystem({ facing: lookFacing }));
+    if (melee !== undefined) {
+      world.register(...MELEE_COMPONENTS);
+      world.addSystem(blockSystem({ moves }));
+    }
+    world.addSystem(actionTimelineSystem({ moves }));
+    if (melee !== undefined) {
+      const { target } = melee;
+      const desired =
+        target === undefined ? lookFacing : firstFacing(faceTarget(target), lookFacing);
+      world.addSystem(facingSystem({ moves, desired }));
+    }
+    world.addSystem(dodgeMotionSystem({ moves, facing: lookFacing }));
   }
   world.addSystem(
     characterControllerSystem<TInput>({
       collision: options.collision,
       tuning: options.tuning,
       input: (inputs, entity) => {
-        const actions = actionFrameOf(inputs);
+        const frame = actionFrameOf(inputs);
         const look = world.get(entity, PlayerLook);
-        if (actions === undefined || look === undefined) return undefined;
+        if (frame === undefined || look === undefined) return undefined;
+        const actions =
+          combat?.melee === undefined
+            ? frame
+            : restrainMovement(frame, locomotionScale(world, entity, combat.moves));
         const motion = combat && world.get(entity, DodgeComponent)?.velocity;
         return motion == null
           ? { actions, cameraYaw: look.yaw }
@@ -290,8 +362,19 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
   if (combat !== undefined) {
     giveStamina(world, id, combat.stamina ?? DEFAULT_STAMINA_PROFILE);
     giveActionTimeline(world, id);
-    giveActionInput(world, id, {});
+    giveActionInput(
+      world,
+      id,
+      melee === undefined ? {} : { primaryAttack: melee.lightAttack ?? KNIGHT_LIGHT_ATTACK },
+    );
     giveDodge(world, id, combat.dodge ?? KNIGHT_DODGE);
+  }
+  if (melee !== undefined) {
+    giveFacing(world, id, yawForward(spawnYaw(start)));
+    giveGuard(world, id, melee.shield);
+    giveHitboxes(world, id);
+    placeEntity(world, id, { x, y: y + SKIN, z }, options.tuning.capsule.radius);
+    world.addSystem(playerPlacementSystem(id, options.tuning.capsule.radius));
   }
   return id;
 }

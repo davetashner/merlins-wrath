@@ -93,6 +93,7 @@ describe('scene loader glue (mw-e00.21)', () => {
     expect(built.map((o) => `${o.kind}:${o.label}`)).toEqual([
       'static:testbed',
       'spawn:player-start',
+      'spawn:training-dummy',
       'spawn:loose-crate',
       'spawn:room-lever',
       'spawn:arena-plank',

@@ -36,22 +36,22 @@ export const GuardComponent = defineComponent<Guard>('combat.guard');
 /** Every melee component, for `world.register(...MELEE_COMPONENTS)`. */
 export const MELEE_COMPONENTS = Object.freeze([CombatFacingComponent, GuardComponent] as const);
 
-/** +z, the facing of an entity nobody has turned. */
-export const DEFAULT_FACING: Vec3 = Object.freeze({ x: 0, y: 0, z: 1 });
+/** +z (the move frame's forward), the facing of an entity nobody has turned. */
+export const FORWARD_FACING: Vec3 = Object.freeze({ x: 0, y: 0, z: 1 });
 
 /**
  * Gives `entity` a facing (the horizontal part of `facing`, default +z); replaces an existing one.
  * Throws a RangeError for a facing with no horizontal direction.
  */
-export function giveFacing(world: World<never>, entity: EntityId, facing: Vec3 = DEFAULT_FACING) {
+export function giveFacing(world: World<never>, entity: EntityId, facing: Vec3 = FORWARD_FACING) {
   const value = Object.freeze({ facing: horizontalAim(facing) });
   if (world.has(entity, CombatFacingComponent)) world.set(entity, CombatFacingComponent, value);
   else world.add(entity, CombatFacingComponent, value);
 }
 
-/** `entity`'s facing, or DEFAULT_FACING when it has none. */
+/** `entity`'s facing, or FORWARD_FACING when it has none. */
 export function facingOf(world: World<never>, entity: EntityId): Vec3 {
-  return world.get(entity, CombatFacingComponent)?.facing ?? DEFAULT_FACING;
+  return world.get(entity, CombatFacingComponent)?.facing ?? FORWARD_FACING;
 }
 
 /** Gives `entity` `shield`, lowered and with the block input released. */

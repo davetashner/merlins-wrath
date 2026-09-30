@@ -502,6 +502,7 @@ describe('dodge direction and motion (mw-e04.8)', () => {
       current: { move: 'nope', tick: 0, startedAt: 0 },
       lockTicks: 0,
       buffer: null,
+      chain: null,
       timeScale: 0,
       scaleTicks: null,
       timeCarry: 0,

@@ -193,6 +193,11 @@
       "tags": ["player-start"]
     },
     {
+      "id": "training-dummy",
+      "at": [0, 0, 0],
+      "tags": ["training-dummy"]
+    },
+    {
       "id": "loose-crate",
       "at": [-1, 0, -2],
       "prop": "crate"

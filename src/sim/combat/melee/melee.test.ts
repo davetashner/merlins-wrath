@@ -51,7 +51,7 @@ import {
 } from '../timeline/timeline';
 import {
   CombatFacingComponent,
-  DEFAULT_FACING,
+  FORWARD_FACING,
   facingOf,
   giveFacing,
   giveGuard,
@@ -155,6 +155,7 @@ function move(spec: MoveSpec): RuntimeMove {
     chainNext: spec.chainNext ?? null,
     charge: null,
     presentation: { anim: `anim-${id}` },
+    motion: null,
   } satisfies RuntimeMove);
 }
 
@@ -188,7 +189,7 @@ const POKE = move({
   id: 'poke',
   frames: [2, 2, 10],
   slash: 1,
-  windows: [{ into: 'block', from: 6, to: 13 }],
+  windows: [{ into: 'block', from: 6, to: 13, move: null }],
 });
 const MOVES: MoveTable = new Map([L1, L2, L3, ROLL, SLAM, POKE].map((m) => [m.id, m]));
 const TRACKS = new Map<string, SocketTrack>(
@@ -460,11 +461,11 @@ describe('knight block (mw-e04.6)', () => {
       return v3(-sin(a), 0, -cos(a)); // travelling toward the knight from `degrees` off its facing
     };
     const guard = { shield: WOOD, held: true, raisedAt: 0 };
-    expect(inGuardArc(guard, DEFAULT_FACING, edge(0))).toBe(true);
-    expect(inGuardArc(guard, DEFAULT_FACING, edge(60))).toBe(true);
-    expect(inGuardArc(guard, DEFAULT_FACING, edge(-60))).toBe(true);
-    expect(inGuardArc(guard, DEFAULT_FACING, edge(61))).toBe(false);
-    expect(inGuardArc(guard, DEFAULT_FACING, v3(0, -1, 0))).toBe(false); // straight down
+    expect(inGuardArc(guard, FORWARD_FACING, edge(0))).toBe(true);
+    expect(inGuardArc(guard, FORWARD_FACING, edge(60))).toBe(true);
+    expect(inGuardArc(guard, FORWARD_FACING, edge(-60))).toBe(true);
+    expect(inGuardArc(guard, FORWARD_FACING, edge(61))).toBe(false);
+    expect(inGuardArc(guard, FORWARD_FACING, v3(0, -1, 0))).toBe(false); // straight down
   });
 
   it('AC-4: a shield raised only 3 ticks does not block yet', () => {
@@ -654,7 +655,7 @@ describe('knight facing (mw-e04.6)', () => {
   });
 
   it('during startup the fighter turns at most 6° a tick (360°/s); from the active tick it is locked', () => {
-    let want = DEFAULT_FACING;
+    let want = FORWARD_FACING;
     const s = setup({ desired: () => want });
     s.pressAt(0, 'primaryAttack'); // startup 0–11
     want = east;
@@ -671,19 +672,19 @@ describe('knight facing (mw-e04.6)', () => {
   });
 
   it('the hitbox commits to the facing startup ended on', () => {
-    let want = DEFAULT_FACING;
+    let want = FORWARD_FACING;
     const s = setup({ desired: () => want });
     s.pressAt(0, 'primaryAttack');
     want = east;
     s.stepTo(13);
     const aim = liveHitboxes(s.world, s.knight)[0]?.aim;
-    expect(angleOf(aim ?? DEFAULT_FACING)).toBeCloseTo(66, 9);
+    expect(angleOf(aim ?? FORWARD_FACING)).toBeCloseTo(66, 9);
   });
 
   it('keepFacing, faceTarget and firstFacing', () => {
     const s = setup();
     s.stepTo(1);
-    expect(facingOf(s.world, s.knight)).toEqual(DEFAULT_FACING);
+    expect(facingOf(s.world, s.knight)).toEqual(FORWARD_FACING);
     const lock = faceTarget((_w, e) => (e === s.knight ? s.dummy : undefined));
     expect(lock(s.world, s.knight)).toEqual({ x: 0, y: 0, z: 1 });
     expect(lock(s.world, s.dummy)).toBeUndefined();
@@ -699,9 +700,9 @@ describe('knight facing (mw-e04.6)', () => {
 
   it('turnToward turns the short way and lands exactly on the target', () => {
     const step = Math.PI / 30;
-    const left = turnToward(DEFAULT_FACING, v3(-1, 0, 0), step);
+    const left = turnToward(FORWARD_FACING, v3(-1, 0, 0), step);
     expect(angleOf(left)).toBeCloseTo(-6, 9);
-    expect(turnToward(DEFAULT_FACING, east, Math.PI)).toEqual(east);
+    expect(turnToward(FORWARD_FACING, east, Math.PI)).toEqual(east);
   });
 
   it('rejects a bad turn rate and moves missing from the table', () => {
@@ -735,6 +736,6 @@ describe('knight facing (mw-e04.6)', () => {
     const s = setup();
     giveFacing(s.world, s.knight, v3(0, 5, -3));
     expect(s.world.get(s.knight, CombatFacingComponent)?.facing).toEqual({ x: 0, y: 0, z: -1 });
-    expect(facingOf(s.world, s.dummy)).toBe(DEFAULT_FACING);
+    expect(facingOf(s.world, s.dummy)).toBe(FORWARD_FACING);
   });
 });

@@ -9,18 +9,14 @@ import { markExercised } from '@content/testing';
 import { createGameLoop, FakeFrames } from '@game/loop/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import {
-  DAMAGE_COMPONENTS,
   debugShapes,
   giveHitboxes,
   giveHurtboxes,
   hashShapes,
-  HIT_VOLUME_COMPONENTS,
   hitboxFromMove,
   HitboxHit,
   hitVolumeDebug,
-  hitVolumeSystem,
   moveTrack,
-  noAllies,
   openHitbox,
   placeEntity,
   type GeomShape,
@@ -57,8 +53,7 @@ describe('hit-volume overlay (mw-e04.2)', () => {
     markExercised(task, 'socket-track', track.id);
 
     const world = createTestbedWorld(RAPIER, { seed: 1, hz: 60 });
-    world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS); // placements: the testbed has them
-    world.addSystem(hitVolumeSystem({ isAlly: noAllies }));
+    // The testbed world already has the hit volumes (its knight combat, mw-e04.6).
     const hits: HitboxHitInfo[] = [];
     world.events.on(HitboxHit, (hit) => hits.push(hit));
 

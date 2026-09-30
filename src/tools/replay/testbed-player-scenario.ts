@@ -12,7 +12,8 @@
 //   TESTBED_PLAYER_RECORD=1 pnpm vitest run tests/integration/testbed-player.test.ts
 
 import { loadGameContent } from '@content/game-content';
-import { compileMoves, PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
+import { PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
+import { prepareTestbedCombat, startTestbedCombat } from '@game/combat/index';
 import { ActionSampler } from '@game/input/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
 import { installGamePhysics, playerFocus } from '@game/physics-objects';
@@ -20,6 +21,8 @@ import { setupTestbedPlayer, type TransformReader } from '@game/player/index';
 import { SceneLoader } from '@game/scene/index';
 import {
   physicsBodiesOf,
+  DAMAGE_COMPONENTS,
+  HIT_VOLUME_COMPONENTS,
   RapierCollisionWorld,
   RapierPhysics,
   RapierSightWorld,
@@ -42,8 +45,8 @@ export interface ScriptStep {
 }
 
 /**
- * About ten seconds in the testbed: through the doorway, a jump, a turn, into a wall and back, then a
- * roll and a backstep (mw-e04.8).
+ * About twelve seconds in the testbed: through the doorway, a jump, a turn, into a wall and back, then
+ * a roll and a backstep (mw-e04.8), the light chain and a walk behind the raised shield (mw-e04.6).
  */
 export const TESTBED_SCRIPT: readonly ScriptStep[] = [
   { ticks: 30 },
@@ -63,6 +66,13 @@ export const TESTBED_SCRIPT: readonly ScriptStep[] = [
   { ticks: 40 },
   { ticks: 1, keys: ['KeyR'] }, // no direction held: backstep
   { ticks: 40 },
+  { ticks: 1, keys: ['Mouse0'] }, // the light chain (mw-e04.6): three swings…
+  { ticks: 29 },
+  { ticks: 1, keys: ['Mouse0'] },
+  { ticks: 33 },
+  { ticks: 1, keys: ['Mouse0'] },
+  { ticks: 50 },
+  { ticks: 40, keys: ['Mouse2', 'KeyW'] }, // …then the shield up, walking at half speed
 ];
 
 /**
@@ -117,6 +127,8 @@ export function createTestbedWorld(
   const content = loadGameContent();
   const physics = new RapierPhysics(rapier);
   const world = registerSceneComponents(new World<ActionFrame>({ seed, hz, physics }));
+  world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS);
+  const combat = prepareTestbedCombat(content);
   const focus = playerFocus(world);
   installGamePhysics(world, { focus: focus.read });
   const sync = new RenderSync(world);
@@ -140,12 +152,14 @@ export function createTestbedWorld(
     object: {},
     binding: headless,
     camera: { position: { set: nothing }, lookAt: nothing, fov: 70, near: 0.1, aspect: 16 / 9 },
-    moves: compileMoves(content.all('move')),
     interaction: {
       sight: new RapierSightWorld(physics),
       bodiesOf: (entity) => physicsBodiesOf(world, entity),
     },
+    moves: combat.moves,
+    melee: combat.melee,
   }).entity;
+  startTestbedCombat(world, combat, scene.layout.spawns);
   return world;
 }
 

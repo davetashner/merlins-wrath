@@ -1,9 +1,11 @@
+import { loadGameContent, PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
 import {
-  compileMoves,
-  loadGameContent,
-  PLAYER_CAMERA_ID,
-  PLAYER_CONTROLLER_ID,
-} from '@content/index';
+  dummyReadout,
+  prepareTestbedCombat,
+  readDummyTransform,
+  startTestbedCombat,
+  TRAINING_DUMMY,
+} from '@game/combat/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
 import { debugConsoleEnabled } from '@game/debug-console-gate';
@@ -32,6 +34,7 @@ import { openSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { VfxSystem } from '@game/vfx/index';
 import { createRenderBootstrap } from '@render/bootstrap/index';
+import { createTrainingDummy } from '@render/combat/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { createPlayerCapsule } from '@render/player/index';
@@ -39,9 +42,7 @@ import { createVfxRenderer } from '@render/vfx/index';
 import {
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
-  hitVolumeSystem,
   installDebugCommands,
-  noAllies,
   physicsBodiesOf,
   PhysicsObjectComponent,
   playerStart,
@@ -235,8 +236,9 @@ function startRenderer(root: HTMLElement): void {
     shown = gone ? 'gone' : device;
     root.dataset['inputDevice'] = device;
     const bindings = { keyboardMouse: sampler.bindings, gamepad: sampler.padBindings };
-    const glyph = (action: 'move' | 'jump' | 'sprint' | 'crouch' | 'dodge') =>
-      inputGlyph(action, device, bindings);
+    const glyph = (
+      action: 'move' | 'jump' | 'sprint' | 'crouch' | 'dodge' | 'primaryAttack' | 'secondaryAttack',
+    ) => inputGlyph(action, device, bindings);
     controls.textContent = gone
       ? GAMEPAD_DISCONNECTED_HINT
       : playerControlsHint(device, {
@@ -245,6 +247,8 @@ function startRenderer(root: HTMLElement): void {
           sprint: glyph('sprint'),
           crouch: glyph('crouch'),
           dodge: glyph('dodge'),
+          attack: glyph('primaryAttack'),
+          block: glyph('secondaryAttack'),
         });
   };
   const playerInput = attachPlayerInput(sampler, {
@@ -293,9 +297,10 @@ function startRenderer(root: HTMLElement): void {
     const commands = new CommandQueue<GameCommand>();
     const afterStep: (() => void)[] = [];
     // Swept hitboxes and region-tagged hurtboxes (mw-e04.2). No faction table is loaded yet, so
-    // nobody counts as an ally; ?hitboxes draws what the system tests each tick.
+    // nobody counts as an ally; ?hitboxes draws what the system tests each tick. The hit-volume
+    // system itself joins after the player (startTestbedCombat), so swings sweep on their first
+    // active tick.
     world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS);
-    world.addSystem(hitVolumeSystem({ isAlly: noAllies }));
     // Physics objects (mw-e03.39): scene props fall, stack and get knocked about in the sim; bodies
     // near the player never get forced to sleep. Budget warnings go to the console and to the
     // `data-physics-budget` debug attribute.
@@ -311,6 +316,12 @@ function startRenderer(root: HTMLElement): void {
     hitOverlay.enabled = new URLSearchParams(location.search).has('hitboxes');
     view.scene.add(hitOverlay.object);
     root.dataset['hitboxOverlay'] = hitOverlay.enabled ? 'on' : 'off';
+
+    // The knight's sword and shield (mw-e04.6): moves, socket tracks, the wood shield and the
+    // damage model with the shield rule.
+    const combat = prepareTestbedCombat(content);
+    let dummy: EntityId | undefined;
+    let publishedDummy = '';
 
     // VFX (mw-e29.1): effects from content, simulated each frame after the sim and the camera have
     // moved, drawn by src/render/vfx. Presentation only: the system reads entity transforms and never
@@ -370,6 +381,11 @@ function startRenderer(root: HTMLElement): void {
           });
           interactPrompt.update(interactPromptModel(player.prompt(), glyph));
         }
+        if (dummy !== undefined) {
+          // The e2e reads the dummy's health here (mw-e04.6 AC-7).
+          const readout = JSON.stringify(dummyReadout(world, dummy) ?? null);
+          if (readout !== publishedDummy) root.dataset['dummy'] = publishedDummy = readout;
+        }
         hitOverlay.sync(world);
         if (animation !== undefined) {
           animation.driver.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
@@ -420,8 +436,10 @@ function startRenderer(root: HTMLElement): void {
           tuning,
           cameraTuning,
           collision: new RapierCollisionWorld(physics),
-          // The knight's moves: the dodge roll and backstep are playable (mw-e04.8).
-          moves: compileMoves(content.all('move')),
+          // The knight's moves: the dodge roll and backstep (mw-e04.8), the light chain and the
+          // shield (mw-e04.6) are playable.
+          moves: combat.moves,
+          melee: combat.melee,
           object: createPlayerCapsule(tuning.capsule),
           binding: (object, read) => {
             view.scene.add(object);
@@ -476,6 +494,15 @@ function startRenderer(root: HTMLElement): void {
           },
         });
       }
+      // Hit volumes, melee strikes and the scene's training dummies (mw-e04.6), after the player.
+      const dummies = startTestbedCombat(world, combat, loaded.layout.spawns);
+      const { radius, torso } = TRAINING_DUMMY;
+      for (const entity of dummies) {
+        const object = createTrainingDummy({ radius, height: torso.top });
+        view.scene.add(object);
+        sync.bind(entity, object3DBinding(object, readDummyTransform));
+      }
+      dummy = dummies[0];
       if (vfxMode === 'demo' || vfxMode === 'stress') {
         const [x, y, z] = scene.camera.target;
         const centre = playerStart(loaded.layout.spawns)?.position ?? { x, y, z };
