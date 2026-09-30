@@ -2,7 +2,8 @@
 // shows, read from the sim after each tick — never written back. For every fighter (the knight, the
 // attacker dummies, the training dummies): the move it performs, its phase and move tick, whether
 // the invulnerability rule (dodge and wake-up i-frames) or its move's hyperarmor applies right now,
-// the hit reaction holding it, its health and poise, and — from a DamageMeter listening to the sim's
+// the hit-stop freezing it (mw-e04.11: its tier and frozen ticks left), the hit reaction holding it,
+// its health and poise, and — from a DamageMeter listening to the sim's
 // DamageApplied — the damage per second it has taken over the last 5 s of sim time.
 //
 // `sandboxFrameData` is plain JSON (the page publishes it on #app[data-frame-data] for the e2e);
@@ -15,6 +16,8 @@ import {
   AttackerDummyComponent,
   DamageApplied,
   healthOf,
+  hitStopOf,
+  HitStopComponent,
   invulnerabilityRule,
   phaseAt,
   poiseOf,
@@ -74,6 +77,8 @@ export interface FighterFrame {
   readonly totalTicks: number | null;
   readonly iframes: boolean;
   readonly hyperarmor: boolean;
+  /** The hit-stop freezing it, with frozen ticks left, or null (mw-e04.11). */
+  readonly hitStop: { readonly tier: string; readonly ticksLeft: number } | null;
   /** The reaction holding it, with ticks left, or null. */
   readonly reaction: { readonly kind: string; readonly ticksLeft: number } | null;
   readonly health: { readonly current: number; readonly max: number } | null;
@@ -121,6 +126,7 @@ function fighter(
   if (running !== undefined && move !== undefined) phase = phaseAt(move, running.tick);
   const armor = move?.hyperarmor ?? null;
   const reacting = world.isRegistered(HitReactionComponent) ? reactionOf(world, entity) : undefined;
+  const frozen = world.isRegistered(HitStopComponent) ? hitStopOf(world, entity) : undefined;
   const health = healthOf(world, entity);
   const poise = poiseOf(world, entity);
   return {
@@ -136,6 +142,7 @@ function fighter(
       armor !== null &&
       running.tick >= armor.from &&
       running.tick <= armor.to,
+    hitStop: frozen === undefined ? null : { tier: frozen.tier, ticksLeft: frozen.ticksLeft },
     reaction:
       reacting === undefined
         ? null
@@ -193,6 +200,7 @@ export function frameDataView(data: SandboxFrameData): FrameDataModel {
           : `${String(f.moveTick)}/${String(f.totalTicks)}`,
       iframes: f.iframes,
       hyperarmor: f.hyperarmor,
+      hitStop: f.hitStop === null ? '' : `${f.hitStop.tier} ${String(f.hitStop.ticksLeft)}`,
       reaction: f.reaction === null ? '' : `${f.reaction.kind} ${String(f.reaction.ticksLeft)}`,
       health: meter(f.health),
       poise: meter(f.poise),

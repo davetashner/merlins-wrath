@@ -86,7 +86,10 @@ export interface ActiveReaction {
   readonly direction: HitDirection;
   /** World tick of the hit. */
   readonly startedAt: number;
-  /** First world tick it is over (startedAt + 1 + its length: the timeline lock runs out then). */
+  /**
+   * First world tick it is over: startedAt + 1 + its length, plus every tick hit-stop froze the
+   * entity since (mw-e04.11); the timeline lock runs out then.
+   */
   readonly endsAt: number;
   /** It interrupted the entity's move (a flinch during active or recovery ticks does not). */
   readonly interrupted: boolean;
@@ -107,7 +110,7 @@ export interface HitReactionState {
   readonly profile: ReactionProfile;
   /** The reaction playing, or null. */
   readonly current: ActiveReaction | null;
-  /** Wake-up invulnerability: world ticks in [from, until) (0/0 when none). */
+  /** Wake-up invulnerability: world ticks in [from, until) (0/0 when none); moves with endsAt. */
   readonly iframesFrom: number;
   readonly iframesUntil: number;
   /** Hyperarmor soak of the current move run, or null. */

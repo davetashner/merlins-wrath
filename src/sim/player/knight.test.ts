@@ -125,6 +125,7 @@ function light(
     hyperarmor: null,
     iframes: null,
     telegraphTick: 0,
+    hitStop: 'light',
     chainNext: next,
     charge: null,
     presentation: { anim: `anim-${id}` },

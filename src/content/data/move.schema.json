@@ -558,6 +558,17 @@
       "additionalProperties": false,
       "description": "Root motion of a committed move, e.g. a roll’s 3.0 m (e04.8); absent = none."
     },
+    "hitStop": {
+      "description": "Hit-stop tier of its hits (e04.11): how long a hit freezes attacker and victim, from the hit-stop table (light, heavy, charged, parry, critical). Only with a hitbox; absent = light.",
+      "type": "string",
+      "enum": [
+        "light",
+        "heavy",
+        "charged",
+        "parry",
+        "critical"
+      ]
+    },
     "presentation": {
       "type": "object",
       "properties": {

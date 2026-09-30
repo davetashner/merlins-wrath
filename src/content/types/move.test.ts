@@ -220,6 +220,7 @@ describe('move schema', () => {
       chainNext: null,
       charge: null,
       motion: null,
+      hitStop: null,
       presentation: { anim: 'anim-fixture-roll' },
     } satisfies RuntimeMove);
     expect(Object.isFrozen(runtime)).toBe(true);

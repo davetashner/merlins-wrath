@@ -1,0 +1,12 @@
+{
+  "$schema": "../hit-stop.schema.json",
+  "id": "hit-stop",
+  "notes": "PLACEHOLDER TUNING (mw-e04.11) — the bead's first numbers, for the owner to tune in ?scene=combat-sandbox (F4 slow motion shows the freeze): light 3 ticks (50 ms), heavy 5 (83 ms), charged 6 (100 ms), parry 8 (133 ms), riposte/critical 10 (167 ms). Attacker and victim freeze; overlapping freezes take the longest.",
+  "ticks": {
+    "light": 3,
+    "heavy": 5,
+    "charged": 6,
+    "parry": 8,
+    "critical": 10
+  }
+}

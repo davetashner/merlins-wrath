@@ -22,6 +22,7 @@ import { cueSheetSchema } from './types/cue-sheet.ts';
 import { environmentDamageSchema } from './types/environment-damage.ts';
 import { factSchema } from './types/fact.ts';
 import { factionSchema } from './types/faction.ts';
+import { hitStopSchema } from './types/hit-stop.ts';
 import { kitSchema } from './types/kit.ts';
 import { lockOnSchema } from './types/lock-on.ts';
 import { locomotionSchema } from './types/locomotion.ts';
@@ -54,6 +55,7 @@ export const contentTypes = {
   'environment-damage': environmentDamageSchema,
   fact: factSchema,
   faction: factionSchema,
+  'hit-stop': hitStopSchema,
   kit: kitSchema,
   'lock-on': lockOnSchema,
   locomotion: locomotionSchema,

@@ -98,6 +98,7 @@ function move(id: string, frames: [number, number, number], hits = true): Runtim
     hyperarmor: null,
     iframes: null,
     telegraphTick: 0,
+    hitStop: hits ? 'light' : null,
     chainNext: null,
     charge: null,
     motion: null,

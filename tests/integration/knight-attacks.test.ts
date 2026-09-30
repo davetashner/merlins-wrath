@@ -3,7 +3,7 @@
 // the testbed's training dummy — the combat sandbox's dummy creatures (mw-e04.9) take its place later.
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
-import { KNIGHT_SHIELD_ID } from '@content/index';
+import { HIT_STOP_ID, KNIGHT_SHIELD_ID, loadGameContent } from '@content/index';
 import { markExercised } from '@content/testing';
 import { ActionSampler } from '@game/input/index';
 import {
@@ -20,6 +20,9 @@ import {
   type DamageResult,
 } from '@sim/index';
 import { createTestbedWorld } from '@tools/replay/testbed-player-scenario';
+
+/** Ticks a light hit freezes the knight (mw-e04.11): each connecting move ends that much later. */
+const LIGHT_HIT_STOP = loadGameContent().get('hit-stop', HIT_STOP_ID).ticks.light;
 
 function testbed() {
   const world = createTestbedWorld(RAPIER, { seed: 1, hz: 60 });
@@ -73,11 +76,11 @@ describe('knight light chain in the testbed (mw-e04.6)', () => {
     const t = testbed();
     t.run(30);
     const before = staminaOf(t.world, t.player)?.current;
-    t.step(['Mouse0']); // L1: 34 ticks
+    t.step(['Mouse0']); // L1: 34 ticks, plus its hit-stop
     const afterL1 = staminaOf(t.world, t.player)?.current;
-    t.run(29);
+    t.run(29 + LIGHT_HIT_STOP);
     t.step(['Mouse0']); // buffered into L2
-    t.run(33);
+    t.run(33 + LIGHT_HIT_STOP);
     t.step(['Mouse0']); // L3
     t.run(60);
     t.step(['Mouse0']); // the chain is over: L1 again

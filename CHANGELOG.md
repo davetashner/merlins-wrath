@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- Hits have weight: when a blade connects, the attacker and the one struck freeze for a few frames
+  (a light hit 3, a heavy 5, a charged heavy 6) while everything else keeps moving. The combat
+  sandbox's frame-data overlay shows the freeze counting down in a new Hit-stop column.
 - Combat and footsteps sound richer in the testbed: sword, club and point hits sound different on
   flesh, bone, metal, wood and stone; a hit on your raised shield plays a block instead of a hit, a
   guard break clangs, every swing whooshes, a dodged swing whiffs past you, and your footsteps change

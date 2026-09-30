@@ -1,7 +1,7 @@
 // The combat sandbox's frame-data overlay (mw-e04.9): one row per fighter — the knight, the attacker
 // dummies, the training dummies — showing the move it is performing, its phase and the tick within
-// the move, whether it is invulnerable (i-frames) or armored (hyperarmor) right now, the hit
-// reaction holding it, its health and poise, and the damage per second it is taking. A header line
+// the move, whether it is invulnerable (i-frames) or armored (hyperarmor) right now, the hit-stop
+// freezing it (mw-e04.11), the hit reaction holding it, its health and poise, and the damage per second it is taking. A header line
 // shows the world tick and the sim speed (slow motion). A HUD widget like the others: it shows a
 // view model the game derives from the sim after each tick (src/game/combat/frame-data.ts) and writes
 // the DOM only when a shown value changed.
@@ -28,6 +28,8 @@ export interface FrameDataRowModel {
   readonly frame: string;
   readonly iframes: boolean;
   readonly hyperarmor: boolean;
+  /** The hit-stop freezing it: tier and frozen ticks left ("heavy 4"), or ''. */
+  readonly hitStop: string;
   /** The hit reaction holding it and ticks left ("stagger 31"), or ''. */
   readonly reaction: string;
   /** "812/1000", or '' without health. */
@@ -50,6 +52,7 @@ const COLUMNS = [
   ['phase', 'Phase'],
   ['frame', 'Tick'],
   ['flags', 'I-frames / armor'],
+  ['hitStop', 'Hit-stop'],
   ['reaction', 'Reaction'],
   ['health', 'Health'],
   ['poise', 'Poise'],
@@ -87,6 +90,7 @@ const STYLES = `
   padding: 0 var(--ui-space-2);
 }
 .vb-frame-data td { padding: 1px var(--ui-space-2); white-space: nowrap; }
+.vb-frame-data td[data-col='hitStop']:not(:empty) { color: var(--ui-color-warning); }
 .vb-frame-data td[data-col='frame'],
 .vb-frame-data td[data-col='health'],
 .vb-frame-data td[data-col='poise'],
@@ -218,7 +222,8 @@ export class FrameDataPanel implements HudWidget<FrameDataModel> {
 
 function updateRow(view: RowView, row: FrameDataRowModel): void {
   const { cache: c, cells } = view;
-  for (const col of ['label', 'move', 'frame', 'reaction', 'health', 'poise', 'dps'] as const) {
+  const text = ['label', 'move', 'frame', 'hitStop', 'reaction', 'health', 'poise', 'dps'] as const;
+  for (const col of text) {
     c.set(col, row[col], (v) => {
       cells[col].textContent = v;
     });

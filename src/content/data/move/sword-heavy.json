@@ -50,6 +50,7 @@
       "poiseCap": 40
     }
   },
+  "hitStop": "heavy",
   "presentation": {
     "anim": "anim-knight-sword-heavy",
     "audioCue": "sfx-knight-sword-swing-heavy",

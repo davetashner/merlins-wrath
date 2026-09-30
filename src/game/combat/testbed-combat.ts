@@ -11,7 +11,8 @@
 //    action timeline so a metronome swing starts on its beat.
 // 2. `startTestbedCombat` (after the player): the hit-volume system — after the player's action
 //    timeline, so a swing sweeps on the tick its active phase starts, and honouring dodge and
-//    wake-up i-frames (invulnerabilityRule, mw-e04.28) — the melee strikes, hit reactions (mw-e04.7: stagger, knockback, the guard
+//    wake-up i-frames (invulnerabilityRule, mw-e04.28) — the melee strikes, hit-stop (mw-e04.11: the
+//    hit-stop table's freeze of attacker and victim on every hit), hit reactions (mw-e04.7: stagger, knockback, the guard
 //    break's stagger, mw-e04.31) with pushes through the controller and physics, the player as a
 //    combatant that can be struck and react, a training dummy at every spawn tagged
 //    `training-dummy`, and the combat sandbox's dummies at spawns tagged `sandbox-dummy` /
@@ -22,12 +23,15 @@
 
 import {
   COMBAT_SANDBOX_ID,
+  compileHitStop,
   compileMoves,
   compileSandbox,
   compileShield,
   compileSocketTracks,
+  HIT_STOP_ID,
   KNIGHT_SHIELD_ID,
   type GameContent,
+  type HitStopTable,
   type MoveTable,
 } from '@content/index';
 import {
@@ -41,11 +45,13 @@ import {
   giveHurtboxes,
   HealthComponent,
   HitReactionComponent,
+  HitStopComponent,
   hitVolumeSystem,
   hurtboxFacing,
   invulnerabilityRule,
   installCombatSandbox,
   installHitReactions,
+  installHitStop,
   installMeleeStrikes,
   MELEE_COMPONENTS,
   noAllies,
@@ -80,6 +86,8 @@ export interface TestbedCombat {
   readonly melee: PlayerMeleeOptions;
   /** The damage model every hit resolves through (the shield rule registered). */
   readonly damage: DamageModel;
+  /** Hit-stop ticks per hit tier (mw-e04.11). */
+  readonly hitStop: HitStopTable;
   /** The combat sandbox's tuning and move table (mw-e04.9). */
   readonly sandbox: CombatSandboxOptions;
   /** The debug console's spawners for the sandbox's dummies (`dummy`, `attacker-dummy`). */
@@ -97,6 +105,7 @@ export function prepareTestbedCombat(content: GameContent): TestbedCombat {
     tracks: compileSocketTracks(content.all('socket-track')),
     melee: { shield: compileShield(content.get('shield', KNIGHT_SHIELD_ID)) },
     damage,
+    hitStop: compileHitStop(content.get('hit-stop', HIT_STOP_ID)),
     sandbox,
     spawners: sandboxSpawners(sandbox),
   };
@@ -173,11 +182,12 @@ export function startTestbedCombat<TInput>(
 ): TestbedCombatants {
   // A scene without a player has no timeline, stamina or melee yet; console-spawned dummies need them.
   ensureRegistered(world, [...ACTION_TIMELINE_COMPONENTS, ...MELEE_COMPONENTS, StaminaComponent]);
-  ensureRegistered(world, [PlacementComponent, HitReactionComponent]);
+  ensureRegistered(world, [PlacementComponent, HitReactionComponent, HitStopComponent]);
   world.addSystem(
     hitVolumeSystem({ isAlly: noAllies, invulnerable: invulnerabilityRule(combat.moves) }),
   );
   installMeleeStrikes(world, combat);
+  installHitStop(world, { moves: combat.moves, table: combat.hitStop });
   const pushers: Pusher[] = [];
   if (world.isRegistered(CharacterController)) pushers.push(pushCharacter);
   if (world.isRegistered(PhysicsObjectComponent)) pushers.push(pushPhysicsObject);

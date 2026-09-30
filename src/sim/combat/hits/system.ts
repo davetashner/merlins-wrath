@@ -5,7 +5,9 @@
 // a knockdown, mw-e04.30: the `invulnerable` rule) gets DodgedHit instead
 // of HitboxHit, and counts as struck for the window: a swing dodged once cannot catch it later. Allies (by the ally rule) are skipped unless the hitbox has friendly fire, so a creature
 // lured into a swing meant for the player can hit its packmate. A dead attacker's hitboxes close
-// without hitting; a destroyed one's vanish with it.
+// without hitting; a destroyed one's vanish with it. A hit-stopped attacker's hitboxes hold still
+// (mw-e04.11): they sweep nothing while its local time is frozen and resume with its move, so each
+// active tick of the move still sweeps exactly once.
 //
 // Order: attackers in ascending id, their hitboxes in the order opened, targets in ascending id —
 // so hits (and the events after them) are identical on every client.
@@ -40,6 +42,7 @@ import { encodeCanonical, xxHash32 } from '../../snapshot';
 import { PlacementComponent } from '../../stimulus/placement';
 import type { Vec3 } from '../../stimulus/shapes';
 import { HealthComponent } from '../damage/components';
+import { isHitStopped } from '../hitstop/components';
 import type { DamagePacketInput } from '../damage/packet';
 import {
   HIT_REGIONS,
@@ -262,7 +265,9 @@ export function hitVolumeSystem<TInput>(options: HitVolumeOptions): System<TInpu
         if (set === undefined || set.live.length === 0) continue;
         const open = set.live.filter((h) => h.elapsed < h.activeTicks);
         let live: readonly LiveHitbox[] = [];
-        if (living(w, attacker)) {
+        if (living(w, attacker) && isHitStopped(w, attacker)) {
+          live = open;
+        } else if (living(w, attacker)) {
           live = open.map((hitbox) => {
             const frame = entityFrame(w, attacker, hitbox.aim);
             if (frame === undefined) return hitbox;

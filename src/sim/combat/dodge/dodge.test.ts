@@ -89,6 +89,7 @@ function move(spec: MoveSpec): RuntimeMove {
     hyperarmor: null,
     iframes: spec.iframes ?? null,
     telegraphTick: 0,
+    hitStop: null,
     chainNext: null,
     charge: null,
     motion: spec.motion ?? null,
