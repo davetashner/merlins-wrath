@@ -98,3 +98,4 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].interact.range` | number > 0 | — | Reach in metres; defaults to 2.5. |
 | `spawns[].interact.anchor` | list of any (at least 3) | — | Focus point relative to the entity, metres; defaults to [0, 1, 0]. |
 | `spawns[].interact.radius` | number ≥ 0 | — | Bounding radius of the focus point, metres. |
+| `spawns[].targetable` | ref → targetable | — | Makes the spawned entity a lock-on target with this profile (mw-e02.16). |

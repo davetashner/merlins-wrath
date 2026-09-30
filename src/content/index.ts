@@ -87,6 +87,19 @@ export {
   type CameraTuning,
 } from './types/camera.ts';
 export {
+  PLAYER_LOCK_ON_ID,
+  lockOnSchema,
+  lockOnTuningSchema,
+  type LockOnDef,
+  type LockOnDefInput,
+  type LockOnTuning,
+} from './types/lock-on.ts';
+export {
+  targetableSchema,
+  type TargetableDef,
+  type TargetableDefInput,
+} from './types/targetable.ts';
+export {
   MAX_COYOTE_MS,
   MAX_JUMP_BUFFER_MS,
   MAX_LAUNCH_RECOVERY_MS,

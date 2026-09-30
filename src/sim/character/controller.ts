@@ -9,7 +9,10 @@
 //  2. Horizontal velocity moves towards the input's target at a constant rate: run speed per
 //     accelTime speeding up, per decelTime slowing down; in the air only airControl of the
 //     acceleration applies and, with no input, momentum is kept. A committed move's root motion (a
-//     dodge roll, `CharacterInput.motion`) sets the velocity outright instead.
+//     dodge roll, `CharacterInput.motion`) sets the velocity outright instead. Strafing (lock-on,
+//     mw-e02.16): with a `strafeAround` point the move input is relative to the direction to that
+//     point, and sideways input follows the circle through the character around it instead of its
+//     tangent, so circling a target keeps the distance.
 //  3. Jump: a press is buffered for jumpBufferMs; it fires when grounded, or up to coyoteMs after
 //     walking off a ledge (not after a jump). Launch speed √(2·g·apex) reaches jumpApex exactly.
 //  4. Gravity (exact for constant acceleration, capped at maxFallSpeed) while airborne.
@@ -63,6 +66,8 @@ const MAX_SLIDES = 4;
 const GLANCE = 0.1;
 /** Normal-y slack when comparing against the slope limit. */
 const SLOPE_EPS = 1e-9;
+/** Closer than this (horizontally) to a strafe point, movement falls back to the camera, metres. */
+export const MIN_STRAFE_RADIUS = 0.1;
 
 /** A digital action's state this tick (the ActionFrame button shape, mw-e02.1). */
 export interface ButtonState {
@@ -98,6 +103,12 @@ export interface CharacterInput {
    * off a ledge falls along its arc.
    */
   readonly motion?: Vec3;
+  /**
+   * Strafe around this point (lock-on, mw-e02.16): forward input moves towards it, sideways input
+   * circles it at the current distance. Ignored (camera-relative movement) within MIN_STRAFE_RADIUS
+   * of it horizontally.
+   */
+  readonly strafeAround?: Vec3;
 }
 
 const UP_BUTTON: ButtonState = { pressed: false, held: false };
@@ -327,6 +338,38 @@ function locked(actions: MovementActions): MovementActions {
   return { move: { x: 0, y: 0 }, jump: RELEASED, sprint: RELEASED, crouch: actions.crouch };
 }
 
+/**
+ * The horizontal velocity the move input asks for at `speed`: camera-relative, or with a strafe point,
+ * relative to the direction to it (see CharacterInput.strafeAround).
+ */
+function moveTarget(
+  position: Vec3,
+  input: CharacterInput,
+  raw: { readonly x: number; readonly y: number },
+  speed: number,
+  dt: number,
+): Vec3 {
+  const toCentre =
+    input.strafeAround === undefined ? ZERO : flat(sub(input.strafeAround, position));
+  const radius = length(toCentre);
+  if (radius < MIN_STRAFE_RADIUS) {
+    const yawSin = sin(input.cameraYaw);
+    const yawCos = cos(input.cameraYaw);
+    const right = vec(yawCos, 0, -yawSin);
+    const forward = vec(-yawSin, 0, -yawCos);
+    return scale(normalize(add(scale(right, raw.x), scale(forward, raw.y))), speed);
+  }
+  const forward = scale(toCentre, 1 / radius);
+  const right = vec(-forward.z, 0, forward.x);
+  const wish = normalize(add(scale(right, raw.x), scale(forward, raw.y)));
+  // Sideways speed becomes the chord to where that speed gets along the circle in one tick, so a
+  // full tick at this velocity lands back on the circle instead of drifting out along the tangent.
+  const sideways = dot(wish, right) * speed;
+  const angle = (sideways * dt) / radius;
+  const chord = scale(add(scale(right, sin(angle)), scale(forward, 1 - cos(angle))), radius / dt);
+  return add(chord, scale(forward, dot(wish, forward) * speed));
+}
+
 /** `from` moved towards `to` by at most `maxDelta`. */
 function moveTowards(from: Vec3, to: Vec3, maxDelta: number): Vec3 {
   const gap = sub(to, from);
@@ -365,12 +408,7 @@ function locomotion(
     : sprinting
       ? tuning.speeds.sprint
       : tuning.speeds.run;
-  const yawSin = sin(input.cameraYaw);
-  const yawCos = cos(input.cameraYaw);
-  const right = vec(yawCos, 0, -yawSin);
-  const forward = vec(-yawSin, 0, -yawCos);
-  const wish = normalize(add(scale(right, raw.x), scale(forward, raw.y)));
-  const target = scale(wish, top * deflection);
+  const target = moveTarget(state.position, input, raw, top * deflection, dt);
   const current = flat(state.velocity);
   let horizontal = current;
   if (motion !== undefined) {

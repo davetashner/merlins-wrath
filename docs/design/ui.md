@@ -100,6 +100,10 @@ binding.frame(latestSnapshot, frame.timeMs);
 - Deriving the vitals from real sim components is owned by the HUD feature beads (e.g. mw-e04.10).
 - `InteractPrompt` (`src/ui/interact-prompt.ts`) is the contextual Interact prompt (`[E] Pull lever`,
   greyed with a reason when unavailable, a bar for holds); see [interaction](interaction.md).
+- `LockMarker` (`src/ui/lock-marker.ts`, mw-e02.16) is the lock-on ring. Its model is the locked entity
+  and a HUD-pixel position; `lockMarkerModel` in `src/game/player` projects the target's lock point
+  through the drawn camera each frame. It hides when nothing is locked or the point is behind the
+  camera, and its colour is the `--ui-color-lock` token (wayfinder gold).
 
 ## Game glue (`src/game/ui`)
 

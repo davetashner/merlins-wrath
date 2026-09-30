@@ -97,8 +97,11 @@ describe('scene loader glue (mw-e00.21)', () => {
       'spawn:loose-crate',
       'spawn:room-lever',
       'spawn:arena-plank',
+      'spawn:dummy-left',
+      'spawn:dummy-centre',
+      'spawn:dummy-right',
     ]);
-    expect(sync.size).toBe(6);
+    expect(sync.size).toBe(9);
     expect(built[0]?.transform?.position).toEqual({ x: 0, y: 0, z: 0 });
     expect(built[1]?.transform?.position).toEqual({ x: 0, y: 0, z: -1 });
   });

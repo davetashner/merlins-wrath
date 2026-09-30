@@ -16,7 +16,7 @@ import {
 } from './controller';
 import { FakeCollisionWorld } from './fake-collision-world';
 import { box, radians, rampAt, type GreyboxShape } from './greybox';
-import { tan } from '../math';
+import { atan2, tan } from '../math';
 import { TRAVERSAL_MODES, type TraversalHook } from './traversal';
 
 /** The mw-e02.2 starting numbers (the shipped file is checked in tests/contracts). */
@@ -695,5 +695,55 @@ describe('degenerate collision replies', () => {
     });
     expect(next.velocity.x).toBe(0);
     expect(next.position.x).toBe(0);
+  });
+});
+
+describe('strafing around a point (lock-on, mw-e02.16)', () => {
+  const centre = v(0, 1.3, -5);
+  const around = (move: [number, number], at: Vec3 = centre): CharacterInput => ({
+    ...input({ move }),
+    strafeAround: at,
+  });
+  const radius = (s: CharacterState) =>
+    Math.sqrt((s.position.x - centre.x) ** 2 + (s.position.z - centre.z) ** 2);
+
+  it('AC-5: sideways input circles the point, keeping the distance within 5% per second', () => {
+    const rig = onFloor();
+    const start = radius(rig.state);
+    expect(start).toBeCloseTo(5, 6);
+    let previous = start;
+    for (let second = 0; second < 5; second++) {
+      const state = rig.step(around([1, 0]), HZ);
+      expect(Math.abs(radius(state) - previous) / previous).toBeLessThan(0.05);
+      previous = radius(state);
+    }
+    // Five seconds at run speed covers most of a lap (5 m/s × 5 s over a 31.4 m circle)…
+    const { x, z } = rig.state.position;
+    expect(atan2(x - centre.x, z - centre.z)).not.toBeCloseTo(0, 1);
+    // …and ends within a centimetre of the circle it started on.
+    expect(Math.abs(radius(rig.state) - start)).toBeLessThan(0.01);
+  });
+
+  it('forward input closes in on the point, backward backs away, whatever the camera yaw', () => {
+    const rig = onFloor();
+    rig.step({ ...around([0, 1]), cameraYaw: 2 }, 30);
+    expect(rig.state.position.x).toBeCloseTo(0, 9);
+    expect(radius(rig.state)).toBeLessThan(4);
+    const closer = radius(rig.state);
+    rig.step({ ...around([0, -1]), cameraYaw: -1 }, 30);
+    expect(radius(rig.state)).toBeGreaterThan(closer);
+  });
+
+  it('right input strafes clockwise seen from above (to the right of the point)', () => {
+    const rig = onFloor();
+    rig.step(around([1, 0]), 6);
+    expect(rig.state.position.x).toBeGreaterThan(0);
+  });
+
+  it('falls back to camera-relative movement right on top of the point', () => {
+    const rig = onFloor();
+    rig.step(around([1, 0], v(0.05, 0, 0)));
+    expect(rig.state.velocity.x).toBeGreaterThan(0);
+    expect(rig.state.velocity.z).toBe(0);
   });
 });

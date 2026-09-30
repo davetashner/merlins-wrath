@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Profile id, e.g. \"player\"."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (debug tools and docs)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why these values (feel targets, references), for owner review."
+    },
+    "selectRange": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 100,
+      "description": "Farthest a target can be picked or cycled to, m (eye to lock point)."
+    },
+    "coneAngle": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 180,
+      "description": "Pick and cycle only targets within this angle of the camera forward, degrees."
+    },
+    "breakRange": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 100,
+      "description": "The lock breaks once the target is farther than this, m; ≥ selectRange."
+    },
+    "lostSightMs": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 10000,
+      "description": "The lock breaks once the target has been out of sight this long, ms; sight returning sooner keeps it."
+    },
+    "switchRange": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 100,
+      "description": "When the locked target dies, the lock moves to the best other target this close, m, or releases."
+    },
+    "eyeHeight": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 3,
+      "description": "Height above the player’s feet that sight lines and angles are measured from, m."
+    },
+    "minVisibility": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1,
+      "description": "A lock point is in sight when at least this much of its sight line is clear, 0–1."
+    },
+    "distanceWeight": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Picking scores angle ÷ coneAngle + distanceWeight × distance ÷ selectRange (lowest wins); 0 ignores distance."
+    },
+    "priorityWeight": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "Each point of a target’s priority takes this much off its pick score."
+    },
+    "turnRate": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 3600,
+      "description": "How fast the locked player turns to face the target, degrees/s."
+    },
+    "flick": {
+      "type": "object",
+      "properties": {
+        "stickThreshold": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1,
+          "description": "Right-stick sideways deflection that counts as a flick, 0.1–1."
+        },
+        "stickRest": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.9,
+          "description": "The stick must come back within this sideways deflection before the next flick, 0–0.9; below stickThreshold."
+        },
+        "mouseCounts": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 10000,
+          "description": "Sideways mouse movement in one tick that counts as a flick, counts."
+        },
+        "mouseRest": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "Sideways mouse movement in one tick at or below which the mouse is at rest, counts; below mouseCounts."
+        }
+      },
+      "required": [
+        "stickThreshold",
+        "stickRest",
+        "mouseCounts",
+        "mouseRest"
+      ],
+      "additionalProperties": false,
+      "description": "Cycling by flicking look input sideways while locked on: the right stick (the pad has no cycle button) or a fast mouse swipe."
+    },
+    "framing": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 2,
+          "description": "Seconds for the camera to swing about two thirds of the way to its lock-on framing (exponential ease), and back on release."
+        },
+        "targetWeight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Where between the player’s head (0) and the target’s lock point (1) the camera aims."
+        },
+        "pitchOffset": {
+          "type": "number",
+          "minimum": -45,
+          "maximum": 45,
+          "description": "Added to the aim pitch, degrees; negative looks further down so the player stays in frame."
+        }
+      },
+      "required": [
+        "time",
+        "targetWeight",
+        "pitchOffset"
+      ],
+      "additionalProperties": false,
+      "description": "Camera framing while locked (presentation only): keeps the player and target in view."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "selectRange",
+    "coneAngle",
+    "breakRange",
+    "lostSightMs",
+    "switchRange",
+    "eyeHeight",
+    "minVisibility",
+    "distanceWeight",
+    "priorityWeight",
+    "turnRate",
+    "flick",
+    "framing"
+  ],
+  "additionalProperties": false
+}

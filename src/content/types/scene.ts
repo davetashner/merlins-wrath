@@ -86,6 +86,9 @@ export const sceneSpawnSchema = z.strictObject({
   interact: interactableSchema
     .optional()
     .describe('Makes the spawned entity interactable: its affordances (mw-e02.5).'),
+  targetable: ref('targetable')
+    .optional()
+    .describe('Makes the spawned entity a lock-on target with this profile (mw-e02.16).'),
 });
 
 const cameraSchema = z.strictObject({

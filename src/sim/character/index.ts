@@ -8,6 +8,7 @@ export {
   DEFAULT_LAUNCH_TUNING,
   IDLE_INPUT,
   initialCharacterState,
+  MIN_STRAFE_RADIUS,
   movementState,
   SKIN,
   stepCharacter,
