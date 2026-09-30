@@ -60,7 +60,15 @@ async function play(page: Page): Promise<void> {
   await expect.poll(() => page.evaluate(() => document.pointerLockElement !== null)).toBe(true);
 }
 
-/** Holds W until the player is past `z` (sim state, so a slow runner only takes longer). */
+/** Waits until the sim has run `ticks` more ticks (sim time, not wall time: CI renders slowly). */
+async function waitTicks(page: Page, ticks: number): Promise<void> {
+  const from = (await player(page)).tick;
+  await expect
+    .poll(async () => (await player(page)).tick, { timeout: 60_000 })
+    .toBeGreaterThanOrEqual(from + ticks);
+}
+
+/** Sprints (W + Shift) until the player is past `z` (sim state, so a slow runner only takes longer). */
 async function walkTo(page: Page, z: number): Promise<void> {
   await page.evaluate(
     (target) =>
@@ -70,6 +78,7 @@ async function walkTo(page: Page, z: number): Promise<void> {
           (JSON.parse(app?.dataset['player'] ?? 'null') as { position: { z: number } }).position.z;
         const key = (type: string) => {
           window.dispatchEvent(new KeyboardEvent(type, { code: 'KeyW', key: 'w' }));
+          window.dispatchEvent(new KeyboardEvent(type, { code: 'ShiftLeft', key: 'Shift' }));
         };
         key('keydown');
         const watch = () => {
@@ -141,7 +150,7 @@ async function tapAndMark(
       }),
     [code, key, previous ?? ''] as const,
   );
-  await page.waitForTimeout(1_000); // the player turns and the camera frames the new target
+  await waitTicks(page, 60); // the player turns and the camera frames the new target
   const box = await page.getByTestId('lock-marker').boundingBox();
   if (box === null) throw new Error('lock marker has no box');
   return { ...sample, settled: { x: box.x + box.width / 2, y: box.y + box.height / 2 } };
@@ -150,11 +159,13 @@ async function tapAndMark(
 test('AC-6: locking on and cycling moves the HUD lock marker across all three dummies', async ({
   page,
 }) => {
+  // GPU-less CI runners draw the testbed at a few frames per second; the waits below are in sim ticks.
+  test.setTimeout(120_000);
   const problems = collectProblems(page);
   await play(page);
   await expect(page.getByTestId('lock-marker')).toBeHidden();
   await walkTo(page, 15); // through the corridor, into the arena doorway
-  await page.waitForTimeout(500); // coast to a stop
+  await waitTicks(page, 30); // coast to a stop
 
   const first = await tapAndMark(page, 'KeyQ', 'q', undefined);
   const second = await tapAndMark(page, 'Tab', 'Tab', first.target);
