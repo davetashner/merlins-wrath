@@ -1,0 +1,67 @@
+{
+  "$schema": "../puzzle.schema.json",
+  "id": "testbed-room-lever",
+  "name": "Testbed: throw the room lever",
+  "notes": "Grey-box example of the puzzle schema (mw-e15.1), not story canon. The goal is the outcome (the lever is thrown), so pulling it, reaching it with Mage Hand or knocking it over with the crate all count. When mw-e15.2 adds live-property predicates the goal can read the lever's state directly instead of a fact.",
+  "scene": "testbed",
+  "entities": [
+    { "id": "room-lever", "role": "the lever to throw" },
+    { "id": "loose-crate", "role": "heavy object that can knock the lever over", "critical": true }
+  ],
+  "goal": { "fact": "testbed.room-lever.thrown" },
+  "solutions": [
+    {
+      "id": "by-hand",
+      "name": "Pull it",
+      "steps": [
+        { "do": "reach", "target": "room-lever" },
+        { "do": "interact", "verb": "pull", "target": "room-lever" }
+      ]
+    },
+    {
+      "id": "mage-hand",
+      "name": "Pull it from range",
+      "capabilities": ["spell.mage-hand"],
+      "steps": [
+        {
+          "do": "stimulus",
+          "element": "force",
+          "target": "room-lever",
+          "using": "spell.mage-hand",
+          "note": "Mage Hand's grip pulls the handle down without walking over."
+        }
+      ]
+    },
+    {
+      "id": "crate-shove",
+      "name": "Knock it with the crate",
+      "steps": [
+        { "do": "move", "target": "loose-crate", "to": "room-lever", "note": "Pushed or thrown." },
+        { "do": "wait", "seconds": 1, "note": "The lever settles." }
+      ],
+      "notes": "Relies on an impact throwing the lever; confirm once the solver (mw-e15.6) runs."
+    }
+  ],
+  "policy": {
+    "repeatable": false,
+    "recovery": [{ "kind": "respawn", "entity": "loose-crate", "seconds": 10 }]
+  },
+  "hints": [
+    {
+      "afterSeconds": 180,
+      "afterAttempts": 3,
+      "highlight": ["room-lever"],
+      "bark": "That lever has to move somehow.",
+      "variants": [
+        { "capability": "spell.mage-hand", "bark": "I could reach that lever from here." }
+      ]
+    },
+    { "afterSeconds": 360, "highlight": ["loose-crate", "room-lever"] }
+  ],
+  "tags": ["greybox"],
+  "focus": ["sorcerer"],
+  "outputs": {
+    "solvedFact": "testbed.room-lever-puzzle.solved",
+    "set": []
+  }
+}

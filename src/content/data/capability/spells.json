@@ -1,0 +1,13 @@
+{
+  "$schema": "../capability.schema.json",
+  "id": "spells",
+  "name": "Spell capabilities",
+  "notes": "Capabilities granted by knowing a spell (CONSTITUTION §4). Seeded with what the example puzzle needs; mw-e19.2 grows the registry (name and description keys, icon, class affinity) and the runtime grants.",
+  "capabilities": [
+    {
+      "id": "spell.mage-hand",
+      "name": "Mage Hand",
+      "description": "Manipulate distant objects: pull a lever, lift a key or drag a crate from range (CONSTITUTION §4)."
+    }
+  ]
+}

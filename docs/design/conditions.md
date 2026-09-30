@@ -50,7 +50,8 @@ and that text form, `all(fact(a), fact(b) ≥ 3)`, is how debug tools and logs s
 
 - **Inline** in any content type that gates on world state: embed `conditionSchema` for the field
   and add a line to `CONDITION_USAGES` (`src/content/condition-checks.ts`) so its facts are checked.
-  Dialogue (mw-e22) and quests (mw-e23) do this rather than inventing their own predicates.
+  Puzzle goals (`goal`, [puzzles](puzzles.md)) do this; dialogue (mw-e22) and quests (mw-e23) will,
+  rather than inventing their own predicates.
 - **Named** in `src/content/data/condition/<id>.json` (`id`, `name`, `notes`, `when`) when several
   systems share one, e.g. `horn-ally`.
 
