@@ -17,6 +17,11 @@
 // (`locomotionScale`). The caller registers the hit-volume, damage and placement components, and
 // adds the hit-volume system and `installMeleeStrikes` itself (they are world-wide, not the player's).
 //
+// After the controller, the locomotion system (mw-e02.6) publishes what the player is doing — idle,
+// walk, run, airborne, landing… — with its speeds and turn rate, and emits jump, land and footstep
+// events, for animation and audio to follow. The player counts as moving while move input is held or
+// a dodge's root motion carries it; its facing is the look yaw.
+//
 // The view yaw and pitch live in the sim (not in the camera) so a replay of ActionFrames alone
 // reproduces every turn: the recorded look input (mouse counts, stick deflection) is their only source. Pitch does not move
 // the player today, but aiming will (bow, spells: mw-e05.3, mw-e06.15), so it is clamped here once,
@@ -31,6 +36,7 @@ import {
   characterControllerSystem,
   spawnCharacter,
 } from '../character/system';
+import { CharacterLocomotion, giveLocomotion, locomotionSystem } from '../character/locomotion';
 import { DodgeComponent, giveDodge, type DodgeMoves } from '../combat/dodge/components';
 import { dodgeInputSystem, dodgeMotionSystem, type DodgeFacing } from '../combat/dodge/dodge';
 import {
@@ -316,7 +322,7 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
   }
   const look: LookSettings = { ...DEFAULT_LOOK_SETTINGS, ...options.look };
   const { combat } = options;
-  world.register(CharacterController, PlayerLook);
+  world.register(CharacterController, CharacterLocomotion, PlayerLook);
   world.addSystem(playerLookSystem(look));
   const melee = combat?.melee;
   if (combat !== undefined) {
@@ -356,8 +362,22 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
       noclip: (entity) => hasCheat(world, entity, 'noclip'),
     }),
   );
+  world.addSystem(
+    locomotionSystem<TInput>({
+      tuning: options.tuning,
+      moving: (inputs, entity) => {
+        const move = actionFrameOf(inputs)?.move;
+        const held = move !== undefined && (move.x !== 0 || move.y !== 0);
+        return (
+          held || (combat !== undefined && world.get(entity, DodgeComponent)?.velocity != null)
+        );
+      },
+      facing: (entity) => world.get(entity, PlayerLook)?.yaw,
+    }),
+  );
   const { x, y, z } = start.position;
   const id = spawnCharacter(world, { x, y: y + SKIN, z });
+  giveLocomotion(world, id);
   world.add(id, PlayerLook, { yaw: spawnYaw(start), pitch: clampPitch(options.pitch ?? 0, look) });
   if (combat !== undefined) {
     giveStamina(world, id, combat.stamina ?? DEFAULT_STAMINA_PROFILE);

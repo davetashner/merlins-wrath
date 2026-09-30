@@ -1,0 +1,112 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-humanoid-fall",
+  "rig": "greybox-humanoid",
+  "loop": true,
+  "duration": 1.0,
+  "notes": "Grey-box placeholder (mw-e02.6): falling, legs reaching down slightly bent, arms out for balance with a slow wave.",
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [-5, 0, 0]
+      }
+    ],
+    "thigh-l": [
+      {
+        "t": 0,
+        "rot": [25, 0, 0]
+      },
+      {
+        "t": 0.5,
+        "rot": [15, 0, 0]
+      },
+      {
+        "t": 1,
+        "rot": [25, 0, 0]
+      }
+    ],
+    "thigh-r": [
+      {
+        "t": 0,
+        "rot": [10, 0, 0]
+      },
+      {
+        "t": 0.5,
+        "rot": [20, 0, 0]
+      },
+      {
+        "t": 1,
+        "rot": [10, 0, 0]
+      }
+    ],
+    "shin-l": [
+      {
+        "t": 0,
+        "rot": [-35, 0, 0]
+      },
+      {
+        "t": 0.5,
+        "rot": [-25, 0, 0]
+      },
+      {
+        "t": 1,
+        "rot": [-35, 0, 0]
+      }
+    ],
+    "shin-r": [
+      {
+        "t": 0,
+        "rot": [-20, 0, 0]
+      },
+      {
+        "t": 0.5,
+        "rot": [-30, 0, 0]
+      },
+      {
+        "t": 1,
+        "rot": [-20, 0, 0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [-20, 0, -60]
+      },
+      {
+        "t": 0.5,
+        "rot": [-20, 0, -70]
+      },
+      {
+        "t": 1,
+        "rot": [-20, 0, -60]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [-20, 0, 60]
+      },
+      {
+        "t": 0.5,
+        "rot": [-20, 0, 70]
+      },
+      {
+        "t": 1,
+        "rot": [-20, 0, 60]
+      }
+    ],
+    "forearm-l": [
+      {
+        "t": 0,
+        "rot": [15, 0, 0]
+      }
+    ],
+    "forearm-r": [
+      {
+        "t": 0,
+        "rot": [15, 0, 0]
+      }
+    ]
+  }
+}

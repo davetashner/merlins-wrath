@@ -24,6 +24,23 @@ export type AnimLayerMode = (typeof ANIM_LAYER_MODES)[number];
 export const ANIM_ACTION_PHASES = ['none', 'startup', 'active', 'recovery'] as const;
 /** Verbs the action parameters report (the sim's MoveVerb, plus none when idle). */
 export const ANIM_ACTION_VERBS = ['none', 'attack', 'dodge', 'parry'] as const;
+/**
+ * Locomotion states the `locomotion` parameter reports (the sim's LocomotionState, mw-e02.6, plus
+ * none for an entity that publishes none).
+ */
+export const ANIM_LOCOMOTION_STATES = [
+  'none',
+  'idle',
+  'walk',
+  'run',
+  'sprint',
+  'crouch',
+  'airborne',
+  'landing',
+  'climb',
+  'mantle',
+  'swim',
+] as const;
 
 /** Directions the hit parameters report (the sim's hit quadrant, plus none when not reacting). */
 export const ANIM_HIT_DIRECTIONS = ['none', ...HIT_DIRECTIONS] as const;
@@ -42,6 +59,12 @@ export const ANIM_PARAMETERS = {
   speed: { kind: 'number', description: 'Horizontal speed, m/s.' },
   turnRate: { kind: 'number', description: 'Yaw rate, rad/s (positive turns left).' },
   grounded: { kind: 'boolean', description: 'Standing on the ground.' },
+  locomotion: {
+    kind: 'string',
+    values: ANIM_LOCOMOTION_STATES,
+    description: 'The sim’s locomotion state (idle, walk, run, airborne, landing…), or none.',
+  },
+  verticalSpeed: { kind: 'number', description: 'Vertical speed, m/s (positive rising).' },
   acting: { kind: 'boolean', description: 'A committed move is in progress (action timeline).' },
   actionPhase: {
     kind: 'string',

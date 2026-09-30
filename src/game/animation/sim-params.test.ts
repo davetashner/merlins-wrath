@@ -3,13 +3,15 @@ import {
   applyHitReaction,
   giveHitReactions,
   HitReactionComponent,
+  CharacterLocomotion,
+  giveLocomotion,
   interruptAction,
   requestMove,
   setTimeScale,
   World,
 } from '@sim/index';
 import { describe, expect, it } from 'vitest';
-import { simAnimReader } from './sim-params';
+import { characterLocomotion, simAnimReader } from './sim-params';
 import { timelineWorld } from './testing';
 
 describe('simAnimReader', () => {
@@ -22,6 +24,8 @@ describe('simAnimReader', () => {
         speed: 0,
         turnRate: 0,
         grounded: true,
+        locomotion: 'none',
+        verticalSpeed: 0,
         acting: false,
         actionPhase: 'none',
         actionVerb: 'none',
@@ -50,6 +54,8 @@ describe('simAnimReader', () => {
         speed: 2,
         turnRate: -1,
         grounded: false,
+        locomotion: 'none',
+        verticalSpeed: 0,
         acting: true,
         actionPhase: 'active',
         actionVerb: 'attack',
@@ -100,5 +106,34 @@ describe('simAnimReader', () => {
       hitReaction: 'none',
       hitDirection: 'none',
     });
+  });
+
+  it('mw-e02.6: reads a world without the action timeline as never acting; publishes the sim’s locomotion', () => {
+    const world = new World({ seed: 1 }).register(CharacterLocomotion);
+    const entity = world.spawn();
+    giveLocomotion(world, entity);
+    const read = simAnimReader({
+      moves: new Map(),
+      locomotion: characterLocomotion,
+      timeline: false,
+    });
+    expect(read(world, entity)).toEqual({
+      values: {
+        speed: 0,
+        turnRate: 0,
+        grounded: true,
+        locomotion: 'idle',
+        verticalSpeed: 0,
+        acting: false,
+        actionPhase: 'none',
+        actionVerb: 'none',
+        hitReact: false,
+        hitReaction: 'none',
+        hitDirection: 'none',
+      },
+      timeScale: 1,
+      action: null,
+    });
+    expect(characterLocomotion(world, world.spawn())).toBeUndefined();
   });
 });

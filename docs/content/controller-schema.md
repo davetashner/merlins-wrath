@@ -28,3 +28,13 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `jumpBufferMs` | integer 0–150 | required | A jump pressed this long before landing fires on landing, whole ms (≤ 150). |
 | `stepHeight` | number 0–1 | required | Tallest step walked up without jumping, m; also how far the player snaps down to stay on stairs and ramps. Below crouchHeight. |
 | `slopeLimit` | number > 0 | required | Steepest walkable slope, degrees; steeper ground is a wall the player slides off. |
+| `gait` | object | — | Locomotion states and events; absent = the sim’s defaults (DEFAULT_GAIT_TUNING). |
+| `gait.walkFrom` | number > 0 ≤ 10 | required | Horizontal speed from which a character with move input walks (below: idle), m/s. |
+| `gait.runFrom` | number > 0 ≤ 20 | required | Horizontal speed from which it runs (below: walk), m/s; above walkFrom. |
+| `gait.landingMs` | integer 0–1000 | required | How long the landing state lasts after a hard landing, whole ms. |
+| `gait.hardLanding` | number 0–50 | required | Impact speed from which a landing counts as hard (shows the landing state), m/s. |
+| `gait.footstep` | object | required | Ground distance between footsteps per gait, m (half a stride): footstep events come from the distance travelled, not from animation. |
+| `gait.footstep.walk` | number > 0 ≤ 5 | required | Walking, m. |
+| `gait.footstep.run` | number > 0 ≤ 5 | required | Running, m. |
+| `gait.footstep.sprint` | number > 0 ≤ 5 | required | Sprinting, m. |
+| `gait.footstep.crouch` | number > 0 ≤ 5 | required | Crouching, m. |

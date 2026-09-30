@@ -1,7 +1,7 @@
 {
   "$schema": "../anim-graph.schema.json",
   "id": "greybox-humanoid",
-  "notes": "Grey-box humanoid placeholder rig (mw-e02.20): box limbs on a 14-bone skeleton, feet at the origin, facing -z. The knight and every humanoid NPC use this graph until the e37 animation pipeline supplies real rigs.",
+  "notes": "Grey-box humanoid placeholder rig (mw-e02.20): box limbs on a 14-bone skeleton, feet at the origin, facing -z. The knight and every humanoid NPC use this graph until the e37 animation pipeline supplies real rigs. The base layer follows the sim's locomotion state (mw-e02.6): idle, move (a speed blend of walk, run and sprint), crouch, jump while rising, fall, land, and dodge (the running dodge move's clip, full body); traversal states (climb, mantle, swim) keep the pose they had until their clips exist.",
   "skeleton": [
     {
       "bone": "pelvis",
@@ -161,33 +161,216 @@
               {
                 "at": 4,
                 "clip": "anim-humanoid-run"
+              },
+              {
+                "at": 7.5,
+                "clip": "anim-humanoid-sprint"
               }
             ]
+          }
+        },
+        {
+          "id": "crouch",
+          "motion": {
+            "kind": "blend1d",
+            "param": "speed",
+            "points": [
+              {
+                "at": 0,
+                "clip": "anim-humanoid-crouch-idle"
+              },
+              {
+                "at": 2.2,
+                "clip": "anim-humanoid-crouch-walk"
+              }
+            ]
+          }
+        },
+        {
+          "id": "jump",
+          "motion": {
+            "kind": "clip",
+            "clip": "anim-humanoid-jump"
+          }
+        },
+        {
+          "id": "fall",
+          "motion": {
+            "kind": "clip",
+            "clip": "anim-humanoid-fall"
+          }
+        },
+        {
+          "id": "land",
+          "motion": {
+            "kind": "clip",
+            "clip": "anim-humanoid-land"
+          }
+        },
+        {
+          "id": "dodge",
+          "motion": {
+            "kind": "action",
+            "fallback": "anim-knight-dodge-roll"
           }
         }
       ],
       "transitions": [
         {
-          "from": "idle",
-          "to": "move",
-          "duration": 0.2,
+          "from": "*",
+          "to": "dodge",
+          "duration": 0.08,
           "when": [
             {
-              "param": "speed",
-              "op": ">",
-              "value": 0.2
+              "param": "actionVerb",
+              "op": "==",
+              "value": "dodge"
             }
           ]
         },
         {
-          "from": "move",
+          "from": "*",
+          "to": "jump",
+          "duration": 0.08,
+          "when": [
+            {
+              "param": "locomotion",
+              "op": "==",
+              "value": "airborne"
+            },
+            {
+              "param": "verticalSpeed",
+              "op": ">",
+              "value": 0
+            },
+            {
+              "param": "actionVerb",
+              "op": "!=",
+              "value": "dodge"
+            }
+          ]
+        },
+        {
+          "from": "*",
+          "to": "fall",
+          "duration": 0.25,
+          "when": [
+            {
+              "param": "locomotion",
+              "op": "==",
+              "value": "airborne"
+            },
+            {
+              "param": "verticalSpeed",
+              "op": "<=",
+              "value": 0
+            },
+            {
+              "param": "actionVerb",
+              "op": "!=",
+              "value": "dodge"
+            }
+          ]
+        },
+        {
+          "from": "*",
+          "to": "land",
+          "duration": 0.06,
+          "when": [
+            {
+              "param": "locomotion",
+              "op": "==",
+              "value": "landing"
+            },
+            {
+              "param": "actionVerb",
+              "op": "!=",
+              "value": "dodge"
+            }
+          ]
+        },
+        {
+          "from": "*",
+          "to": "crouch",
+          "duration": 0.2,
+          "when": [
+            {
+              "param": "locomotion",
+              "op": "==",
+              "value": "crouch"
+            },
+            {
+              "param": "actionVerb",
+              "op": "!=",
+              "value": "dodge"
+            }
+          ]
+        },
+        {
+          "from": "*",
+          "to": "move",
+          "duration": 0.2,
+          "when": [
+            {
+              "param": "locomotion",
+              "op": "==",
+              "value": "walk"
+            },
+            {
+              "param": "actionVerb",
+              "op": "!=",
+              "value": "dodge"
+            }
+          ]
+        },
+        {
+          "from": "*",
+          "to": "move",
+          "duration": 0.2,
+          "when": [
+            {
+              "param": "locomotion",
+              "op": "==",
+              "value": "run"
+            },
+            {
+              "param": "actionVerb",
+              "op": "!=",
+              "value": "dodge"
+            }
+          ]
+        },
+        {
+          "from": "*",
+          "to": "move",
+          "duration": 0.2,
+          "when": [
+            {
+              "param": "locomotion",
+              "op": "==",
+              "value": "sprint"
+            },
+            {
+              "param": "actionVerb",
+              "op": "!=",
+              "value": "dodge"
+            }
+          ]
+        },
+        {
+          "from": "*",
           "to": "idle",
           "duration": 0.25,
           "when": [
             {
-              "param": "speed",
-              "op": "<=",
-              "value": 0.2
+              "param": "locomotion",
+              "op": "==",
+              "value": "idle"
+            },
+            {
+              "param": "actionVerb",
+              "op": "!=",
+              "value": "dodge"
             }
           ]
         }

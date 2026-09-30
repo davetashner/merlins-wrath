@@ -1,6 +1,12 @@
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it, vi } from 'vitest';
-import { loadGameContent, PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
+import {
+  compileMoves,
+  loadGameContent,
+  PLAYER_CAMERA_ID,
+  PLAYER_CONTROLLER_ID,
+} from '@content/index';
+import { AnimationController, compileGraph } from '@render/animation/index';
 import {
   box,
   CharacterController,
@@ -28,7 +34,9 @@ import { prepareTestbedCombat, startTestbedCombat } from '../combat';
 import { createGameLoop, FakeFrames, RenderSync, type SceneBinding, type Transform } from '../loop';
 import { readSceneTransform, SceneLoader } from '../scene';
 import { lookForward, toRadians } from '../camera';
+import type { CharacterProbe } from '../animation';
 import {
+  CROUCH_DROP,
   readPlayerTransform,
   setupTestbedPlayer,
   yawOf,
@@ -98,6 +106,9 @@ function testbed(options: Extra | ((physics: RapierPhysics) => Extra) = {}) {
     world,
     sources: { now: frames.now, scheduler: frames, visibility: frames },
     sampleCommands: sampler.sampleCommands,
+    onStep: () => {
+      player.onStep();
+    },
     draw: (frame) => {
       player.frame(frame);
     },
@@ -516,6 +527,131 @@ describe('testbed player interaction (mw-e02.5)', () => {
     const { player, run } = testbed();
     run(0.1);
     expect(player.prompt()).toBeUndefined();
+  });
+});
+
+/** The player's body: the grey-box humanoid graph from content, recording what it is given. */
+function animatedBody() {
+  const graph = compileGraph(
+    content.get('anim-graph', 'greybox-humanoid'),
+    content.all('anim-clip'),
+  );
+  const poses: number[] = [];
+  const drops: number[] = [];
+  const probes: CharacterProbe[] = [];
+  const animation = {
+    controller: new AnimationController(graph),
+    apply: () => {
+      poses.push(1);
+    },
+    lower: (metres: number) => {
+      drops.push(metres);
+    },
+    publish: (probe: CharacterProbe) => {
+      probes.push(probe);
+    },
+  };
+  const last = () => probes.at(-1);
+  return { animation, poses, drops, probes, last };
+}
+
+describe('testbed player animation (mw-e02.6)', () => {
+  const moves = compileMoves(content.all('move'));
+
+  it('AC-4: running then jumping plays the run clip, then jump, fall and land, from sim locomotion', () => {
+    const body = animatedBody();
+    const { sampler, run, state } = testbed({ animation: body.animation, moves });
+    run(0.3);
+    expect(body.last()?.layers[0]?.state).toBe('idle');
+    sampler.down('KeyW');
+    run(0.5);
+    expect(body.last()?.layers[0]).toMatchObject({ state: 'move', clip: 'anim-humanoid-run' });
+    sampler.down('Space');
+    run(0.1);
+    sampler.up('Space');
+    expect(body.last()?.layers[0]?.state).toBe('jump');
+    run(1);
+    expect(state().grounded).toBe(true);
+    const probe = body.last();
+    expect(probe?.history).toEqual(['idle', 'move', 'jump', 'fall', 'land', 'move']);
+    expect(probe?.clipHistory).toEqual(
+      expect.arrayContaining(['anim-humanoid-run', 'anim-humanoid-jump', 'anim-humanoid-fall']),
+    );
+    expect(body.poses.length).toBeGreaterThan(100);
+  });
+
+  it('a dodge plays its move clip on the whole body, then locomotion takes over again', () => {
+    const body = animatedBody();
+    const { sampler, run } = testbed({ animation: body.animation, moves });
+    run(0.2);
+    sampler.down('KeyW');
+    run(0.2);
+    sampler.down('KeyR');
+    run(0.1);
+    sampler.up('KeyR');
+    expect(body.last()?.layers[0]).toMatchObject({
+      state: 'dodge',
+      clip: 'anim-knight-dodge-roll',
+    });
+    run(1);
+    expect(body.last()?.layers[0]?.state).toBe('move');
+  });
+
+  it('crouching lowers the pelvis by CROUCH_DROP once the crouch has faded in; standing, by 0', () => {
+    const body = animatedBody();
+    const { sampler, run } = testbed({ animation: body.animation, moves });
+    run(0.2);
+    expect(body.drops.at(-1)).toBe(0);
+    sampler.down('KeyC');
+    run(0.5);
+    expect(body.last()?.layers[0]?.state).toBe('crouch');
+    expect(body.drops.at(-1)).toBeCloseTo(CROUCH_DROP, 9);
+    sampler.up('KeyC');
+    run(0.5);
+    expect(body.drops.at(-1)).toBe(0);
+  });
+
+  it('animation never changes the sim: same inputs, same hash, with or without a body', () => {
+    const play = (animated: boolean) => {
+      const { sampler, run, world } = testbed(
+        animated ? { animation: animatedBody().animation, moves } : { moves },
+      );
+      sampler.down('KeyW');
+      run(0.4);
+      sampler.down('Space');
+      run(0.6);
+      return hashWorld(world);
+    };
+    expect(play(true)).toBe(play(false));
+  });
+
+  it('works without lower or publish, and stops animating once disposed', () => {
+    const graph = compileGraph(
+      content.get('anim-graph', 'greybox-humanoid'),
+      content.all('anim-clip'),
+    );
+    const apply = vi.fn();
+    const { run, player } = testbed({
+      animation: { controller: new AnimationController(graph), apply },
+    });
+    run(0.1);
+    expect(apply).toHaveBeenCalled();
+    player.dispose();
+    apply.mockClear();
+    player.frame({ alpha: 1, timeMs: 10_000 });
+    expect(apply).not.toHaveBeenCalled();
+  });
+
+  it('a graph without layers is never lowered', () => {
+    const graph = compileGraph(
+      content.get('anim-graph', 'greybox-humanoid'),
+      content.all('anim-clip'),
+    );
+    const lower = vi.fn();
+    const controller = new AnimationController({ ...graph, layers: [] });
+    const { run } = testbed({ animation: { controller, apply: () => undefined, lower } });
+    run(0.1);
+    expect(lower).toHaveBeenCalledWith(0);
   });
 });
 

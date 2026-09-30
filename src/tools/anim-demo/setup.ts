@@ -124,3 +124,28 @@ export function compactProbe(
   }
   return out;
 }
+
+/** One character's probe as the page publishes it, with its clips (the player's, mw-e02.6). */
+export interface PublishedCharacterProbe {
+  /** Each layer's state. */
+  readonly layers: Record<string, string>;
+  /** Each layer's clip (null for a none state). */
+  readonly clips: Record<string, string | null>;
+  readonly history: readonly string[];
+  readonly clipHistory: readonly string[];
+}
+
+/** A character's probe with its clips, as the page publishes it on `data-player-animation`. */
+export function playerAnimationProbe(
+  probe: AnimProbe & {
+    readonly history: readonly string[];
+    readonly clipHistory: readonly string[];
+  },
+): PublishedCharacterProbe {
+  return {
+    layers: Object.fromEntries(probe.layers.map((l) => [l.id, l.state])),
+    clips: Object.fromEntries(probe.layers.map((l) => [l.id, l.clip])),
+    history: probe.history,
+    clipHistory: probe.clipHistory,
+  };
+}

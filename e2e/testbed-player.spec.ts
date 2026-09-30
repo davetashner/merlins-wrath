@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-// mw-e02.23: a controllable player capsule in ?scene=testbed, against the production build
+// mw-e02.23: a controllable player (mw-e02.6: an animated grey-box rig) in ?scene=testbed, against the production build
 // (Chromium). The page publishes the player's sim state on #app[data-player] (JSON: tick, feet
 // position, grounded, yaw, pitch) after every sim tick a frame shows, and the orbit camera's
 // (mw-e02.4) on #app[data-orbit-camera] after every frame it draws; the tests only read them.
@@ -192,6 +192,76 @@ test('AC-3: Space leaves the ground and lands again within 1 s', async ({ page }
   const landed = air.find((s) => s.grounded);
   expect(landed).toBeDefined();
   expect(landed?.ticks ?? Infinity).toBeLessThanOrEqual(60);
+  expect(problems).toEqual([]);
+});
+
+/** #app[data-player-animation] (mw-e02.6): the player body's animation probe. */
+interface PlayerAnimationData {
+  layers: Record<string, string>;
+  clips: Record<string, string | null>;
+  history: string[];
+  clipHistory: string[];
+}
+
+async function playerAnimation(page: Page): Promise<PlayerAnimationData | null> {
+  const json = await page.locator('#app').getAttribute('data-player-animation');
+  return JSON.parse(json ?? 'null') as PlayerAnimationData | null;
+}
+
+// mw-e02.6 AC-4: the bot runs forward, jumps and lands; the placeholder rig follows the sim's
+// locomotion state. The page's animation state probe (#app[data-player-animation]) records the base
+// layer's states and clips in order; the bot drives from inside the page, paced by the published sim
+// tick, so a slow runner takes the same route.
+test('AC-4 (mw-e02.6): running and jumping play the rig’s run and jump clips, with no console errors', async ({
+  page,
+}) => {
+  const problems = collectProblems(page);
+  await play(page);
+  await expect.poll(async () => (await playerAnimation(page))?.layers['base']).toBe('idle');
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        const app = document.querySelector<HTMLElement>('#app');
+        const tick = () =>
+          (JSON.parse(app?.dataset['player'] ?? '{"tick":0}') as { tick: number }).tick;
+        const key = (type: string, code: string, k: string) => {
+          window.dispatchEvent(new KeyboardEvent(type, { code, key: k }));
+        };
+        const start = tick();
+        key('keydown', 'KeyW', 'w');
+        let jumped = false;
+        const drive = () => {
+          const ticks = tick() - start;
+          // Run for 30 ticks (full speed), jump, and keep running until well after landing.
+          if (!jumped && ticks >= 30) {
+            jumped = true;
+            key('keydown', 'Space', ' ');
+            key('keyup', 'Space', ' ');
+          }
+          if (ticks >= 90) {
+            key('keyup', 'KeyW', 'w');
+            resolve();
+            return;
+          }
+          requestAnimationFrame(drive);
+        };
+        requestAnimationFrame(drive);
+      }),
+  );
+  const probe = await playerAnimation(page);
+  if (probe === null) throw new Error('no player animation probe');
+  test.info().annotations.push({ type: 'player animation', description: JSON.stringify(probe) });
+  // The base layer went idle → move (on the run clip) → jump → fall → land, in that order.
+  const order = (items: readonly string[], wanted: readonly string[]) => {
+    let next = 0;
+    for (const item of items) if (item === wanted[next]) next += 1;
+    return next === wanted.length;
+  };
+  expect(order(probe.history, ['idle', 'move', 'jump', 'fall', 'land'])).toBe(true);
+  expect(
+    order(probe.clipHistory, ['anim-humanoid-run', 'anim-humanoid-jump', 'anim-humanoid-fall']),
+  ).toBe(true);
+  expect(Object.keys(probe.layers)).toEqual(['base', 'action', 'hit']);
   expect(problems).toEqual([]);
 });
 

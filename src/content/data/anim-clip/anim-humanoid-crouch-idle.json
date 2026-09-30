@@ -1,0 +1,84 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-humanoid-crouch-idle",
+  "rig": "greybox-humanoid",
+  "loop": true,
+  "duration": 2.0,
+  "notes": "Grey-box placeholder (mw-e02.6): crouched and still, knees bent about 70\u00b0, back hunched, sword low. Rotations only: the game lowers the pelvis while crouched so the feet stay on the ground.",
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [20, 0, 0]
+      },
+      {
+        "t": 1,
+        "rot": [23, 0, 0]
+      },
+      {
+        "t": 2,
+        "rot": [20, 0, 0]
+      }
+    ],
+    "chest": [
+      {
+        "t": 0,
+        "rot": [10, 0, 0]
+      }
+    ],
+    "head": [
+      {
+        "t": 0,
+        "rot": [-25, 0, 0]
+      }
+    ],
+    "thigh-l": [
+      {
+        "t": 0,
+        "rot": [70, 0, 0]
+      }
+    ],
+    "thigh-r": [
+      {
+        "t": 0,
+        "rot": [70, 0, 0]
+      }
+    ],
+    "shin-l": [
+      {
+        "t": 0,
+        "rot": [-110, 0, 0]
+      }
+    ],
+    "shin-r": [
+      {
+        "t": 0,
+        "rot": [-110, 0, 0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [20, 0, -10]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [20, 0, 10]
+      }
+    ],
+    "forearm-l": [
+      {
+        "t": 0,
+        "rot": [40, 0, 0]
+      }
+    ],
+    "forearm-r": [
+      {
+        "t": 0,
+        "rot": [40, 0, 0]
+      }
+    ]
+  }
+}

@@ -1,9 +1,9 @@
 // A controllable player in a loaded scene (mw-e02.23): the glue from sampled ActionFrames to a
-// capsule on screen. It installs the player into the sim (spawn at the scene's player start, look and
+// body on screen. It installs the player into the sim (spawn at the scene's player start, look and
 // controller systems; see src/sim/player), resolves collisions against the given CollisionWorld (the
-// game passes RapierCollisionWorld over the sim's physics, mw-e02.21), binds a placeholder capsule to
+// game passes RapierCollisionWorld over the sim's physics, mw-e02.21), binds a placeholder body to
 // the player through render sync so it is interpolated like every other entity, and each drawn frame
-// places the orbit camera (mw-e02.4, src/game/camera) behind the interpolated capsule and publishes
+// places the orbit camera (mw-e02.4, src/game/camera) behind the interpolated body and publishes
 // small read-only readouts for the HUD and the Playwright e2e: the player's state after every sim
 // tick, and the camera's after every frame it drives.
 //
@@ -11,11 +11,19 @@
 // sim's interaction system runs after the controller, the scene's interactable spawns get their
 // affordances, and `prompt()` returns what the contextual prompt should show.
 //
-// Renderer-agnostic: the caller supplies the capsule object and how an object follows its entity
+// With `animation` (mw-e02.6) the placeholder body is the grey-box humanoid rig, animated from the
+// sim: after each sim step the player's published locomotion (CharacterLocomotion) and action
+// timeline are captured (`onStep`), and each drawn frame the AnimationDriver poses the rig from them.
+// Animation only reads the sim; the body's transform stays the interpolated sim position (root
+// motion is never applied). A crouch lowers the rig's pelvis by CROUCH_DROP × the crouch state's
+// weight, so the bent legs keep the feet on the ground.
+//
+// Renderer-agnostic: the caller supplies the body object and how an object follows its entity
 // (object3DBinding for Three.js). The sim steps only through the frame loop, as ever; nothing here
 // mutates the sim after setup (the camera's collision queries are read-only).
 
 import type { CameraTuning, ControllerTuning, Frozen, MoveTable } from '@content/index';
+import type { AnimationController, Pose } from '@render/animation/index';
 import {
   addInteractor,
   addSceneInteractables,
@@ -46,6 +54,12 @@ import {
   toRadians,
   type OrbitCameraTarget,
 } from '../camera';
+import {
+  AnimationDriver,
+  characterLocomotion,
+  simAnimReader,
+  type CharacterProbe,
+} from '../animation';
 import type { FrameInfo } from '../loop';
 import type { Quat, RenderSync, SceneBinding, SimView, Transform, Vec3 } from '../loop/render-sync';
 
@@ -107,6 +121,25 @@ export interface TestbedInteractionOptions {
   readonly publish?: (interaction: Interaction) => void;
 }
 
+/**
+ * How far the grey-box humanoid's pelvis sinks when fully crouched, metres: with its crouch clips'
+ * knees bent about 70° (thigh 0.42 m, shin 0.43 m) the feet would float this far off the ground.
+ * A property of the placeholder rig and clips; real rigs (e37) bring their own crouch.
+ */
+export const CROUCH_DROP = 0.38;
+
+/** The player's animated body (mw-e02.6). */
+export interface PlayerAnimationView {
+  /** The body's controller (the grey-box humanoid graph). */
+  readonly controller: AnimationController;
+  /** Writes a pose into the body (bone rotations only). */
+  readonly apply: (pose: Pose) => void;
+  /** Lowers the body's pelvis by `metres` below rest (0 = standing). */
+  readonly lower?: (metres: number) => void;
+  /** Receives the body's animation probe after every frame it animates (the e2e hook). */
+  readonly publish?: (probe: CharacterProbe) => void;
+}
+
 export interface TestbedPlayerOptions<TObject, TCommand> {
   readonly world: World<TCommand>;
   /** The loaded scene; the player spawns at its `player-start` spawn. */
@@ -117,7 +150,7 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
   readonly cameraTuning: Frozen<CameraTuning>;
   /** Collision for the controller and the camera: RapierCollisionWorld over the world's physics. */
   readonly collision: CollisionWorld;
-  /** The placeholder capsule; its origin is the player's feet and it faces −z. */
+  /** The placeholder body; its origin is the player's feet and it faces −z. */
   readonly object: TObject;
   /** How `object` follows the player (object3DBinding for Three.js). */
   readonly binding: (object: TObject, read: TransformReader) => SceneBinding<TObject>;
@@ -140,12 +173,16 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
    * the hit-volume, damage and placement components and wires the strikes (see installPlayer).
    */
   readonly melee?: PlayerMeleeOptions;
+  /** Animates the body from the sim (mw-e02.6); absent = a still body. */
+  readonly animation?: PlayerAnimationView;
 }
 
 export interface TestbedPlayer {
   readonly entity: EntityId;
   /** Whether the orbit camera drives the camera (off while the debug camera flies). */
   drivesCamera: boolean;
+  /** Call after every sim step (the loop's onStep): captures what animation reads. */
+  onStep(): void;
   /** Call once per drawn frame, after render sync and before drawing. */
   frame(info?: Pick<FrameInfo, 'alpha' | 'timeMs'>): void;
   /** Zooms the orbit camera by whole mouse-wheel notches (positive = out). */
@@ -154,7 +191,7 @@ export interface TestbedPlayer {
   readout(): PlayerReadout | undefined;
   /** What the Interact prompt shows now; undefined with nothing in focus or no interaction. */
   prompt(): InteractionPrompt | undefined;
-  /** Unbinds the capsule and removes the player (its systems stay; they find no player). */
+  /** Unbinds the body and removes the player (its systems stay; they find no player). */
   dispose(): void;
 }
 
@@ -178,6 +215,40 @@ export const readPlayerTransform: TransformReader = (view, entity) => {
   if (state === undefined || look === undefined) return undefined;
   return { position: state.position, rotation: yawRotation(look.yaw) };
 };
+
+/**
+ * The player's body animated on its own driver (the player is always near the camera): `frame`
+ * poses it, lowers its pelvis by the crouch state's weight and publishes the probe.
+ */
+function animatedBody(
+  view: SimView,
+  entity: EntityId,
+  animation: PlayerAnimationView,
+  moves: MoveTable | undefined,
+): { readonly driver: AnimationDriver; frame(alpha: number, dt: number): void } {
+  const driver = new AnimationDriver(view);
+  driver.add(entity, {
+    name: 'player',
+    controller: animation.controller,
+    // Without moves the player has no action timeline (movement only).
+    read: simAnimReader({
+      moves: moves ?? new Map(),
+      locomotion: characterLocomotion,
+      timeline: moves !== undefined,
+    }),
+    apply: animation.apply,
+  });
+  return {
+    driver,
+    frame(alpha, dt) {
+      driver.frame(alpha, dt);
+      const probe = driver.probe()['player'];
+      if (probe === undefined) return;
+      animation.lower?.(CROUCH_DROP * (probe.layers[0]?.weights['crouch'] ?? 0));
+      animation.publish?.(probe);
+    },
+  };
+}
 
 /** Seconds between two frame timestamps; 0 for the first frame or a clock that went back. */
 const secondsSince = (last: number | undefined, now: number): number =>
@@ -260,7 +331,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
     };
   };
 
-  // Pitch is not part of the interpolated transform (the capsule does not tilt), so it is
+  // Pitch is not part of the interpolated transform (the body does not tilt), so it is
   // interpolated here between the last two ticks the camera saw, as render sync does for yaw.
   let pitchTick: number | undefined;
   let pitchBefore = 0;
@@ -274,6 +345,11 @@ export function setupTestbedPlayer<TObject, TCommand>(
     }
     return pitchBefore + (pitchNow - pitchBefore) * alpha;
   };
+
+  const body =
+    options.animation === undefined
+      ? undefined
+      : animatedBody(world, entity, options.animation, options.moves);
 
   const counts = { frames: 0, clipped: 0, pulledIn: 0 };
   let lastMs: number | undefined;
@@ -321,10 +397,14 @@ export function setupTestbedPlayer<TObject, TCommand>(
       drivesCamera = value;
       if (!value) drove = false;
     },
+    onStep() {
+      body?.driver.capture();
+    },
     frame(info) {
       const dt = info === undefined ? 0 : secondsSince(lastMs, info.timeMs);
       if (info !== undefined) lastMs = info.timeMs;
       if (drivesCamera) placeCamera(info?.alpha ?? 1, dt);
+      body?.frame(info?.alpha ?? 1, dt);
       if (publish === undefined || world.tick === publishedTick) return;
       const current = readout();
       if (current === undefined) return;
@@ -341,6 +421,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
     },
     dispose() {
       unsubscribe?.();
+      body?.driver.remove(entity);
       sync.unbind(entity);
       if (world.isAlive(entity)) world.destroy(entity);
       shown = undefined;

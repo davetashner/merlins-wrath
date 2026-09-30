@@ -86,6 +86,11 @@ export interface LayerProbe {
   readonly state: string;
   /** Weight per state id, summing to 1. */
   readonly weights: Readonly<Record<string, number>>;
+  /**
+   * The clip that state is playing (a blend's heaviest clip, an action's move clip), or null for a
+   * "none" state (mw-e02.6: the probe shows run vs walk inside a speed blend).
+   */
+  readonly clip: string | null;
 }
 
 /** The dev state probe: every layer's state and weights. */
@@ -299,6 +304,27 @@ function crossedMarkers(
   }
 }
 
+/** The clip `inst` shows most of: see LayerProbe.clip. */
+function clipOf(inst: Instance): string | null {
+  const motion = inst.state.motion;
+  switch (motion.kind) {
+    case 'clip':
+      return motion.clip.id;
+    case 'action':
+      return (inst.actionClip ?? motion.fallback).id;
+    case 'blend1d':
+    case 'blend2d': {
+      let heaviest = 0;
+      inst.blend.forEach((w, i) => {
+        if (w > (inst.blend[heaviest] ?? 0)) heaviest = i;
+      });
+      return motion.points[heaviest]?.clip.id ?? null;
+    }
+    case 'none':
+      return null;
+  }
+}
+
 /** Whether `action` is the run `inst` shows. */
 const sameRun = (action: ActionSample, inst: { actionKey: number | null }): boolean =>
   action.key === inst.actionKey;
@@ -420,7 +446,12 @@ export class AnimationController {
         for (const inst of layer.instances()) {
           weights[inst.state.id] = (weights[inst.state.id] ?? 0) + inst.weight;
         }
-        return { id: layer.layer.id, state: layer.current.state.id, weights };
+        return {
+          id: layer.layer.id,
+          state: layer.current.state.id,
+          weights,
+          clip: clipOf(layer.current),
+        };
       }),
     };
   }
