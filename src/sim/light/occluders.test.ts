@@ -98,14 +98,16 @@ describe('segment vs sphere', () => {
 });
 
 describe('static occluders', () => {
-  it('is a collider sink: add, remove, count, version', () => {
+  it('is a collider sink: add, remove, has, count, version', () => {
     const statics = new StaticOccluders();
     const v0 = statics.version;
     const a = statics.add(box(at(0, 0, 0), at(1, 1, 1)));
     const b = statics.add(box(at(5, 0, 0), at(6, 1, 1)));
     expect(statics.count()).toBe(2);
     expect(statics.version).toBe(v0 + 2);
+    expect(statics.has(a)).toBe(true);
     statics.remove(a);
+    expect(statics.has(a)).toBe(false);
     expect(statics.count()).toBe(1);
     expect(() => {
       statics.remove(a);

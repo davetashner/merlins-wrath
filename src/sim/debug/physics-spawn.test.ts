@@ -6,18 +6,28 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import type { EntityId } from '../core/component';
 import { World } from '../core/world';
-import { installPhysicsObjects, PhysicsObjectComponent } from '../physics/objects';
+import {
+  addPhysicsObject,
+  installPhysicsObjects,
+  PhysicsObjectComponent,
+} from '../physics/objects';
+import type { BodyShape } from '../physics/bodies';
 import { RapierPhysics } from '../physics/rapier';
 import type { ColliderHandle } from '../physics/static-colliders';
-import { readProperty, registerWorldProperties } from '../properties/components';
+import { addProperties, readProperty, registerWorldProperties } from '../properties/components';
 import type { MaterialPresets } from '../properties/materials';
 import { playReplay } from '../replay/player';
 import { ReplayRecorder } from '../replay/recorder';
 import { TEST_SCENE, testKit } from '../scene/fixtures';
-import { loadScene, registerSceneComponents, SceneSpawnComponent } from '../scene/loader';
+import {
+  loadScene,
+  registerSceneComponents,
+  SceneSpawnComponent,
+  SceneTransformComponent,
+} from '../scene/loader';
 import type { PropBody } from '../scene/physics';
-import { PlacementComponent } from '../stimulus/placement';
-import { spawnCommand, type DebugCommand } from './commands';
+import { PlacementComponent, placementOf } from '../stimulus/placement';
+import { spawnCommand, teleportCommand, type DebugCommand } from './commands';
 import { DEBUG_SPAWN_TAG, installDebugCommands, SPAWN_SPACING, testPropSpawners } from './system';
 
 const MATERIALS: MaterialPresets = new Map([
@@ -118,3 +128,96 @@ describe('debug physics spawns (mw-e33.16)', () => {
     expect(outcome.status).toBe('passed');
   });
 });
+
+describe('debug teleport of physics objects (mw-e33.17)', () => {
+  const TO = { x: 2, y: 0, z: -2 };
+
+  /** A crate spawned at AT and left to settle on the floor. */
+  function settledCrate(world: World): EntityId {
+    world.step([spawnCommand('testprop-crate', 1, AT)]);
+    for (let i = 0; i < 120; i++) world.step();
+    const [crate] = spawned(world, 'crate');
+    if (crate === undefined) throw new Error('the crate spawned');
+    return crate;
+  }
+
+  it('AC-1: tp moves a resting crate’s body to stand on the destination in the command’s tick', () => {
+    const { world, physics } = setup();
+    const crate = settledCrate(world);
+    const centre = { x: TO.x, y: TO.y + 0.3, z: TO.z };
+    world.step([teleportCommand(crate, TO)]);
+    // The pose is read back from the engine, which keeps 32-bit floats.
+    const near = (p: { x: number; y: number; z: number } | undefined): number[] =>
+      [p?.x ?? NaN, p?.y ?? NaN, p?.z ?? NaN].map((n) => Math.round(n * 1e5) / 1e5);
+    const object = world.get(crate, PhysicsObjectComponent);
+    expect(object?.sleeping).toBe(false);
+    expect(near(object?.position)).toEqual(near(centre));
+    const motion = physics.motionOf(object?.body as ColliderHandle);
+    expect(near(motion.position)).toEqual(near(centre));
+    expect(motion.linvel).toEqual({ x: 0, y: 0, z: 0 });
+    expect(near(placementOf(world as unknown as World<never>, crate))).toEqual(near(centre));
+    expect(world.get(crate, SceneTransformComponent)?.position).toEqual(TO);
+    for (let i = 0; i < 60; i++) world.step();
+    const rested = world.get(crate, PhysicsObjectComponent)?.position;
+    expect(rested?.x).toBeCloseTo(TO.x, 2);
+    expect(rested?.y).toBeCloseTo(0.3, 2); // still standing on the floor there
+    expect(rested?.z).toBeCloseTo(TO.z, 2);
+  });
+
+  it('AC-1: spheres and capsules stand on the destination too', () => {
+    const { world } = setup();
+    const sim = world as unknown as World<never>;
+    const shapes: BodyShape[] = [
+      { kind: 'sphere', radius: 0.4 },
+      { kind: 'capsule', halfHeight: 0.5, radius: 0.2 },
+    ];
+    const bodies = shapes.map((shape) => {
+      const id = world.spawn();
+      giveBodyProperties(sim, id);
+      addPhysicsObject(sim, id, { shape, position: { x: 0, y: 3, z: 0 } });
+      return id;
+    });
+    world.step(bodies.map((id) => teleportCommand(id, TO)));
+    const heights = bodies.map((id) => world.get(id, PhysicsObjectComponent)?.position.y);
+    expect(heights[0]).toBeCloseTo(0.4, 5);
+    expect(heights[1]).toBeCloseTo(0.7, 5);
+  });
+
+  it('AC-2: a recorded session teleporting a crate replays with every checkpoint hash matching', () => {
+    const { world } = setup();
+    const recorder = new ReplayRecorder(world, {
+      scenario: 'debug-teleport',
+      buildSha: 'test',
+      contentHash: null,
+      checkpointInterval: 10,
+    });
+    recorder.step([spawnCommand('testprop-crate', 2, AT)]);
+    for (let i = 0; i < 30; i++) recorder.step();
+    const [crate] = spawned(world, 'crate');
+    recorder.step([teleportCommand(crate ?? -1, { x: 1, y: 2, z: 1 })]);
+    for (let i = 0; i < 40; i++) recorder.step();
+    const replay = recorder.finish();
+    const outcome = playReplay(replay, {
+      name: 'debug-teleport',
+      usesContent: false,
+      command: z.custom<DebugCommand>(() => true),
+      create: () => setup().world,
+      drive: () => [],
+    });
+    expect(outcome.status).toBe('passed');
+  });
+
+  it('AC-3: a prop without a body still just moves its scene transform', () => {
+    const { world } = setup();
+    world.step([spawnCommand('testprop-plank', 1, AT)]);
+    const [plank] = spawned(world, 'plank');
+    world.step([teleportCommand(plank ?? -1, TO)]);
+    expect(world.get(plank ?? -1, SceneTransformComponent)?.position).toEqual(TO);
+    expect(world.has(plank ?? -1, PhysicsObjectComponent)).toBe(false);
+  });
+});
+
+/** Gives `id` the few properties a body is built from. */
+function giveBodyProperties(world: World<never>, id: EntityId): void {
+  addProperties(world, id, { weight: 1, friction: 0.5 });
+}

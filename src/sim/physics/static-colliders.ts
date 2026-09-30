@@ -29,6 +29,8 @@ export interface StaticColliderSink {
   add(desc: StaticColliderDesc): ColliderHandle;
   /** Removes a collider this sink added. Removing an unknown or already removed handle throws. */
   remove(handle: ColliderHandle): void;
+  /** Whether `handle` is a collider this sink added and still holds. */
+  has(handle: ColliderHandle): boolean;
   /** Number of colliders currently in the sink. */
   count(): number;
 }
@@ -50,6 +52,10 @@ export class InMemoryColliderSink implements StaticColliderSink {
     }
   }
 
+  has(handle: ColliderHandle): boolean {
+    return this.colliders.has(handle);
+  }
+
   count(): number {
     return this.colliders.size;
   }
@@ -57,5 +63,52 @@ export class InMemoryColliderSink implements StaticColliderSink {
   /** The colliders currently held, in the order they were added. */
   all(): readonly StaticColliderDesc[] {
     return [...this.colliders.values()];
+  }
+}
+
+/**
+ * One sink that feeds several: every collider goes into `primary` and each of `followers` (e.g. the
+ * physics port and the light model's static occluders, mw-e03.42), under `primary`'s handle. Removing
+ * a handle removes the collider from all of them, so a level piece that burns away leaves no trace in
+ * any of them.
+ */
+export class ColliderFanOut implements StaticColliderSink {
+  /** Primary handle → the same collider in each follower. */
+  private readonly copies = new Map<
+    ColliderHandle,
+    readonly { readonly sink: StaticColliderSink; readonly handle: ColliderHandle }[]
+  >();
+  private readonly followers: readonly StaticColliderSink[];
+
+  constructor(
+    readonly primary: StaticColliderSink,
+    ...followers: readonly StaticColliderSink[]
+  ) {
+    this.followers = followers;
+  }
+
+  add(desc: StaticColliderDesc): ColliderHandle {
+    const handle = this.primary.add(desc);
+    this.copies.set(
+      handle,
+      this.followers.map((sink) => ({ sink, handle: sink.add(desc) })),
+    );
+    return handle;
+  }
+
+  remove(handle: ColliderHandle): void {
+    const copies = this.copies.get(handle);
+    if (copies === undefined) throw new Error(`collider ${String(handle)} is not in this sink`);
+    this.primary.remove(handle);
+    for (const copy of copies) copy.sink.remove(copy.handle);
+    this.copies.delete(handle);
+  }
+
+  has(handle: ColliderHandle): boolean {
+    return this.copies.has(handle);
+  }
+
+  count(): number {
+    return this.copies.size;
   }
 }
