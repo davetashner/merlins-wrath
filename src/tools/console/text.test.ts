@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { closest, commonPrefix, editDistance, tokenize } from './text';
+import { closest, commonPrefix, editDistance, splitOptions, tokenize } from './text';
 
 describe('console text helpers', () => {
+  it('splitOptions separates words from --name value options (mw-e04.9)', () => {
+    expect(splitOptions(['dummy', '2', '--poise', '60', '--resist', 'slash=0.5'])).toEqual({
+      words: ['dummy', '2'],
+      options: { poise: '60', resist: 'slash=0.5' },
+    });
+    expect(splitOptions([])).toEqual({ words: [], options: {} });
+    expect(() => splitOptions(['--poise'])).toThrow('option --poise needs a value');
+    expect(() => splitOptions(['--poise', '--resist', 'x'])).toThrow(
+      'option --poise needs a value',
+    );
+    expect(() => splitOptions(['--', '1'])).toThrow('option -- needs a value');
+    expect(() => splitOptions(['--a', '1', '--a', '2'])).toThrow('option --a given twice');
+  });
+
   it('tokenize splits on whitespace and keeps "quoted words" together', () => {
     expect(tokenize('  spawn   testprop-crate 3 ')).toEqual(['spawn', 'testprop-crate', '3']);
     expect(tokenize('say "hello there" "open')).toEqual(['say', 'hello there', 'open']);

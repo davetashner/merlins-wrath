@@ -159,6 +159,24 @@ export const PlayerCombatantComponent = defineComponent<true>('combat.player', {
   deserialize: restorePlayer,
 });
 
+function restoreUndying(data: unknown): true {
+  if (data !== true) throw new RangeError('undying marker must be true');
+  return true;
+}
+
+/** Health an undying combatant keeps, points (or what it has left, if that is less). */
+export const UNDYING_FLOOR = 1;
+
+/**
+ * Marks a combatant that cannot die (`combat.undying`): the damage model never takes its health below
+ * UNDYING_FLOOR, so it never emits Died, while every hit still reports its full damage (the combat
+ * sandbox's infinite-health dummy, mw-e04.9). Not one of DAMAGE_COMPONENTS: register it where it is
+ * used; the model ignores it in worlds that do not.
+ */
+export const UndyingComponent = defineComponent<true>('combat.undying', {
+  deserialize: restoreUndying,
+});
+
 /** Every damage-model component, for `world.register(...DAMAGE_COMPONENTS)`. */
 export const DAMAGE_COMPONENTS = Object.freeze([
   HealthComponent,

@@ -12,6 +12,8 @@ import {
   isDead,
   poiseOf,
   poiseSystem,
+  UNDYING_FLOOR,
+  UndyingComponent,
   type CombatantSpec,
 } from './components';
 import {
@@ -187,6 +189,25 @@ describe('damage model', () => {
     ]);
     expect(s.applied).toHaveLength(1);
     expect(s.broken).toEqual([]); // a killing blow does not also stagger
+  });
+
+  it('an undying combatant keeps UNDYING_FLOOR health and never dies, though hits report their damage (mw-e04.9)', () => {
+    const s = setup({ health: 50, poise: 10 });
+    s.world.register(UndyingComponent);
+    s.world.add(s.target, UndyingComponent, true);
+    s.world.step();
+    const result = s.hit({ amounts: { slash: 10_000 }, poiseDamage: 5 });
+    expect(result).toMatchObject({ total: 10_000, healthBefore: 50, healthAfter: 1, died: false });
+    expect(UNDYING_FLOOR).toBe(1);
+    expect(s.hit({ amounts: { slash: 10_000 } })).toMatchObject({ healthAfter: 1, died: false });
+    s.world.set(s.target, HealthComponent, { max: 50, current: 0.5 });
+    expect(s.hit({ amounts: { slash: 3 } })).toMatchObject({ healthAfter: 0.5, died: false });
+    expect(s.died).toEqual([]);
+    // Without the marker (or in a world that never registered it) the hit kills as ever.
+    const other = s.world.spawn();
+    giveCombatant(s.world, other, { health: 5 });
+    s.world.step();
+    expect(s.hit({ amounts: { slash: 10 } }, other)).toMatchObject({ died: true });
   });
 
   it('AC-6: a type the defender is immune to deals 0 and is flagged immune', () => {

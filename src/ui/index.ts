@@ -9,6 +9,7 @@ export * from './components/list';
 export * from './components/overlays';
 export * from './components/tabs';
 export * from './focus';
+export * from './frame-data';
 export * from './gallery';
 export * from './hud';
 export * from './input';

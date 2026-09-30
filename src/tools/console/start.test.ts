@@ -49,6 +49,27 @@ describe('startDebugConsole', () => {
     expect(s.console.registry.get('help')).toBeDefined();
   });
 
+  it('adds the sandbox commands when given the sandbox check (mw-e04.9)', () => {
+    const plain = start(false);
+    expect(plain.console.registry.get('attacker')).toBeUndefined();
+    document.body.innerHTML = '';
+    const ui = new UiRoot(document.body, { unstyled: true });
+    const sandbox = startDebugConsole({
+      world: registerSceneComponents(new World<never>({ seed: 1 })),
+      submit: () => undefined,
+      player: () => undefined,
+      spawnables: [],
+      bookmarks: () => new Map(),
+      scenes: [],
+      loadScene: () => undefined,
+      loop: { timeScale: 1 },
+      dom: { document, keys: window, screens: ui },
+      sandbox: () => undefined,
+    });
+    expect(sandbox.registry.get('attacker')).toBeDefined();
+    expect(sandbox.registry.get('dummies')).toBeDefined();
+  });
+
   it('works without a toggle callback', () => {
     const s = start(false);
     s.console.view.open();

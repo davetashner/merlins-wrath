@@ -20,7 +20,7 @@ import {
 import { MAX_TIME_SCALE } from '@game/loop/fixed-step';
 import { z } from 'zod';
 import { ConsoleError, type CommandRegistry, type CommandSpec } from './registry';
-import { closest } from './text';
+import { closest, splitOptions } from './text';
 
 /** What the built-ins need from the running game. */
 export interface ConsoleHost {
@@ -37,6 +37,11 @@ export interface ConsoleHost {
   spawnPoint(): Vec3;
   /** Spawnable content ids (`testprop-crate`…), sorted. */
   readonly spawnables: readonly string[];
+  /**
+   * What is wrong with `options` for spawning `content` (`spawn dummy --poise 60`), or undefined
+   * when they are fine. Without it, no spawnable takes options.
+   */
+  checkSpawn?(content: string, options: Readonly<Record<string, string>>): string | undefined;
   /** Named places `tp` accepts (the loaded scene's spawns). */
   bookmarks(): ReadonlyMap<string, Vec3>;
   /** Scene ids `scene` accepts, sorted. */
@@ -66,6 +71,15 @@ function unknown(what: string, value: string, known: readonly string[]): Console
 }
 
 const onOff = z.enum(['on', 'off']).optional();
+
+/** `splitOptions` with its errors as console errors. */
+export function parsedOptions(tokens: readonly string[]): ReturnType<typeof splitOptions> {
+  try {
+    return splitOptions(tokens);
+  } catch (error) {
+    throw new ConsoleError([(error as Error).message]);
+  }
+}
 
 function cheatToggle(
   name: DebugCheat,
@@ -110,18 +124,38 @@ export function registerBuiltins(registry: CommandRegistry<ConsoleHost>): void {
     },
   });
 
+  const spawnUsage = `<contentId> [count 1–${String(MAX_SPAWN_COUNT)}] [--option value…]`;
   registry.registerCommand({
     name: 'spawn',
-    summary: 'spawn content in front of the player',
-    usage: `<contentId> [count 1–${String(MAX_SPAWN_COUNT)}]`,
-    args: z.tuple([z.string(), count(MAX_SPAWN_COUNT).optional()]),
+    summary: 'spawn content in front of the player (sandbox dummies take options: type dummies)',
+    usage: spawnUsage,
+    args: z.tuple([z.string()]).rest(z.string()),
     complete: (index, host) => (index === 0 ? host.spawnables : []),
-    run: ([content, n = 1], host) => {
+    run: ([content, ...rest], host) => {
+      const { words, options } = parsedOptions(rest);
+      const counted = z.tuple([count(MAX_SPAWN_COUNT).optional()]).safeParse(words);
+      if (!counted.success) {
+        const issue = counted.error.issues.map((i) => i.message).join('; ');
+        throw new ConsoleError([
+          `spawn: invalid arguments: arg 2: ${issue}`,
+          `usage: spawn ${spawnUsage}`,
+        ]);
+      }
+      const [n = 1] = counted.data;
       if (!host.spawnables.includes(content)) {
         throw unknown('content id', content, host.spawnables);
       }
-      host.submit(spawnCommand(content, n, host.spawnPoint()));
-      return `spawning ${String(n)} × ${content}`;
+      const noOptions = Object.keys(options).length === 0;
+      const problem =
+        host.checkSpawn === undefined
+          ? noOptions
+            ? undefined
+            : `${content} takes no options`
+          : host.checkSpawn(content, options);
+      if (problem !== undefined) throw new ConsoleError([`spawn ${content}: ${problem}`]);
+      host.submit(spawnCommand(content, n, host.spawnPoint(), options));
+      const described = Object.entries(options).map(([name, value]) => `--${name} ${value}`);
+      return `spawning ${String(n)} × ${[content, ...described].join(' ')}`;
     },
   });
 

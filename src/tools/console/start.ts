@@ -5,6 +5,7 @@ import { ConsoleHistory, type HistoryStorage } from './history';
 import { registerBuiltins, type ConsoleHost } from './builtins';
 import { createGameHost, type GameHostOptions } from './host';
 import { CommandRegistry } from './registry';
+import { registerSandboxCommands, type SandboxCommandCheck } from './sandbox';
 import { mountConsoleView, type ConsoleDom, type ConsoleView } from './view';
 
 export interface DebugConsoleOptions extends GameHostOptions {
@@ -13,6 +14,8 @@ export interface DebugConsoleOptions extends GameHostOptions {
   readonly storage?: HistoryStorage;
   /** Called after the console opens or closes (the game hands keyboard and mouse over). */
   readonly onToggle?: (open: boolean) => void;
+  /** The combat sandbox's command check: adds `attacker` and `dummies` (mw-e04.9). */
+  readonly sandbox?: SandboxCommandCheck;
 }
 
 export interface DebugConsole {
@@ -25,6 +28,7 @@ export interface DebugConsole {
 export function startDebugConsole(options: DebugConsoleOptions): DebugConsole {
   const registry = new CommandRegistry<ConsoleHost>(createGameHost(options));
   registerBuiltins(registry);
+  if (options.sandbox !== undefined) registerSandboxCommands(registry, options.sandbox);
   const view = mountConsoleView({
     dom: options.dom,
     commands: registry,

@@ -7,7 +7,8 @@
 //   defender  – the target's resistance multipliers, then defender modifiers
 //   guard     – block and parry rules (e04.6, e04.12); nothing built in
 //   armor     – the target's flat armor absorption per type, then armor modifiers
-//   then difficulty `damageTaken` when the player is hit, and finally health clamps at 0.
+//   then difficulty `damageTaken` when the player is hit, and finally health clamps at 0 (at
+//   UNDYING_FLOOR for an undying combatant, which therefore never dies).
 //
 // Within a stage the built-in step runs first, then registered modifiers by registration id, so the
 // order is a pure function of setup and never of hit order or iteration luck. Other rules extend the
@@ -27,6 +28,8 @@ import {
   PoiseComponent,
   poiseAfterHit,
   ResistancesComponent,
+  UNDYING_FLOOR,
+  UndyingComponent,
   type Resistances,
 } from './components';
 import { DamageApplied, Died, PoiseBroken, type DamageResult } from './events';
@@ -278,7 +281,9 @@ export class DamageModel {
     }
 
     const total = totalDamage(hit.amounts);
-    const healthAfter = fromUnits(Math.max(0, toUnits(health.current) - toUnits(total)));
+    const undying = world.isRegistered(UndyingComponent) && world.has(target, UndyingComponent);
+    const floor = undying ? Math.min(toUnits(UNDYING_FLOOR), toUnits(health.current)) : 0;
+    const healthAfter = fromUnits(Math.max(floor, toUnits(health.current) - toUnits(total)));
     world.set(target, HealthComponent, Object.freeze({ ...health, current: healthAfter }));
     const died = healthAfter === 0;
 

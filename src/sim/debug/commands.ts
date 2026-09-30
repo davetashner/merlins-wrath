@@ -19,6 +19,15 @@ export type DebugCheat = (typeof DEBUG_CHEATS)[number];
 /** Most entities one spawn command may create. */
 export const MAX_SPAWN_COUNT = 100;
 
+/**
+ * Options a spawn passes its spawner, as typed (`spawn dummy --poise 60` → `{ poise: '60' }`): option
+ * name → value text. The spawner parses and validates them.
+ */
+export type SpawnParams = Readonly<Record<string, string>>;
+
+/** No spawn options. */
+export const NO_SPAWN_PARAMS: SpawnParams = Object.freeze({});
+
 /** Spawns `count` of a spawnable content id, the first at `at`, the rest in a row along +x. */
 export interface SpawnCommand {
   readonly kind: typeof DEBUG_COMMAND;
@@ -27,6 +36,8 @@ export interface SpawnCommand {
   readonly content: string;
   readonly count: number;
   readonly at: Vec3;
+  /** Options for the spawner (absent when there are none, as in older replays). */
+  readonly params?: SpawnParams;
 }
 
 /** Turns a cheat on or off for one entity. */
@@ -70,16 +81,36 @@ function entity(target: EntityId): EntityId {
   return target;
 }
 
+/** Option names: lower-case words joined by dashes, like command names. */
+const PARAM_NAME = /^[a-z][a-z0-9-]*$/;
+
 /**
- * A spawn command.
- * @throws RangeError for an empty id, a count outside 1–MAX_SPAWN_COUNT or a non-finite position.
+ * A spawn command, with the spawner's `params` when there are any.
+ * @throws RangeError for an empty id, a count outside 1–MAX_SPAWN_COUNT, a non-finite position or
+ * a malformed option name.
  */
-export function spawnCommand(content: string, count: number, at: Vec3): SpawnCommand {
+export function spawnCommand(
+  content: string,
+  count: number,
+  at: Vec3,
+  params: SpawnParams = NO_SPAWN_PARAMS,
+): SpawnCommand {
   if (content === '') throw new RangeError('spawn needs a content id');
   if (!Number.isInteger(count) || count < 1 || count > MAX_SPAWN_COUNT) {
     throw new RangeError(`spawn count must be 1–${String(MAX_SPAWN_COUNT)}, got ${String(count)}`);
   }
-  return { kind: DEBUG_COMMAND, op: 'spawn', content, count, at: position('spawn position', at) };
+  const entries = Object.entries(params).sort(([a], [b]) => (a < b ? -1 : 1));
+  for (const [name] of entries) {
+    if (!PARAM_NAME.test(name)) throw new RangeError(`bad spawn option name "${name}"`);
+  }
+  const command = {
+    kind: DEBUG_COMMAND,
+    op: 'spawn',
+    content,
+    count,
+    at: position('spawn position', at),
+  } as const;
+  return entries.length === 0 ? command : { ...command, params: Object.fromEntries(entries) };
 }
 
 /** A cheat toggle. @throws RangeError for an invalid target or cheat. */

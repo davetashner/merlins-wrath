@@ -24,7 +24,11 @@ import { createTestbedWorld } from '@tools/replay/testbed-player-scenario';
 function testbed() {
   const world = createTestbedWorld(RAPIER, { seed: 1, hz: 60 });
   const [player] = world.query(PlayerLook).ids();
-  const [dummy] = world.query(HurtboxComponent).ids();
+  // The knight has hurtboxes too (mw-e04.31): the dummy is the other one.
+  const [dummy] = world
+    .query(HurtboxComponent)
+    .ids()
+    .filter((id) => id !== player);
   if (player === undefined || dummy === undefined) throw new Error('no player or dummy');
   const sampler = new ActionSampler();
   const started: ActionStartInfo[] = [];

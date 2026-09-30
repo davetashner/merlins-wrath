@@ -306,6 +306,19 @@ export {
   type SocketTrackTable,
 } from './types/socket-track.ts';
 export {
+  COMBAT_SANDBOX_ID,
+  SANDBOX_HIT_REGIONS,
+  compileSandbox,
+  sandboxSchema,
+  type RuntimeSandbox,
+  type RuntimeSandboxAttacker,
+  type RuntimeSandboxDummy,
+  type SandboxDef,
+  type SandboxDefInput,
+  type SandboxEntry,
+  type SandboxHitRegion,
+} from './types/sandbox.ts';
+export {
   KNIGHT_SHIELD_ID,
   compileShield,
   shieldSchema,

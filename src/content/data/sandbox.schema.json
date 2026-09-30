@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique sandbox id, e.g. \"combat-sandbox\"."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the numbers are for, and which are placeholders."
+    },
+    "scene": {
+      "description": "The sandbox scene (`?scene=<id>`).",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "x-contentRef": "scene"
+    },
+    "dummy": {
+      "type": "object",
+      "properties": {
+        "health": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Maximum health."
+        },
+        "poise": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Maximum poise; poise damage that empties it staggers the dummy."
+        },
+        "infiniteHealth": {
+          "type": "boolean",
+          "description": "Never dies: health stops at 1 and refills after resetAfterTicks without a hit."
+        },
+        "resetAfterTicks": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Sim ticks without a hit after which an infinite-health dummy refills (180 = 3 s)."
+        },
+        "resistances": {
+          "description": "Damage multiplier per type (0 immune, <1 resists, >1 vulnerable); unlisted = 1.",
+          "default": {},
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "enum": [
+              "slash",
+              "pierce",
+              "blunt",
+              "fire",
+              "frost",
+              "shock",
+              "arcane",
+              "poison"
+            ]
+          },
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 3
+          }
+        },
+        "regions": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "weakpoint",
+              "head",
+              "torso",
+              "limb"
+            ]
+          },
+          "description": "The hurtbox regions a dummy has by default: head, torso, limb and/or weakpoint."
+        },
+        "regionMultipliers": {
+          "type": "object",
+          "properties": {
+            "weakpoint": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "head": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "torso": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            },
+            "limb": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            }
+          },
+          "required": [
+            "weakpoint",
+            "head",
+            "torso",
+            "limb"
+          ],
+          "additionalProperties": false,
+          "description": "Damage multiplier of a hit on each region (the damage model’s region stage)."
+        },
+        "radius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 2,
+          "description": "Body radius, metres."
+        },
+        "reactions": {
+          "type": "object",
+          "properties": {
+            "knockbackImpulse": {
+              "default": 300,
+              "description": "Hit impulse (N·s) at or above which a hit knocks it back.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "knockdownImpulse": {
+              "default": 900,
+              "description": "Hit impulse (N·s) at or above which a hit knocks it down.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "launchSpeed": {
+              "default": 2,
+              "description": "Upward speed (m/s) a knockback or knockdown adds.",
+              "type": "number",
+              "minimum": 0
+            },
+            "mass": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Body mass, kg."
+            }
+          },
+          "required": [
+            "mass"
+          ],
+          "additionalProperties": false,
+          "description": "How it reacts to hits (mw-e04.7)."
+        }
+      },
+      "required": [
+        "health",
+        "poise",
+        "infiniteHealth",
+        "resetAfterTicks",
+        "regions",
+        "regionMultipliers",
+        "radius",
+        "reactions"
+      ],
+      "additionalProperties": false,
+      "description": "The training dummy `spawn dummy` creates."
+    },
+    "attacker": {
+      "type": "object",
+      "properties": {
+        "move": {
+          "description": "The move it performs by default (a move with a hitbox).",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "x-contentRef": "move"
+        },
+        "periodTicks": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Sim ticks between swings: each starts on a multiple of it (120 = every 2.0 s)."
+        },
+        "parryable": {
+          "type": "boolean",
+          "description": "Its swings can be parried (parry arrives with e04.12)."
+        },
+        "unblockable": {
+          "type": "boolean",
+          "description": "Its swings go through shields."
+        }
+      },
+      "required": [
+        "move",
+        "periodTicks",
+        "parryable",
+        "unblockable"
+      ],
+      "additionalProperties": false,
+      "description": "The attacker dummy `spawn attacker-dummy` creates: a dummy that swings on a metronome."
+    },
+    "player": {
+      "type": "object",
+      "properties": {
+        "health": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "description": "The knight’s maximum health."
+        },
+        "poise": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "The knight’s maximum poise."
+        }
+      },
+      "required": [
+        "health",
+        "poise"
+      ],
+      "additionalProperties": false,
+      "description": "The knight’s placeholder health and poise in the greybox scenes."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "scene",
+    "dummy",
+    "attacker",
+    "player"
+  ],
+  "additionalProperties": false
+}

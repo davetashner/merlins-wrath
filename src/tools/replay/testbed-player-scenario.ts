@@ -13,7 +13,13 @@
 
 import { loadGameContent } from '@content/game-content';
 import { PLAYER_CAMERA_ID, PLAYER_CONTROLLER_ID } from '@content/index';
-import { prepareTestbedCombat, startTestbedCombat } from '@game/combat/index';
+import {
+  installSandboxRules,
+  prepareTestbedCombat,
+  startTestbedCombat,
+  type TestbedCombat,
+  type TestbedCombatants,
+} from '@game/combat/index';
 import { ActionSampler } from '@game/input/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
 import { installGamePhysics, playerFocus } from '@game/physics-objects';
@@ -23,6 +29,9 @@ import {
   physicsBodiesOf,
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
+  installDebugCommands,
+  testPropSpawners,
+  type EntityId,
   RapierCollisionWorld,
   RapierPhysics,
   RapierSightWorld,
@@ -119,16 +128,42 @@ const headless = (object: object, read: TransformReader): SceneBinding<object> =
   dispose: nothing,
 });
 
+/** A scene with the player, headless (see `createGameWorld`). */
+export interface HeadlessGame<TInput> {
+  readonly world: World<TInput>;
+  readonly player: EntityId;
+  readonly combat: TestbedCombat;
+  readonly combatants: TestbedCombatants;
+}
+
 /** The testbed with the player, wired as src/main.ts wires it, minus the renderer. */
 export function createTestbedWorld(
   rapier: RapierModule,
-  { seed, hz }: { readonly seed: number; readonly hz: number },
+  options: { readonly seed: number; readonly hz: number },
 ): World<ActionFrame> {
+  return createGameWorld<ActionFrame>(rapier, options).world;
+}
+
+/**
+ * Scene `scene` (default the testbed) with the player, wired as src/main.ts wires it — debug
+ * commands with the sandbox's spawners, the combat sandbox rules, physics, the player and combat —
+ * minus the renderer. The combat sandbox's e2e-free tests (tests/integration) run on it.
+ */
+export function createGameWorld<TInput>(
+  rapier: RapierModule,
+  { seed, hz, scene: sceneId = 'testbed' }: { seed: number; hz: number; scene?: string },
+): HeadlessGame<TInput> {
   const content = loadGameContent();
   const physics = new RapierPhysics(rapier);
-  const world = registerSceneComponents(new World<ActionFrame>({ seed, hz, physics }));
-  world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS);
+  const world = registerSceneComponents(new World<TInput>({ seed, hz, physics }));
   const combat = prepareTestbedCombat(content);
+  const props = testPropSpawners(content.all('testprop').map((prop) => prop.id));
+  installDebugCommands(world, {
+    spawners: new Map([...props, ...combat.spawners]),
+    damage: combat.damage,
+  });
+  installSandboxRules(world, combat);
+  world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS);
   const focus = playerFocus(world);
   installGamePhysics(world, { focus: focus.read });
   const sync = new RenderSync(world);
@@ -141,8 +176,8 @@ export function createTestbedWorld(
     binding: headless,
     physics: {},
   });
-  const scene = scenes.load('testbed');
-  focus.entity = setupTestbedPlayer({
+  const scene = scenes.load(sceneId);
+  const player = setupTestbedPlayer({
     world,
     scene,
     sync,
@@ -159,8 +194,9 @@ export function createTestbedWorld(
     moves: combat.moves,
     melee: combat.melee,
   }).entity;
-  startTestbedCombat(world, combat, scene.layout.spawns);
-  return world;
+  focus.entity = player;
+  const combatants = startTestbedCombat(world, combat, scene.layout.spawns, player);
+  return { world, player, combat, combatants };
 }
 
 /** The replay scenario, on the given Rapier module. */

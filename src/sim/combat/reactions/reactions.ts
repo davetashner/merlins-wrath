@@ -33,8 +33,14 @@
 // the same tick) and is over from T+length+1, when HitReactionEnded fires. Lengths count world ticks:
 // hit-stop (e04.11) freezes the timeline's lock but not this clock, which that bead reconciles.
 //
-// Other rules call `applyHitReaction` to force a reaction (a guard break's 60-tick stagger, e04.6),
-// which replaces whatever is playing.
+// Other rules call `applyHitReaction` to force a reaction, which replaces whatever is playing.
+//
+// Blocks and guard breaks (mw-e04.31). A hit the shield blocked (tagged `blocked`, e04.6) causes no
+// reaction: the blocker is behind its shield, so nothing flinches or pushes it (HitReaction none,
+// suppressed `blocked`). A guard break (GuardBroken) becomes the guard-break reaction: a stagger of the
+// event's `staggerTicks` (60), from the front — a blocked hit always comes from inside the shield's
+// frontal arc. The guard rule has already interrupted and locked the blocker's timeline for exactly
+// that long, so the reaction does not interrupt or lock it a second time.
 
 import type { MoveTable } from '@content/index';
 import type { EntityId } from '../../core/component';
@@ -45,7 +51,9 @@ import type { ColliderHandle } from '../../physics/static-colliders';
 import type { Vec3 } from '../../stimulus/shapes';
 import { DamageApplied, type DamageResult } from '../damage/events';
 import type { DamageModel, DamageModifier } from '../damage/model';
+import { DAMAGE_TAGS } from '../damage/packet';
 import { HurtboxComponent } from '../hits/components';
+import { GuardBroken } from '../melee/events';
 import { ActionTimelineComponent } from '../timeline/components';
 import { interruptAction, phaseAt } from '../timeline/timeline';
 import {
@@ -169,7 +177,15 @@ export interface ReactionRequest {
   readonly impulse?: Vec3;
   readonly instigator?: EntityId | null;
   readonly source?: EntityId | null;
+  /**
+   * The caller has already interrupted and locked the entity's timeline for this reaction (a guard
+   * break, mw-e04.31): the reaction holds it without interrupting or locking it again.
+   */
+  readonly locked?: boolean;
 }
+
+/** The reaction a guard break (GuardBroken, mw-e04.6) turns into: a stagger (see the file header). */
+export const GUARD_BREAK_REACTION = 'stagger' satisfies HitReactionKind;
 
 function stateOf(world: World<never>, entity: EntityId): HitReactionState | undefined {
   return world.get(entity, HitReactionComponent);
@@ -235,6 +251,8 @@ interface Start {
   readonly suppressed: ReactionSuppression;
   readonly instigator: EntityId | null;
   readonly source: EntityId | null;
+  /** The timeline is already locked for it (ReactionRequest.locked). */
+  readonly locked: boolean;
 }
 
 function start(
@@ -267,7 +285,7 @@ function start(
   const { kind, ticks } = s;
   const hasTimeline = world.get(entity, ActionTimelineComponent) !== undefined;
   const locked = hasTimeline && (kind !== 'flinch' || !committed(world, entity, options.moves));
-  const interrupted = locked && interruptAction(world, entity, ticks);
+  const interrupted = locked && !s.locked && interruptAction(world, entity, ticks);
   const pushes = (kind === 'knockback' || kind === 'knockdown') && !isZero(s.impulse);
   const displaced =
     pushes && (options.pushers ?? []).some((p) => p(world, entity, s.impulse, state.profile));
@@ -344,7 +362,10 @@ export function resolveHitReaction(
   };
   let { kind, suppressed } = chooseReaction(factors, state.profile);
   const playing = state.current;
-  if (kind !== 'none' && playing !== null && !outlasts(world, kind, playing)) {
+  if (tags.includes(DAMAGE_TAGS.blocked)) {
+    kind = 'none';
+    suppressed = 'blocked';
+  } else if (kind !== 'none' && playing !== null && !outlasts(world, kind, playing)) {
     kind = 'none';
     suppressed = 'weaker';
   }
@@ -356,6 +377,7 @@ export function resolveHitReaction(
     suppressed,
     instigator: packet.instigator,
     source: packet.source,
+    locked: false,
   });
 }
 
@@ -388,6 +410,7 @@ export function applyHitReaction(
     suppressed: null,
     instigator: request.instigator ?? null,
     source: request.source ?? null,
+    locked: request.locked === true,
   });
 }
 
@@ -483,7 +506,8 @@ export interface InstallHitReactionOptions extends HitReactionOptions {
 
 /**
  * Wires the reaction rules into `world`: the hit-reaction system (appended), a DamageApplied
- * subscription that resolves each hit's reaction, and the hyperarmor and wake-up i-frame modifiers
+ * subscription that resolves each hit's reaction, a GuardBroken subscription that plays the
+ * guard-break reaction (see the file header), and the hyperarmor and wake-up i-frame modifiers
  * on `damage`. Register HitReactionComponent (and the damage and action timeline components) first.
  * Returns a function that removes the subscription and the modifiers (the system stays, as systems
  * always do).
@@ -498,11 +522,22 @@ export function installHitReactions<TInput>(
     options.damage.register(wakeIframesModifier()),
     options.damage.register(hyperarmorModifier(options.moves)),
   ];
-  const off = world.events.on(DamageApplied, (result) => {
-    resolveHitReaction(w, result, options);
-  });
+  const offs = [
+    world.events.on(GuardBroken, ({ entity, staggerTicks, instigator, source }) => {
+      const request = { instigator, source, locked: true };
+      applyHitReaction(
+        w,
+        entity,
+        { kind: GUARD_BREAK_REACTION, ticks: staggerTicks, ...request },
+        options,
+      );
+    }),
+    world.events.on(DamageApplied, (result) => {
+      resolveHitReaction(w, result, options);
+    }),
+  ];
   return () => {
-    off();
+    for (const off of offs) off();
     for (const id of modifiers) options.damage.unregister(id);
   };
 }

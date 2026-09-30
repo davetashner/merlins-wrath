@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- A combat sandbox for tuning fights: open `?scene=combat-sandbox` for an arena with a training dummy
+  and an attacker dummy that swings every 2 s. F3 shows live frame data (move, phase, tick, i-frames,
+  hyperarmor, reactions, health, poise, DPS) with hitboxes; F4 plays in 0.25× slow motion; the debug
+  console spawns and retunes dummies. The knight can now be hit: blocked hits never flinch you, and a
+  guard break plays a one-second stagger.
 - The knight can fight in the testbed: left click (RT) swings a three-hit sword chain, and holding
   right click (LT) raises a wooden shield that blocks frontal hits at half walking speed. Running out
   of stamina behind the shield breaks your guard and staggers you. A training dummy stands in front of

@@ -78,7 +78,7 @@ function setup() {
 describe('scene loader glue (mw-e00.21)', () => {
   it('lists the scenes in the content and defaults to the testbed', () => {
     const { loader } = setup();
-    expect(loader.available()).toEqual(['kit-gallery', 'testbed']);
+    expect(loader.available()).toEqual(['combat-sandbox', 'kit-gallery', 'testbed']);
     expect(loader.available()).toContain(DEFAULT_SCENE);
     expect(loader.current).toBeUndefined();
   });
@@ -142,7 +142,7 @@ describe('scene loader glue (mw-e00.21)', () => {
     const current = loader.load('testbed');
     expect(() => loader.load('does-not-exist')).toThrow(UnknownSceneError);
     expect(() => loader.load('does-not-exist')).toThrow(
-      'unknown scene "does-not-exist"; available scenes: kit-gallery, testbed',
+      'unknown scene "does-not-exist"; available scenes: combat-sandbox, kit-gallery, testbed',
     );
     expect(loader.current).toBe(current);
   });

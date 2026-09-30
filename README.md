@@ -38,6 +38,28 @@ pnpm dev                 # Vite dev server
 
 First e2e run: `pnpm exec playwright install chromium`.
 
+## Combat sandbox
+
+Where combat feel is judged and tuned: open **`/?scene=combat-sandbox`** (e.g.
+`http://localhost:5173/?scene=combat-sandbox` under `pnpm dev`, or the same path on a preview or
+playtest build). A walled arena with a training dummy to hit and an attacker dummy that swings at
+you every 2.0 s for block, parry and dodge practice. Click to take control (the usual knight controls).
+
+| Key / command | What it does |
+| --- | --- |
+| `F3` | Frame-data overlay (on by default): each fighter's move, phase, tick, i-frame and hyperarmor badges, hit reaction, health, poise and DPS, plus the hitbox/hurtbox wireframes |
+| `F4` | Slow motion: the sim runs at 0.25× wall time (tick counts and frame data are unchanged) |
+| `` ` `` | Debug console (always available in the sandbox); `dummies` lists every option below |
+| `spawn dummy [n] --health 500 --poise 60 --resist slash=0.5 --regions head,torso,limb,weakpoint --infinite off` | Spawn training dummies in front of you |
+| `spawn attacker-dummy --move sword-light-1 --every 1.5 --unblockable on` | Spawn another attacker |
+| `attacker --every 1 --parryable off --unblockable on`, `attacker off` | Retune every attacker's metronome |
+| `dummies --infinite off` | Mortal dummies (infinite ones refill 3 s after the last hit) |
+| `timescale 0.1`, `god`, `tp player-start` | The console's usual speed, cheat and teleport commands |
+
+The dummies and the knight's placeholder numbers are content: `src/content/data/sandbox/combat-sandbox.json`
+(all flagged placeholders to tune). `?frames` adds the overlay to any scene; the sandbox's sim seed is
+fixed, so e2e tests and replays see the same arena every time.
+
 ## Layout
 
 Code lives in `src/`, split into layers (contract §2), each importable through an alias (`@sim/*`,

@@ -1,5 +1,5 @@
-// Text helpers for the debug console (mw-e33.1): splitting a typed line into tokens, and finding the
-// closest known names to a typo.
+// Text helpers for the debug console (mw-e33.1): splitting a typed line into tokens and options,
+// and finding the closest known names to a typo.
 
 /** Splits a command line on whitespace; "double quotes" keep spaces inside one token. */
 export function tokenize(line: string): string[] {
@@ -47,4 +47,36 @@ export function commonPrefix(strings: readonly string[]): string {
     end = i;
   }
   return first.slice(0, end);
+}
+
+/** Words and `--name value` options of a command's arguments (mw-e04.9). */
+export interface SplitOptions {
+  /** The words that are not options, in order. */
+  readonly words: string[];
+  /** Option name (without `--`) → value. */
+  readonly options: Record<string, string>;
+}
+
+/**
+ * Splits `tokens` into plain words and `--name value` options (`--poise 60`). Throws an Error naming
+ * the option for one without a value or given twice.
+ */
+export function splitOptions(tokens: readonly string[]): SplitOptions {
+  const words: string[] = [];
+  const options: Record<string, string> = {};
+  const rest = [...tokens];
+  for (let token = rest.shift(); token !== undefined; token = rest.shift()) {
+    if (!token.startsWith('--')) {
+      words.push(token);
+      continue;
+    }
+    const name = token.slice(2);
+    const value = rest.shift();
+    if (name === '' || value === undefined || value.startsWith('--')) {
+      throw new Error(`option ${token} needs a value`);
+    }
+    if (name in options) throw new Error(`option ${token} given twice`);
+    options[name] = value;
+  }
+  return { words, options };
 }

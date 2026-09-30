@@ -51,6 +51,10 @@ export const PLAYER_CONTROLS_HINT = playerControlsHint('keyboardMouse', {
 export const GAMEPAD_DISCONNECTED_HINT =
   'Controller disconnected: reconnect it, or click to play with keyboard and mouse';
 
+/** Hint for the combat sandbox (mw-e04.9): its keys and where its options live. */
+export const SANDBOX_HINT =
+  'Combat sandbox: F3 frame data and hitboxes, F4 slow motion (0.25×), ` console (type dummies for spawn and tuning options)';
+
 /** Hint for the debug fly camera. */
 export const DEBUG_CAMERA_HINT =
   'F2: fly camera (WASD move, Q/E down/up, Shift fast, drag to look)';

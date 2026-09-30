@@ -10,6 +10,7 @@ import {
   healthOf,
   isDead,
   PlayerCombatantComponent,
+  UndyingComponent,
   PoiseComponent,
   poiseAfterHit,
   poiseOf,
@@ -145,6 +146,8 @@ describe('combatant components', () => {
     for (const [type, data, message] of corrupt) {
       expect(() => type.deserialize(data)).toThrow(message);
     }
+    expect(UndyingComponent.deserialize(true)).toBe(true);
+    expect(() => UndyingComponent.deserialize(1)).toThrow(/undying marker/);
   });
 });
 
