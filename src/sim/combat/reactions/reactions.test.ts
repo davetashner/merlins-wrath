@@ -788,6 +788,11 @@ describe('hit reactions: choosing and profiles', () => {
     expect(choose({ impulse: 900, poiseBroken: true })).toBe('knockdown');
     expect(choose({ impulse: 900, hyperarmor: 'absorbed' })).toBe('none');
     expect(choose({ impulse: 900, invulnerable: true })).toBe('none');
+    // A critical (a riposte, mw-e04.12) ignores poise and hyperarmor: it staggers at least.
+    expect(choose({ critical: true })).toBe('stagger');
+    expect(choose({ critical: true, hyperarmor: 'absorbed' })).toBe('stagger');
+    expect(choose({ critical: true, impulse: 900 })).toBe('knockdown');
+    expect(choose({ critical: true, invulnerable: true })).toBe('none');
   });
 
   it('reaction and direction lists, ranks and lengths', () => {
@@ -888,6 +893,21 @@ describe('hit reactions: blocks and guard breaks (mw-e04.31)', () => {
     expect(s.actionsEnded).toEqual([]);
     expect(actionOf(s.world, knight)?.move).toBe('swing');
     expect(s.world.get(knight, ActionTimelineComponent)?.lockTicks).toBe(0);
+  });
+
+  it('a parried hit (mw-e04.12) causes no reaction, even with a push', () => {
+    const s = setup();
+    const e = s.creature({ poise: 40 });
+    s.steps(1);
+    s.hit(e, {
+      amounts: { slash: 30 },
+      poiseDamage: 15,
+      impulse: v(0, 0, -400),
+      tags: ['parried'],
+    });
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({ reaction: 'none', suppressed: 'parried' });
+    expect(reactionOf(s.world, e)).toBeUndefined();
   });
 
   it('AC-1: the same hit from behind is not blocked and flinches', () => {

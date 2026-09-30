@@ -2,10 +2,13 @@
 // with combat, the dodge (mw-e04.8) and the knight's sword and shield (mw-e04.6).
 export {
   clampPitch,
+  DEFAULT_PARRY_BUTTON,
   DEFAULT_LOOK_SETTINGS,
   installPlayer,
   KNIGHT_DODGE,
   KNIGHT_LIGHT_ATTACK,
+  KNIGHT_PARRY,
+  KNIGHT_RIPOSTE,
   lookTurn,
   NoPlayerStartError,
   PLAYER_LOOK_SENSITIVITY,

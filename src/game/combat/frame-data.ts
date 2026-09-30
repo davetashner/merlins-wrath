@@ -3,7 +3,8 @@
 // attacker dummies, the training dummies): the move it performs, its phase and move tick, whether
 // the invulnerability rule (dodge and wake-up i-frames) or its move's hyperarmor applies right now,
 // the hit-stop freezing it (mw-e04.11: its tier and frozen ticks left), the hit reaction holding it,
-// its health and poise, and — from a DamageMeter listening to the sim's
+// its parry (mw-e04.12: the parry's phase — startup, window, counter or recovery —, the Parried stun
+// and ticks left, or "riposte ready" while a Parried foe is in its riposte reach), its health and poise, and — from a DamageMeter listening to the sim's
 // DamageApplied — the damage per second it has taken over the last 5 s of sim time.
 //
 // `sandboxFrameData` is plain JSON (the page publishes it on #app[data-frame-data] for the e2e);
@@ -21,14 +22,18 @@ import {
   hitStopOf,
   HitStopComponent,
   invulnerabilityRule,
+  parriedOf,
+  parryPhaseOf,
   phaseAt,
   poiseOf,
   reactionOf,
+  riposteTargetOf,
   SandboxDummyComponent,
   ActionTimelineComponent,
   HitReactionComponent,
   type EntityId,
   type InvulnerabilityRule,
+  type ParryPhase,
   type World,
 } from '@sim/index';
 import type { FrameDataModel, FramePhase } from '@ui/index';
@@ -115,6 +120,12 @@ export interface FighterFrame {
   readonly hitStop: { readonly tier: string; readonly ticksLeft: number } | null;
   /** The reaction holding it, with ticks left, or null. */
   readonly reaction: { readonly kind: string; readonly ticksLeft: number } | null;
+  /** The phase of the parry it performs (mw-e04.12: window, counter…), or null. */
+  readonly parry: ParryPhase | null;
+  /** Ticks left of its Parried stun, or null when it is not Parried. */
+  readonly parried: number | null;
+  /** A Parried foe is in its riposte reach: its attack would riposte now. */
+  readonly riposte: boolean;
   readonly health: { readonly current: number; readonly max: number } | null;
   readonly poise: { readonly current: number; readonly max: number } | null;
   /** Damage per second taken (a DamageMeter's window), or null without a meter. */
@@ -163,6 +174,7 @@ function fighter(
   const armor = move?.hyperarmor ?? null;
   const reacting = world.isRegistered(HitReactionComponent) ? reactionOf(world, entity) : undefined;
   const frozen = world.isRegistered(HitStopComponent) ? hitStopOf(world, entity) : undefined;
+  const stun = parriedOf(world, entity);
   const health = healthOf(world, entity);
   const poise = poiseOf(world, entity);
   return {
@@ -183,6 +195,9 @@ function fighter(
       reacting === undefined
         ? null
         : { kind: reacting.kind, ticksLeft: Math.max(0, reacting.endsAt - world.tick) },
+    parry: parryPhaseOf(world, entity, moves) ?? null,
+    parried: stun === undefined ? null : stun.ticksLeft,
+    riposte: riposteTargetOf(world, entity) !== undefined,
     health: health === undefined ? null : { current: health.current, max: health.max },
     poise: poise === undefined ? null : { current: poise.current, max: poise.max },
     dps: meter === undefined ? null : meter.dps(entity, world.tick, world.clock.hz),
@@ -219,6 +234,13 @@ const points = (n: number): string => (Number.isInteger(n) ? String(n) : n.toFix
 const meter = (m: { current: number; max: number } | null): string =>
   m === null ? '' : `${points(m.current)}/${points(m.max)}`;
 
+/** The overlay's parry cell: a Parried stun first, then the parry's phase, then a ready riposte. */
+function parryText(f: FighterFrame): string {
+  if (f.parried !== null) return `parried ${String(f.parried)}`;
+  if (f.parry !== null) return f.parry;
+  return f.riposte ? 'riposte ready' : '';
+}
+
 /** The overlay's text for `data` (see src/ui/frame-data.ts). */
 export function frameDataView(data: SandboxFrameData): FrameDataModel {
   const speed =
@@ -239,6 +261,7 @@ export function frameDataView(data: SandboxFrameData): FrameDataModel {
       hyperarmor: f.hyperarmor,
       hitStop: f.hitStop === null ? '' : `${f.hitStop.tier} ${String(f.hitStop.ticksLeft)}`,
       reaction: f.reaction === null ? '' : `${f.reaction.kind} ${String(f.reaction.ticksLeft)}`,
+      parry: parryText(f),
       health: meter(f.health),
       poise: meter(f.poise),
       dps: f.dps === null ? '' : f.dps.toFixed(1),

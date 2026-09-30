@@ -10,6 +10,7 @@ import {
   DamageApplied,
   DodgedHit,
   GuardBroken,
+  HitParried,
   registerWorldProperties,
   World,
   type DamageResult,
@@ -163,6 +164,29 @@ describe('combat impact audio (mw-e28.4)', () => {
     const hitPriority = priorityOf('sfx-blade-impact-flesh') ?? 0;
     expect(played[0]?.options.priority).toBeGreaterThan(hitPriority);
     expect(played[1]?.options.priority).toBeGreaterThan(played[0]?.options.priority ?? 100);
+  });
+
+  it('mw-e28.16: a parry rings at the top voice priority, once, instead of the deflected hit’s impact', () => {
+    const { world, played, spawn } = setup();
+    const knight = spawn('flesh');
+    world.step();
+    world.events.emit(HitParried, {
+      tick: 1,
+      entity: knight,
+      attacker: null,
+      source: null,
+      parriedTicks: 90,
+    });
+    world.events.emit(DamageApplied, hit(knight, { slash: 0 }, { tags: ['parried', 'parryable'] }));
+    world.step();
+    expect(played.map((p) => [p.cue, p.options.priority, p.options.entity])).toEqual([
+      ['sfx-knight-parry-metal', 100, knight],
+    ]);
+    // On its own (a later tick), the deflected hit's impact layer names the ring, never flesh.
+    world.events.emit(DamageApplied, hit(knight, { slash: 0 }, { tags: ['parried'] }));
+    world.step();
+    expect(played.map((p) => p.cue)).toEqual(['sfx-knight-parry-metal', 'sfx-knight-parry-metal']);
+    expect(priorityOf('sfx-knight-parry-metal')).toBe(100);
   });
 
   it('a swing whooshes with its move’s own sound as its active phase starts; a dodged swing whiffs', () => {

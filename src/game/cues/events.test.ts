@@ -56,6 +56,7 @@ const SAMPLES: Record<CueEventName, unknown> = {
   },
   PoiseBroken: { tick: 1, target: 1, instigator: 4, source: null },
   GuardBroken: { tick: 1, entity: 1, instigator: 4, source: null, staggerTicks: 60 },
+  HitParried: { tick: 1, entity: 1, attacker: 4, source: null, parriedTicks: 90 },
   DodgedHit: hitbox,
   ActionPhaseChanged: { tick: 1, entity: 4, move: 'sword-light-1', phase: 'active', moveTick: 13 },
   LocomotionEvents: { tick: 1, entity: 4, kind: 'footstep', foot: 'left', gait: 'walk' },
@@ -313,6 +314,23 @@ describe('cue event bindings', () => {
     expect(damage({ tags: ['blocked'] }, bare)['shield']).toBeUndefined();
     expect(damage({ immune: true, tags: [] })).toMatchObject({ contact: 'immune' });
     expect(damage({ immune: true, tags: [] })['shield']).toBeUndefined();
+  });
+
+  it('mw-e28.16: a parried hit is contact parried; the parry names its parrier, attacker and shield', () => {
+    const damage = (extra: object) =>
+      read('DamageApplied', { ...(SAMPLES.DamageApplied as object), ...extra }).facts;
+    expect(damage({ tags: ['parried', 'parryable'] })).toMatchObject({ contact: 'parried' });
+    expect(damage({ tags: ['parried'] })['shield']).toBeUndefined();
+    expect(read('HitParried', SAMPLES.HitParried)).toEqual({
+      anchors: { entity: { entity: 1 }, attacker: { entity: 4 }, source: undefined },
+      facts: { shield: 'wood-shield' },
+    });
+    expect(read('HitParried', { ...(SAMPLES.HitParried as object), attacker: null }, bare)).toEqual(
+      {
+        anchors: { entity: { entity: 1 }, attacker: undefined, source: undefined },
+        facts: { shield: undefined },
+      },
+    );
   });
 
   it('mw-e28.4: read guard breaks, dodged swings and move phases (with the move’s own sound)', () => {

@@ -186,7 +186,9 @@ describe('the knight takes hits and blocks them (mw-e04.31)', () => {
   it('AC-1: a blocked swing lands tagged blocked and causes no reaction', () => {
     const s = facingTheAttacker();
     holdShield(s, 30);
-    expect(s.hits.map((h) => [h.tick, h.tags, h.poiseDamage])).toEqual([[18, ['blocked'], 0]]);
+    expect(s.hits.map((h) => [h.tick, h.tags, h.poiseDamage])).toEqual([
+      [18, ['blocked', 'parryable'], 0],
+    ]);
     expect(s.hits[0]?.total).toBeCloseTo(15 * 0.15); // the wood shield absorbs 85% of slash
     expect(s.reactions).toMatchObject([{ tick: 18, reaction: 'none', suppressed: 'blocked' }]);
   });
@@ -196,7 +198,9 @@ describe('the knight takes hits and blocks them (mw-e04.31)', () => {
     holdShield(s, 10);
     drainStamina(s.world, s.player, 95); // 5 left: the next block needs 8
     holdShield(s, 20);
-    expect(s.hits.map((h) => [h.tick, h.tags])).toEqual([[18, ['blocked', 'guard-break']]]);
+    expect(s.hits.map((h) => [h.tick, h.tags])).toEqual([
+      [18, ['blocked', 'guard-break', 'parryable']],
+    ]);
     expect(s.reactions.map((r) => [r.tick, r.reaction, r.ticks, r.suppressed])).toEqual([
       [18, 'stagger', 60, null],
       [18, 'none', 0, 'blocked'],
@@ -207,8 +211,8 @@ describe('the knight takes hits and blocks them (mw-e04.31)', () => {
     const s = facingTheAttacker();
     s.steps(160); // the swings at ticks 0 and 120 turn active on 18 and 138
     expect(s.hits.map((h) => [h.tick, h.healthBefore, h.total, h.tags])).toEqual([
-      [18, 100, 15, []],
-      [138, 85, 15, []],
+      [18, 100, 15, ['parryable']],
+      [138, 85, 15, ['parryable']],
     ]);
     // 15 poise each: the second empties the knight's 30 and staggers.
     expect(s.reactions.map((r) => [r.tick, r.reaction])).toEqual([
@@ -241,5 +245,68 @@ describe('lock-on in the combat sandbox (mw-e02.32)', () => {
     const [spawned] = s.dummies(false).filter((id) => !before.has(id));
     if (spawned === undefined) throw new Error('no dummy spawned');
     expect(s.world.has(spawned, TargetableComponent)).toBe(true);
+  });
+});
+
+describe('parry and riposte in the sandbox (mw-e04.12)', () => {
+  /** The knight a step in front of the attacker dummy, whose swing turns active on tick 18. */
+  function facingTheAttacker(command?: string) {
+    const s = sandbox();
+    if (command !== undefined) expect(s.console.execute(command).ok).toBe(true);
+    const [attacker] = s.dummies(true);
+    if (attacker === undefined) throw new Error('no attacker');
+    s.steps(1);
+    s.world.step([teleportCommand(s.player, { x: 2, y: 0, z: 0 })]); // the attacker is at (2, 0, 1)
+    const hits: DamageResult[] = [];
+    s.world.events.on(DamageApplied, (e) => hits.push(e));
+    const sampler = new ActionSampler();
+    /** Steps to `tick`, tapping `key` on it (Digit3 parries, Mouse0 attacks). */
+    const tapAt = (tick: number, key: string) => {
+      while (s.world.tick < tick) s.world.step([sampler.sample(), ...s.queue.drain()]);
+      sampler.down(key);
+      s.world.step([sampler.sample(), ...s.queue.drain()]);
+      sampler.up(key);
+    };
+    const stepTo = (tick: number) => {
+      while (s.world.tick < tick) s.world.step([sampler.sample(), ...s.queue.drain()]);
+    };
+    const row = (entity: EntityId) =>
+      frameDataView(
+        sandboxFrameData(s.world as World<never>, { moves: s.combat.moves, player: s.player }),
+      ).rows.find((r) => r.key === String(entity));
+    return { ...s, attacker, hits, tapAt, stepTo, row };
+  }
+
+  it('3 parries the dummy’s swing in the window; attack then ripostes it for 3× damage, shown in the overlay', ({
+    task,
+  }) => {
+    markExercised(task, 'move', 'shield-parry');
+    markExercised(task, 'move', 'sword-riposte');
+    const s = facingTheAttacker();
+    s.tapAt(12, 'Digit3'); // window 16–25; the swing lands on 18
+    s.stepTo(17);
+    expect(s.row(s.player)?.parry).toBe('window');
+    s.stepTo(19);
+    expect(s.hits.map((h) => [h.tick, h.target, h.total, h.tags])).toEqual([
+      [18, s.player, 0, ['parried', 'parryable']],
+    ]);
+    expect(s.row(s.attacker)?.parry).toMatch(/^parried \d+$/);
+    s.stepTo(60);
+    expect(s.row(s.player)?.parry).toBe('riposte ready');
+    s.tapAt(60, 'Mouse0');
+    s.stepTo(90);
+    const riposte = s.hits.find((h) => h.target === s.attacker);
+    expect(riposte?.total).toBe(60);
+    expect(riposte?.tags).toEqual(expect.arrayContaining(['critical', 'riposte']));
+    expect(s.row(s.attacker)?.parry).toBe('');
+  });
+
+  it('with the dummy’s swing made unparryable (`attacker --parryable off`), the same parry is struck', () => {
+    const s = facingTheAttacker('attacker --parryable off');
+    s.tapAt(12, 'Digit3');
+    s.stepTo(19);
+    expect(s.hits.map((h) => [h.tick, h.target, h.total, h.tags])).toEqual([
+      [18, s.player, 15, []],
+    ]);
   });
 });

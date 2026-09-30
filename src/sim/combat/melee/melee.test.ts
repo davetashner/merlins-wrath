@@ -102,6 +102,7 @@ interface MoveSpec {
   readonly poise?: number;
   readonly chainNext?: string;
   readonly unblockable?: boolean;
+  readonly parryable?: boolean;
   readonly windows?: RuntimeMove['cancelWindows'];
   readonly impulse?: Vec3;
 }
@@ -145,7 +146,7 @@ function move(spec: MoveSpec): RuntimeMove {
           swing: 'horizontal',
         }
       : null,
-    parryable: canHit,
+    parryable: canHit && spec.parryable !== false,
     blockable: canHit && spec.unblockable !== true,
     unblockable: canHit && spec.unblockable === true,
     interruptible: false,
@@ -184,6 +185,7 @@ const SLAM = move({
   frames: [4, 2, 4],
   slash: 10,
   unblockable: true,
+  parryable: false,
   impulse: v3(0, 0, 100),
 });
 const POKE = move({
@@ -346,7 +348,7 @@ describe('knight light chain (mw-e04.6)', () => {
       source: s.knight,
       direction: { x: 0, y: 0, z: 1 },
       region: 'torso',
-      tags: [],
+      tags: ['parryable'],
     });
     expect(health(s.world, s.dummy)).toBe(480);
   });
@@ -380,7 +382,7 @@ describe('knight light chain (mw-e04.6)', () => {
     expect(liveHitboxes(s.world, s.knight)).toEqual([]);
   });
 
-  it('an unblockable move is tagged so; its impulse turns into the world with the facing', () => {
+  it('an unblockable (unparryable) move is tagged so; its impulse turns into the world with the facing', () => {
     const s = setup();
     giveFacing(s.world, s.knight, v3(1, 0, 0));
     placeEntity(s.world, s.dummy, v3(1, 0, 0));

@@ -26,7 +26,7 @@ B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT
 | Secondary / block | LT                                | Right click              |
 | Ability 1        | Y, D-pad Up                        | 1                        |
 | Ability 2        | RB, D-pad Right                    | 2                        |
-| Ability 3        | LB                                 | 3                        |
+| Ability 3 / parry (knight) | LB                       | 3                        |
 | Ability 4        | D-pad Left                         | 4                        |
 | Inventory        | View                               | I                        |
 | Pause            | Menu                               | Esc, P                   |
@@ -40,6 +40,11 @@ remapping example) and Ctrl or Alt would trip browser shortcuts (Ctrl+W closes t
 the view faces the target, so relative to it); with no direction held it backsteps. Timing and i-frames:
 `src/content/data/move/dodge-roll.json` and `backstep.json`; the rules: `src/sim/combat/dodge`. Cycle target has no pad button: flicking the right stick sideways
 while locked on cycles instead (see Lock-on below), the usual convention.
+
+**Parry.** The knight parries with ability 3 (LB, 3) while the owner settles the knight's layout
+(`DEFAULT_PARRY_BUTTON`, mw-e04.12); block stays on LT / right click. Attack while a parried foe
+reels within 2 m in front of you and the light attack becomes a riposte. Timing and numbers:
+`src/content/data/move/shield-parry.json` and `sword-riposte.json`; the rules: `src/sim/combat/parry`.
 
 **Sprint toggle.** On the pad, clicking the left stick latches sprint on; it stays on until the stick
 comes back to centre or is clicked again (`GamepadSettings.sprintToggle`, default on). Off, sprint is

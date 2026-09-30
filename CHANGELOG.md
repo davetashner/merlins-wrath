@@ -25,6 +25,11 @@ check enforces this).
 - You can lock on to the training dummy in the testbed room and to the combat sandbox's dummies
   (including ones the debug console spawns), and the knight's sword swings now turn toward the
   locked target as they wind up. Defeating the room dummy releases the lock.
+- The knight can parry: press 3 (LB on a pad) just before a blow lands and a well-timed parry
+  (a 10-tick window, about 1/6 s) deflects it with a ringing clang, costs you nothing and leaves
+  the attacker reeling for 1.5 s; attack while it reels within 2 m in front of you for a riposte
+  that deals triple damage. Mistime it and blows land harder (×1.25) while you recover. The combat
+  sandbox's frame-data overlay shows the parry window, the stun and when a riposte is ready.
 - Hits have weight: when a blade connects, the attacker and the one struck freeze for a few frames
   (a light hit 3, a heavy 5, a charged heavy 6) while everything else keeps moving. The combat
   sandbox's frame-data overlay shows the freeze counting down in a new Hit-stop column.

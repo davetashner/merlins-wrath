@@ -1,0 +1,51 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "sword-riposte",
+  "notes": "Knight riposte (mw-e04.12): the critical the attack button starts instead of the light chain while a Parried target stands within 2.0 m and the knight's frontal 60 degrees. The bead's numbers: 3x base damage (the riposte rule triples this template's 20 slash, sword-light-1's, to 60), tagged critical and riposte, ignores poise (a critical always staggers, whatever the target's poise or hyperarmor), i-frames for its whole duration. PLACEHOLDER TUNING for the owner (not in the bead): 8/4/24 ticks, no stamina cost, a straight thrust reaching 2.0 m, critical-tier hit-stop.",
+  "verb": "attack",
+  "frames": {
+    "startup": 8,
+    "active": 4,
+    "recovery": 24
+  },
+  "staminaCost": 0,
+  "damage": {
+    "amounts": {
+      "slash": 20
+    },
+    "poiseDamage": 0,
+    "staminaDamage": 0,
+    "tags": ["critical", "riposte"]
+  },
+  "hitbox": {
+    "track": "knight-sword-riposte",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0.1,
+        "y": 1.1,
+        "z": 0.3
+      },
+      "to": {
+        "x": 0,
+        "y": 1.1,
+        "z": 1.8
+      },
+      "radius": 0.12
+    },
+    "reach": "medium",
+    "swing": "thrust"
+  },
+  "flags": {
+    "iframes": {
+      "from": 0,
+      "to": 35
+    }
+  },
+  "hitStop": "critical",
+  "presentation": {
+    "anim": "anim-knight-riposte",
+    "audioCue": "sfx-knight-sword-swing-heavy",
+    "vfxCue": "vfx-sword-trail-heavy"
+  }
+}

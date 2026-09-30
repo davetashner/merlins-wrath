@@ -1,0 +1,27 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "knight-sword-riposte",
+  "notes": "Riposte (move sword-riposte, 4 active ticks): a straight thrust into the Parried target, the blade driving forward from 0.4 m behind its rest pose to 0.2 m past it (tip at 2.0 m); no rotation. A placeholder arc until the owner tunes the riposte (mw-e04.12).",
+  "keys": [
+    {
+      "position": { "x": 0.0, "y": 0.0, "z": -0.4 },
+      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
+    },
+    {
+      "position": { "x": 0.0, "y": 0.0, "z": -0.2 },
+      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
+    },
+    {
+      "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
+    },
+    {
+      "position": { "x": 0.0, "y": 0.0, "z": 0.1 },
+      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
+    },
+    {
+      "position": { "x": 0.0, "y": 0.0, "z": 0.2 },
+      "rotation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
+    }
+  ]
+}

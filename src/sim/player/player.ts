@@ -9,7 +9,8 @@
 // whose root-motion velocity the controller travels at while a roll or backstep runs.
 //
 // With `combat.melee` (mw-e04.6) the player is also a knight: the attack button starts the light
-// chain, the block button holds its shield up, and it has a combat facing, hitboxes and a placement
+// chain (or, with a riposte, the riposte while a Parried foe is in reach: mw-e04.12), the parry
+// button its parry, the block button holds its shield up, and it has a combat facing, hitboxes and a placement
 // at its feet (the frame its swings are placed in). Three more systems join: block (just before the
 // timeline), facing (after it: idle the knight faces where it looks — or its lock-on target — and a
 // move's startup turns at 360°/s, then locks) and, after the controller, placement. While it swings
@@ -69,6 +70,7 @@ import {
   type FacingRule,
 } from '../combat/melee/facing';
 import { blockSystem, locomotionScale } from '../combat/melee/guard';
+import { riposteRedirect } from '../combat/parry/parry';
 import { placeEntity } from '../stimulus/placement';
 import { defineComponent, type EntityId } from '../core/component';
 import type { System, World } from '../core/world';
@@ -78,6 +80,7 @@ import {
   actionFrameOf,
   type ActionFrame,
   type ActionVector,
+  type ButtonAction,
 } from '../input/action-frame';
 import { cos, pow, sin } from '../math';
 import type { LedgeIndex } from '../climb/ledges';
@@ -261,6 +264,18 @@ export const KNIGHT_DODGE: DodgeMoves = Object.freeze({ roll: 'dodge-roll', back
 /** The move the knight's attack button starts: the root of its light chain (mw-e04.6). */
 export const KNIGHT_LIGHT_ATTACK = 'sword-light-1';
 
+/** The knight's parry (mw-e04.12). */
+export const KNIGHT_PARRY = 'shield-parry';
+
+/** The knight's riposte: its attack button starts it while a Parried target is in reach (e04.12). */
+export const KNIGHT_RIPOSTE = 'sword-riposte';
+
+/**
+ * The button that parries for entities driven by the ActionFrame: ability 3 (LB, 3) until the
+ * owner settles the knight's layout (block holds LT / right click).
+ */
+export const DEFAULT_PARRY_BUTTON: ButtonAction = 'ability3';
+
 /** The knight's sword and shield (mw-e04.6). */
 export interface PlayerMeleeOptions {
   /** The shield the block button raises (content `shield`, e.g. the wood shield). */
@@ -271,6 +286,15 @@ export interface PlayerMeleeOptions {
   readonly target?: (world: World<never>, entity: EntityId) => EntityId | undefined;
   /** Where the target is (lock-on's locator, mw-e02.31); defaults to its placement. */
   readonly locate?: EntityLocator;
+  /** The move the parry button starts (e.g. KNIGHT_PARRY, mw-e04.12); absent = no parry. */
+  readonly parry?: string;
+  /** The button that parries; defaults to DEFAULT_PARRY_BUTTON. */
+  readonly parryButton?: ButtonAction;
+  /**
+   * The riposte the attack button starts instead of the light attack while a Parried target is in
+   * reach (e.g. KNIGHT_RIPOSTE, `riposteRedirect`); absent = no riposte.
+   */
+  readonly riposte?: string;
 }
 
 /** The player's combat (mw-e04.8): what its action timeline can perform. */
@@ -319,6 +343,15 @@ function playerPlacementSystem<TInput>(entity: EntityId, radius: number): System
       if (state !== undefined) placeEntity(world, entity, state.position, radius);
     },
   };
+}
+
+/** The knight's button bindings: the light attack and, with a parry, the parry button. */
+function meleeBindings(melee: PlayerMeleeOptions): Partial<Record<ButtonAction, string>> {
+  const bindings: Partial<Record<ButtonAction, string>> = {
+    primaryAttack: melee.lightAttack ?? KNIGHT_LIGHT_ATTACK,
+  };
+  if (melee.parry !== undefined) bindings[melee.parryButton ?? DEFAULT_PARRY_BUTTON] = melee.parry;
+  return bindings;
 }
 
 export interface PlayerOptions {
@@ -374,7 +407,14 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
       world.register(...MELEE_COMPONENTS);
       world.addSystem(blockSystem({ moves }));
     }
-    world.addSystem(actionTimelineSystem({ moves }));
+    const riposte = melee?.riposte;
+    const trigger = melee?.lightAttack ?? KNIGHT_LIGHT_ATTACK;
+    world.addSystem(
+      actionTimelineSystem({
+        moves,
+        ...(riposte !== undefined && { redirect: riposteRedirect({ trigger, riposte }) }),
+      }),
+    );
     if (melee !== undefined) {
       const { target, locate } = melee;
       const desired =
@@ -437,11 +477,7 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
   if (combat !== undefined) {
     giveStamina(world, id, combat.stamina ?? DEFAULT_STAMINA_PROFILE);
     giveActionTimeline(world, id);
-    giveActionInput(
-      world,
-      id,
-      melee === undefined ? {} : { primaryAttack: melee.lightAttack ?? KNIGHT_LIGHT_ATTACK },
-    );
+    giveActionInput(world, id, melee === undefined ? {} : meleeBindings(melee));
     giveDodge(world, id, combat.dodge ?? KNIGHT_DODGE);
   }
   if (melee !== undefined) {

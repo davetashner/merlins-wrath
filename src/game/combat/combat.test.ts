@@ -71,6 +71,7 @@ describe('training dummy (mw-e04.6)', () => {
     expect(combat.moves.get('sword-light-1')?.chainNext).toBe('sword-light-2');
     expect(combat.tracks.has('knight-sword-arc-light-1')).toBe(true);
     expect(combat.melee.shield.id).toBe(KNIGHT_SHIELD_ID);
+    expect([combat.melee.parry, combat.melee.riposte]).toEqual(['shield-parry', 'sword-riposte']);
     expect(combat.damage.modifiers().map((m) => [m.name, m.stage])).toEqual([
       ['shield-block', 'guard'],
     ]);
@@ -85,11 +86,14 @@ describe('training dummy (mw-e04.6)', () => {
     ]);
     expect(dummies).toHaveLength(2);
     expect(sandboxDummies).toEqual([]);
-    // Hit reactions joined the damage model (mw-e04.7, mw-e04.31).
+    // Parry and riposte (mw-e04.12) and hit reactions (mw-e04.7, mw-e04.31) joined the damage model.
     expect(combat.damage.modifiers().map((m) => m.name)).toEqual([
+      'counter-hit',
+      'riposte',
       'wake-up-iframes',
       'hyperarmor',
       'shield-block',
+      'parry',
     ]);
     w.step();
     expect(dummies.map((d) => dummyReadout(w, d)?.health)).toEqual([200, 200]);

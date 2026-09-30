@@ -33,6 +33,11 @@ export interface FrameDataRowModel {
   readonly hitStop: string;
   /** The hit reaction holding it and ticks left ("stagger 31"), or ''. */
   readonly reaction: string;
+  /**
+   * Parry and riposte (mw-e04.12): its parry's phase ("window", "counter"…), the Parried stun and
+   * ticks left ("parried 64"), or "riposte ready" while a Parried foe is in reach; or ''.
+   */
+  readonly parry: string;
   /** "812/1000", or '' without health. */
   readonly health: string;
   readonly poise: string;
@@ -57,6 +62,7 @@ const COLUMNS = [
   ['flags', 'I-frames / armor'],
   ['hitStop', 'Hit-stop'],
   ['reaction', 'Reaction'],
+  ['parry', 'Parry'],
   ['health', 'Health'],
   ['poise', 'Poise'],
   ['dps', 'DPS'],
@@ -95,6 +101,7 @@ const STYLES = `
 }
 .vb-frame-data td { padding: 1px var(--ui-space-2); white-space: nowrap; }
 .vb-frame-data td[data-col='hitStop']:not(:empty) { color: var(--ui-color-warning); }
+.vb-frame-data td[data-col='parry']:not(:empty) { color: var(--ui-color-accent); }
 .vb-frame-data td[data-col='frame'],
 .vb-frame-data td[data-col='health'],
 .vb-frame-data td[data-col='poise'],
@@ -232,6 +239,7 @@ function updateRow(view: RowView, row: FrameDataRowModel): void {
     'frame',
     'hitStop',
     'reaction',
+    'parry',
     'health',
     'poise',
     'dps',

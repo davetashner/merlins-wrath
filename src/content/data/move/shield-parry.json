@@ -1,0 +1,15 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "shield-parry",
+  "notes": "Knight parry (mw-e04.12), the bead's numbers: a 30-tick action costing 10 stamina whose active ticks are the parry window, ticks 4-13 (10 ticks, about 167 ms). A parryable hit landing in the window is deflected (no damage or stamina loss; the attacker is Parried for 90 ticks; parry-tier hit-stop). Recovery (ticks 14-29) of a parry that deflected nothing is vulnerable: hits there are counter-hits (x1.25). The window scales with the player's DifficultyConfig parryWindow (assists, e04.23; progression, e19). It has no hitbox and never hits.",
+  "verb": "parry",
+  "frames": {
+    "startup": 4,
+    "active": 10,
+    "recovery": 16
+  },
+  "staminaCost": 10,
+  "presentation": {
+    "anim": "anim-knight-parry"
+  }
+}

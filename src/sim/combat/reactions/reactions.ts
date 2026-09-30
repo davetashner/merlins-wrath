@@ -5,11 +5,13 @@
 //
 // Choosing (`chooseReaction`, in order):
 //  - invulnerable (wake-up i-frames after a knockdown) → none;
-//  - hyperarmor absorbed the hit's poise (the move's window, with cap left) → none, damage applies;
+//  - hyperarmor absorbed the hit's poise (the move's window, with cap left), unless the hit is a
+//    critical → none, damage applies;
 //  - impulse ≥ the profile's knockdownImpulse → knockdown (90 ticks grounded, then 20 invulnerable
 //    wake-up ticks);
 //  - impulse ≥ knockbackImpulse (300 N·s by default) → knockback (60 ticks, pushed);
-//  - the hit broke poise (PoiseBroken) or the hyperarmor's cap → stagger (45 ticks);
+//  - the hit broke poise (PoiseBroken) or the hyperarmor's cap, or is a critical (a riposte, which
+//    ignores poise and hyperarmor, e04.12) → stagger (45 ticks);
 //  - any poise damage → flinch (12 ticks);
 //  - otherwise none (a poison tick, a zero-poise graze).
 // Then the profile may replace the tier (a troll: knockdown → knockback). A reaction weaker than the
@@ -40,7 +42,7 @@
 //
 // Blocks and guard breaks (mw-e04.31). A hit the shield blocked (tagged `blocked`, e04.6) causes no
 // reaction: the blocker is behind its shield, so nothing flinches or pushes it (HitReaction none,
-// suppressed `blocked`). A guard break (GuardBroken) becomes the guard-break reaction: a stagger of the
+// suppressed `blocked`); nor does a parried one (tagged `parried`, e04.12: suppressed `parried`). A guard break (GuardBroken) becomes the guard-break reaction: a stagger of the
 // event's `staggerTicks` (60), from the front — a blocked hit always comes from inside the shield's
 // frontal arc. The guard rule has already interrupted and locked the blocker's timeline for exactly
 // that long, so the reaction does not interrupt or lock it a second time.
@@ -123,6 +125,8 @@ export interface ReactionFactors {
   readonly hyperarmor: 'absorbed' | 'broken' | null;
   /** The entity is invulnerable (wake-up i-frames). */
   readonly invulnerable: boolean;
+  /** A critical (riposte): it ignores poise and hyperarmor and always staggers at least. */
+  readonly critical?: boolean;
 }
 
 /** A chosen reaction and, when it is none although the hit could have caused one, why. */
@@ -134,12 +138,15 @@ export interface ReactionChoice {
 /** The reaction a hit causes (see the file header); pure. */
 export function chooseReaction(factors: ReactionFactors, profile: ReactionProfile): ReactionChoice {
   if (factors.invulnerable) return { kind: 'none', suppressed: 'invulnerable' };
-  if (factors.hyperarmor === 'absorbed') return { kind: 'none', suppressed: 'hyperarmor' };
+  const critical = factors.critical === true;
+  if (factors.hyperarmor === 'absorbed' && !critical) {
+    return { kind: 'none', suppressed: 'hyperarmor' };
+  }
   const { impulse } = factors;
   let tier: HitReactionKind = 'none';
   if (impulse >= profile.knockdownImpulse) tier = 'knockdown';
   else if (impulse >= profile.knockbackImpulse) tier = 'knockback';
-  else if (factors.poiseBroken || factors.hyperarmor === 'broken') tier = 'stagger';
+  else if (factors.poiseBroken || factors.hyperarmor === 'broken' || critical) tier = 'stagger';
   else if (factors.poiseDamage > 0) tier = 'flinch';
   if (tier === 'none') return { kind: 'none', suppressed: null };
   const kind = profile.replace[tier] ?? tier;
@@ -357,12 +364,16 @@ export function resolveHitReaction(
         ? 'absorbed'
         : null,
     invulnerable: tags.includes(REACTION_TAGS.invulnerable) || hasWakeIframes(world, entity),
+    critical: tags.includes(DAMAGE_TAGS.critical),
   };
   let { kind, suppressed } = chooseReaction(factors, state.profile);
   const playing = state.current;
   if (tags.includes(DAMAGE_TAGS.blocked)) {
     kind = 'none';
     suppressed = 'blocked';
+  } else if (tags.includes(DAMAGE_TAGS.parried)) {
+    kind = 'none';
+    suppressed = 'parried';
   } else if (kind !== 'none' && playing !== null && !outlasts(world, kind, playing)) {
     kind = 'none';
     suppressed = 'weaker';

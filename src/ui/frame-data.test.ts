@@ -12,6 +12,7 @@ const row = (key: string, patch: Partial<FrameDataRowModel> = {}): FrameDataRowM
   hyperarmor: false,
   hitStop: '',
   reaction: '',
+  parry: '',
   health: '1000/1000',
   poise: '40/40',
   dps: '0.0',
@@ -46,7 +47,7 @@ describe('frame-data overlay (mw-e04.9)', () => {
     expect(cell(panel, '7', 'phase').textContent).toBe('startup');
     expect(cell(panel, '7', 'phase').querySelector('span')?.dataset['phase']).toBe('startup');
     expect(cell(panel, '7', 'frame').textContent).toBe('5/42');
-    expect(panel.element.querySelectorAll('th')).toHaveLength(11);
+    expect(panel.element.querySelectorAll('th')).toHaveLength(12);
     expect(document.getElementById('vb-frame-data-styles')).not.toBeNull();
     new FrameDataPanel(); // the stylesheet is installed once
     expect(document.querySelectorAll('#vb-frame-data-styles')).toHaveLength(1);
@@ -76,6 +77,16 @@ describe('frame-data overlay (mw-e04.9)', () => {
     expect(cell(panel, '1', 'hitStop').textContent).toBe('heavy 5');
     panel.update(model([row('1')]));
     expect(cell(panel, '1', 'hitStop').textContent).toBe('');
+  });
+
+  it('shows a fighter’s parry: its phase, a Parried stun or a ready riposte (mw-e04.12)', () => {
+    const panel = new FrameDataPanel();
+    panel.update(model([row('1', { parry: 'window' }), row('2', { parry: 'parried 64' })]));
+    expect(cell(panel, '1', 'parry').textContent).toBe('window');
+    expect(cell(panel, '2', 'parry').textContent).toBe('parried 64');
+    panel.update(model([row('1', { parry: 'riposte ready' }), row('2')]));
+    expect(cell(panel, '1', 'parry').textContent).toBe('riposte ready');
+    expect(cell(panel, '2', 'parry').textContent).toBe('');
   });
 
   it('writes only what changed, and adds, reorders and removes rows with the model', () => {

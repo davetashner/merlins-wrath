@@ -728,3 +728,70 @@ describe('action timeline: determinism', () => {
     expect(JSON.parse(JSON.stringify(a.snapshot))).toEqual(a.snapshot);
   });
 });
+
+describe('action timeline: redirects (mw-e04.12)', () => {
+  /** A timeline whose redirect turns requests for light-1 into the heavy while `on` holds. */
+  function redirected() {
+    const calls: [string, string][] = [];
+    const state = { on: false };
+    const world = new World<ActionFrame>({ seed: 1 }).register(
+      ...ACTION_TIMELINE_COMPONENTS,
+      StaminaComponent,
+    );
+    world.addSystem(
+      actionTimelineSystem({
+        moves: MOVES,
+        redirect: (_world, _entity, requested, resolved) => {
+          calls.push([requested, resolved.id]);
+          return state.on && requested === 'light-1' ? 'heavy' : undefined;
+        },
+      }),
+    );
+    const knight = world.spawn();
+    giveActionTimeline(world, knight);
+    const started: ActionStartInfo[] = [];
+    world.events.on(ActionStarted, (e) => started.push(e));
+    const stepTo = (tick: number) => {
+      while (world.tick < tick) world.step([]);
+    };
+    return { world, knight, state, calls, started, stepTo };
+  }
+
+  it('is asked once as a legal request starts, and may start another move in its place', () => {
+    const s = redirected();
+    s.state.on = true;
+    s.stepTo(1);
+    requestMove(s.world, s.knight, 'light-1');
+    s.stepTo(2);
+    expect(s.started.map((e) => [e.tick, e.move, e.chained])).toEqual([[1, 'heavy', false]]);
+    // A request waiting in the buffer is not asked until it becomes legal.
+    requestMove(s.world, s.knight, 'light-1');
+    s.stepTo(10);
+    expect(s.calls).toEqual([['light-1', 'light-1']]);
+  });
+
+  it('sees the chain’s resolved move, and wins over a chain and a cancel window’s move', () => {
+    const s = redirected();
+    requestMove(s.world, s.knight, 'light-1');
+    s.stepTo(35); // light-1 completes on 34: the chain continues with light-2
+    s.state.on = true;
+    requestMove(s.world, s.knight, 'light-1');
+    s.stepTo(36);
+    expect(s.calls.at(-1)).toEqual(['light-1', 'light-2']);
+    expect(s.started.map((e) => [e.move, e.chained])).toEqual([
+      ['light-1', false],
+      ['heavy', false],
+    ]);
+    // Past a roll's attack window the light attack becomes the heavy, not the window's move.
+    const t = redirected();
+    t.state.on = true;
+    requestMove(t.world, t.knight, 'roll');
+    t.stepTo(30);
+    requestMove(t.world, t.knight, 'light-1');
+    t.stepTo(31);
+    expect(t.started.map((e) => [e.tick, e.move, e.cancelled])).toEqual([
+      [0, 'roll', null],
+      [30, 'heavy', 'roll'],
+    ]);
+  });
+});
