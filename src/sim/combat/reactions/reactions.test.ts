@@ -98,6 +98,7 @@ function move({ id, frames, hyperarmor }: MoveSpec): RuntimeMove {
     hyperarmor: hyperarmor ?? null,
     iframes: null,
     telegraphTick: 0,
+    hitStop: null,
     chainNext: null,
     charge: null,
     motion: null,

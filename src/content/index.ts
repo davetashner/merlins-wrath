@@ -324,6 +324,18 @@ export {
   type MaterialProperties,
 } from './types/material.ts';
 export {
+  HIT_STOP_ID,
+  HIT_STOP_TIERS,
+  MAX_HIT_STOP_TICKS,
+  compileHitStop,
+  hitStopSchema,
+  type HitStopDef,
+  type HitStopDefInput,
+  type HitStopEntry,
+  type HitStopTable,
+  type HitStopTier,
+} from './types/hit-stop.ts';
+export {
   ANIM_ID_PATTERN,
   AUDIO_CUE_PATTERN,
   CANCEL_TARGETS,

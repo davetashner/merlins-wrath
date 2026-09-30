@@ -31,8 +31,10 @@
 // default): front or back within 45° of the facing axis, else left or right.
 //
 // Timing: a reaction chosen on world tick T lasts ticks T+1…T+length (the timeline's lock runs out on
-// the same tick) and is over from T+length+1, when HitReactionEnded fires. Lengths count world ticks:
-// hit-stop (e04.11) freezes the timeline's lock but not this clock, which that bead reconciles.
+// the same tick) and is over from T+length+1, when HitReactionEnded fires. Lengths count the entity's
+// local time, as the timeline's lock does: each tick hit-stop freezes it (e04.11) moves the end — and
+// a knockdown's wake-up i-frames — one tick later, so a stagger struck with a 5-tick hit-stop ends,
+// and its lock runs out, on T+length+6.
 //
 // Other rules call `applyHitReaction` to force a reaction, which replaces whatever is playing.
 //
@@ -53,6 +55,7 @@ import type { Vec3 } from '../../stimulus/shapes';
 import { DamageApplied, type DamageResult } from '../damage/events';
 import type { DamageModel, DamageModifier } from '../damage/model';
 import { DAMAGE_TAGS } from '../damage/packet';
+import { isHitStopped } from '../hitstop/components';
 import { HurtboxComponent } from '../hits/components';
 import { GuardBroken } from '../melee/events';
 import { ActionTimelineComponent } from '../timeline/components';
@@ -472,7 +475,21 @@ export function wakeIframesModifier(): DamageModifier {
   };
 }
 
-/** Ends reactions whose time is up, emitting HitReactionEnded. */
+/** A reaction (and a knockdown's wake-up i-frames) one frozen tick later: hit-stop held it still. */
+function held(state: HitReactionState, current: ActiveReaction): HitReactionState {
+  const down = current.kind === 'knockdown';
+  return Object.freeze({
+    ...state,
+    current: Object.freeze({ ...current, endsAt: current.endsAt + 1 }),
+    iframesFrom: down ? state.iframesFrom + 1 : state.iframesFrom,
+    iframesUntil: down ? state.iframesUntil + 1 : state.iframesUntil,
+  });
+}
+
+/**
+ * Ends reactions whose time is up, emitting HitReactionEnded; a reaction frozen by hit-stop this tick
+ * waits a tick longer instead (see the file header).
+ */
 export function hitReactionSystem<TInput>(): System<TInput> {
   return {
     name: 'hit-reactions',
@@ -480,7 +497,12 @@ export function hitReactionSystem<TInput>(): System<TInput> {
       const w: World<never> = world;
       w.query(HitReactionComponent).forEach((entity, state) => {
         const { current } = state;
-        if (current === null || w.tick < current.endsAt) return;
+        if (current === null) return;
+        if (isHitStopped(w, entity)) {
+          w.set(entity, HitReactionComponent, held(state, current));
+          return;
+        }
+        if (w.tick < current.endsAt) return;
         w.set(entity, HitReactionComponent, Object.freeze({ ...state, current: null }));
         w.events.emit(HitReactionEnded, {
           tick: w.tick,

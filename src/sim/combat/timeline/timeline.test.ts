@@ -93,6 +93,7 @@ function move({
     hyperarmor: null,
     iframes: null,
     telegraphTick: 0,
+    hitStop: canHit ? 'light' : null,
     chainNext: chainNext ?? null,
     charge: null,
     motion: null,

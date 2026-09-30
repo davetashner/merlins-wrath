@@ -152,6 +152,7 @@ function move(spec: MoveSpec): RuntimeMove {
     hyperarmor: null,
     iframes: null,
     telegraphTick: 0,
+    hitStop: canHit ? 'light' : null,
     chainNext: spec.chainNext ?? null,
     charge: null,
     presentation: { anim: `anim-${id}` },

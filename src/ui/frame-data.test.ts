@@ -10,6 +10,7 @@ const row = (key: string, patch: Partial<FrameDataRowModel> = {}): FrameDataRowM
   frame: '5/42',
   iframes: false,
   hyperarmor: false,
+  hitStop: '',
   reaction: '',
   health: '1000/1000',
   poise: '40/40',
@@ -44,7 +45,7 @@ describe('frame-data overlay (mw-e04.9)', () => {
     expect(cell(panel, '7', 'phase').textContent).toBe('startup');
     expect(cell(panel, '7', 'phase').querySelector('span')?.dataset['phase']).toBe('startup');
     expect(cell(panel, '7', 'frame').textContent).toBe('5/42');
-    expect(panel.element.querySelectorAll('th')).toHaveLength(9);
+    expect(panel.element.querySelectorAll('th')).toHaveLength(10);
     expect(document.getElementById('vb-frame-data-styles')).not.toBeNull();
     new FrameDataPanel(); // the stylesheet is installed once
     expect(document.querySelectorAll('#vb-frame-data-styles')).toHaveLength(1);
@@ -58,6 +59,14 @@ describe('frame-data overlay (mw-e04.9)', () => {
     expect([badge('iframes'), badge('armor')]).toEqual(['true', 'false']);
     panel.update(model([row('1', { hyperarmor: true })]));
     expect([badge('iframes'), badge('armor')]).toEqual(['false', 'true']);
+  });
+
+  it('shows the hit-stop freezing a fighter, with its tier and ticks left (mw-e04.11)', () => {
+    const panel = new FrameDataPanel();
+    panel.update(model([row('1', { hitStop: 'heavy 5' })]));
+    expect(cell(panel, '1', 'hitStop').textContent).toBe('heavy 5');
+    panel.update(model([row('1')]));
+    expect(cell(panel, '1', 'hitStop').textContent).toBe('');
   });
 
   it('writes only what changed, and adds, reorders and removes rows with the model', () => {

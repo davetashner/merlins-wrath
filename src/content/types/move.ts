@@ -28,6 +28,7 @@ import { z } from 'zod';
 import type { Frozen } from '../loader.ts';
 import { contentId, ref } from '../schema.ts';
 import { DAMAGE_TYPES } from './damage.ts';
+import { HIT_STOP_TIERS, type HitStopTier } from './hit-stop.ts';
 
 /** Current MoveDef schema version; bump it (and add a migration) on breaking changes. */
 export const MOVE_SCHEMA_VERSION = 1;
@@ -290,6 +291,13 @@ export const moveSchema = z
       .describe('Move the next attack press chains into (e.g. light 1 → light 2); absent = none.'),
     charge: chargeSchema.optional(),
     motion: motionSchema.optional(),
+    hitStop: z
+      .enum(HIT_STOP_TIERS)
+      .optional()
+      .describe(
+        'Hit-stop tier of its hits (e04.11): how long a hit freezes attacker and victim, from the ' +
+          'hit-stop table (light, heavy, charged, parry, critical). Only with a hitbox; absent = light.',
+      ),
     presentation: presentationSchema,
   })
   .superRefine((move, ctx) => {
@@ -345,6 +353,9 @@ export const moveSchema = z
         fail(['cancelWindows', i, 'move'], 'a move cannot cancel into itself');
       }
     });
+    if (move.hitStop !== undefined && move.hitbox === undefined) {
+      fail(['hitStop'], 'only a move with a hitbox has a hit-stop tier');
+    }
     if (move.motion !== undefined && move.motion.distance > 0 && active === 0) {
       fail(['motion'], 'a move with motion needs at least one active tick to travel on');
     }
@@ -485,6 +496,8 @@ export interface RuntimeMove {
   } | null;
   /** Root motion (a dodge's travel), or null. */
   readonly motion: RuntimeMotion | null;
+  /** Hit-stop tier of its hits (light unless the move names one), or null for a move that cannot hit. */
+  readonly hitStop: HitStopTier | null;
   readonly presentation: MoveEntry['presentation'];
 }
 
@@ -534,6 +547,7 @@ export function compileMove(move: MoveEntry): RuntimeMove {
       move.motion === undefined
         ? null
         : Object.freeze({ distance: move.motion.distance, direction: move.motion.direction }),
+    hitStop: canHit ? (move.hitStop ?? 'light') : null,
     presentation: move.presentation,
   });
 }

@@ -89,6 +89,7 @@ function makeAttack(
       chainNext: null,
       charge: null,
       motion: null,
+      hitStop: 'light',
       presentation: { anim: 'anim-test' },
     },
     hitbox,

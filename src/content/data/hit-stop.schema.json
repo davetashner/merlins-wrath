@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique table id; the game reads \"hit-stop\"."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the numbers come from (bead, tuning status)."
+    },
+    "ticks": {
+      "type": "object",
+      "properties": {
+        "light": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30,
+          "description": "A light attack (the default tier of a hitting move)."
+        },
+        "heavy": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30,
+          "description": "A heavy attack."
+        },
+        "charged": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30,
+          "description": "A charged heavy."
+        },
+        "parry": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30,
+          "description": "A parry deflecting an attack (both fighters)."
+        },
+        "critical": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30,
+          "description": "A riposte or other critical hit."
+        }
+      },
+      "required": [
+        "light",
+        "heavy",
+        "charged",
+        "parry",
+        "critical"
+      ],
+      "additionalProperties": false,
+      "description": "Freeze length per hit tier, sim ticks: light, heavy, charged, parry and critical (a riposte). Overlapping freezes take the longest, never the sum."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "ticks"
+  ],
+  "additionalProperties": false
+}

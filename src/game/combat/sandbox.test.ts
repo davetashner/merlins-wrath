@@ -3,6 +3,7 @@ import { loadGameContent } from '@content/index';
 import {
   actionTimelineSystem,
   ActionTimelineComponent,
+  applyHitStop,
   CombatFacingComponent,
   DAMAGE_COMPONENTS,
   DamageModel,
@@ -141,6 +142,28 @@ describe('combat sandbox frame data (mw-e04.9)', () => {
       iframes: true,
       hyperarmor: false,
     });
+  });
+
+  it('shows the hit-stop freezing a fighter and its frozen ticks left (mw-e04.11)', () => {
+    const { world, attacker } = sandbox();
+    world.step([]);
+    expect(
+      frameDataView(sandboxFrameData(w(world), { moves: combat.moves })).rows[0]?.hitStop,
+    ).toBe('');
+    // As a hit does: during the tick, after the action timeline has run.
+    const at = world.tick;
+    world.addSystem({
+      name: 'hit',
+      run: ({ tick }) => {
+        if (tick === at) applyHitStop(w(world), attacker, 'heavy', combat.hitStop.heavy);
+      },
+    });
+    world.step([]);
+    const data = sandboxFrameData(w(world), { moves: combat.moves });
+    expect(data.fighters[0]?.hitStop).toEqual({ tier: 'heavy', ticksLeft: 5 });
+    expect(frameDataView(data).rows[0]?.hitStop).toBe('heavy 5');
+    for (let i = 0; i < 5; i++) world.step([]);
+    expect(sandboxFrameData(w(world), { moves: combat.moves }).fighters[0]?.hitStop).toBeNull();
   });
 
   it('skips a player that is gone, and reads a world without timelines or sandbox dummies', () => {
