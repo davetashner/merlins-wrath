@@ -3,7 +3,8 @@
 // `contentChecks` are the checks across entries every load runs: fact references (mw-e27.2),
 // conditions against the fact registry (mw-e27.5), animation (mw-e02.20) and socket tracks
 // (mw-e04.26), capability ids and puzzles against their scenes, capabilities and facts (mw-e15.1),
-// and creature attacks' readability (windups and telegraph cues, mw-e04.20).
+// creature attacks' readability (windups and telegraph cues, mw-e04.20), and unlock definitions
+// against the capability registry, without cycles or pure numeric upgrades (mw-e19.3).
 
 import { checkAnimation } from './anim-checks.ts';
 import { checkCreatureAttacks } from './attack-checks.ts';
@@ -43,6 +44,7 @@ import { checkSocketTracks, socketTrackSchema } from './types/socket-track.ts';
 import { spellSchema } from './types/spell.ts';
 import { targetableSchema } from './types/targetable.ts';
 import { testPropSchema } from './types/testprop.ts';
+import { checkUnlocks, unlockSchema } from './types/unlock.ts';
 import { vfxCueSheetSchema } from './types/vfx-cue-sheet.ts';
 import { vfxEffectSchema } from './types/vfx-effect.ts';
 
@@ -80,6 +82,7 @@ export const contentTypes = {
   spell: spellSchema,
   targetable: targetableSchema,
   testprop: testPropSchema,
+  unlock: unlockSchema,
   'vfx-cue-sheet': vfxCueSheetSchema,
   'vfx-effect': vfxEffectSchema,
 };
@@ -93,6 +96,7 @@ export const contentChecks: readonly ContentCheck[] = [
   checkCapabilities,
   checkPuzzles,
   checkCreatureAttacks,
+  checkUnlocks,
 ];
 
 export type ContentTypes = typeof contentTypes;

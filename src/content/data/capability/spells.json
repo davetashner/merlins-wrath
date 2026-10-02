@@ -2,12 +2,36 @@
   "$schema": "../capability.schema.json",
   "id": "spells",
   "name": "Spell capabilities",
-  "notes": "Capabilities granted by knowing a spell (CONSTITUTION §4). Seeded with what the example puzzle needs; mw-e19.2 grows the registry (name and description keys, icon, class affinity) and the runtime grants.",
+  "notes": "Capabilities granted by knowing a spell (CONSTITUTION §4). Seeded with what the example puzzle needs and ADR-0004's fire chain, whose unlocks are src/content/data/unlock/sorcerer-fire.json (mw-e19.3).",
   "capabilities": [
     {
       "id": "spell.mage-hand",
       "name": "Mage Hand",
       "description": "Manipulate distant objects: pull a lever, lift a key or drag a crate from range (CONSTITUTION §4)."
+    },
+    {
+      "id": "spell.ember",
+      "name": "Ember",
+      "description": "Ignite a candle, a rope or spilled oil at a touch (ADR-0004 fire chain, step 1).",
+      "classAffinity": "sorcerer"
+    },
+    {
+      "id": "spell.firebolt",
+      "name": "Firebolt",
+      "description": "Hurl a burning projectile that sets what it hits alight (fire chain, step 2).",
+      "classAffinity": "sorcerer"
+    },
+    {
+      "id": "spell.flame-jet",
+      "name": "Flame Jet",
+      "description": "Hold a cone of flame that burns through webs, cloth and crowds (fire chain, step 3).",
+      "classAffinity": "sorcerer"
+    },
+    {
+      "id": "spell.fire-wall",
+      "name": "Fire Wall",
+      "description": "Raise a burning barrier that blocks a passage and scares off creatures (fire chain, step 4).",
+      "classAffinity": "sorcerer"
     }
   ]
 }
