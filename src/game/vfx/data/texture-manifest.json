@@ -1,0 +1,130 @@
+[
+  {
+    "id": "vfx-base-flame-8x8-01",
+    "width": 256,
+    "height": 256,
+    "cols": 8,
+    "rows": 8,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-base-ring-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-base-shard-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-base-smoke-noise-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-base-soft-circle-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-base-spark-streak-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-decal-arrow-hole-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-decal-frost-01",
+    "width": 128,
+    "height": 128,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-decal-scorch-01",
+    "width": 128,
+    "height": 128,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-decal-wet-01",
+    "width": 128,
+    "height": 128,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-template-area-ring-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-template-beam-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-template-cast-windup-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-template-impact-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-template-projectile-head-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  },
+  {
+    "id": "vfx-template-projectile-trail-01",
+    "width": 64,
+    "height": 64,
+    "cols": 1,
+    "rows": 1,
+    "placeholder": true
+  }
+]

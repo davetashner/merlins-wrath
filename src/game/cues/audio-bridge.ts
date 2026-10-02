@@ -21,6 +21,7 @@ import {
 } from '@content/index';
 import {
   CharacterController,
+  CombatFacingComponent,
   GuardComponent,
   PhysicsColliderComponent,
   PhysicsObjectComponent,
@@ -305,6 +306,7 @@ export function worldCueLookups(
     materialOf,
     impactClassOf: (material) => classes.get(material),
     shieldOf: (entity) => read(entity, GuardComponent)?.shield.id,
+    facingOf: (entity) => read(entity, CombatFacingComponent)?.facing,
     moveSoundOf: (move) => sounds.get(move),
     arrowCuesOf: (arrow) => arrowCues.get(arrow),
     surfaceUnder: (entity) => {

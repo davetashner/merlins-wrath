@@ -47,7 +47,7 @@ non-commercial use are **placeholders only** and must be flagged `placeholder: y
 
 | Asset id | Type | Source | Tier | Date | Licence | Terms / URL | Author / attribution | Prompt file | Placeholder |
 |---|---|---|---|---|---|---|---|---|---|
-| _(none yet)_ | | | | | | | | | |
+| `vfx-*` — the procedural placeholder VFX textures: every `.png` under `public/assets/vfx/` (entries flagged `placeholder: true` in `src/game/vfx/data/texture-manifest.json`) | vfx | original (procedural shapes and seeded value noise: `scripts/vfx/gen-placeholders.ts`, mw-e29.2; no images, kits or generation APIs) | n/a | 2026-10-02 | ORIGINAL | n/a | The Vesper Bell project | n/a | yes |
 
 ## 3D models & animation
 

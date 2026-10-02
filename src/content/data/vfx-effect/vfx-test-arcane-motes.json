@@ -7,7 +7,7 @@
   "emitters": [
     {
       "id": "motes",
-      "texture": "vfx-mote-01",
+      "texture": "vfx-base-soft-circle-01",
       "blend": "additive",
       "rate": 20,
       "bursts": [{ "at": 0, "count": 6 }],

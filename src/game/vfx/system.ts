@@ -77,6 +77,11 @@ export interface VfxSpawnOptions {
   readonly socket?: string;
   /** Local rotation of the effect (its up axis is the launch cone's axis). */
   readonly rotation?: Quat;
+  /**
+   * `rotation` is in world space (e.g. turned to a hit normal) rather than relative to the anchor
+   * entity's own rotation. Default false.
+   */
+  readonly worldRotation?: boolean;
   /** Uniform scale: particle size, launch speed and spawn radius. Default 1. */
   readonly scale?: number;
   readonly params?: {
@@ -171,6 +176,7 @@ class EffectInstance {
   intensity = 1;
   stopped = false;
   dormant = false;
+  worldRotation = false;
   entity: EntityId | undefined;
   socket: string | undefined;
   readonly origin = { x: 0, y: 0, z: 0 };
@@ -344,6 +350,7 @@ export class VfxSystem {
     inst.size = options.scale ?? 1;
     inst.entity = options.entity;
     inst.socket = socket;
+    inst.worldRotation = options.worldRotation ?? false;
     copyQuat(inst.local, options.rotation ?? IDENTITY);
     this.#place(inst, anchor);
     for (const s of inst.emitters) {
@@ -579,7 +586,8 @@ export class VfxSystem {
     inst.origin.x = anchor.position.x;
     inst.origin.y = anchor.position.y;
     inst.origin.z = anchor.position.z;
-    multiplyQuat(inst.rotation, anchor.rotation ?? IDENTITY, inst.local);
+    if (inst.worldRotation) copyQuat(inst.rotation, inst.local);
+    else multiplyQuat(inst.rotation, anchor.rotation ?? IDENTITY, inst.local);
   }
 
   #distance(inst: EffectInstance): number {

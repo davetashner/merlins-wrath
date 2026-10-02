@@ -46,3 +46,11 @@ export {
   type VfxStats,
   type VfxSystemOptions,
 } from './system.ts';
+export { vfxTextureManifest } from './texture-data.ts';
+export {
+  textureProblems,
+  VFX_TEXTURE_BASE_URL,
+  vfxTextureManifestSchema,
+  vfxTextureUrls,
+  type VfxTextureEntry,
+} from './textures.ts';

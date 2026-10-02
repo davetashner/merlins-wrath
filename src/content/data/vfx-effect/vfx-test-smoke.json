@@ -8,7 +8,7 @@
   "emitters": [
     {
       "id": "puffs",
-      "texture": "vfx-smoke-puff-01",
+      "texture": "vfx-base-smoke-noise-01",
       "blend": "alpha",
       "rate": 8,
       "lifetime": { "min": 2, "max": 3 },
