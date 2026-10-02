@@ -20,7 +20,9 @@
 //
 // With `ledges` (mw-e02.12) the player mantles onto the scene's crates and ledges, and with the
 // ledge-hang capability grabs, hangs from and shimmies along higher ones (src/sim/climb/mantle.ts);
-// the rig plays the graph's mantle and hang states from the published locomotion.
+// the rig plays the graph's mantle and hang states from the published locomotion. With `climb`
+// (mw-e02.13) it climbs the scene's ladders, ropes and ivy (src/sim/climb/climb.ts) and pulls up
+// onto the ledge at the top; the readout's `traversal` says which mode has it.
 //
 // Renderer-agnostic: the caller supplies the body object and how an object follows its entity
 // (object3DBinding for Three.js). The sim steps only through the frame loop, as ever; nothing here
@@ -58,6 +60,7 @@ import {
   PlayerLook,
   ViewAnchor,
   sceneLedges,
+  sceneRopes,
   type BodyId,
   staminaOf,
   type PlayerMeleeOptions,
@@ -71,6 +74,7 @@ import {
   type LoadedScene,
   type SightWorld,
   type TargetLocator,
+  type TraversalMode,
   type World,
 } from '@sim/index';
 import {
@@ -101,6 +105,8 @@ export interface PlayerReadout {
   /** Feet position, metres. */
   readonly position: Vec3;
   readonly grounded: boolean;
+  /** The traversal mode that has the player (mantle, hang, climb), or null in plain locomotion. */
+  readonly traversal: TraversalMode | null;
   /** Look yaw, radians (0 looks along −z). */
   readonly yaw: number;
   /** Look pitch, radians above the horizon. */
@@ -233,6 +239,18 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
    * properties registered (a ledge's hold reads them). Absent = none.
    */
   readonly ledges?: TestbedLedgeOptions;
+  /**
+   * Climbing ladders, ropes, ivy and (with the capability) rough walls (mw-e02.13); the world must
+   * have the world properties registered and the scene's colliders bound to their pieces (scene
+   * physics), since what can be climbed is read from them. Absent = none.
+   */
+  readonly climb?: TestbedClimbOptions;
+}
+
+/** The player's climbing (mw-e02.13). */
+export interface TestbedClimbOptions {
+  /** The player's climbing capabilities (e.g. CLIMB_ROUGH_CAPABILITY) until class data (mw-e02.3). */
+  readonly capabilities?: readonly string[];
 }
 
 /** The player's mantling and ledge hangs (mw-e02.12). */
@@ -345,6 +363,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
     ...(options.ledges !== undefined && {
       ledges: { index: sceneLedges(scene), ...options.ledges },
     }),
+    ...(options.climb !== undefined && { climb: options.climb }),
     ...(options.moves !== undefined && {
       combat: {
         moves: options.moves,
@@ -352,6 +371,8 @@ export function setupTestbedPlayer<TObject, TCommand>(
       },
     }),
   });
+  // The scene's authored ropes (pieces marked climbable: rope) hang ready to climb (mw-e02.13).
+  if (options.climb !== undefined) sceneRopes(world, scene);
   const orbit = new OrbitCamera(cameraTuning, collision);
   const interaction = options.interaction;
   let unsubscribe: (() => void) | undefined;
@@ -416,6 +437,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
       tick: world.tick,
       position: roundVec(state.position),
       grounded: state.grounded,
+      traversal: state.traversal,
       yaw: round(view.yaw),
       pitch: round(view.pitch),
       ...(timeline !== undefined && {

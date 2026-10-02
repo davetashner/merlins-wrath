@@ -22,6 +22,13 @@
 // scene's ledges (src/sim/climb/mantle.ts): the player mantles onto crates and sills, and with the
 // ledge-hang capability grabs, hangs from and shimmies along higher ledges.
 //
+// With `climb` (mw-e02.13) it also runs the climbing hook (src/sim/climb/climb.ts), after the ledge
+// hook: the player climbs ladders, ropes and ivy, and with the climbing capability rough walls, and
+// pulls up onto the ledge at the top. With combat, climbing drains the stamina pool (the climb tuning's
+// staminaPerSecond, after the controller), and at 0 the player falls. While any traversal mode has the
+// player (mantle, hang, climb), no dodge, attack or block starts: the action timeline's one gate,
+// `handsBusy` (mw-e02.33).
+//
 // After the controller, the locomotion system (mw-e02.6) publishes what the player is doing — idle,
 // walk, run, airborne, landing… — with its speeds and turn rate, and emits jump, land and footstep
 // events, for animation and audio to follow. The player counts as moving while move input is held or
@@ -59,6 +66,7 @@ import { DodgeComponent, giveDodge, type DodgeMoves } from '../combat/dodge/comp
 import { dodgeInputSystem, dodgeMotionSystem, type DodgeFacing } from '../combat/dodge/dodge';
 import {
   DEFAULT_STAMINA_PROFILE,
+  drainStamina,
   giveStamina,
   StaminaComponent,
   staminaSystem,
@@ -93,8 +101,11 @@ import {
   type ButtonAction,
 } from '../input/action-frame';
 import { cos, pow, sin } from '../math';
+import { climbTraversal, DEFAULT_CLIMB_TUNING } from '../climb/climb';
 import type { LedgeIndex } from '../climb/ledges';
-import { ledgeTraversal } from '../climb/mantle';
+import { ledgeTraversal, type LedgeTraversalHook } from '../climb/mantle';
+import { ClimbRopeComponent } from '../climb/ropes';
+import type { TraversalHook } from '../character/traversal';
 import type { SceneSpawnPlacement } from '../scene/layout';
 import type { Vec3 } from '../stimulus/shapes';
 
@@ -453,6 +464,25 @@ function meleeBindings(melee: PlayerMeleeOptions): Partial<Record<ButtonAction, 
   return bindings;
 }
 
+/**
+ * Drains every climbing character's stamina pool at the climb tuning's rate (mw-e02.13): the climb
+ * hook lets go when it reaches 0. Runs after the controller, so the regen pause restarts every tick
+ * of a climb.
+ */
+function climbStaminaSystem<TInput>(tuning: { readonly staminaPerSecond: number }): System<TInput> {
+  return {
+    name: 'climb-stamina',
+    run: ({ world, clock }) => {
+      if (tuning.staminaPerSecond === 0) return;
+      const w: World<never> = world;
+      w.query(CharacterController, StaminaComponent).forEach((entity, state) => {
+        if (state.traversal === 'climb')
+          drainStamina(w, entity, tuning.staminaPerSecond / clock.hz);
+      });
+    },
+  };
+}
+
 export interface PlayerOptions {
   /** The loaded scene's spawns; the player starts at the one tagged `player-start`. */
   readonly spawns: readonly SceneSpawnPlacement[];
@@ -466,6 +496,18 @@ export interface PlayerOptions {
   readonly combat?: PlayerCombatOptions;
   /** Mantling and ledge hangs over the scene's ledges (mw-e02.12); absent = none. */
   readonly ledges?: PlayerLedgeOptions;
+  /** Climbing ladders, ropes, ivy and rough walls (mw-e02.13); absent = none. */
+  readonly climb?: PlayerClimbOptions;
+}
+
+/** The player's climbing (mw-e02.13). */
+export interface PlayerClimbOptions {
+  /**
+   * The player's climbing capabilities (class data, mw-e02.3), e.g. CLIMB_ROUGH_CAPABILITY; none by
+   * default (ladders, ropes and ivy need none). Mantling and climbing share one list: these and the
+   * ledge options' capabilities apply to both.
+   */
+  readonly capabilities?: readonly string[];
 }
 
 /** The player's mantling and ledge hangs (mw-e02.12). */
@@ -531,20 +573,33 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     }
     world.addSystem(dodgeMotionSystem({ moves, facing: lookFacing }));
   }
-  const { ledges } = options;
+  const { ledges, climb } = options;
+  const capabilities = [...(ledges?.capabilities ?? []), ...(climb?.capabilities ?? [])];
+  const hooks: TraversalHook[] = [];
+  let ledgeHook: LedgeTraversalHook | undefined;
+  if (ledges !== undefined) {
+    ledgeHook = ledgeTraversal({ world, ledges: ledges.index, capabilities: () => capabilities });
+    hooks.push(ledgeHook);
+  }
+  if (climb !== undefined) {
+    if (!world.isRegistered(ClimbRopeComponent)) world.register(ClimbRopeComponent);
+    hooks.push(
+      climbTraversal({
+        world,
+        capabilities: () => capabilities,
+        stamina: (entity) =>
+          combat === undefined || entity === undefined
+            ? undefined
+            : world.get(entity, StaminaComponent)?.current,
+        ...(ledgeHook !== undefined && { ledges: ledgeHook }),
+      }),
+    );
+  }
   world.addSystem(
     characterControllerSystem<TInput>({
       collision: options.collision,
       tuning: options.tuning,
-      ...(ledges !== undefined && {
-        hooks: [
-          ledgeTraversal({
-            world,
-            ledges: ledges.index,
-            capabilities: () => ledges.capabilities ?? [],
-          }),
-        ],
-      }),
+      ...(hooks.length > 0 && { hooks }),
       input: (inputs, entity) => {
         const frame = actionFrameOf(inputs);
         const look = world.get(entity, PlayerLook);
@@ -565,6 +620,9 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
       noclip: (entity) => hasCheat(world, entity, 'noclip'),
     }),
   );
+  if (climb !== undefined && combat !== undefined) {
+    world.addSystem(climbStaminaSystem(options.tuning.climb ?? DEFAULT_CLIMB_TUNING));
+  }
   world.addSystem(
     locomotionSystem<TInput>({
       tuning: options.tuning,

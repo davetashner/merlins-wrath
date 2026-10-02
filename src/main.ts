@@ -585,6 +585,9 @@ function startRenderer(root: HTMLElement): void {
           // Mantling for every class; ledge hangs are capability-gated (mw-e02.12), granted here
           // until class data (mw-e02.3) says who climbs.
           ledges: { capabilities: [LEDGE_HANG_CAPABILITY] },
+          // Ladders, ropes and ivy for every class (mw-e02.13); rough walls need the climbing
+          // capability, which class data (mw-e02.3) will grant the thief.
+          climb: {},
           object: body.root,
           animation: {
             controller: new AnimationController(graph),

@@ -237,6 +237,7 @@ export function createGameWorld<TInput>(
       defeated: zeroHealth,
     },
     ledges: { capabilities: [LEDGE_HANG_CAPABILITY] },
+    climb: {},
   }).entity;
   focus.entity = player;
   const combatants = startTestbedCombat(world, combat, scene.layout.spawns, player);

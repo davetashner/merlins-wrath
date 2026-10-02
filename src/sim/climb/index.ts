@@ -3,3 +3,5 @@
 export * from './ledges';
 export * from './surfaces';
 export * from './mantle';
+export * from './climb';
+export * from './ropes';

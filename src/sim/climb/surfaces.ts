@@ -109,16 +109,22 @@ export function canAttachClimb(
 
 /**
  * The entity a collider or body handle belongs to (a collision query's `body`): a physics object
- * whose body it is, or the entity it is bound to (`bindCollider`); undefined for unbound geometry.
+ * whose body it is, or the entity it is bound to (`bindCollider`); undefined for unbound geometry
+ * (and in a world without physics objects).
  */
 export function ownerOfCollider(world: World<never>, handle: number): EntityId | undefined {
   let owner: EntityId | undefined;
-  world.query(PhysicsObjectComponent).forEach((entity, object) => {
-    if (owner === undefined && object.body === handle) owner = entity;
-  });
-  world.query(PhysicsColliderComponent).forEach((entity, { colliders }) => {
-    if (owner === undefined && colliders.includes(handle)) owner = entity;
-  });
+  // A world without physics objects (or bound colliders) has none to own it.
+  if (world.isRegistered(PhysicsObjectComponent)) {
+    world.query(PhysicsObjectComponent).forEach((entity, object) => {
+      if (owner === undefined && object.body === handle) owner = entity;
+    });
+  }
+  if (world.isRegistered(PhysicsColliderComponent)) {
+    world.query(PhysicsColliderComponent).forEach((entity, { colliders }) => {
+      if (owner === undefined && colliders.includes(handle)) owner = entity;
+    });
+  }
   return owner;
 }
 

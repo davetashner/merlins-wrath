@@ -61,3 +61,19 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `ledge.jumpBack` | object | required | Jumping off a hang, away from the wall. |
 | `ledge.jumpBack.away` | number 0–20 | required | Speed away from the wall, m/s. |
 | `ledge.jumpBack.up` | number 0–20 | required | Upward speed, m/s. |
+| `climb` | object | — | Climbing surfaces and ropes; absent = the sim’s defaults (DEFAULT_CLIMB_TUNING). |
+| `climb.speeds` | object | required | Surface-space speed per climbing grade at full stick deflection, m/s (a frozen surface climbs at its own grade’s speed). |
+| `climb.speeds.ladder` | number > 0 ≤ 10 | required | Climbing speed on a ladder, m/s. |
+| `climb.speeds.rope` | number > 0 ≤ 10 | required | Climbing speed on a rope, m/s. |
+| `climb.speeds.ivy` | number > 0 ≤ 10 | required | Climbing speed on ivy, m/s. |
+| `climb.speeds.rough` | number > 0 ≤ 10 | required | Climbing speed on rough stone or timber, m/s. |
+| `climb.speeds.sheer` | number > 0 ≤ 10 | required | Climbing speed on a sheer face (with a tool), m/s. |
+| `climb.walkOn` | list of `"ladder"` \| `"rope"` \| `"ivy"` \| `"rough"` \| `"sheer"` | required | Grades a character attaches to by walking into them; every other grade needs a jump at it (or a catch in the air), so bumping a stone wall never starts a climb. |
+| `climb.reach` | number > 0 ≤ 1 | required | How far ahead of the capsule a surface or rope can be caught, m. |
+| `climb.handHeight` | number > 0 ≤ 5 | required | Hands above the feet while climbing, m: the surface must reach this high, and a ledge this high above the feet is pulled up onto. |
+| `climb.maxCornerAngle` | number 0–90 | required | Sharpest turn between two faces a climber follows round a corner, degrees. |
+| `climb.slipGraceMs` | integer 0–10000 | required | How long a climber holds a surface that became impossible to hold (frozen, burning) before falling, whole ms. |
+| `climb.staminaPerSecond` | number 0–1000 | required | Stamina drained per second while climbing (characters with a stamina pool); at 0 stamina the climber falls. Progression may change it (mw-e10.9). |
+| `climb.jumpOff` | object | required | Jumping off a climbed surface. |
+| `climb.jumpOff.away` | number 0–20 | required | Speed away from the surface, m/s. |
+| `climb.jumpOff.up` | number 0–20 | required | Upward speed, m/s. |

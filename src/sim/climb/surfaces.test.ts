@@ -124,6 +124,15 @@ describe('climbable surfaces (mw-e03.22)', () => {
     expect(climbabilityOfCollider(w, 3)).toBe('rough');
     expect(climbabilityOfCollider(w, 9)).toBe('none');
   });
+
+  it('a world without physics objects or bound colliders has no owners (mw-e02.13)', () => {
+    expect(ownerOfCollider(world(), 1)).toBeUndefined();
+    const colliders = world();
+    colliders.register(PhysicsColliderComponent);
+    const wall = surface(colliders, { climbable: 'rough' });
+    colliders.add(wall, PhysicsColliderComponent, { colliders: [1] });
+    expect(ownerOfCollider(colliders, 1)).toBe(wall);
+  });
 });
 
 describe('climbability after fire (mw-e03.22 AC-3)', () => {

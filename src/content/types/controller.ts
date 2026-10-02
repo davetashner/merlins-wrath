@@ -201,6 +201,70 @@ export const ledgeTuningSchema = z
 /** Mantle and ledge-hang tuning (see ledgeTuningSchema). */
 export type LedgeTuning = z.output<typeof ledgeTuningSchema>;
 
+const climbSpeed = z.number().positive().max(10);
+
+/** The climbing grades (the `climbable` world property without `none`), in the order they are listed. */
+export const CLIMB_GRADES = ['ladder', 'rope', 'ivy', 'rough', 'sheer'] as const;
+
+export const climbTuningSchema = z
+  .strictObject({
+    speeds: z
+      .strictObject({
+        ladder: climbSpeed.describe('Climbing speed on a ladder, m/s.'),
+        rope: climbSpeed.describe('Climbing speed on a rope, m/s.'),
+        ivy: climbSpeed.describe('Climbing speed on ivy, m/s.'),
+        rough: climbSpeed.describe('Climbing speed on rough stone or timber, m/s.'),
+        sheer: climbSpeed.describe('Climbing speed on a sheer face (with a tool), m/s.'),
+      })
+      .describe(
+        'Surface-space speed per climbing grade at full stick deflection, m/s (a frozen surface climbs at its own grade’s speed).',
+      ),
+    walkOn: z
+      .array(z.enum(CLIMB_GRADES))
+      .describe(
+        'Grades a character attaches to by walking into them; every other grade needs a jump at it (or a catch in the air), so bumping a stone wall never starts a climb.',
+      ),
+    reach: z
+      .number()
+      .positive()
+      .max(1)
+      .describe('How far ahead of the capsule a surface or rope can be caught, m.'),
+    handHeight: heightM.describe(
+      'Hands above the feet while climbing, m: the surface must reach this high, and a ledge this high above the feet is pulled up onto.',
+    ),
+    maxCornerAngle: z
+      .number()
+      .min(0)
+      .max(90)
+      .describe('Sharpest turn between two faces a climber follows round a corner, degrees.'),
+    slipGraceMs: z
+      .int()
+      .min(0)
+      .max(10_000)
+      .describe(
+        'How long a climber holds a surface that became impossible to hold (frozen, burning) before falling, whole ms.',
+      ),
+    staminaPerSecond: z
+      .number()
+      .min(0)
+      .max(1000)
+      .describe(
+        'Stamina drained per second while climbing (characters with a stamina pool); at 0 stamina the climber falls. Progression may change it (mw-e10.9).',
+      ),
+    jumpOff: z
+      .strictObject({
+        away: z.number().min(0).max(20).describe('Speed away from the surface, m/s.'),
+        up: z.number().min(0).max(20).describe('Upward speed, m/s.'),
+      })
+      .describe('Jumping off a climbed surface.'),
+  })
+  .describe(
+    'Climbing ladders, ropes, ivy and rough walls (mw-e02.13): speeds per grade, what attaches by walking, reach, corners, slipping, stamina and the jump off.',
+  );
+
+/** Climbing tuning (see climbTuningSchema). */
+export type ClimbTuning = z.output<typeof climbTuningSchema>;
+
 /** Every tuning value the controller reads (a profile without its id, name and notes). */
 const tuningShape = {
   capsule: capsuleSchema,
@@ -254,6 +318,9 @@ const tuningShape = {
   ledge: ledgeTuningSchema
     .optional()
     .describe('Mantling and ledge hangs; absent = the sim’s defaults (DEFAULT_LEDGE_TUNING).'),
+  climb: climbTuningSchema
+    .optional()
+    .describe('Climbing surfaces and ropes; absent = the sim’s defaults (DEFAULT_CLIMB_TUNING).'),
 };
 
 /**
