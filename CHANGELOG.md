@@ -13,6 +13,12 @@ check enforces this).
 
 ### Added
 
+- You can climb: walk into a ladder, a rope or ivy to grab it and climb (1.2 m/s on a ladder, slower on
+  ivy), hold forward at the top to pull yourself up onto the ledge, jump to push off or crouch to let
+  go. Ivy that burns away drops you, frozen or burning holds slip after a second, and climbing
+  drains stamina, so an empty bar makes you fall. The testbed room has an ivy-covered wall to try it.
+- Your hands stay on the wall: dodging, attacking, blocking and drawing the bow do nothing while you
+  are mantling, hanging from a ledge or climbing.
 - Debug builds can put creatures into the grey-box scenes from data: the new creature pen
   (`?scene=creature-pen`) places two test hounds, a patrolling guard and a sentinel as placeholder
   capsules, and the debug console spawns any creature by id (`spawn fixture-hound 3`, or
