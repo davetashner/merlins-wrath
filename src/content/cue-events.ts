@@ -283,6 +283,66 @@ export const CUE_EVENTS = {
       loudness: 'number',
     },
   },
+  doorStateChanged: {
+    /** `entity` is the door (its closed leaf's centre as the fallback), `source` who moved it. */
+    anchors: ['entity', 'at', 'source'],
+    facts: {
+      /** Impact class of the door's material, e.g. "wood" or "metal". */
+      entity: 'string',
+      entityMaterial: 'string',
+      /** hinged, sliding, portcullis or trapdoor. */
+      kind: 'string',
+      /** The state it left and the one it entered: closed, opening, open, closing, blocked, broken. */
+      from: 'string',
+      to: 'string',
+    },
+  },
+  doorBlocked: {
+    /** `entity` is the door, `by` what it met, `at` the centre of what it met. */
+    anchors: ['at', 'entity', 'by'],
+    facts: {
+      entity: 'string',
+      entityMaterial: 'string',
+      kind: 'string',
+      /** It was closing with a crush and dealt it. */
+      crushed: 'boolean',
+    },
+  },
+  lockUnlocked: {
+    /** `entity` is the door the lock is on, `source` who opened it. */
+    anchors: ['entity', 'source'],
+    facts: {
+      /** The lock id. */
+      lock: 'string',
+      /** key, pick or magic. */
+      by: 'string',
+      /** The key item that opened it (by key). */
+      key: 'string',
+    },
+  },
+  lockRefused: {
+    anchors: ['entity', 'source'],
+    /** `reason`: no-key, sealed, unpickable, pick-failed or locked. */
+    facts: { lock: 'string', reason: 'string' },
+  },
+  switchUsed: {
+    /** `entity` is the switch, `source` who used it. */
+    anchors: ['entity', 'source'],
+    facts: {
+      /** Impact class of the switch's material, e.g. "metal". */
+      entity: 'string',
+      entityMaterial: 'string',
+      /** lever, button, crank or wheel. */
+      kind: 'string',
+      /** Its position now (0 is off; a button is back at 0). */
+      position: 'number',
+    },
+  },
+  mechanismJammed: {
+    /** `entity` is the door or switch that would not move. */
+    anchors: ['entity', 'source'],
+    facts: { entity: 'string', entityMaterial: 'string', frozen: 'boolean' },
+  },
 } as const satisfies Record<string, CueEventSpec>;
 
 /** A sim event name a cue sheet may use. */

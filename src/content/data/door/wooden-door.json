@@ -1,0 +1,12 @@
+{
+  "$schema": "../door.schema.json",
+  "id": "wooden-door",
+  "name": "Wooden door (grey-box prefab)",
+  "notes": "The slice's spawn-room door (docs/design/vertical-slice.md B2, mw-e03.18): a hinged plank door filling the grey-box doorway's 1.2 × 2.2 m opening, 6 cm thick. One second to swing fully open, about how long a hand-pushed door takes. Seasoned wood, so it burns (a torch or the brazier can open a second route) and breaks under heavy blows when a scene makes it breakable. Shuts out light, smoke and most sound while closed. A creaky 50 dB when it starts to move: a stealthy player hears it, and so do guards nearby (mw-e09).",
+  "kind": "hinged",
+  "size": [1.2, 2.2, 0.06],
+  "seconds": 1,
+  "material": "wood",
+  "blocks": { "light": true, "gas": true, "sound": true },
+  "loudness": 50
+}

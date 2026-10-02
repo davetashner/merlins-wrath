@@ -1,0 +1,9 @@
+{
+  "$schema": "../../../data/lock.schema.json",
+  "id": "fixture-tower-door",
+  "name": "Fixture tower door lock",
+  "notes": "The lock fixture-tower-key opens (mw-e03.18): keys' opens ids are checked against lock content.",
+  "tier": 1,
+  "pickTier": 1,
+  "tags": ["fixture-tower"]
+}

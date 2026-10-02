@@ -1,0 +1,12 @@
+{
+  "$schema": "../door.schema.json",
+  "id": "trapdoor",
+  "name": "Wooden trapdoor (grey-box prefab)",
+  "notes": "A 1 × 1.2 m floor hatch of planks, flush with the floor, that swings up about its hinge (mw-e03.18). Opened by hand or by a signal (a crank in the grey-box room). One second to swing up; something standing on it keeps it shut. Wood, so it burns. Shuts out light, smoke and sound while closed; 45 dB as it lifts.",
+  "kind": "trapdoor",
+  "size": [1, 1.2, 0.06],
+  "seconds": 1,
+  "material": "wood",
+  "blocks": { "light": true, "gas": true, "sound": true },
+  "loudness": 45
+}

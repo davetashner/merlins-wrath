@@ -40,6 +40,13 @@ import {
 } from '@game/creatures/index';
 import { bindBreakLeftovers, BreakWatch, hasBreakables } from '@game/breakables/index';
 import { bindWorldItems, ItemWatch, prepareWorldItems, startWorldItems } from '@game/items/index';
+import {
+  doorLeafLooks,
+  hasMechanisms,
+  MechanismWatch,
+  readDoorLeaf,
+  startMechanisms,
+} from '@game/mechanisms/index';
 import { createCapabilityRegistry } from '@game/capabilities';
 import { attachGameAudio, attachGameVfx, soundPositions } from '@game/cues/index';
 import { layers } from '@game/index';
@@ -99,6 +106,7 @@ import { vfxTextureManifest, vfxTextureUrls, VfxSystem } from '@game/vfx/index';
 import { createRenderBootstrap } from '@render/bootstrap/index';
 import { createLeftover, disposeLeftover } from '@render/breakables/index';
 import { createWorldItemMesh, disposeWorldItemMesh } from '@render/items/index';
+import { createDoorLeaf, disposeDoorLeaf } from '@render/mechanisms/index';
 import {
   createArrowShaft,
   createSandboxDummy,
@@ -889,6 +897,38 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
         };
         drawBreaks();
         afterStep.push(drawBreaks);
+      }
+      // Mechanisms (mw-e03.18): only in scenes with doors, switches or signal graphs. Started after
+      // the player, so doors and switches get their prompts and move the tick they are told to.
+      // Door leaves collide in the sim's Rapier world, closed ones occlude the light field, and
+      // each leaf follows its sim pose; the e2e reads them from #app[data-mechanisms].
+      if (hasMechanisms(loaded.layout)) {
+        const made = startMechanisms(world, loaded, {
+          content,
+          materials: materialPresets(content.all('material')),
+          colliders: physics,
+          occluders: light.field.statics,
+        });
+        const watch = new MechanismWatch(world, made);
+        const leaves = doorLeafLooks(world, made, content).map(
+          ({ entity, size, centre, material }) => {
+            const object = createDoorLeaf(size, centre, material);
+            view.scene.add(object);
+            sync.bind(entity, {
+              ...object3DBinding(object, readDoorLeaf),
+              dispose: disposeDoorLeaf,
+            });
+            return { entity, object };
+          },
+        );
+        let publishedMechanisms = '';
+        const drawMechanisms = (): void => {
+          for (const { entity, object } of leaves) object.visible = !watch.broken(entity);
+          const json = JSON.stringify(watch.readout());
+          if (json !== publishedMechanisms) root.dataset['mechanisms'] = publishedMechanisms = json;
+        };
+        drawMechanisms();
+        afterStep.push(drawMechanisms);
       }
       // The scene's creature spawns (mw-e12.4), after combat so they are hittable and lockable. A
       // spawn naming a creature or faction that does not exist is reported, not fatal.

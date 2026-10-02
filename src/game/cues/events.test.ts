@@ -174,6 +174,35 @@ const SAMPLES: Record<CueEventName, unknown> = {
     reveals: 'hidden-room',
     loudness: 85,
   },
+  doorStateChanged: {
+    tick: 3,
+    entity: 3,
+    kind: 'hinged',
+    from: 'closed',
+    to: 'opening',
+    source: 4,
+    position: origin,
+  },
+  doorBlocked: {
+    tick: 3,
+    entity: 2,
+    kind: 'portcullis',
+    by: 7,
+    openness: 0.27,
+    crushed: true,
+    position: origin,
+  },
+  lockUnlocked: { tick: 3, entity: 2, lock: 'slice-exit', by: 'key', source: 4, key: 'old-key' },
+  lockRefused: {
+    tick: 3,
+    entity: 2,
+    lock: 'slice-exit',
+    reason: 'no-key',
+    hint: 'Locked.',
+    source: 4,
+  },
+  switchUsed: { tick: 3, entity: 2, kind: 'lever', position: 1, positions: 2, source: 4 },
+  mechanismJammed: { tick: 3, entity: 1, frozen: true, source: null },
 };
 
 const read = (event: CueEventName, payload: unknown, look = lookups): CueReading =>
@@ -318,6 +347,50 @@ describe('cue event bindings', () => {
     const clay = { ...(SAMPLES.breakableBroken as object), material: 'clay', source: null };
     expect(read('breakableBroken', clay).facts).toMatchObject({ entity: 'clay', material: 'clay' });
     expect(read('breakableBroken', clay).anchors['source']).toBeUndefined();
+  });
+
+  it('mw-e03.18: read doors, locks and switches: what moved, of what, and how', () => {
+    expect(read('doorStateChanged', SAMPLES.doorStateChanged)).toEqual({
+      anchors: {
+        entity: { entity: 3, position: origin },
+        at: { position: origin },
+        source: { entity: 4 },
+      },
+      facts: {
+        entity: 'dry-wood',
+        entityMaterial: 'dry-wood',
+        kind: 'hinged',
+        from: 'closed',
+        to: 'opening',
+      },
+    });
+    expect(read('doorBlocked', SAMPLES.doorBlocked).facts).toEqual({
+      entity: 'metal',
+      entityMaterial: 'iron',
+      kind: 'portcullis',
+      crushed: true,
+    });
+    expect(read('lockUnlocked', SAMPLES.lockUnlocked).facts).toEqual({
+      lock: 'slice-exit',
+      by: 'key',
+      key: 'old-key',
+    });
+    const picked = { ...(SAMPLES.lockUnlocked as object), by: 'pick', key: null, source: null };
+    expect(read('lockUnlocked', picked).facts['key']).toBeUndefined();
+    expect(read('lockRefused', SAMPLES.lockRefused).facts).toEqual({
+      lock: 'slice-exit',
+      reason: 'no-key',
+    });
+    expect(read('switchUsed', SAMPLES.switchUsed).facts).toEqual({
+      entity: 'metal',
+      entityMaterial: 'iron',
+      kind: 'lever',
+      position: 1,
+    });
+    expect(read('mechanismJammed', SAMPLES.mechanismJammed)).toEqual({
+      anchors: { entity: { entity: 1 }, source: undefined },
+      facts: { entity: 'bone', entityMaterial: 'bone', frozen: true },
+    });
   });
 
   it('read attack, stamina and fire payloads', () => {

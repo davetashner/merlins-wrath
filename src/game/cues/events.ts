@@ -19,6 +19,8 @@ import {
   DEFAULT_GAIT_TUNING,
   Died,
   DodgedHit,
+  doorBlocked,
+  doorStateChanged,
   factChanged,
   fireBurntOut,
   fireExtinguished,
@@ -26,6 +28,9 @@ import {
   GuardBroken,
   HitParried,
   LocomotionEvents,
+  lockRefused,
+  lockUnlocked,
+  mechanismJammed,
   physicsImpact,
   PoiseBroken,
   propertyChanged,
@@ -33,6 +38,7 @@ import {
   StaminaExhausted,
   StaminaRecovered,
   stimulusResolved,
+  switchUsed,
   TelegraphStarted,
   volumeEntered,
   volumeExited,
@@ -443,5 +449,33 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
       by: e.by,
       loudness: e.loudness,
     },
+  })),
+  doorStateChanged: bind(doorStateChanged, (e, look) => ({
+    anchors: {
+      entity: { entity: e.entity, position: e.position },
+      at: { position: e.position },
+      source: at(e.source),
+    },
+    facts: { ...materialFacts('entity', e.entity, look), kind: e.kind, from: e.from, to: e.to },
+  })),
+  doorBlocked: bind(doorBlocked, (e, look) => ({
+    anchors: { at: { position: e.position }, entity: { entity: e.entity }, by: { entity: e.by } },
+    facts: { ...materialFacts('entity', e.entity, look), kind: e.kind, crushed: e.crushed },
+  })),
+  lockUnlocked: bind(lockUnlocked, (e) => ({
+    anchors: { entity: { entity: e.entity }, source: at(e.source) },
+    facts: { lock: e.lock, by: e.by, key: e.key ?? undefined },
+  })),
+  lockRefused: bind(lockRefused, (e) => ({
+    anchors: { entity: { entity: e.entity }, source: at(e.source) },
+    facts: { lock: e.lock, reason: e.reason },
+  })),
+  switchUsed: bind(switchUsed, (e, look) => ({
+    anchors: { entity: { entity: e.entity }, source: at(e.source) },
+    facts: { ...materialFacts('entity', e.entity, look), kind: e.kind, position: e.position },
+  })),
+  mechanismJammed: bind(mechanismJammed, (e, look) => ({
+    anchors: { entity: { entity: e.entity }, source: at(e.source) },
+    facts: { ...materialFacts('entity', e.entity, look), frozen: e.frozen },
   })),
 };

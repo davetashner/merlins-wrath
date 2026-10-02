@@ -169,6 +169,17 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].breakable.profile` | ref → breakable | required | Breakable profile: resistances, debris, break loudness. |
 | `spawns[].breakable.contents` | list of ref → testprop | — | Props it spills when it breaks (props with a body; mw-e03.39). |
 | `spawns[].breakable.reveals` | id | — | Passage it opens when it breaks: names the passageRevealed event (nav, quests). |
+| `spawns[].door` | object | — | Makes the spawned entity a door: profile, lock and starting state (mw-e03.18). |
+| `spawns[].door.profile` | ref → door | required | Door profile: kind, size, speed, material, what it shuts out. |
+| `spawns[].door.lock` | ref → lock | — | The lock it carries: what keys, picks and spells get past. |
+| `spawns[].door.locked` | boolean | — | Starts locked; defaults to true when it has a lock (needs one). |
+| `spawns[].door.state` | `"closed"` \| `"open"` \| `"jammed"` | `"closed"` | How it starts: closed, open or jammed. |
+| `spawns[].door.hinge` | `"left"` \| `"right"` | `"left"` | Hinged and trapdoor: the side the hinge is on (−x or +x before yaw); sliding: the side it slides to. |
+| `spawns[].door.swing` | `"forward"` \| `"back"` | `"forward"` | Hinged: swings towards +z (forward) or −z (back) before yaw. |
+| `spawns[].switch` | object | — | Makes the spawned entity a lever, button, crank or wheel (mw-e03.18). |
+| `spawns[].switch.kind` | `"lever"` \| `"button"` \| `"crank"` \| `"wheel"` | required | lever, button, crank or wheel. |
+| `spawns[].switch.positions` | integer 2–8 | — | Positions it steps through (crank and wheel; a lever has 2, a button none). |
+| `spawns[].switch.initial` | integer ≥ 0 | `0` | Position it starts in (0 = off). |
 | `light` | object | — | Static lighting: ambient level, ambient zones, directional lights (mw-e03.37). |
 | `light.ambient` | number 0–1 | — | Ambient level wherever no ambient zone applies, 0–1. |
 | `light.ambientZones` | list of object | `[]` | Boxes with their own ambient level; later zones win where they overlap. |
@@ -181,3 +192,6 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `light.directional[].direction` | list of any (at least 3) | required | Direction the light travels, e.g. [0, -1, 0] straight down. |
 | `light.directional[].level` | number 0–1 | required | Level where it reaches, 0–1. |
 | `light.directional[].reach` | number > 0 | required | How far back towards the light a position must be clear to receive it, metres. |
+| `signals` | list of object | — | Signal graphs wiring its switches, volumes and doors (mw-e03.18). |
+| `signals[].graph` | ref → signal-graph | required | The graph to place. |
+| `signals[].bindings` | map of id → id | `{}` | Binding name → spawn id, for names that are not themselves spawn ids. |

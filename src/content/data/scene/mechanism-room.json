@@ -1,0 +1,245 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "mechanism-room",
+  "name": "Mechanism room",
+  "description": "Grey-box prefabs of every mechanism (mw-e03.18), laid out like the slice's spawn room: pull the lever by the north doorway to raise the portcullis onto the corridor; the west closet's wooden door opens by hand (and burns); the south closet's iron door is locked (Unlock finds no key; lockpicks pick it); the button by the east doorway slides the stone door open for six seconds; the floor crank lifts the trapdoor.",
+  "grid": 1,
+  "camera": {
+    "position": [-6, 7, -7],
+    "target": [0, 0, 2]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 0],
+      "scale": [5, 1, 5]
+    },
+    {
+      "piece": "wall",
+      "at": [-3, 0, -5],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [0, 0, -5]
+    },
+    {
+      "piece": "wall",
+      "at": [3, 0, -5],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-3, 0, 5],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [0, 0, 5]
+    },
+    {
+      "piece": "wall",
+      "at": [3, 0, 5],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-5, 0, -3],
+      "yaw": 90,
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [-5, 0, 0],
+      "yaw": 90
+    },
+    {
+      "piece": "wall",
+      "at": [-5, 0, 3],
+      "yaw": 90,
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [5, 0, -3],
+      "yaw": 90,
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [5, 0, 0],
+      "yaw": 90
+    },
+    {
+      "piece": "wall",
+      "at": [5, 0, 3],
+      "yaw": 90,
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "floor",
+      "at": [0, 0, 9],
+      "scale": [1, 1, 4]
+    },
+    {
+      "piece": "wall",
+      "at": [-1, 0, 9],
+      "yaw": 90,
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [1, 0, 9],
+      "yaw": 90,
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 13]
+    },
+    {
+      "piece": "floor",
+      "at": [0, 0, -6]
+    },
+    {
+      "piece": "wall",
+      "at": [-1, 0, -6],
+      "yaw": 90
+    },
+    {
+      "piece": "wall",
+      "at": [1, 0, -6],
+      "yaw": 90
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, -7]
+    },
+    {
+      "piece": "floor",
+      "at": [-6, 0, 0]
+    },
+    {
+      "piece": "wall",
+      "at": [-6, 0, -1]
+    },
+    {
+      "piece": "wall",
+      "at": [-6, 0, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-7, 0, 0],
+      "yaw": 90
+    },
+    {
+      "piece": "floor",
+      "at": [6, 0, 0]
+    },
+    {
+      "piece": "wall",
+      "at": [6, 0, -1]
+    },
+    {
+      "piece": "wall",
+      "at": [6, 0, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [7, 0, 0],
+      "yaw": 90
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, 2.5],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "north-gate",
+      "at": [0, 0, 5],
+      "door": {
+        "profile": "portcullis"
+      }
+    },
+    {
+      "id": "north-lever",
+      "at": [1.25, 0, 4.5],
+      "prop": "lever",
+      "switch": {
+        "kind": "lever"
+      }
+    },
+    {
+      "id": "west-door",
+      "at": [-5, 0, 0],
+      "yaw": 90,
+      "door": {
+        "profile": "wooden-door",
+        "swing": "back"
+      }
+    },
+    {
+      "id": "south-door",
+      "at": [0, 0, -5],
+      "door": {
+        "profile": "iron-door",
+        "lock": "mechanism-vault",
+        "swing": "back"
+      }
+    },
+    {
+      "id": "east-door",
+      "at": [5, 0, 0],
+      "yaw": 90,
+      "door": {
+        "profile": "sliding-door",
+        "hinge": "right"
+      }
+    },
+    {
+      "id": "east-button",
+      "at": [4.5, 0, -1.5],
+      "switch": {
+        "kind": "button"
+      }
+    },
+    {
+      "id": "trapdoor",
+      "at": [-3, 0, -3],
+      "door": {
+        "profile": "trapdoor"
+      }
+    },
+    {
+      "id": "floor-crank",
+      "at": [-3, 0, -1.5],
+      "switch": {
+        "kind": "crank",
+        "positions": 4
+      }
+    },
+    {
+      "id": "corridor",
+      "at": [0, 0, 10],
+      "tags": ["goal"]
+    }
+  ],
+  "signals": [
+    {
+      "graph": "mechanism-room"
+    }
+  ],
+  "light": {
+    "ambient": 0.4,
+    "directional": [
+      {
+        "id": "sun",
+        "direction": [-0.45, -1, 0.3],
+        "level": 0.5,
+        "reach": 60
+      }
+    ]
+  }
+}

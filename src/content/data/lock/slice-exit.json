@@ -1,0 +1,8 @@
+{
+  "$schema": "../lock.schema.json",
+  "id": "slice-exit",
+  "name": "Slice exit lock",
+  "notes": "The vertical slice's locked iron exit (docs/design/vertical-slice.md B7): the Forgotten miner's rusted gallery key opens it (mw-e01.6 adds that key with key.opens [\"slice-exit\"]). A tier-2 lock a thief could pick at pick tier 2 (the minigame is mw-e10). Without a key the prompt says only \"Locked.\" (mw-e01.4 AC-3).",
+  "tier": 2,
+  "pickTier": 2
+}

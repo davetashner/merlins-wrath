@@ -1,0 +1,14 @@
+{
+  "$schema": "../door.schema.json",
+  "id": "portcullis",
+  "name": "Portcullis (grey-box prefab)",
+  "notes": "An iron grille that rises into the wall above the grey-box doorway (mw-e03.18; the Chapel of Echoes portcullis in chapel-portcullis.json is one). Moved only by signals (a lever, a cut rope), never by hand. Two seconds to rise or fall. It drops with a 2 kJ crush: pottery and wooden barricades break under it, while anything sturdier (a crate with its default unbreakable threshold, a stone block) wedges it open, which is the creative way to keep it up. A grille, so light, gas and sound pass through it even when it is down. A loud 75 dB rattle of chain and iron when it starts to move.",
+  "kind": "portcullis",
+  "size": [1.2, 2.2, 0.1],
+  "seconds": 2,
+  "crush": 2000,
+  "manual": false,
+  "material": "iron",
+  "blocks": { "light": false, "gas": false, "sound": false },
+  "loudness": 75
+}

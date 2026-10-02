@@ -139,6 +139,8 @@ export {
   type BreakableDef,
   type BreakableDefInput,
 } from './types/breakable.ts';
+export { DOOR_KIND_IDS, doorSchema, type DoorDef, type DoorDefInput } from './types/door.ts';
+export { lockSchema, MAX_LOCK_TIER, type LockDef, type LockDefInput } from './types/lock.ts';
 export {
   targetableSchema,
   TRAINING_DUMMY_TARGETABLE_ID,

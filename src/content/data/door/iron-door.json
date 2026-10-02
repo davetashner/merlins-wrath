@@ -1,0 +1,12 @@
+{
+  "$schema": "../door.schema.json",
+  "id": "iron-door",
+  "name": "Iron door (grey-box prefab)",
+  "notes": "The slice's locked exit (docs/design/vertical-slice.md B7, mw-e03.18): a hinged iron-bound door in the grey-box doorway, 8 cm thick. Iron, not wood, so it neither burns nor splinters: the key (or a thief's picks, or a sorcerer's spell) is the way through. Heavier than the wooden door: 1.5 s to swing open and a louder 55 dB groan. Shuts out light, smoke and sound while closed.",
+  "kind": "hinged",
+  "size": [1.2, 2.2, 0.08],
+  "seconds": 1.5,
+  "material": "iron",
+  "blocks": { "light": true, "gas": true, "sound": true },
+  "loudness": 55
+}

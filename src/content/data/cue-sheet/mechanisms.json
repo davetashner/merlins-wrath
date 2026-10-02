@@ -1,0 +1,67 @@
+{
+  "id": "mechanisms",
+  "notes": "Mechanism cue rules (mw-e03.18), from the placeholder impact sets until dedicated door, lever and lock sets are made: a door that sets off plays its material's impact set quietly and pitched down (a wooden creak-thud, an iron groan), and lands on its frame with the same set at full volume when it shuts; a door that meets something knocks against it; a lever, button, crank or wheel clunks in its own material; a lock that opens clicks in metal; a jammed or frozen mechanism gives a dull, muffled knock, so the player hears that it will not move. Sim noise for hearing is separate (noiseEmitted, e09).",
+  "rules": [
+    {
+      "event": "doorStateChanged",
+      "match": { "to": "opening" },
+      "layer": "door",
+      "cue": "sfx-impact-{entity}",
+      "pitchJitter": 0.05,
+      "volumeDb": -9,
+      "priority": 35
+    },
+    {
+      "event": "doorStateChanged",
+      "match": { "to": "closing" },
+      "layer": "door",
+      "cue": "sfx-impact-{entity}",
+      "pitchJitter": 0.05,
+      "volumeDb": -9,
+      "priority": 35
+    },
+    {
+      "event": "doorStateChanged",
+      "match": { "from": "closing", "to": "closed" },
+      "layer": "door",
+      "cue": "sfx-impact-{entity}",
+      "pitchJitter": 0.05,
+      "priority": 45
+    },
+    {
+      "event": "doorBlocked",
+      "layer": "door",
+      "at": "entity",
+      "cue": "sfx-impact-{entity}",
+      "pitchJitter": 0.08,
+      "volumeDb": -4,
+      "cooldownMs": 250,
+      "priority": 40
+    },
+    {
+      "event": "switchUsed",
+      "layer": "switch",
+      "cue": "sfx-impact-{entity}",
+      "pitchJitter": 0.06,
+      "volumeDb": -6,
+      "priority": 40
+    },
+    {
+      "event": "lockUnlocked",
+      "layer": "lock",
+      "cue": "sfx-impact-metal",
+      "pitchJitter": 0.1,
+      "volumeDb": -10,
+      "priority": 45
+    },
+    {
+      "event": "mechanismJammed",
+      "layer": "switch",
+      "cue": "sfx-impact-{entity}",
+      "pitchJitter": 0.04,
+      "volumeDb": -14,
+      "cooldownMs": 300,
+      "priority": 30
+    }
+  ]
+}
