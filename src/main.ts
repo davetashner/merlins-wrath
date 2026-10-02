@@ -37,6 +37,7 @@ import {
   viewCentrePoint,
   type GameCreatures,
 } from '@game/creatures/index';
+import { bindBreakLeftovers, BreakWatch, hasBreakables } from '@game/breakables/index';
 import { attachGameAudio, soundPositions } from '@game/cues/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
@@ -93,6 +94,7 @@ import { openSaveStore, type OpenedSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { VfxSystem } from '@game/vfx/index';
 import { createRenderBootstrap } from '@render/bootstrap/index';
+import { createLeftover, disposeLeftover } from '@render/breakables/index';
 import {
   createArrowShaft,
   createSandboxDummy,
@@ -123,6 +125,7 @@ import {
   RapierSightWorld,
   registerSceneComponents,
   SceneSpawnComponent,
+  SpilledComponent,
   testPropSpawners,
   tuneCommand,
   World,
@@ -420,6 +423,8 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
     // one sink, so a piece that burns away stops blocking both.
     const light = createGameLight(physics);
     installGamePhysics(world, {
+      // Breaks spill their contents as props (mw-e03.11).
+      breakables: { props, materials: materialPresets(content.all('material')) },
       focus: focus.read,
       onBudgetExceeded: (warning) => {
         console.warn(formatBudgetWarning(warning));
@@ -811,6 +816,26 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
       );
       drawArrows();
       afterStep.push(drawArrows);
+      // Breakables (mw-e03.11): only in scenes that have them, debris and spilled props get boxes
+      // after each step, and the e2e reads what broke from #app[data-breakables].
+      if (hasBreakables(loaded.layout)) {
+        const breaks = new BreakWatch(world);
+        let publishedBreaks = '';
+        const drawBreaks = (): void => {
+          bindBreakLeftovers(world, sync, (entity, size) => {
+            const object = createLeftover(size, world.has(entity, SpilledComponent));
+            view.scene.add(object);
+            return {
+              ...object3DBinding(object, readPhysicsObjectTransform),
+              dispose: disposeLeftover,
+            };
+          });
+          const json = JSON.stringify(breaks.readout());
+          if (json !== publishedBreaks) root.dataset['breakables'] = publishedBreaks = json;
+        };
+        drawBreaks();
+        afterStep.push(drawBreaks);
+      }
       // The scene's creature spawns (mw-e12.4), after combat so they are hittable and lockable. A
       // spawn naming a creature or faction that does not exist is reported, not fatal.
       const sceneCreatures = startCreatures(world, creatures, combat, loaded.layout.spawns);

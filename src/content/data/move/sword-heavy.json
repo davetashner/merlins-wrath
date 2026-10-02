@@ -1,7 +1,7 @@
 {
   "$schema": "../move.schema.json",
   "id": "sword-heavy",
-  "notes": "Knight heavy attack (mw-e04.13): 24/5/26 ticks, 25 stamina, 1.6x light 1's damage (32 slash) and 2.2x its poise (33), hyperarmor ticks 10-29 absorbing up to 40 poise. impactForce 1500 N and staminaDamage 30 are placeholders until e04.13/e04.19 tune them.",
+  "notes": "Knight heavy attack (mw-e04.13): 24/5/26 ticks, 25 stamina, 1.6x light 1's damage (32 slash) and 2.2x its poise (33), hyperarmor ticks 10-29 absorbing up to 40 poise. impactForce 1500 N and staminaDamage 30 are placeholders until e04.13/e04.19 tune them. World impact (mw-e03.11): 150 J blunt, the heavy overhead's weight carrying through stone (an old wall resists 20%, so one blow takes 120 of a weakened wall's 100 hp); a placeholder until e04 weapon numbers tune it.",
   "verb": "attack",
   "frames": {
     "startup": 24,
@@ -49,6 +49,9 @@
       "to": 29,
       "poiseCap": 40
     }
+  },
+  "worldImpact": {
+    "blunt": 150
   },
   "hitStop": "heavy",
   "presentation": {

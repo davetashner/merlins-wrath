@@ -43,6 +43,12 @@ import {
   type ImpulseApplied,
 } from '../stimulus/stimulus';
 import {
+  ACTION_TIMELINE_COMPONENTS,
+  ActionTimelineComponent,
+  giveActionTimeline,
+} from '../combat/timeline/components';
+import {
+  actCommand,
   blastCommand,
   cheatCommand,
   DEBUG_COMMAND,
@@ -531,6 +537,46 @@ describe('blast (mw-e04.34)', () => {
     world.step([]);
     const other = debugWorld();
     other.step([]);
+    other.step([]);
+    expect(hashWorld(world)).toBe(hashWorld(other));
+    expect(before).not.toBe(hashWorld(world));
+  });
+});
+
+describe('act (mw-e03.11)', () => {
+  it('builds a JSON-safe command and rejects bad values at the call site', () => {
+    expect(actCommand(4, 'sword-heavy')).toEqual({
+      kind: DEBUG_COMMAND,
+      op: 'act',
+      target: 4,
+      move: 'sword-heavy',
+    });
+    expect(isDebugCommand(actCommand(4, 'sword-heavy'))).toBe(true);
+    expect(() => actCommand(4, '')).toThrow('act needs a move id');
+    expect(() => actCommand(0, 'sword-heavy')).toThrow(/entity id/);
+  });
+
+  it('buffers the move on the target’s action timeline, as its attack button would', () => {
+    const world = debugWorld();
+    world.register(...ACTION_TIMELINE_COMPONENTS);
+    const knight = world.spawn();
+    const crate = world.spawn();
+    giveActionTimeline(world, knight);
+    world.step([actCommand(knight, 'sword-heavy'), actCommand(crate, 'sword-heavy')]);
+    expect(world.get(knight, ActionTimelineComponent)?.buffer).toEqual({
+      move: 'sword-heavy',
+      age: 0,
+    });
+    expect(world.has(crate, ActionTimelineComponent)).toBe(false);
+  });
+
+  it('is skipped in a world without action timelines', () => {
+    const world = debugWorld();
+    const thing = world.spawn();
+    const before = hashWorld(world);
+    world.step([actCommand(thing, 'sword-heavy')]);
+    const other = debugWorld();
+    other.spawn();
     other.step([]);
     expect(hashWorld(world)).toBe(hashWorld(other));
     expect(before).not.toBe(hashWorld(world));

@@ -1,0 +1,76 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "weak-wall-room",
+  "name": "Weak-wall room",
+  "description": "Two rooms with no door between them (mw-e03.11): the middle of the dividing wall is a cracked old wall the knight can smash with a heavy attack (console: act sword-heavy) to open a passage to the back room, and a wooden crate in the corner breaks open and spills a plank.",
+  "grid": 1,
+  "camera": {
+    "position": [-5, 6, -6],
+    "target": [0, 0, 2]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 1.5],
+      "scale": [3, 1, 4.5]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, -3],
+      "scale": [3, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 6],
+      "scale": [3, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-3, 0, 1.5],
+      "yaw": 90,
+      "scale": [4.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [3, 0, 1.5],
+      "yaw": 90,
+      "scale": [4.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-2, 0, 2]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 2],
+      "properties": { "hp": 100 },
+      "breakable": { "profile": "old-wall", "reveals": "weak-wall-passage" }
+    },
+    {
+      "piece": "wall",
+      "at": [2, 0, 2]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, 0.75],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "loot-crate",
+      "at": [-2, 0, -2],
+      "prop": "crate",
+      "breakable": { "profile": "crate", "contents": ["plank"] }
+    },
+    {
+      "id": "back-room",
+      "at": [0, 0, 4.5],
+      "tags": ["goal"]
+    }
+  ],
+  "light": {
+    "ambient": 0.4,
+    "directional": [{ "id": "sun", "direction": [-0.45, -1, 0.3], "level": 0.5, "reach": 60 }]
+  }
+}

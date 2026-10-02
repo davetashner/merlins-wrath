@@ -4,7 +4,7 @@ import { ContentLoadError, loadContent, type ContentSource } from '../loader.ts'
 import { contentChecks, contentTypes } from '../registry.ts';
 import { ContentRef } from '../schema.ts';
 import { describeContent } from '../testing.ts';
-import { sceneSchema, type SceneDefInput } from './scene.ts';
+import { sceneBreakableSchema, sceneSchema, type SceneDefInput } from './scene.ts';
 
 const room = {
   id: 'room',
@@ -198,11 +198,30 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene, the kit gallery, the combat sandbox and the lighting room', () => {
+  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room and the weak-wall room', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
         .map((s) => s.id),
-    ).toEqual(['combat-sandbox', 'kit-gallery', 'lighting-room', 'testbed']);
+    ).toEqual(['combat-sandbox', 'kit-gallery', 'lighting-room', 'testbed', 'weak-wall-room']);
+  });
+
+  it('mw-e03.11: the weak-wall room’s middle wall is a cracked old wall that reveals the passage', () => {
+    const scene = loadContent(contentTypes, gameContentSources(), contentChecks).get(
+      'scene',
+      'weak-wall-room',
+    );
+    const breakables = scene.placements.filter((p) => p.breakable !== undefined);
+    expect(breakables).toHaveLength(1);
+    expect(breakables[0]?.breakable?.profile.id).toBe('old-wall');
+    expect(breakables[0]?.breakable?.reveals).toBe('weak-wall-passage');
+    expect(breakables[0]?.properties?.hp).toBe(100);
+    const crate = scene.spawns.find((s) => s.id === 'loot-crate');
+    expect(crate?.breakable?.contents?.map((prop) => prop.id)).toEqual(['plank']);
+  });
+
+  it('mw-e03.11: rejects a breakable naming no profile or an unknown key', () => {
+    expect(sceneBreakableSchema.safeParse({}).success).toBe(false);
+    expect(sceneBreakableSchema.safeParse({ profile: 'old-wall', hp: 3 }).success).toBe(false);
   });
 });

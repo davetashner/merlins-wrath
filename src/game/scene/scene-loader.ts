@@ -9,12 +9,20 @@
 // physics.ts). Their render objects follow the sim pose (`physics.object`), which RenderSync
 // interpolates between the last two ticks: the renderer never simulates anything.
 //
+// Breakables (mw-e03.11): with physics, the scene's breakable placements and spawns get their
+// content profiles (src/sim/breakables/scene.ts). A breakable piece is not part of the merged static
+// geometry: it gets its own object (`objects.piece`), bound to the piece's entity, so it disappears
+// from the screen the frame the sim destroys it.
+//
 // Renderer-agnostic: `objects` builds the scene objects (src/render/greybox for Three.js) and
 // `binding` says how an object follows its entity (object3DBinding for Three.js).
 
 import { materialPresets, type GameContent } from '@content/index';
 import {
+  addSceneBreakables,
   addScenePhysics,
+  at,
+  BreakableComponent,
   loadScene,
   PhysicsObjectComponent,
   SceneTransformComponent,
@@ -25,12 +33,21 @@ import {
   type LightEnvironment,
   type LoadedScene,
   type SceneLayout,
+  type ScenePart,
+  type ScenePiecePlacement,
   type SceneSpawnPlacement,
   type StaticColliderSink,
   type Vec3,
   type World,
 } from '@sim/index';
-import type { RenderSync, SceneBinding, SimView, Transform } from '../loop/render-sync';
+import { breakableProfiles, cracked } from '../breakables';
+import {
+  IDENTITY_ROTATION,
+  type RenderSync,
+  type SceneBinding,
+  type SimView,
+  type Transform,
+} from '../loop/render-sync';
 import { propBodies } from '../physics-objects';
 
 /** The scene id loaded when the URL names none. */
@@ -47,6 +64,12 @@ export interface SceneObjects<TObject> {
    * it, movable props get `spawn`'s object (fine for headless runs).
    */
   body?(spawn: SceneSpawnPlacement, size: Vec3): TObject;
+  /**
+   * The object for one breakable piece (mw-e03.11): its `parts` in world space, cracked when its
+   * profile telegraphs a weak spot. Breakable pieces are left out of `staticGeometry`; without this
+   * they are not drawn (fine for headless runs).
+   */
+  piece?(piece: ScenePiecePlacement, parts: readonly ScenePart[], crack: boolean): TObject;
 }
 
 /** How a scene object reads its entity's transform. */
@@ -98,6 +121,16 @@ export function readSceneTransform(view: SimView, entity: EntityId): Transform |
   return view.get(entity, SceneTransformComponent);
 }
 
+const WORLD_FRAME: Transform = Object.freeze({
+  position: Object.freeze({ x: 0, y: 0, z: 0 }),
+  rotation: IDENTITY_ROTATION,
+});
+
+/** Reads the world frame for an object built in world space (a breakable piece) while it lives. */
+export function readWorldFrame(view: SimView, entity: EntityId): Transform | undefined {
+  return view.isAlive(entity) ? WORLD_FRAME : undefined;
+}
+
 /** Reads a physics object's pose as of the last tick: the centre of its body and its rotation. */
 export function readPhysicsObjectTransform(view: SimView, entity: EntityId): Transform | undefined {
   const object = view.get(entity, PhysicsObjectComponent);
@@ -146,7 +179,19 @@ export class SceneLoader<TObject, TCommand = unknown> {
             ...(physics.levelMaterial !== undefined && { levelMaterial: physics.levelMaterial }),
           }).objects,
     );
+    if (physics !== undefined && world.isRegistered(BreakableComponent)) {
+      addSceneBreakables(world, loaded, breakableProfiles(content));
+    }
     sync.bind(loaded.root, binding(objects.staticGeometry(loaded.layout), readSceneTransform));
+    loaded.layout.pieces.forEach((piece, index) => {
+      if (piece.breakable === undefined || objects.piece === undefined) return;
+      const parts = loaded.layout.parts.filter((part) => part.placement === index);
+      const crack = cracked(content, piece.breakable.profile);
+      sync.bind(
+        at(loaded.pieces, index),
+        binding(objects.piece(piece, parts, crack), readWorldFrame),
+      );
+    });
     for (const { entity, spawn } of loaded.spawns) {
       const size =
         movable.has(entity) && spawn.prop !== undefined ? props(spawn.prop)?.size : undefined;

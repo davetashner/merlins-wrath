@@ -14,6 +14,7 @@ import {
   ArrowFired,
   arrowImpact,
   AttackTelegraph,
+  breakableBroken,
   DAMAGE_TAGS,
   DamageApplied,
   DEFAULT_GAIT_TUNING,
@@ -379,4 +380,19 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
       },
     };
   }),
+  breakableBroken: bind(breakableBroken, (e, look) => ({
+    anchors: {
+      entity: { entity: e.entity, position: e.position },
+      at: { position: e.position },
+      source: at(e.source),
+    },
+    facts: {
+      entity: look.impactClassOf(e.material) ?? e.material,
+      material: e.material,
+      profile: e.profile,
+      cause: e.cause,
+      by: e.by,
+      loudness: e.loudness,
+    },
+  })),
 };

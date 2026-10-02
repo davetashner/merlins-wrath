@@ -1,0 +1,9 @@
+{
+  "$schema": "../breakable.schema.json",
+  "id": "wood-barricade",
+  "name": "Wooden barricade",
+  "notes": "Nailed planks across a doorway (mw-e03.11). Slash weak (no resistance: axes and swords hack through), blunt and force resisted 30%, arrows mostly stick (70% of pierce resisted). Being wood it is flammable, so fire burns through it too (the fire rules, not this profile). Five 0.25 m plank chunks; splintering wood is about 75 dB at 1 m.",
+  "resistances": { "blunt": 0.3, "slash": 0, "pierce": 0.7, "force": 0.3 },
+  "debris": { "count": 5, "size": 0.25 },
+  "breakLoudness": 75
+}

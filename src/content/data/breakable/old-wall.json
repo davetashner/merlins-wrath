@@ -1,0 +1,10 @@
+{
+  "$schema": "../breakable.schema.json",
+  "id": "old-wall",
+  "name": "Cracked old wall",
+  "notes": "A weakened stretch of masonry hiding a route (mw-e03.11). Blunt and force weak only: hammers, the knight's heavy overhead, Thunderclap, a rolling boulder or a gas blast bring it down (20% resisted), a sword barely scratches it (90% of slash resisted) and arrows do nothing (pierce immune). Its hit points come from the placement (a weakened wall sets hp 100 over stone's 400). Six 0.3 m stone chunks of debris; a collapse is loud, 85 dB at 1 m (a door slam is about 80). Cracks telegraph it.",
+  "resistances": { "blunt": 0.2, "slash": 0.9, "pierce": 1, "force": 0.2 },
+  "debris": { "count": 6, "size": 0.3 },
+  "breakLoudness": 85,
+  "crack": true
+}

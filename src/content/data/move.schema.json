@@ -558,6 +558,37 @@
       "additionalProperties": false,
       "description": "Root motion of a committed move, e.g. a roll’s 3.0 m (e04.8); absent = none."
     },
+    "worldImpact": {
+      "type": "object",
+      "properties": {
+        "blunt": {
+          "description": "Blunt impact energy, J.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "slash": {
+          "description": "Slash impact energy, J.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "pierce": {
+          "description": "Pierce impact energy, J.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "force": {
+          "description": "Shove, N·s (pushes and strains whatever it reaches).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        }
+      },
+      "additionalProperties": false,
+      "description": "What the swing does to the world (mw-e03.11): on its first active tick its hitbox, at the middle of the swing, applies one stimulus per kind listed, so breakables, props and anything else with the right properties react. Absent: the swing touches only hurtboxes."
+    },
     "hitStop": {
       "description": "Hit-stop tier of its hits (e04.11): how long a hit freezes attacker and victim, from the hit-stop table (light, heavy, charged, parry, critical). Only with a hitbox; absent = light.",
       "type": "string",

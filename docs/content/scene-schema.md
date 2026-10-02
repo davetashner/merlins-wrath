@@ -80,6 +80,10 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `placements[].ledges[].side` | `"+x"` \| `"-x"` \| `"+z"` \| `"-z"` | — | Top edge on this side of the piece (its own axes, before yaw); omit for every side. |
 | `placements[].ledges[].part` | integer ≥ 0 | — | Index of the part in the kit piece; omit for every part. |
 | `placements[].ledges[].ledge` | boolean | required | false: never a ledge (decoration); true: always a ledge (the whole edge). |
+| `placements[].breakable` | object | — | Makes the piece breakable, e.g. a cracked wall the knight can smash (mw-e03.11). |
+| `placements[].breakable.profile` | ref → breakable | required | Breakable profile: resistances, debris, break loudness. |
+| `placements[].breakable.contents` | list of ref → testprop | — | Props it spills when it breaks (props with a body; mw-e03.39). |
+| `placements[].breakable.reveals` | id | — | Passage it opens when it breaks: names the passageRevealed event (nav, quests). |
 | `spawns` | list of object | — | Entity spawns: markers and props. |
 | `spawns[].id` | id | required | Name of the spawn, unique in the scene (e.g. player-start). |
 | `spawns[].at` | list of any (at least 3) | required | Position in grid cells (x, y, z), snapped to SCENE_SNAP_STEP. |
@@ -158,6 +162,10 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].properties.container` | boolean | — | Holds items (contents live in the e18 container component). |
 | `spawns[].properties.remains` | boolean | — | Inert skeletal or corpse remains that summoning can raise. |
 | `spawns[].properties.noiseMultiplier` | number 0.2–3 | — | Multiplier on its wearer's noise; an actor's is the product of its equipment's. |
+| `spawns[].breakable` | object | — | Makes the spawned entity breakable, e.g. a pot that spills its contents (mw-e03.11). |
+| `spawns[].breakable.profile` | ref → breakable | required | Breakable profile: resistances, debris, break loudness. |
+| `spawns[].breakable.contents` | list of ref → testprop | — | Props it spills when it breaks (props with a body; mw-e03.39). |
+| `spawns[].breakable.reveals` | id | — | Passage it opens when it breaks: names the passageRevealed event (nav, quests). |
 | `light` | object | — | Static lighting: ambient level, ambient zones, directional lights (mw-e03.37). |
 | `light.ambient` | number 0–1 | — | Ambient level wherever no ambient zone applies, 0–1. |
 | `light.ambientZones` | list of object | `[]` | Boxes with their own ambient level; later zones win where they overlap. |

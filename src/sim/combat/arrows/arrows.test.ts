@@ -13,7 +13,12 @@ import type { WorldPropertyValues } from '../../properties/spec';
 import { hashWorld } from '../../snapshot';
 import { PlacementComponent, placeEntity } from '../../stimulus/placement';
 import type { Vec3 } from '../../stimulus/shapes';
-import { impulseApplied, installStimuli, stimulusSystem } from '../../stimulus/stimulus';
+import {
+  impulseApplied,
+  installStimuli,
+  stimulusResolved,
+  stimulusSystem,
+} from '../../stimulus/stimulus';
 import { DAMAGE_COMPONENTS, giveCombatant, healthOf } from '../damage/components';
 import { DamageApplied, type DamageResult } from '../damage/events';
 import { DamageModel } from '../damage/model';
@@ -630,6 +635,31 @@ describe('what arrows hit, by properties', () => {
     expect(pushes[0]?.entity).toBe(crate);
     expect(speedOf(pushes[0]?.impulse ?? ZERO)).toBeCloseTo(t.impacts[0]?.impulse ?? 0, 9);
     expect(pushes[0]?.impulse.x).toBeGreaterThan(0);
+  });
+
+  it('mw-e03.11: strikes what it hits with its impact energy — pierce for a point, blunt for a bounce head', () => {
+    const t = setup({ stimuli: true, shapes: [box(v3(5, 0, -0.5), v3(6, 1, 0.5))] });
+    const pot = surface(t.world, 1, { hp: 10, fragile: 5, material: 'clay' });
+    placeEntity(t.world, pot, v3(5.5, 0.5, 0), 0.7);
+    const struck: { element: string; amount: number; entity: EntityId | undefined }[] = [];
+    t.world.events.on(stimulusResolved, ({ stimulus, hits }) => {
+      if (stimulus.element === 'force') return;
+      struck.push({
+        element: stimulus.element,
+        amount: hits[0]?.amount ?? 0,
+        entity: hits[0]?.entity,
+      });
+    });
+    t.fire('no-drag', v3(0, 0.5, 0), v3(50, 0, 0));
+    t.run(8);
+    t.fire('blunt', v3(0, 0.5, 0), v3(30, 0, 0));
+    t.run(12);
+    expect(struck.map((s) => [s.element, s.entity])).toEqual([
+      ['pierce', pot],
+      ['blunt', pot],
+    ]);
+    expect(struck[0]?.amount).toBeCloseTo(t.impacts[0]?.energy ?? 0, 9);
+    expect(struck[1]?.amount).toBeCloseTo(t.impacts[1]?.energy ?? 0, 9);
   });
 
   it('names physics objects by their body; unbound colliders by nobody', () => {

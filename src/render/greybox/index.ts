@@ -6,14 +6,19 @@
 // directional light (off when it has none), through the same mapping as the torch lights. Materials are colour-coded
 // by purpose and carry a 1 m world-space grid so distances read at a glance.
 //
+// Breakable pieces (mw-e03.11) are left out of the merged meshes: each is its own mesh (`piece`),
+// which the scene loader binds to the piece's entity so it vanishes when the piece breaks. A piece
+// whose profile telegraphs a weak spot gets dark crack lines on both faces of its thin side.
+//
 // Render-only (needs a GPU context), so it is excluded from unit coverage and verified by the
-// Playwright scene smoke (e2e/scenes.spec.ts).
+// Playwright scene smoke (e2e/scenes.spec.ts) and the breakables e2e (e2e/breakables.spec.ts).
 
 import type { KitPurpose } from '@content/index';
 import type {
   ResolvedLightEnvironment,
   SceneLayout,
   ScenePart,
+  ScenePiecePlacement,
   SceneSpawnPlacement,
   Vec3,
 } from '@sim/index';
@@ -49,6 +54,8 @@ export const PURPOSE_COLOURS: Readonly<Record<KitPurpose, number>> = {
 };
 
 const MARKER_COLOUR = 0xe8c547;
+/** Crack lines on a weak wall (mw-e03.11). */
+const CRACK_COLOUR = 0x1a1612;
 /** A wall bracket holding a light (a torch spawn). */
 const BRACKET_COLOUR = 0x3b3a5a;
 const BACKGROUND = 0x10131c;
@@ -127,6 +134,60 @@ function partGeometry(part: ScenePart): BufferGeometry {
   return geometry;
 }
 
+/** The part's world matrix: its centre and rotation. */
+function partMatrix(part: ScenePart): Matrix4 {
+  const { center, rotation } = part;
+  return new Matrix4().compose(
+    new Vector3(center.x, center.y, center.z),
+    new Quaternion(rotation.x, rotation.y, rotation.z, rotation.w),
+    new Vector3(1, 1, 1),
+  );
+}
+
+/**
+ * Crack lines on both faces of a box part's thin side, in world space: a jagged line of thin dark
+ * slabs from low on one side to high on the other, with a branch.
+ */
+function crackGeometry(part: ScenePart): BufferGeometry {
+  const { x, y, z } = part.size;
+  const alongX = z <= x; // the thin side faces ±z (a wall) or ±x
+  const width = alongX ? x : z;
+  const depth = (alongX ? z : x) / 2 + 0.004;
+  const points: [number, number][] = [
+    [-0.35, -0.4],
+    [-0.15, -0.15],
+    [-0.22, 0.05],
+    [0.05, 0.2],
+    [0.02, 0.38],
+    [0.3, 0.45],
+  ];
+  const branch: [number, number][] = [
+    [-0.22, 0.05],
+    [-0.38, 0.22],
+  ];
+  const slabs: BufferGeometry[] = [];
+  for (const line of [points, branch]) {
+    line.slice(1).forEach(([u1, v1], i) => {
+      const [u0, v0] = line[i] ?? [u1, v1];
+      const du = (u1 - u0) * width;
+      const dv = (v1 - v0) * y;
+      const length = Math.hypot(du, dv);
+      for (const side of [-1, 1]) {
+        const slab = new BoxGeometry(length, 0.035, 0.01).toNonIndexed();
+        slab.deleteAttribute('uv');
+        slab.rotateZ(Math.atan2(dv, du));
+        slab.translate(((u0 + u1) / 2) * width, ((v0 + v1) / 2) * y, side * depth);
+        if (!alongX) slab.rotateY(Math.PI / 2);
+        slabs.push(slab);
+      }
+    });
+  }
+  const merged = mergeGeometries(slabs);
+  for (const slab of slabs) slab.dispose();
+  merged.applyMatrix4(partMatrix(part));
+  return merged;
+}
+
 export interface GreyboxView {
   /** The scene's static geometry: one merged mesh per purpose, added to the scene. */
   staticGeometry(layout: SceneLayout): Object3D;
@@ -134,6 +195,8 @@ export interface GreyboxView {
   spawn(spawn: SceneSpawnPlacement): Object3D;
   /** A movable prop (mw-e03.39): a `size` box centred on the origin, which follows its body. */
   body(spawn: SceneSpawnPlacement, size: Vec3): Object3D;
+  /** A breakable piece (mw-e03.11): its parts in world space, with crack lines when `crack`. */
+  piece(piece: ScenePiecePlacement, parts: readonly ScenePart[], crack: boolean): Object3D;
   /**
    * Mirrors the sim's light environment (mw-e03.37): hemisphere fill from its ambient level, the
    * shadow-casting sun from its brightest directional light (none: the sun is off).
@@ -190,6 +253,8 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
       group.name = `scene:${layout.id}`;
       const byPurpose = new Map<KitPurpose, BufferGeometry[]>();
       for (const part of layout.parts) {
+        // A breakable piece is drawn on its own (`piece`), so it can go when it breaks.
+        if (layout.pieces[part.placement]?.breakable !== undefined) continue;
         const list = byPurpose.get(part.purpose) ?? [];
         list.push(partGeometry(part));
         byPurpose.set(part.purpose, list);
@@ -257,6 +322,34 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);
+      scene.add(group);
+      return group;
+    },
+
+    piece(piece, parts, crack) {
+      const group = new Group();
+      group.name = `piece:${piece.piece}:${String(piece.placement)}`;
+      const geometries = parts.map(partGeometry);
+      const mesh = new Mesh(
+        mergeGeometries(geometries),
+        gridMaterial(PURPOSE_COLOURS[piece.purpose]),
+      );
+      for (const geometry of geometries) geometry.dispose();
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+      if (crack) {
+        const lines = parts.filter((part) => part.shape === 'box').map(crackGeometry);
+        if (lines.length > 0) {
+          const cracks = new Mesh(
+            mergeGeometries(lines),
+            new MeshStandardMaterial({ color: new Color(CRACK_COLOUR), roughness: 1 }),
+          );
+          for (const line of lines) line.dispose();
+          cracks.name = 'cracks';
+          group.add(cracks);
+        }
+      }
       scene.add(group);
       return group;
     },

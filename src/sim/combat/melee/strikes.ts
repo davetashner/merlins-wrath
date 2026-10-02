@@ -14,15 +14,36 @@
 //   (guard.ts) and the parry rule (combat/parry) meet it.
 //
 // Hitbox ids are move ids, so the knight's `sword-light-2` is also the hitbox that struck.
+//
+// World impact (mw-e03.11): a move with a `worldImpact` also strikes the world through the one
+// stimulus API when it enters its active phase: its hitbox, placed at the middle of the swing, applies
+// one stimulus per kind of hit it lists (blunt, slash, pierce J; force N·s along the swing's facing),
+// attributed to the attacker, with no falloff. Whatever the shape reaches reacts by its own
+// properties — an old wall weak to blunt crumbles under the knight's heavy overhead — and no code
+// here knows what a wall is.
 
-import type { MoveTable } from '@content/index';
+import type { MoveTable, RuntimeMove } from '@content/index';
+import type { EntityId } from '../../core/component';
 import type { World } from '../../core/world';
+import { composePose, placeShape, type GeomShape } from '../../geom';
+import { at } from '../../geom/vec';
+import { hypot } from '../../math';
+import { BREAK_TYPES } from '../../properties/spec';
+import type { StimulusShape, Vec3 } from '../../stimulus/shapes';
+import { applyStimulus, StimulusQueueComponent } from '../../stimulus/stimulus';
 import { rotateToWorld } from '../attacks/frame';
 import type { DamageModel } from '../damage/model';
 import { DAMAGE_TAGS } from '../damage/packet';
 import { closeHitboxes, HitboxComponent, openHitbox } from '../hits/components';
 import { HitboxHit } from '../hits/events';
-import { hitboxFromMove, hitPacket, moveTrack, type SocketTrackLookup } from '../hits/system';
+import type { SocketTrack } from '../hits/components';
+import {
+  entityFrame,
+  hitboxFromMove,
+  hitPacket,
+  moveTrack,
+  type SocketTrackLookup,
+} from '../hits/system';
 import { ActionEnded, ActionPhaseChanged } from '../timeline/events';
 import { facingOf } from './components';
 
@@ -52,7 +73,10 @@ export function installMeleeStrikes<TInput>(
       if (phase !== 'active' || !w.has(entity, HitboxComponent)) return;
       const move = moves.get(id);
       if (move?.hitbox == null) return;
-      openHitbox(w, entity, hitboxFromMove(move, moveTrack(move, tracks), facingOf(w, entity)));
+      const track = moveTrack(move, tracks);
+      const facing = facingOf(w, entity);
+      openHitbox(w, entity, hitboxFromMove(move, track, facing));
+      strikeWorld(w, entity, move, track, facing);
     }),
     world.events.on(ActionEnded, ({ entity, move, reason }) => {
       if (reason !== 'completed' && w.has(entity, HitboxComponent)) {
@@ -75,4 +99,44 @@ export function installMeleeStrikes<TInput>(
   return () => {
     for (const off of offs) off();
   };
+}
+
+/** A placed hitbox as a stimulus shape (a turned box becomes its bounding sphere). */
+function stimulusShapeOf(shape: GeomShape): StimulusShape {
+  if (shape.kind !== 'box') return shape;
+  const { x, y, z } = shape.halfExtents;
+  return { kind: 'sphere', center: shape.center, radius: hypot(x, y, z) };
+}
+
+/**
+ * Applies `move`'s world impact for `attacker` facing `facing` (see the file header). Returns how many
+ * stimuli it queued: none for a move without one, an unplaced attacker or a world without stimuli.
+ */
+export function strikeWorld(
+  world: World<never>,
+  attacker: EntityId,
+  move: RuntimeMove,
+  track: SocketTrack,
+  facing: Vec3,
+): number {
+  const impact = move.worldImpact;
+  if (impact === undefined || move.hitbox === null) return 0;
+  const frame = entityFrame(world, attacker, facing);
+  if (frame === undefined || !world.isRegistered(StimulusQueueComponent)) return 0;
+  const key = at(track.keys, Math.min(Math.ceil(move.active / 2), track.keys.length - 1));
+  const shape = stimulusShapeOf(placeShape(move.hitbox.shape, composePose(frame, key)));
+  let queued = 0;
+  for (const element of BREAK_TYPES) {
+    const intensity = impact[element] ?? 0;
+    const applied = applyStimulus(world, {
+      shape,
+      element,
+      intensity,
+      falloff: 'none',
+      source: attacker,
+      ...(element === 'force' && { direction: facing }),
+    });
+    if (applied) queued += 1;
+  }
+  return queued;
 }

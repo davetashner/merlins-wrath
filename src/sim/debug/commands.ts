@@ -116,7 +116,20 @@ export interface TuneCommand {
   readonly tuning: Frozen<ControllerTuning>;
 }
 
+/**
+ * Makes an entity perform a move through its action timeline (mw-e03.11: the knight's heavy attack,
+ * until the controls bind it), exactly as its attack button would request it.
+ */
+export interface ActCommand {
+  readonly kind: typeof DEBUG_COMMAND;
+  readonly op: 'act';
+  readonly target: EntityId;
+  /** A move id (or chain root), e.g. `sword-heavy`. */
+  readonly move: string;
+}
+
 export type DebugCommand =
+  | ActCommand
   | SpawnCommand
   | TuneCommand
   | CheatCommand
@@ -216,6 +229,12 @@ export function blastCommand(at: Vec3, radius: number, intensity: number): Blast
     radius,
     intensity,
   };
+}
+
+/** A move request. @throws RangeError for an invalid target or an empty move id. */
+export function actCommand(target: EntityId, move: string): ActCommand {
+  if (move === '') throw new RangeError('act needs a move id');
+  return { kind: DEBUG_COMMAND, op: 'act', target: entity(target), move };
 }
 
 /** A despawn of every creature. */

@@ -6,16 +6,19 @@
 //
 // The game world also accepts stimuli (mw-e04.34): the stimulus queue and its system, right after
 // the physics-object system, so a force stimulus pushes props and characters (src/game/combat wires
-// characters) before the player's controller steps.
+// characters) before the player's controller steps. And it breaks things (mw-e03.11): breakables
+// listen to those stimuli and to physics impacts (src/sim/breakables).
 
 import type { GameContent } from '@content/index';
 import {
   CharacterController,
+  installBreakables,
   installPhysicsObjects,
   installStimuli,
   physicsBudgetExceeded,
   registerWorldProperties,
   stimulusSystem,
+  type BreakablesOptions,
   type EntityId,
   type PhysicsBudgetExceeded,
   type PropBody,
@@ -35,12 +38,14 @@ export interface GamePhysicsOptions {
    * ColliderFanOut (mw-e03.37), so a burnt-away piece leaves physics and the light field together.
    */
   readonly levelColliders?: StaticColliderSink;
+  /** Breakables' options (mw-e03.11): the props they spill, the debris budget. */
+  readonly breakables?: BreakablesOptions;
 }
 
 /**
  * Registers world properties on `world`, whose physics must be a rigid-body port, installs stimuli
- * (placements and the queue) and physics objects, and adds the stimulus system after the
- * physics-object system. Call once at setup, before loading a scene.
+ * (placements and the queue) and physics objects, adds the stimulus system after the physics-object
+ * system, and installs breakables. Call once at setup, before loading a scene.
  */
 export function installGamePhysics<T>(world: World<T>, options: GamePhysicsOptions = {}): World<T> {
   const sim = world as unknown as World<never>; // the physics layer never reads inputs
@@ -51,6 +56,7 @@ export function installGamePhysics<T>(world: World<T>, options: GamePhysicsOptio
     ...(levelColliders !== undefined && { levelColliders }),
   });
   sim.addSystem(stimulusSystem());
+  installBreakables(sim, options.breakables);
   if (onBudgetExceeded !== undefined) sim.events.on(physicsBudgetExceeded, onBudgetExceeded);
   return world;
 }

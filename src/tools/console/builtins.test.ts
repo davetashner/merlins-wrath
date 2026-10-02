@@ -8,6 +8,7 @@ import {
   difficultyCommand,
   hashWorld,
   installDebugCommands,
+  actCommand,
   blastCommand,
   killCommand,
   PlayerLook,
@@ -234,6 +235,17 @@ describe('built-in console commands', () => {
     expect(s.queue.drain()).toEqual([killCommand(s.hero)]);
   });
 
+  it('mw-e03.11: act makes the player perform a move (the heavy attack placeholder)', () => {
+    const s = session({ withPlayer: true });
+    expect(s.registry.execute('act sword-heavy').lines).toEqual(['player performs sword-heavy']);
+    expect(s.queue.drain()).toEqual([actCommand(s.hero, 'sword-heavy')]);
+    expect(session().registry.execute('act sword-heavy')).toEqual({
+      ok: false,
+      lines: ['no player in this scene'],
+    });
+    expect(s.registry.execute('act').ok).toBe(false);
+  });
+
   it('mw-e03.37: prop sets a world property of a live entity, parsing the value', () => {
     const s = session();
     const torch = s.world.spawn();
@@ -418,6 +430,7 @@ describe('built-in console commands', () => {
     expect(s.registry.execute('seed 1').ok).toBe(false);
     const help = s.registry.execute('help').lines;
     expect(help.map((line) => line.split(' ')[0])).toEqual([
+      'act',
       'blast',
       'despawn',
       'give',

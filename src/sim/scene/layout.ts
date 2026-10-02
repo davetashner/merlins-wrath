@@ -64,6 +64,22 @@ export type ScenePropertiesSpec = {
     WorldPropertyValues[K] | undefined;
 } & { readonly material?: { readonly id: string } | undefined };
 
+/** A breakable placement or spawn as written in data (mw-e03.11): its profile and instance data. */
+export interface SceneBreakableSpec {
+  readonly profile: { readonly id: string };
+  /** Props it spills when it breaks. */
+  readonly contents?: readonly { readonly id: string }[] | undefined;
+  /** Passage it reveals when it breaks. */
+  readonly reveals?: string | undefined;
+}
+
+/** A breakable as laid out: plain ids. */
+export interface SceneBreakable {
+  readonly profile: string;
+  readonly contents: readonly string[];
+  readonly reveals?: string;
+}
+
 export interface ScenePlacementSpec {
   readonly piece: { readonly id: string };
   /** Grid cells. */
@@ -75,6 +91,8 @@ export interface ScenePlacementSpec {
   readonly properties?: ScenePropertiesSpec | undefined;
   /** Ledge overrides, applied in order. */
   readonly ledges?: readonly LedgeOverrideSpec[] | undefined;
+  /** Makes the piece breakable (mw-e03.11). */
+  readonly breakable?: SceneBreakableSpec | undefined;
 }
 
 export interface SceneSpawnSpec {
@@ -96,6 +114,8 @@ export interface SceneSpawnSpec {
   readonly patrol?: readonly Triple[] | undefined;
   /** World properties of the spawned entity (mw-e03.37: a torch that burns). */
   readonly properties?: ScenePropertiesSpec | undefined;
+  /** Makes the spawned entity breakable (mw-e03.11). */
+  readonly breakable?: SceneBreakableSpec | undefined;
 }
 
 /** A box with its own ambient level, in grid cells (mw-e03.37). */
@@ -169,6 +189,8 @@ export interface ScenePiecePlacement {
   readonly properties?: ScenePropertiesSpec;
   /** The placement's ledge overrides, when it has any. */
   readonly ledges?: readonly LedgeOverrideSpec[];
+  /** The piece's breakable profile and instance data, when it is breakable (mw-e03.11). */
+  readonly breakable?: SceneBreakable;
 }
 
 /** One spawn in world space. */
@@ -191,6 +213,8 @@ export interface SceneSpawnPlacement {
   readonly patrol?: readonly Vec3[];
   /** Its world properties, when the spawn sets any (mw-e03.37). */
   readonly properties?: ScenePropertiesSpec;
+  /** Its breakable profile and instance data, when it is breakable (mw-e03.11). */
+  readonly breakable?: SceneBreakable;
 }
 
 export interface SceneLayout {
@@ -289,6 +313,15 @@ function layoutPart(
   });
 }
 
+/** A breakable's data-file form as plain ids. */
+function breakableOf(spec: SceneBreakableSpec): SceneBreakable {
+  return Object.freeze({
+    profile: spec.profile.id,
+    contents: Object.freeze((spec.contents ?? []).map((prop) => prop.id)),
+    ...(spec.reveals !== undefined && { reveals: spec.reveals }),
+  });
+}
+
 /**
  * Lays out every placement and spawn of `scene` in world space, in scene order.
  * @throws SceneLayoutError when a placement names a piece `kit` does not have.
@@ -321,6 +354,7 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
         max: own.map((p) => p.max).reduce(maxOf),
         ...(placement.properties !== undefined && { properties: placement.properties }),
         ...(placement.ledges !== undefined && { ledges: placement.ledges }),
+        ...(placement.breakable !== undefined && { breakable: breakableOf(placement.breakable) }),
       }),
     );
   });
@@ -340,6 +374,7 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
         patrol: Object.freeze(spawn.patrol.map((at) => gridToWorld(at, scene.grid))),
       }),
       ...(spawn.properties !== undefined && { properties: spawn.properties }),
+      ...(spawn.breakable !== undefined && { breakable: breakableOf(spawn.breakable) }),
     }),
   );
   return Object.freeze({

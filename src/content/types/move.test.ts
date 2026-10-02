@@ -248,6 +248,20 @@ describe('move schema', () => {
     expect(Object.isFrozen(runtime)).toBe(true);
   });
 
+  it('mw-e03.11: a swing carries its world impact into the runtime move; only hitting moves may', () => {
+    const smash = compileMove(moveSchema.parse({ ...swing, worldImpact: { blunt: 150 } }));
+    expect(smash.worldImpact).toEqual({ blunt: 150 });
+    expect(compileMove(moveSchema.parse(swing)).worldImpact).toBeUndefined();
+    expect(problems({ ...roll, worldImpact: { force: 10 } })).toEqual([
+      'worldImpact: move "fixture-roll": only a move with a hitbox strikes the world',
+    ]);
+    expect(problems({ ...swing, worldImpact: { fire: 10 } })).toEqual([
+      'worldImpact: Unrecognized key: "fire"',
+    ]);
+    const heavy = compileMoves(loadGameContent().all('move')).get('sword-heavy');
+    expect(heavy?.worldImpact).toEqual({ blunt: 150 });
+  });
+
   it('AC-1: a charged move compiles its charge with a plain move id', () => {
     const charge = {
       from: 'fixture-swing',
