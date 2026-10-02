@@ -10,6 +10,8 @@ project-wide decision, the same PR updates the contract row that states it.
 |---|---|---|---|
 | [0001](0001-engine-and-physics.md) | Renderer and physics engine | Accepted | `mw-e00.13` |
 | [0002](0002-game-title.md) | Game title — The Vesper Bell | Accepted | `mw-e39.2` |
+| [0003](0003-encumbrance-model.md) | Encumbrance model — weightless inventory, weighted armor, physical carrying | Accepted | `mw-e17.1` |
+| [0004](0004-progression-model.md) | Progression model — in-world capability unlocks, no XP, no respec | Accepted | `mw-e19.1` |
 
 ## Writing one
 
