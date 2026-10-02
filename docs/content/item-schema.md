@@ -100,6 +100,10 @@ An entry is exactly one of the objects below: the fields above, plus those of it
 | `equip` | object | required | How it is equipped. |
 | `equip.slot` | `"main-hand"` \| `"off-hand"` \| `"both-hands"` | required | Slot it is worn or held in: main-hand, off-hand, both-hands. |
 | `equip.proficiencies` | list of id | `[]` | Class proficiency tags it calls for, e.g. "blades", "heavy-armor" (class data, mw-e19.4). Soft: any class may equip it (mw-e17.4). |
+| `equip.nonProficient` | object | `{"drawTimeMultiplier":1.5,"staminaCostMultiplier":1.25,"noiseMultiplier":1}` | The penalty while worn by a class lacking any of its proficiencies (soft proficiency, mw-e17.4): the equip succeeds and the wearer pays this instead. |
+| `equip.nonProficient.drawTimeMultiplier` | number 1–3 | `1.5` | Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05). 1 = no penalty; default 1.5. |
+| `equip.nonProficient.staminaCostMultiplier` | number 1–3 | `1.25` | Multiplier on the stamina its moves cost (combat reads it, mw-e04). 1 = no penalty; default 1.25. |
+| `equip.nonProficient.noiseMultiplier` | number 1–3 | `1` | Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003). 1 = no penalty; default 1. |
 | `weapon` | object | required | Weapon data. |
 | `weapon.moves` | list of ref → move | — | Moves it adds to the wielder’s moveset; its heft lives there (mw-e04). |
 
@@ -111,6 +115,10 @@ An entry is exactly one of the objects below: the fields above, plus those of it
 | `equip` | object | required | How it is equipped. |
 | `equip.slot` | `"head"` \| `"body"` \| `"hands"` \| `"feet"` | required | Slot it is worn or held in: head, body, hands, feet. |
 | `equip.proficiencies` | list of id | `[]` | Class proficiency tags it calls for, e.g. "blades", "heavy-armor" (class data, mw-e19.4). Soft: any class may equip it (mw-e17.4). |
+| `equip.nonProficient` | object | `{"drawTimeMultiplier":1.5,"staminaCostMultiplier":1.25,"noiseMultiplier":1}` | The penalty while worn by a class lacking any of its proficiencies (soft proficiency, mw-e17.4): the equip succeeds and the wearer pays this instead. |
+| `equip.nonProficient.drawTimeMultiplier` | number 1–3 | `1.5` | Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05). 1 = no penalty; default 1.5. |
+| `equip.nonProficient.staminaCostMultiplier` | number 1–3 | `1.25` | Multiplier on the stamina its moves cost (combat reads it, mw-e04). 1 = no penalty; default 1.25. |
+| `equip.nonProficient.noiseMultiplier` | number 1–3 | `1` | Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003). 1 = no penalty; default 1. |
 | `armor` | object | required | Armor data. |
 | `armor.weightKg` | number > 0 ≤ 20 | required | Weight counted towards the wearer’s load. Kilograms (ADR-0003). |
 
@@ -122,6 +130,10 @@ An entry is exactly one of the objects below: the fields above, plus those of it
 | `equip` | object | required | How it is equipped. |
 | `equip.slot` | `"off-hand"` | required | Slot it is worn or held in: off-hand. |
 | `equip.proficiencies` | list of id | `[]` | Class proficiency tags it calls for, e.g. "blades", "heavy-armor" (class data, mw-e19.4). Soft: any class may equip it (mw-e17.4). |
+| `equip.nonProficient` | object | `{"drawTimeMultiplier":1.5,"staminaCostMultiplier":1.25,"noiseMultiplier":1}` | The penalty while worn by a class lacking any of its proficiencies (soft proficiency, mw-e17.4): the equip succeeds and the wearer pays this instead. |
+| `equip.nonProficient.drawTimeMultiplier` | number 1–3 | `1.5` | Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05). 1 = no penalty; default 1.5. |
+| `equip.nonProficient.staminaCostMultiplier` | number 1–3 | `1.25` | Multiplier on the stamina its moves cost (combat reads it, mw-e04). 1 = no penalty; default 1.25. |
+| `equip.nonProficient.noiseMultiplier` | number 1–3 | `1` | Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003). 1 = no penalty; default 1. |
 | `shield` | object | required | Shield data. |
 | `shield.weightKg` | number > 0 ≤ 20 | required | Weight counted towards the wearer’s load. Kilograms (ADR-0003). |
 | `shield.profile` | ref → shield | required | What a block with it does (mw-e04.6). |
@@ -167,6 +179,10 @@ An entry is exactly one of the objects below: the fields above, plus those of it
 | `equip` | object | — | How it is equipped. |
 | `equip.slot` | `"tool-belt"` | required | Slot it is worn or held in: tool-belt. |
 | `equip.proficiencies` | list of id | `[]` | Class proficiency tags it calls for, e.g. "blades", "heavy-armor" (class data, mw-e19.4). Soft: any class may equip it (mw-e17.4). |
+| `equip.nonProficient` | object | `{"drawTimeMultiplier":1.5,"staminaCostMultiplier":1.25,"noiseMultiplier":1}` | The penalty while worn by a class lacking any of its proficiencies (soft proficiency, mw-e17.4): the equip succeeds and the wearer pays this instead. |
+| `equip.nonProficient.drawTimeMultiplier` | number 1–3 | `1.5` | Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05). 1 = no penalty; default 1.5. |
+| `equip.nonProficient.staminaCostMultiplier` | number 1–3 | `1.25` | Multiplier on the stamina its moves cost (combat reads it, mw-e04). 1 = no penalty; default 1.25. |
+| `equip.nonProficient.noiseMultiplier` | number 1–3 | `1` | Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003). 1 = no penalty; default 1. |
 
 ## 9. A quest item: noSell and noDrop by default.
 
@@ -182,6 +198,10 @@ An entry is exactly one of the objects below: the fields above, plus those of it
 | `equip` | object | — | How it is equipped. |
 | `equip.slot` | `"trinket"` | required | Slot it is worn or held in: trinket. |
 | `equip.proficiencies` | list of id | `[]` | Class proficiency tags it calls for, e.g. "blades", "heavy-armor" (class data, mw-e19.4). Soft: any class may equip it (mw-e17.4). |
+| `equip.nonProficient` | object | `{"drawTimeMultiplier":1.5,"staminaCostMultiplier":1.25,"noiseMultiplier":1}` | The penalty while worn by a class lacking any of its proficiencies (soft proficiency, mw-e17.4): the equip succeeds and the wearer pays this instead. |
+| `equip.nonProficient.drawTimeMultiplier` | number 1–3 | `1.5` | Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05). 1 = no penalty; default 1.5. |
+| `equip.nonProficient.staminaCostMultiplier` | number 1–3 | `1.25` | Multiplier on the stamina its moves cost (combat reads it, mw-e04). 1 = no penalty; default 1.25. |
+| `equip.nonProficient.noiseMultiplier` | number 1–3 | `1` | Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003). 1 = no penalty; default 1. |
 
 ## 11. Money. Must be stackable; gold clamps at its cap (mw-e17.3).
 
