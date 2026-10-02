@@ -232,6 +232,11 @@
       }
     },
     {
+      "id": "testbed-draught",
+      "at": [1, 0, -1],
+      "item": { "id": "healing-draught" }
+    },
+    {
       "id": "arena-plank",
       "at": [2, 0, 21],
       "yaw": 90,

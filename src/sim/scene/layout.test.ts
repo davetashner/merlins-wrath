@@ -154,6 +154,19 @@ describe('scene layout (mw-e00.21)', () => {
     expect(Object.isFrozen(den?.patrol)).toBe(true);
   });
 
+  it('lays out an item spawn with its item and count (mw-e17.7)', () => {
+    const scene: SceneSpec = {
+      ...TEST_SCENE,
+      spawns: [
+        { id: 'loot', at: [1, 0, 1], yaw: 0, tags: [], item: { id: { id: 'gold' }, count: 12 } },
+      ],
+    };
+    const [loot] = layoutScene(scene, testKit).spawns;
+    expect(loot?.item).toEqual({ id: 'gold', count: 12 });
+    expect(Object.isFrozen(loot?.item)).toBe(true);
+    expect(layoutScene(TEST_SCENE, testKit).spawns.every((s) => s.item === undefined)).toBe(true);
+  });
+
   it('is deterministic and frozen', () => {
     const a = layoutScene(TEST_SCENE, testKit);
     expect(layoutScene(TEST_SCENE, testKit)).toEqual(a);

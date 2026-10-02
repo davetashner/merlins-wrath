@@ -715,6 +715,29 @@
             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
             "x-contentRef": "targetable"
           },
+          "item": {
+            "description": "Places an item here as a world item the player can take, drop and throw (mw-e17.7).",
+            "type": "object",
+            "properties": {
+              "id": {
+                "description": "The item lying here.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "item"
+              },
+              "count": {
+                "default": 1,
+                "description": "Units in the one world item (a pile of arrows); default 1.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9999
+              }
+            },
+            "required": [
+              "id"
+            ],
+            "additionalProperties": false
+          },
           "creature": {
             "description": "Creature to spawn here (mw-e12.4); faces the spawn’s yaw.",
             "type": "string",

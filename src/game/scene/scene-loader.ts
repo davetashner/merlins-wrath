@@ -193,6 +193,8 @@ export class SceneLoader<TObject, TCommand = unknown> {
       );
     });
     for (const { entity, spawn } of loaded.spawns) {
+      // An item spawn becomes a world item (mw-e17.7), which brings its own body and box.
+      if (spawn.item !== undefined) continue;
       const size =
         movable.has(entity) && spawn.prop !== undefined ? props(spawn.prop)?.size : undefined;
       sync.bind(

@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Items lie in the world as physical objects: walk up to one and press Interact ("Take <name>") to
+  put it in your pack, press G to drop the last item you picked up in front of you, or T to throw one
+  along your look. Dropped and thrown items fall, bounce and make a noise when they land, louder the
+  heavier they are. Quest items, such as keys you need, cannot be dropped or thrown. The testbed has
+  a healing draught on the floor to try it with.
 - A slow walk for sneaking: hold X to creep at 1.2 m/s, or push the left stick only lightly. It is
   the quietest way to move, standing or crouched. Sprinting while crouched now stands you up and
   sprints, unless a low ceiling keeps you down.

@@ -39,6 +39,7 @@ import {
   type GameCreatures,
 } from '@game/creatures/index';
 import { bindBreakLeftovers, BreakWatch, hasBreakables } from '@game/breakables/index';
+import { bindWorldItems, ItemWatch, prepareWorldItems, startWorldItems } from '@game/items/index';
 import { createCapabilityRegistry } from '@game/capabilities';
 import { attachGameAudio, attachGameVfx, soundPositions } from '@game/cues/index';
 import { layers } from '@game/index';
@@ -97,6 +98,7 @@ import { missingFeatures } from '@game/support';
 import { vfxTextureManifest, vfxTextureUrls, VfxSystem } from '@game/vfx/index';
 import { createRenderBootstrap } from '@render/bootstrap/index';
 import { createLeftover, disposeLeftover } from '@render/breakables/index';
+import { createWorldItemMesh, disposeWorldItemMesh } from '@render/items/index';
 import {
   createArrowShaft,
   createSandboxDummy,
@@ -845,6 +847,29 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
       );
       drawArrows();
       afterStep.push(drawArrows);
+      // World items (mw-e17.7): the scene's items lie in the world as physics objects; the player
+      // takes one with Interact and drops (G) or throws (T) the selected one. Each gets a placeholder
+      // box once it exists; the e2e reads the pack and the world items from #app[data-items], which
+      // is rebuilt only after a take, drop, throw or refusal.
+      const worldItems = prepareWorldItems(content);
+      startWorldItems(world, worldItems, loaded.spawns, player?.entity);
+      const itemWatch = new ItemWatch(world, player?.entity);
+      let publishedItems = -1;
+      const drawItems = (): void => {
+        bindWorldItems(world, sync, worldItems, (_entity, size, category) => {
+          const object = createWorldItemMesh(size, category);
+          view.scene.add(object);
+          return {
+            ...object3DBinding(object, readPhysicsObjectTransform),
+            dispose: disposeWorldItemMesh,
+          };
+        });
+        if (itemWatch.version === publishedItems) return;
+        publishedItems = itemWatch.version;
+        root.dataset['items'] = JSON.stringify(itemWatch.readout());
+      };
+      drawItems();
+      afterStep.push(drawItems);
       // Breakables (mw-e03.11): only in scenes that have them, debris and spilled props get boxes
       // after each step, and the e2e reads what broke from #app[data-breakables].
       if (hasBreakables(loaded.layout)) {

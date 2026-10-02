@@ -60,6 +60,8 @@ export const DEFAULT_BINDINGS: Bindings = freezeBindings({
   ability3: ['Digit3'],
   ability4: ['Digit4'],
   inventory: ['KeyI'],
+  drop: ['KeyG'],
+  throw: ['KeyT'],
   pause: ['Escape', 'KeyP'],
 });
 
@@ -91,6 +93,8 @@ export const DEFAULT_PAD_BINDINGS: Bindings = freezeBindings({
   ability3: ['PadLB'],
   ability4: ['PadLeft'],
   inventory: ['PadView'],
+  drop: [],
+  throw: [],
   pause: ['PadMenu'],
 });
 

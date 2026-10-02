@@ -64,6 +64,7 @@ export * from './noise';
 export * from './physics';
 export * from './player';
 export * from './inventory';
+export * from './items';
 export * from './progression';
 export * from './properties';
 export * from './scene';
