@@ -8,9 +8,10 @@ import { defineEvent } from '../core/events';
 
 /**
  * Why an action was refused: `stamina` — the pool is empty (mw-e04.5); `busy` — a buffered request
- * never became legal within the input buffer (the action timeline, mw-e04.4).
+ * never became legal within the input buffer (the action timeline, mw-e04.4), or a bow draw was asked
+ * for mid-move; `ammo` — the quiver has none of the selected arrow type (mw-e05.3).
  */
-export type ActionRejectReason = 'stamina' | 'busy';
+export type ActionRejectReason = 'stamina' | 'busy' | 'ammo';
 
 /** A refused action. */
 export interface ActionRejection {

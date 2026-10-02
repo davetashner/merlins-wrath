@@ -13,6 +13,7 @@ import { animClipSchema } from './types/anim-clip.ts';
 import { animGraphSchema } from './types/anim-graph.ts';
 import { arrowSchema } from './types/arrow.ts';
 import { attackSchema } from './types/attack.ts';
+import { bowSchema } from './types/bow.ts';
 import { cameraSchema } from './types/camera.ts';
 import { capabilitySchema, checkCapabilities } from './types/capability.ts';
 import { namedConditionSchema } from './types/condition.ts';
@@ -46,6 +47,7 @@ export const contentTypes = {
   'anim-graph': animGraphSchema,
   arrow: arrowSchema,
   attack: attackSchema,
+  bow: bowSchema,
   camera: cameraSchema,
   capability: capabilitySchema,
   condition: namedConditionSchema,

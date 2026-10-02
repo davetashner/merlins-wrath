@@ -5,7 +5,7 @@
 // see installGestureUnlock), so sounds from the scene settling at load are dropped, not queued.
 
 import type { PlayOptions } from '@audio/index';
-import type { CueRuleDef, MoveDef } from '@content/index';
+import type { ArrowDefinition, CueRuleDef, MoveDef } from '@content/index';
 import type { EntityId, World } from '@sim/index';
 import type { SimView, Transform } from '../loop/render-sync.ts';
 import {
@@ -30,6 +30,8 @@ export interface GameAudioOptions {
   readonly materials: readonly CueMaterial[];
   /** Moves, for their own sounds (swing whooshes on ActionPhaseChanged). */
   readonly moves?: readonly Pick<MoveDef, 'id' | 'presentation'>[];
+  /** Arrows, for their own impact sounds (arrowImpact's `sound` fact). */
+  readonly arrows?: readonly Pick<ArrowDefinition, 'id' | 'cues'>[];
   /** Armour weight class of a character, for the footstep armour layer (e04.16 will own it). */
   readonly armorOf?: (entity: EntityId) => string | undefined;
   /** Presentation clock in ms. */
@@ -54,6 +56,7 @@ export function attachGameAudio(options: GameAudioOptions): () => void {
     now: options.now,
     lookups: worldCueLookups(options.world, options.materials, {
       ...(options.moves !== undefined && { moves: options.moves }),
+      ...(options.arrows !== undefined && { arrows: options.arrows }),
       ...(options.armorOf !== undefined && { armorOf: options.armorOf }),
     }),
     variantCount: soundVariantCount(options.registry),

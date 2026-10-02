@@ -3,6 +3,7 @@ import { cueRuleSchema } from '@content/index';
 import {
   ActionPhaseChanged,
   addProperties,
+  arrowImpact,
   Died,
   LocomotionEvents,
   registerWorldProperties,
@@ -144,6 +145,48 @@ describe('game audio wiring (mw-e28.2)', () => {
     expect(play.mock.calls.map((call) => (call as unknown[])[0])).toEqual([
       'sfx-knight-kick',
       'sfx-armor-plate-layer',
+    ]);
+  });
+
+  it('passes arrows to the cue lookups (an arrow’s own impact sound)', () => {
+    const world = registerWorldProperties(new World({ seed: 1 }));
+    const play = vi.fn(() => null);
+    attachGameAudio({
+      world,
+      engine: { context: { state: 'running' }, play },
+      registry: { get: () => undefined },
+      sheets: [{ rules: [cueRuleSchema.parse({ event: 'arrowImpact', cue: '{sound}' })] }],
+      materials: [],
+      arrows: [
+        {
+          id: 'water',
+          cues: {
+            trailVfx: 'vfx-trail',
+            flightSfx: 'sfx-arrow-flyby',
+            impactSfx: 'sfx-arrow-water-splash',
+          },
+        },
+      ],
+      now: () => 0,
+    });
+    world.events.emit(arrowImpact, {
+      tick: 0,
+      entity: world.spawn(),
+      arrow: 'water',
+      shooter: null,
+      other: null,
+      material: 'stone',
+      hardness: 'hard',
+      outcome: 'drop',
+      speed: 20,
+      energy: 10,
+      impulse: 0.5,
+      normal: { x: 0, y: 1, z: 0 },
+      position: { x: 0, y: 0, z: 0 },
+    });
+    world.step();
+    expect(play.mock.calls.map((call) => (call as unknown[])[0])).toEqual([
+      'sfx-arrow-water-splash',
     ]);
   });
 

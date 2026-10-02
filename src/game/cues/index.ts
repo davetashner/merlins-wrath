@@ -23,6 +23,7 @@ export {
 } from './game-audio.ts';
 export {
   CUE_EVENT_BINDINGS,
+  type ArrowCues,
   type CueAnchor,
   type CueEventBinding,
   type CueLookups,

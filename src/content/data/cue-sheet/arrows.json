@@ -1,0 +1,85 @@
+{
+  "id": "arrows",
+  "notes": "Arrow cue rules (mw-e05.19). The bow twangs at the shooter as each arrow is loosed, louder the faster it leaves (a half draw is quieter than a full one). An arrow that lands on the world plays one impact-layer rule, the most specific that matches: its own arrow set for wood, stone and metal (a thunk into a post, a crack off a wall), a metal ricochet's ring, and otherwise the struck material's own impact set (sfx-impact-<class>), so no surface is silent; louder the more energy it carried, so a spent arrow dropping to the floor barely ticks. A creature hit is heard through its DamageApplied (the combat sheet's pierce-on-flesh matrix), so these impact rules skip creatures, except a glance: an arrow that fails to bite and ricochets off a creature plays the glance. An arrow with its own impact sound (a water splash, a noise rattle, a fire ignite) layers it on top in the payload layer. Not yet: the draw creak and the flyby past the listener (mw-e28.7), trail and impact VFX (mw-e29.11). Final assets arrive through the placeholder pack (e28.2) and the SFX asset groups (e38.28-31).",
+  "rules": [
+    {
+      "event": "ArrowFired",
+      "layer": "release",
+      "at": "shooter",
+      "cue": "sfx-bow-release-twang",
+      "pitchJitter": 0.05,
+      "volumeJitterDb": 1,
+      "volumeBy": { "fact": "speed", "min": 18, "max": 60, "floorDb": -9 },
+      "priority": 55
+    },
+    {
+      "event": "arrowImpact",
+      "match": { "creature": false },
+      "layer": "impact",
+      "cue": "sfx-impact-{other}",
+      "pitchJitter": 0.08,
+      "volumeJitterDb": 1.5,
+      "volumeBy": { "fact": "energy", "min": 1, "max": 45, "floorDb": -18 },
+      "cooldownMs": 40,
+      "priority": 45
+    },
+    {
+      "event": "arrowImpact",
+      "match": { "creature": false, "other": "wood" },
+      "layer": "impact",
+      "cue": "sfx-arrow-impact-wood",
+      "pitchJitter": 0.06,
+      "volumeJitterDb": 1.5,
+      "volumeBy": { "fact": "energy", "min": 1, "max": 45, "floorDb": -18 },
+      "cooldownMs": 40,
+      "priority": 50
+    },
+    {
+      "event": "arrowImpact",
+      "match": { "creature": false, "other": "stone" },
+      "layer": "impact",
+      "cue": "sfx-arrow-impact-stone",
+      "pitchJitter": 0.06,
+      "volumeJitterDb": 1.5,
+      "volumeBy": { "fact": "energy", "min": 1, "max": 45, "floorDb": -18 },
+      "cooldownMs": 40,
+      "priority": 50
+    },
+    {
+      "event": "arrowImpact",
+      "match": { "creature": false, "other": "metal" },
+      "layer": "impact",
+      "cue": "sfx-arrow-impact-metal",
+      "pitchJitter": 0.06,
+      "volumeJitterDb": 1.5,
+      "volumeBy": { "fact": "energy", "min": 1, "max": 45, "floorDb": -18 },
+      "cooldownMs": 40,
+      "priority": 50
+    },
+    {
+      "event": "arrowImpact",
+      "match": { "creature": false, "outcome": "ricochet", "other": "metal" },
+      "layer": "impact",
+      "cue": "sfx-arrow-ricochet-metal",
+      "pitchJitter": 0.06,
+      "volumeBy": { "fact": "energy", "min": 1, "max": 45, "floorDb": -12 },
+      "cooldownMs": 40,
+      "priority": 55
+    },
+    {
+      "event": "arrowImpact",
+      "match": { "creature": true, "outcome": "ricochet" },
+      "layer": "impact",
+      "cue": "sfx-combat-glance",
+      "pitchJitter": 0.05,
+      "priority": 55
+    },
+    {
+      "event": "arrowImpact",
+      "layer": "payload",
+      "cue": "{sound}",
+      "pitchJitter": 0.04,
+      "priority": 55
+    }
+  ]
+}

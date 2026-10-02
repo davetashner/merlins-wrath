@@ -32,7 +32,7 @@ describe('cue sheet sound ids (mw-e28.2)', () => {
     });
   });
 
-  it('reads fact values from content: impact classes, material ids, attack telegraphs, footstep surfaces and move sounds', () => {
+  it('reads fact values from content: impact classes, material ids, attack telegraphs, footstep surfaces, move and arrow sounds', () => {
     const lists: Record<string, unknown[]> = {
       material: [
         { id: 'iron', impactSound: 'sfx-impact-metal' },
@@ -44,6 +44,7 @@ describe('cue sheet sound ids (mw-e28.2)', () => {
         { presentation: {} },
         { presentation: { audioCue: 'sfx-knight-kick' } },
       ],
+      arrow: [{ cues: { impactSfx: 'sfx-arrow-water-splash' } }, { cues: {} }],
     };
     const content = { all: ((type: string) => lists[type] ?? []) as never };
     const facts = factDomains(content);
@@ -53,7 +54,7 @@ describe('cue sheet sound ids (mw-e28.2)', () => {
     expect(facts.get('material')).toEqual(['iron', 'copper']);
     expect(facts.get('telegraph')).toEqual(['glint']);
     expect(facts.get('surface')).toEqual(['stone', 'metal-grate']);
-    expect(facts.get('sound')).toEqual(['sfx-knight-kick']);
+    expect(facts.get('sound')).toEqual(['sfx-knight-kick', 'sfx-arrow-water-splash']);
   });
 
   it('AC-1: every sound id the committed cue sheets can play resolves to a manifest entry', () => {

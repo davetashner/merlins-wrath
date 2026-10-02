@@ -33,9 +33,13 @@ export function factDomains(content: Pick<GameContent, 'all'>): FactDomains {
   domains.set('surface', [
     ...new Set(['stone', ...materials.flatMap((m) => m.footstepSurface ?? [])]),
   ]);
-  // Each move's own sound (ActionPhaseChanged `sound`).
+  // Each move's own sound (ActionPhaseChanged `sound`) and each arrow's own impact sound
+  // (arrowImpact `sound`).
   domains.set('sound', [
-    ...new Set(content.all('move').flatMap((m) => m.presentation.audioCue ?? [])),
+    ...new Set([
+      ...content.all('move').flatMap((m) => m.presentation.audioCue ?? []),
+      ...content.all('arrow').flatMap((a) => a.cues.impactSfx ?? []),
+    ]),
   ]);
   return domains;
 }

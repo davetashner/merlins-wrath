@@ -429,6 +429,8 @@ function startRenderer(root: HTMLElement): void {
       materials: content.all('material'),
       // Swing whooshes play each move's own sound (mw-e28.4); footsteps read the ground's material.
       moves: content.all('move'),
+      // Arrows layer their own impact sounds (a water splash) over the surface's (mw-e05.19).
+      arrows: content.all('arrow'),
       now: () => performance.now(),
       onPlay: (cue) => {
         recentCues.push(cue);

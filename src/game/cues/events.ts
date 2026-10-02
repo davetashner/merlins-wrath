@@ -11,6 +11,8 @@ import {
   AttackEnded,
   AttackHit,
   AttackProjectileLaunched,
+  ArrowFired,
+  arrowImpact,
   AttackTelegraph,
   DAMAGE_TAGS,
   DamageApplied,
@@ -68,6 +70,16 @@ export interface CueLookups {
   readonly surfaceUnder?: (entity: EntityId) => string | undefined;
   /** Armour weight class of a character's armour layer, e.g. "plate". */
   readonly armorOf?: (entity: EntityId) => string | undefined;
+  /** An arrow's own presentation cues (its content `cues`: trail, flight and impact). */
+  readonly arrowCuesOf?: (arrow: string) => ArrowCues | undefined;
+}
+
+/** An arrow's own cue ids (the arrow content's `cues`). */
+export interface ArrowCues {
+  readonly trailVfx: string;
+  readonly impactVfx?: string | undefined;
+  readonly flightSfx?: string | undefined;
+  readonly impactSfx?: string | undefined;
 }
 
 /** A cue event bound to the sim. */
@@ -327,4 +339,44 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
       speed: e.speed,
     },
   })),
+  ArrowFired: bind(ArrowFired, (e, look) => {
+    const cues = look.arrowCuesOf?.(e.arrow);
+    return {
+      anchors: {
+        arrow: { entity: e.entity, position: e.origin },
+        shooter: at(e.shooter),
+        origin: { position: e.origin },
+      },
+      facts: {
+        arrow: e.arrow,
+        trail: cues?.trailVfx,
+        flight: cues?.flightSfx,
+        speed: Math.hypot(e.velocity.x, e.velocity.y, e.velocity.z),
+      },
+    };
+  }),
+  // Like physicsImpact, the payload names the struck material (unbound geometry reads the default).
+  arrowImpact: bind(arrowImpact, (e, look) => {
+    const cues = look.arrowCuesOf?.(e.arrow);
+    return {
+      anchors: {
+        entity: { entity: e.entity, position: e.position },
+        other: at(e.other),
+        at: { position: e.position },
+      },
+      facts: {
+        arrow: e.arrow,
+        outcome: e.outcome,
+        ...classFacts('other', e.material, look),
+        hardness: e.hardness,
+        creature: e.hurtbox !== undefined,
+        region: e.region,
+        sound: cues?.impactSfx,
+        vfx: cues?.impactVfx,
+        energy: e.energy,
+        speed: e.speed,
+        impulse: e.impulse,
+      },
+    };
+  }),
 };
