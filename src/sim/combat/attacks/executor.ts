@@ -18,14 +18,34 @@
 // i-frames, the same rule the hit-volume system asks) names on the tick it is struck gets DodgedHit
 // instead of damage. A dodged melee target counts as hit for the attack, so the swing cannot catch it
 // later in its window; a projectile flies on through it as if it missed (DodgedHit once per target)
-// and may still hit whoever is behind. Until executor hits route through hit volumes (mw-e04.20),
-// DodgedHit names the attack as the hitbox and the bounding sphere as hurtbox `body` (torso, ×1).
+// and may still hit whoever is behind. On the executor's own counter (attacks off the move system,
+// below), DodgedHit names the attack as the hitbox and the bounding sphere as hurtbox `body` (torso,
+// ×1).
 // Run the action timeline before the executor so the rule reads this tick's move.
 //
 // A poise break (PoiseBroken) or death of the attacker breaks its attack off; hyperarmor is the poise
 // rules' business, so a hit that did not break poise never reaches here.
+//
+// The move system (mw-e04.20). A melee or area attack of an attacker with an action timeline and
+// hitboxes (a spawned creature in a world with knight combat) is not run by the executor's own
+// counter: it is performed on the attacker's action timeline, exactly as the combat sandbox's attacker
+// dummy performs its swing, so it shares every rule of the player's moves — the melee strikes open its
+// hit volume on the hit-volume system (regions, i-frames, allies), its packet is tagged parryable /
+// unblockable from the move, a parry in the window interrupts it and leaves the creature Parried
+// (PARRIED_TICKS) with the parry's hit-stop, a shield blocks it, hit reactions interrupt and lock it,
+// and hit-stop freezes it. `startAttack` turns the attacker to its aim and requests the move;
+// the executor follows the timeline each tick: TelegraphStarted on each move's telegraphTick (counted
+// in the move's own ticks, so hit-stop delays it), the chain's next move requested once the running
+// one opens its cancel window into an attack (or reaches its last tick), the attack's extra packets
+// applied after each struck target's own packet (MoveStruck; a parried swing has ended by then), and
+// AttackEnded: `parried` as soon as a parry deflects it (HitParried), else once no move of it runs —
+// `staggered` when a hit reaction locked it, `cancelled` when something else took the timeline,
+// else `completed`. Run the
+// executor after the action timeline and the hit-volume system, and install it after the melee
+// strikes. Projectile, grab and special attacks, and attackers without a timeline, keep the executor's
+// own counter.
 
-import type { RuntimeAttack, TargetStance } from '@content/index';
+import type { RuntimeAttack, RuntimeMove, TargetStance } from '@content/index';
 import type { EntityId } from '../../core/component';
 import type { System, World } from '../../core/world';
 import { PlacementComponent } from '../../stimulus/placement';
@@ -33,14 +53,22 @@ import { shapeFalloff, type Vec3 } from '../../stimulus/shapes';
 import { HealthComponent } from '../damage/components';
 import { Died, PoiseBroken, type DamageResult } from '../damage/events';
 import type { DamageModel } from '../damage/model';
+import { DAMAGE_TAGS } from '../damage/packet';
+import { HitboxComponent, HurtboxComponent } from '../hits/components';
 import { DodgedHit } from '../hits/events';
 import { noInvulnerability, type InvulnerabilityRule } from '../hits/system';
+import { CombatFacingComponent, facingOf, giveFacing } from '../melee/components';
+import { MoveStruck, type MoveStrike } from '../melee/events';
+import { HitParried } from '../parry/events';
+import { ActionTimelineComponent, type ActionTimeline } from '../timeline/components';
+import { interruptAction, requestMove } from '../timeline/timeline';
 import {
   AttackerComponent,
   ProjectileComponent,
   type ActiveAttack,
   type Attacker,
   type Projectile,
+  type TimelineRun,
 } from './components';
 import {
   AttackActive,
@@ -48,7 +76,7 @@ import {
   AttackHit,
   AttackProjectileLaunched,
   AttackStub,
-  AttackTelegraph,
+  TelegraphStarted,
   type AttackEndReason,
 } from './events';
 import { horizontalAim, pointToWorld, rotateToWorld, shapeToWorld, type HitShape } from './frame';
@@ -102,27 +130,65 @@ function attackerOf(world: World<never>, entity: EntityId): Attacker {
   return attacker;
 }
 
+/** Every move `attack` performs, in order (its move, then the chain it continues into). */
+export function attackChain(attack: RuntimeAttack): readonly RuntimeMove[] {
+  return attack.chain ?? [attack.move];
+}
+
+/** `entity`'s action timeline, or undefined when it has none (or the world has no timelines). */
+function timelineOf(world: World<never>, entity: EntityId): ActionTimeline | undefined {
+  return world.isRegistered(ActionTimelineComponent)
+    ? world.get(entity, ActionTimelineComponent)
+    : undefined;
+}
+
 /**
- * Whether `entity` may start `attack` now, checked in a fixed order: busy, cooldown, range
+ * Whether `entity` performs `attack` on its action timeline (the move system, see the file header):
+ * a melee or area attack, and `entity` has an action timeline and hitboxes.
+ */
+export function attacksOnTimeline(
+  world: World<never>,
+  entity: EntityId,
+  attack: RuntimeAttack,
+): boolean {
+  if (attack.kind !== 'melee' && attack.kind !== 'area') return false;
+  if (timelineOf(world, entity) === undefined) return false;
+  return world.isRegistered(HitboxComponent) && world.has(entity, HitboxComponent);
+}
+
+/** Whether `entity`'s action timeline is busy: a move running or requested, or a lock (a reaction). */
+function timelineBusy(world: World<never>, entity: EntityId): boolean {
+  const timeline = timelineOf(world, entity);
+  if (timeline === undefined) return false;
+  return timeline.current !== null || timeline.buffer !== null || timeline.lockTicks > 0;
+}
+
+/**
+ * Whether `entity` may start `attack` now, checked in a fixed order: busy (an attack in progress, or
+ * its action timeline running, requesting or locked — a stagger or a Parried stun), cooldown, range
  * (too-close/too-far), target stance, own health band (current / max health; an entity without
- * health counts as full). Pure: the same world state and context always give the same answer.
- * Throws when `entity` is not an attacker.
+ * health counts as full). Range and stance are skipped when the context leaves out the distance
+ * (`canUseMove`'s range-free question). Pure: the same world state and context always give the
+ * same answer. Throws when `entity` is not an attacker.
  */
 export function canStartAttack(
   world: World<never>,
   entity: EntityId,
   attack: RuntimeAttack,
-  context: AttackContext,
+  context: Partial<AttackContext>,
 ): AttackCheck {
   const attacker = attackerOf(world, entity);
   const refuse = (reason: AttackRefusal): AttackCheck => ({ ok: false, reason });
-  if (attacker.current !== null) return refuse('busy');
+  if (attacker.current !== null || timelineBusy(world, entity)) return refuse('busy');
   if (world.tick < (attacker.readyAt[attack.id] ?? 0)) return refuse('cooldown');
-  if (context.distance < attack.rangeMin) return refuse('too-close');
-  if (context.distance > attack.rangeMax) return refuse('too-far');
-  const stances = attack.targetStances;
-  if (stances !== null && !stances.some((stance) => stance === context.targetStance)) {
-    return refuse('target-stance');
+  const { distance } = context;
+  if (distance !== undefined) {
+    if (distance < attack.rangeMin) return refuse('too-close');
+    if (distance > attack.rangeMax) return refuse('too-far');
+    const stances = attack.targetStances;
+    if (stances !== null && !stances.some((stance) => stance === context.targetStance)) {
+      return refuse('target-stance');
+    }
   }
   const health = world.get(entity, HealthComponent);
   const fraction = health === undefined ? 1 : health.current / health.max;
@@ -130,10 +196,34 @@ export function canStartAttack(
   return OK;
 }
 
+/** Turns `entity` (its combat facing and hurtboxes, where it has them) to face `aim`. */
+function face(world: World<never>, entity: EntityId, aim: Vec3): void {
+  if (world.isRegistered(CombatFacingComponent)) giveFacing(world, entity, aim);
+  const hurtboxes = world.isRegistered(HurtboxComponent)
+    ? world.get(entity, HurtboxComponent)
+    : undefined;
+  if (hurtboxes !== undefined) {
+    world.set(
+      entity,
+      HurtboxComponent,
+      Object.freeze({ ...hurtboxes, facing: facingOf(world, entity) }),
+    );
+  }
+}
+
+const NOT_STARTED: TimelineRun = Object.freeze({
+  move: null,
+  startedAt: null,
+  telegraphed: false,
+  followUp: false,
+});
+
 /**
  * Starts `attack` for `entity`, facing `aim` (its horizontal direction is used), and puts the attack
- * on cooldown from this tick. Preconditions are the caller's to check (`canStartAttack`); this only
- * throws — when `entity` is not an attacker or is busy, or `aim` has no horizontal direction.
+ * on cooldown from this tick. On the move system (`attacksOnTimeline`) it turns the attacker to `aim`
+ * and requests the attack's move on its action timeline, which starts it on its next run.
+ * Preconditions are the caller's to check (`canStartAttack`); this only throws — when `entity` is
+ * not an attacker or is busy, or `aim` has no horizontal direction.
  */
 export function startAttack(
   world: World<never>,
@@ -146,18 +236,24 @@ export function startAttack(
     throw new Error(`entity ${String(entity)} is already attacking (${attacker.current.attack})`);
   }
   const tick = world.tick;
+  const onTimeline = attacksOnTimeline(world, entity, attack);
   const current: ActiveAttack = Object.freeze({
     attack: attack.id,
     elapsed: 0,
     startedAt: tick,
     aim: horizontalAim(aim),
     hit: Object.freeze([]),
+    ...(onTimeline && { timeline: NOT_STARTED }),
   });
   const readyAt = Object.freeze({
     ...attacker.readyAt,
     [attack.id]: tick + world.clock.ticksFor(attack.cooldownMs),
   });
-  world.set(entity, AttackerComponent, Object.freeze({ current, readyAt }));
+  world.set(entity, AttackerComponent, Object.freeze({ ...attacker, current, readyAt }));
+  if (onTimeline) {
+    face(world, entity, current.aim);
+    requestMove(world, entity, attack.move.id);
+  }
 }
 
 function end(
@@ -179,8 +275,9 @@ function end(
 
 /**
  * Breaks off `entity`'s attack in progress (no further telegraph, hit volume or damage) and emits
- * AttackEnded with `reason`. Returns whether there was one; an idle entity or a non-attacker is a
- * no-op. The cooldown stays spent.
+ * AttackEnded with `reason`. On the move system its running (or requested) move is interrupted too,
+ * keeping any lock the timeline already has (a hit reaction's). Returns whether there was one; an
+ * idle entity or a non-attacker is a no-op. The cooldown stays spent.
  */
 export function cancelAttack(
   world: World<never>,
@@ -192,6 +289,10 @@ export function cancelAttack(
   const { current } = attacker;
   if (current === null) return false;
   end(world, entity, attacker, current, reason);
+  const timeline = current.timeline === undefined ? undefined : timelineOf(world, entity);
+  if (timeline !== undefined && (timeline.current !== null || timeline.buffer !== null)) {
+    interruptAction(world, entity, timeline.lockTicks);
+  }
   return true;
 }
 
@@ -317,9 +418,138 @@ function runActive(
   return { ...current, hit: Object.freeze(hit) };
 }
 
+/** Emits TelegraphStarted for `move` of `attack`. */
+function telegraph(
+  world: World<never>,
+  entity: EntityId,
+  attack: RuntimeAttack,
+  move: RuntimeMove,
+) {
+  const cues = move.presentation.telegraph;
+  world.events.emit(TelegraphStarted, {
+    tick: world.tick,
+    attacker: entity,
+    attack: attack.id,
+    move: move.id,
+    cue: attack.telegraph,
+    audioCue: cues?.audioCue ?? null,
+    vfxCue: cues?.vfxCue ?? null,
+    parryable: move.parryable,
+    unblockable: move.unblockable || attack.kind === 'grab',
+  });
+}
+
+/** Whether the move tick `tick` of `move` is the moment to request the chain's next move. */
+const followUpDue = (move: RuntimeMove, tick: number): boolean =>
+  tick >= move.totalTicks - 1 ||
+  move.cancelWindows.some((w) => w.into === 'attack' && tick >= w.from && tick <= w.to);
+
+/** Why a move-system attack whose moves no longer run ended (a parry ends it at once, HitParried). */
+function endReason(current: ActiveAttack, timeline: ActionTimeline | undefined): AttackEndReason {
+  if (timeline === undefined) return 'cancelled';
+  if (timeline.lockTicks > 0) return 'staggered';
+  if (timeline.current !== null || current.timeline?.startedAt === null) return 'cancelled';
+  return 'completed';
+}
+
+/** One tick of a move-system attack (see the file header). */
+function runOnTimeline(
+  world: World<never>,
+  entity: EntityId,
+  attacker: Attacker,
+  current: ActiveAttack & { readonly timeline: TimelineRun },
+  attack: RuntimeAttack,
+): void {
+  const timeline = timelineOf(world, entity);
+  const running = timeline?.current ?? null;
+  const chain = attackChain(attack);
+  const index =
+    running === null || running.startedAt < current.startedAt
+      ? -1
+      : chain.findIndex((m) => m.id === running.move);
+  const store = (run: TimelineRun) => {
+    const next = Object.freeze({ ...current, elapsed: current.elapsed + 1, timeline: run });
+    world.set(entity, AttackerComponent, Object.freeze({ ...attacker, current: next }));
+  };
+  const move = chain[index];
+  if (running !== null && move !== undefined) {
+    let run = current.timeline;
+    if (run.startedAt !== running.startedAt) {
+      run = { move: move.id, startedAt: running.startedAt, telegraphed: false, followUp: false };
+    }
+    if (!run.telegraphed && running.tick >= move.telegraphTick) {
+      telegraph(world, entity, attack, move);
+      run = { ...run, telegraphed: true };
+    }
+    if (!run.followUp && index + 1 < chain.length && followUpDue(move, running.tick)) {
+      requestMove(world, entity, attack.move.id);
+      run = { ...run, followUp: true };
+    }
+    store(Object.freeze(run));
+    return;
+  }
+  // None of its moves runs: it is about to (its request is buffered), or it is over.
+  const waiting = current.timeline.startedAt === null || current.timeline.followUp;
+  if (waiting && timeline?.buffer?.move === attack.move.id) {
+    store(current.timeline);
+    return;
+  }
+  end(world, entity, attacker, current, endReason(current, timeline));
+}
+
+/** The attack's extra packets for one struck target of a move-system attack, and AttackHit. */
+function strikeExtras(
+  world: World<never>,
+  options: AttackExecutorOptions,
+  strike: MoveStrike,
+): void {
+  const attacker = world.get(strike.attacker, AttackerComponent);
+  const current = attacker?.current ?? null;
+  if (attacker === undefined || current?.timeline === undefined) return;
+  const attack = lookup(options.attacks, current.attack);
+  const move = attackChain(attack).find((m) => m.id === strike.move);
+  if (move === undefined) return;
+  const { result, target } = strike;
+  const results: DamageResult[] = result === null ? [] : [result];
+  if (result !== null && !result.tags.includes(DAMAGE_TAGS.parried)) {
+    const { packet } = result;
+    const aim = current.aim;
+    for (const extra of attack.packets.slice(1)) {
+      const applied = options.damage.apply(world, target, {
+        instigator: strike.attacker,
+        source: strike.attacker,
+        amounts: extra.amounts,
+        poiseDamage: extra.poiseDamage,
+        staminaDamage: extra.staminaDamage,
+        impulse: rotateToWorld(extra.impulse, aim),
+        impactForce: extra.impactForce,
+        direction: aim,
+        ...(packet.region !== undefined && { region: packet.region }),
+        regionMultiplier: packet.regionMultiplier,
+        tags: [...extra.tags, ...(move.unblockable ? [DAMAGE_TAGS.unblockable] : [])],
+      });
+      if (applied !== undefined) results.push(applied);
+    }
+  }
+  if (!current.hit.includes(target)) {
+    const hit = Object.freeze([...current.hit, target].sort((a, b) => a - b));
+    const next = Object.freeze({ ...current, hit });
+    world.set(strike.attacker, AttackerComponent, Object.freeze({ ...attacker, current: next }));
+  }
+  world.events.emit(AttackHit, {
+    tick: world.tick,
+    attacker: strike.attacker,
+    attack: attack.id,
+    target,
+    source: strike.attacker,
+    results: Object.freeze(results),
+  });
+}
+
 /**
  * Runs every attack in progress one tick: telegraph on the move's telegraphTick, the hit volume (or
  * projectile launch, or grab/special stub) on active ticks, and AttackEnded once recovery is over.
+ * A move-system attack is followed on its action timeline instead (see the file header).
  */
 export function attackSystem<TInput>(options: AttackExecutorOptions): System<TInput> {
   return {
@@ -330,15 +560,12 @@ export function attackSystem<TInput>(options: AttackExecutorOptions): System<TIn
         const { current } = attacker;
         if (current === null) return;
         const attack = lookup(options.attacks, current.attack);
-        const attackTick = current.elapsed + 1;
-        if (attackTick - 1 === attack.move.telegraphTick) {
-          w.events.emit(AttackTelegraph, {
-            tick: w.tick,
-            attacker: entity,
-            attack: attack.id,
-            cue: attack.telegraph,
-          });
+        if (current.timeline !== undefined) {
+          runOnTimeline(w, entity, attacker, { ...current, timeline: current.timeline }, attack);
+          return;
         }
+        const attackTick = current.elapsed + 1;
+        if (attackTick - 1 === attack.move.telegraphTick) telegraph(w, entity, attack, attack.move);
         let next: ActiveAttack = { ...current, elapsed: attackTick };
         if (attackPhase(attack, attackTick) === 'active') {
           next = runActive(w, options, entity, attack, next, attackTick);
@@ -443,10 +670,11 @@ export function projectileSystem<TInput>(options: AttackExecutorOptions): System
 }
 
 /**
- * Wires the executor into `world`: the attack and projectile systems (appended in that order) and
- * the interrupts — a PoiseBroken on an attacker cancels its attack as `staggered`, a Died as `died`.
- * Register ATTACK_COMPONENTS and the damage components first. Returns a function that removes the
- * interrupt subscriptions (the systems stay, as systems always do).
+ * Wires the executor into `world`: the attack and projectile systems (appended in that order), the
+ * interrupts — a PoiseBroken on an attacker cancels its attack as `staggered`, a Died as `died` —
+ * and, for move-system attacks, the extra packets after each MoveStruck. Register ATTACK_COMPONENTS
+ * and the damage components first (and install it after the melee strikes, see the file header).
+ * Returns a function that removes the subscriptions (the systems stay, as systems always do).
  */
 export function installAttacks<TInput>(
   world: World<TInput>,
@@ -457,6 +685,18 @@ export function installAttacks<TInput>(
   const offs = [
     world.events.on(PoiseBroken, ({ target }) => cancelAttack(w, target, 'staggered')),
     world.events.on(Died, ({ target }) => cancelAttack(w, target, 'died')),
+    world.events.on(MoveStruck, (strike) => {
+      strikeExtras(w, options, strike);
+    }),
+    world.events.on(HitParried, ({ attacker }) => {
+      if (attacker === null) return;
+      const state = w.get(attacker, AttackerComponent);
+      const current = state?.current ?? null;
+      // The parry has interrupted its move already; only a move-system attack can be parried.
+      if (state !== undefined && current?.timeline !== undefined) {
+        end(w, attacker, state, current, 'parried');
+      }
+    }),
   ];
   return () => {
     for (const off of offs) off();

@@ -277,6 +277,11 @@ export {
 } from './types/puzzle.ts';
 export { checkPuzzles } from './puzzle-checks.ts';
 export {
+  checkCreatureAttacks,
+  CREATURE_MIN_WINDUP_TICKS,
+  CREATURE_UNBLOCKABLE_WINDUP_TICKS,
+} from './attack-checks.ts';
+export {
   CONDITION_USAGES,
   checkConditions,
   conditionProblems,

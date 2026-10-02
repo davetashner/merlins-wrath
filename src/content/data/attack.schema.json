@@ -42,7 +42,7 @@
     "telegraph": {
       "type": "string",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
-      "description": "Telegraph cue id render and audio play when the windup reads (AttackTelegraph event), e.g. \"guard-strike-windup\"; placeholder cues can be swapped later."
+      "description": "Telegraph cue id render and audio play when the windup reads (TelegraphStarted event, mw-e04.20), e.g. \"guard-strike-windup\"; placeholder cues can be swapped later."
     },
     "range": {
       "type": "object",

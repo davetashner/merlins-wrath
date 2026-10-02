@@ -617,6 +617,27 @@
           "description": "VFX cue id (style bible §15.1), e.g. \"vfx-sword-trail-light\".",
           "type": "string",
           "pattern": "^vfx-[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "telegraph": {
+          "description": "The telegraph’s own cues (TelegraphStarted, e04.20), played on its telegraphTick. Required for a creature’s unblockable or grab move, and distinct from every blockable creature move’s, so the player can tell it apart (attack-checks.ts); absent = the attack’s telegraph cue plays.",
+          "type": "object",
+          "properties": {
+            "audioCue": {
+              "type": "string",
+              "pattern": "^sfx-[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "description": "Audio cue id the telegraph plays, e.g. \"sfx-telegraph-forgotten-lunge\"."
+            },
+            "vfxCue": {
+              "type": "string",
+              "pattern": "^vfx-[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "description": "VFX cue id the telegraph plays on the attacker, e.g. \"vfx-telegraph-flare\"."
+            }
+          },
+          "required": [
+            "audioCue",
+            "vfxCue"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

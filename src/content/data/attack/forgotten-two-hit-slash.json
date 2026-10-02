@@ -1,0 +1,14 @@
+{
+  "$schema": "../attack.schema.json",
+  "id": "forgotten-two-hit-slash",
+  "notes": "The grey-box Forgotten skeleton's two-hit slash (mw-e04.20): forgotten-slash-1 chains into forgotten-slash-2, each with its own 18-tick telegraph. Used from 0-1.5 m, every 2.5 s at most, twice as likely as the thrust. Shares the parryable swings' telegraph cue.",
+  "kind": "melee",
+  "move": "forgotten-slash-1",
+  "telegraph": "forgotten-windup",
+  "range": {
+    "min": 0,
+    "max": 1.5
+  },
+  "cooldown": 2.5,
+  "weight": 2
+}

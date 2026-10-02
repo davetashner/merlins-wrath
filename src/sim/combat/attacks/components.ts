@@ -3,7 +3,8 @@
 // when each attack comes off cooldown — plus the in-flight projectile. Plain frozen data, replaced
 // never mutated, so snapshots, saves and replays carry attacks mid-swing. An attacker keeps its
 // component while idle (`current: null`) so starting an attack is a value change, never a structural
-// one, and takes effect in the tick it is made.
+// one, and takes effect in the tick it is made. A move-system attack (mw-e04.20) also remembers which
+// move of its chain is running and whether its telegraph and follow-up have been issued.
 
 import { defineComponent, type EntityId } from '../../core/component';
 import type { World } from '../../core/world';
@@ -24,6 +25,24 @@ export interface ActiveAttack {
   readonly aim: Vec3;
   /** Entities this attack has hit (each is hit at most once per attack), ascending. */
   readonly hit: readonly EntityId[];
+  /**
+   * Present when the attack runs on the attacker's action timeline (the move system, mw-e04.20): the
+   * move of its chain now running and what the executor has done for it. Absent = the executor runs
+   * the attack's ticks itself.
+   */
+  readonly timeline?: TimelineRun;
+}
+
+/** One move of a move-system attack as the executor follows it (see ActiveAttack.timeline). */
+export interface TimelineRun {
+  /** The move of the attack's chain running, or null until the first starts. */
+  readonly move: string | null;
+  /** The world tick that move started on, or null until the first starts. */
+  readonly startedAt: number | null;
+  /** Its TelegraphStarted has fired. */
+  readonly telegraphed: boolean;
+  /** The chain's next move has been requested. */
+  readonly followUp: boolean;
 }
 
 /** An entity that can perform creature attacks. */
@@ -32,6 +51,8 @@ export interface Attacker {
   readonly current: ActiveAttack | null;
   /** Attack id → first world tick it may start again (absent = ready). */
   readonly readyAt: Readonly<Record<string, number>>;
+  /** The attacks it knows (its creature's `attacks`, mw-e04.20), in data order; absent = unlisted. */
+  readonly attacks?: readonly string[];
 }
 
 /** A projectile in flight (spawned by a projectile attack's first active tick). */
@@ -63,11 +84,16 @@ export const ATTACK_COMPONENTS = Object.freeze([AttackerComponent, ProjectileCom
 const IDLE: Attacker = Object.freeze({ current: null, readyAt: Object.freeze({}) });
 
 /**
- * Makes `entity` an idle attacker with every attack ready. Adding the component is structural, so
- * during a step it exists from the end of the tick.
+ * Makes `entity` an idle attacker with every attack ready, knowing `attacks` (attack ids) when given.
+ * Adding the component is structural, so during a step it exists from the end of the tick.
  */
-export function giveAttacker(world: World<never>, entity: EntityId): void {
-  world.add(entity, AttackerComponent, IDLE);
+export function giveAttacker(
+  world: World<never>,
+  entity: EntityId,
+  attacks?: readonly string[],
+): void {
+  const known = attacks === undefined ? IDLE : { ...IDLE, attacks: Object.freeze([...attacks]) };
+  world.add(entity, AttackerComponent, Object.freeze(known));
 }
 
 /** `entity`'s attack in progress, or undefined when it is idle or no attacker. */

@@ -11,7 +11,8 @@
 //   (`hitPacket`: direction, region and region multiplier from the hit; the template's impulse turned
 //   from the attacker's frame into the world), tagged `unblockable` for an unblockable move and
 //   `parryable` for a parryable one, and is applied through the damage model — where the shield rule
-//   (guard.ts) and the parry rule (combat/parry) meet it.
+//   (guard.ts) and the parry rule (combat/parry) meet it — then reported as MoveStruck with its result
+//   (the creature attack executor adds an attack's extra packets from there, mw-e04.20).
 //
 // Hitbox ids are move ids, so the knight's `sword-light-2` is also the hitbox that struck.
 //
@@ -46,6 +47,7 @@ import {
 } from '../hits/system';
 import { ActionEnded, ActionPhaseChanged } from '../timeline/events';
 import { facingOf } from './components';
+import { MoveStruck } from './events';
 
 /** What melee strikes need. */
 export interface MeleeStrikeOptions {
@@ -93,7 +95,14 @@ export function installMeleeStrikes<TInput>(
         ...(move.parryable ? [DAMAGE_TAGS.parryable] : []),
       ];
       const impulse = rotateToWorld(template.impulse, hit.direction);
-      damage.apply(w, hit.target, hitPacket(hit, { ...template, impulse, tags }));
+      const result = damage.apply(w, hit.target, hitPacket(hit, { ...template, impulse, tags }));
+      w.events.emit(MoveStruck, {
+        tick: hit.tick,
+        attacker: hit.attacker,
+        move: move.id,
+        target: hit.target,
+        result: result ?? null,
+      });
     }),
   ];
   return () => {

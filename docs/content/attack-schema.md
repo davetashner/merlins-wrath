@@ -12,7 +12,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `notes` | string | required | Where the numbers come from (bead, design intent), for owner review. |
 | `kind` | `"melee"` \| `"projectile"` \| `"area"` \| `"grab"` \| `"special"` | required | How it reaches its target. |
 | `move` | ref → move | required | The move it performs: windup (startup), active and recovery ticks, hit volume, damage template, parry/block flags, telegraph tick and cues. Must be an "attack" move. |
-| `telegraph` | id | required | Telegraph cue id render and audio play when the windup reads (AttackTelegraph event), e.g. "guard-strike-windup"; placeholder cues can be swapped later. |
+| `telegraph` | id | required | Telegraph cue id render and audio play when the windup reads (TelegraphStarted event, mw-e04.20), e.g. "guard-strike-windup"; placeholder cues can be swapped later. |
 | `range` | object | required | Distance band to the target (centre to centre, metres) the attack is used from: the distance precondition, and what AI spacing (e11) aims for. |
 | `range.min` | number ≥ 0 | required | Closest distance to the target it is used from, metres. |
 | `range.max` | number ≥ 0 | required | Farthest distance to the target it is used from, metres; at least min. |

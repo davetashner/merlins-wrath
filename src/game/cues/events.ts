@@ -13,7 +13,6 @@ import {
   AttackProjectileLaunched,
   ArrowFired,
   arrowImpact,
-  AttackTelegraph,
   breakableBroken,
   DAMAGE_TAGS,
   DamageApplied,
@@ -34,6 +33,7 @@ import {
   StaminaExhausted,
   StaminaRecovered,
   stimulusResolved,
+  TelegraphStarted,
   volumeEntered,
   volumeExited,
   type DamageAmounts,
@@ -41,6 +41,7 @@ import {
   type EntityId,
   type EventType,
   type StimulusShape,
+  type TelegraphInfo,
   type Vec3,
 } from '@sim/index';
 import type { CueFacts, CueFactValue } from './matcher.ts';
@@ -195,6 +196,12 @@ function blowDirections(forward: Vec3 | undefined): CueDirections {
 const facing = (look: CueLookups, entity: EntityId | null): Vec3 | undefined =>
   entity === null ? undefined : look.facingOf?.(entity);
 
+/**
+ * The sound a creature telegraph plays (mw-e04.20): its move's declared telegraph audio cue, else
+ * the attack's telegraph cue as `sfx-telegraph-<cue>`.
+ */
+export const telegraphSound = (e: TelegraphInfo): string => e.audioCue ?? `sfx-telegraph-${e.cue}`;
+
 const entityOnly = (payload: { entity: EntityId }): CueReading => ({
   anchors: { entity: { entity: payload.entity } },
   facts: {},
@@ -268,9 +275,17 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
       },
     };
   }),
-  AttackTelegraph: bind(AttackTelegraph, (e) => ({
+  TelegraphStarted: bind(TelegraphStarted, (e) => ({
     anchors: { attacker: { entity: e.attacker } },
-    facts: { attack: e.attack, telegraph: e.cue },
+    facts: {
+      attack: e.attack,
+      move: e.move,
+      telegraph: e.cue,
+      telegraphSound: telegraphSound(e),
+      telegraphVfx: e.vfxCue ?? undefined,
+      parryable: e.parryable,
+      unblockable: e.unblockable,
+    },
   })),
   AttackHit: bind(AttackHit, (e, look) => ({
     anchors: {

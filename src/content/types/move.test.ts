@@ -23,6 +23,10 @@ import {
 const REQUIRED_MOVES = [
   'backstep',
   'dodge-roll',
+  'forgotten-lunging-thrust',
+  'forgotten-overhead-chop',
+  'forgotten-slash-1',
+  'forgotten-slash-2',
   'kick',
   'roll-attack',
   'shield-bash',
@@ -96,7 +100,7 @@ describeContent('move', 'AC-1: passes the schema and has a runtime form', (move,
 });
 
 describe('move schema', () => {
-  it('AC-1: every knight move the bead lists loads, and sword-light-1 is 12/4/18 ticks', () => {
+  it('AC-1: every knight move the bead lists (and the e04.20 skeleton set) loads, and sword-light-1 is 12/4/18 ticks', () => {
     const content = loadGameContent();
     expect(content.all('move').map((m) => m.id)).toEqual(REQUIRED_MOVES);
     const table = compileMoves(content.all('move'));
@@ -410,6 +414,31 @@ describe('move schema', () => {
     ]);
     expect(moveWarnings([move])).toEqual([]);
     expect(moveWarnings([entry(roll)], { audio: [], vfx: [] })).toEqual([]);
+  });
+
+  it('mw-e04.20: telegraph cues follow the naming patterns and unknown ones warn like the others', () => {
+    const telegraph = { audioCue: 'sfx-telegraph-x', vfxCue: 'vfx-telegraph-x' };
+    const move = entry({ ...swing, presentation: { anim: 'anim-x', telegraph } });
+    expect(compileMove(move).presentation.telegraph).toEqual(telegraph);
+    expect(moveWarnings([move], { audio: [], vfx: ['vfx-telegraph-x'] })).toEqual([
+      {
+        move: 'fixture-swing',
+        path: 'presentation.telegraph.audioCue',
+        message: expect.stringContaining('"sfx-telegraph-x"') as string,
+      },
+    ]);
+    expect(
+      problems({
+        ...swing,
+        presentation: { anim: 'anim-x', telegraph: { audioCue: 'vfx-a', vfxCue: 'sfx-b' } },
+      }),
+    ).toEqual([
+      expect.stringContaining('presentation.telegraph.audioCue: must be an audio cue id'),
+      expect.stringContaining('presentation.telegraph.vfxCue: must be a VFX cue id'),
+    ]);
+    expect(
+      problems({ ...swing, presentation: { anim: 'anim-x', telegraph: { audioCue: 'sfx-a' } } }),
+    ).toHaveLength(1);
   });
 
   it('presentation ids must follow the asset naming patterns', () => {

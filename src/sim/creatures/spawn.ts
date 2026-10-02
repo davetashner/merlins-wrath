@@ -11,7 +11,10 @@
 // - a combatant (health, poise, poise regen, resistances from its stats) with one body hurtbox, a
 //   capsule the size of its nav agent (region hurtboxes arrive with each creature's rig), reacting
 //   to hits with its `reactions` profile and mass (mw-e04.7);
-// - an idle attacker when it has attacks and the world runs the attack executor (mw-e12.5);
+// - an idle attacker knowing its attacks when it has attacks and the world runs the attack executor
+//   (mw-e12.5) — and, in a world with action timelines and hit volumes (knight combat), an action
+//   timeline and hitboxes too, so its melee attacks run on the move system exactly as the combat
+//   sandbox's attacker dummy swings (mw-e04.20: parried, blocked and staggered by the player's rules);
 // - a lock-on target when the world has lock-on (mw-e02.16), lock points up its body;
 // - a member of its faction (or the spawn's override) with its disposition toward the player;
 // - its creature state: origin (for respawn), behaviour profile, needs, senses and nav agent;
@@ -31,7 +34,12 @@ import {
   DAMAGE_COMPONENTS,
   giveCombatant,
 } from '../combat/damage/components';
-import { giveHurtboxes, HurtboxComponent } from '../combat/hits/components';
+import {
+  giveHitboxes,
+  giveHurtboxes,
+  HitboxComponent,
+  HurtboxComponent,
+} from '../combat/hits/components';
 import { CombatFacingComponent, FORWARD_FACING, giveFacing } from '../combat/melee/components';
 import {
   giveHitReactions,
@@ -39,6 +47,7 @@ import {
   reactionProfileFromCreature,
 } from '../combat/reactions/components';
 import { towardPlayer } from '../combat/sandbox/dummies';
+import { ActionTimelineComponent, giveActionTimeline } from '../combat/timeline/components';
 import type { ComponentType, EntityId } from '../core/component';
 import type { World } from '../core/world';
 import type { Spawner } from '../debug/system';
@@ -230,7 +239,17 @@ export function spawnCreature(
   });
   giveCombatant(world, entity, combatantFromCreature(def));
   giveHitReactions(world, entity, reactionProfileFromCreature(def));
-  if (def.attacks.length > 0 && world.isRegistered(AttackerComponent)) giveAttacker(world, entity);
+  if (def.attacks.length > 0 && world.isRegistered(AttackerComponent)) {
+    giveAttacker(
+      world,
+      entity,
+      def.attacks.map((attack) => attack.id),
+    );
+    if (world.isRegistered(ActionTimelineComponent) && world.isRegistered(HitboxComponent)) {
+      giveActionTimeline(world, entity);
+      giveHitboxes(world, entity);
+    }
+  }
   if (world.isRegistered(TargetableComponent)) {
     giveTargetable(world, entity, creatureLockProfile(nav.height));
   }

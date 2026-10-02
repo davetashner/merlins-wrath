@@ -5,6 +5,7 @@
 
 import type { EntityId } from '../../core/component';
 import { defineEvent } from '../../core/events';
+import type { DamageResult } from '../damage/events';
 
 /** Payload of GuardBroken. */
 export interface GuardBreak {
@@ -23,3 +24,22 @@ export interface GuardBreak {
  * `staggerTicks`, and the hit's unabsorbed remainder lands (in the DamageApplied that follows).
  */
 export const GuardBroken = defineEvent<GuardBreak>('GuardBroken');
+
+/** Payload of MoveStruck. */
+export interface MoveStrike {
+  readonly tick: number;
+  /** Whose move struck (the hitbox's owner). */
+  readonly attacker: EntityId;
+  /** The move (its hitbox id). */
+  readonly move: string;
+  readonly target: EntityId;
+  /** The damage model's result for the move's packet, or null when it resolved nothing (no combatant). */
+  readonly result: DamageResult | null;
+}
+
+/**
+ * A move's hit volume struck a target and its packet went through the damage model (mw-e04.20): the
+ * creature attack executor adds its extra packets and reports AttackHit from here. Emitted after the
+ * hit's DamageApplied is queued, so it carries the same result.
+ */
+export const MoveStruck = defineEvent<MoveStrike>('MoveStruck');

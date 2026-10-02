@@ -2,9 +2,11 @@
 // name under src/content/data/. Adding a content type = a schema module + one line here + a folder.
 // `contentChecks` are the checks across entries every load runs: fact references (mw-e27.2),
 // conditions against the fact registry (mw-e27.5), animation (mw-e02.20) and socket tracks
-// (mw-e04.26), capability ids and puzzles against their scenes, capabilities and facts (mw-e15.1).
+// (mw-e04.26), capability ids and puzzles against their scenes, capabilities and facts (mw-e15.1),
+// and creature attacks' readability (windups and telegraph cues, mw-e04.20).
 
 import { checkAnimation } from './anim-checks.ts';
+import { checkCreatureAttacks } from './attack-checks.ts';
 import { checkConditions } from './condition-checks.ts';
 import { checkFacts } from './fact-checks.ts';
 import { checkPuzzles } from './puzzle-checks.ts';
@@ -90,6 +92,7 @@ export const contentChecks: readonly ContentCheck[] = [
   checkSocketTracks,
   checkCapabilities,
   checkPuzzles,
+  checkCreatureAttacks,
 ];
 
 export type ContentTypes = typeof contentTypes;

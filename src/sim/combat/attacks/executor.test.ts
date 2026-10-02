@@ -26,13 +26,13 @@ import {
   AttackHit,
   AttackProjectileLaunched,
   AttackStub,
-  AttackTelegraph,
+  TelegraphStarted,
   type AttackActiveInfo,
   type AttackEndInfo,
   type AttackHitInfo,
   type AttackProjectileInfo,
   type AttackStubInfo,
-  type AttackTelegraphInfo,
+  type TelegraphInfo,
 } from './events';
 import { attackPhase, cancelAttack, canStartAttack, installAttacks, startAttack } from './executor';
 
@@ -116,7 +116,7 @@ function setup(attacks: readonly RuntimeAttack[]) {
   const damage = new DamageModel();
   const off = installAttacks(world, { attacks: new Map(attacks.map((a) => [a.id, a])), damage });
   const log = {
-    telegraph: [] as AttackTelegraphInfo[],
+    telegraph: [] as TelegraphInfo[],
     active: [] as AttackActiveInfo[],
     hit: [] as AttackHitInfo[],
     ended: [] as AttackEndInfo[],
@@ -124,7 +124,7 @@ function setup(attacks: readonly RuntimeAttack[]) {
     stub: [] as AttackStubInfo[],
     applied: [] as DamageResult[],
   };
-  world.events.on(AttackTelegraph, (e) => log.telegraph.push(e));
+  world.events.on(TelegraphStarted, (e) => log.telegraph.push(e));
   world.events.on(AttackActive, (e) => log.active.push(e));
   world.events.on(AttackHit, (e) => log.hit.push(e));
   world.events.on(AttackEnded, (e) => log.ended.push(e));
@@ -273,7 +273,7 @@ describe('attack executor', () => {
     expect(currentAttack(world, second)?.elapsed).toBe(1);
   });
 
-  it('AC-4: windup start emits exactly one AttackTelegraph with the attacker id and cue id', () => {
+  it('AC-4: windup start emits exactly one TelegraphStarted with the attacker id and cue id', () => {
     const attack = makeAttack('strike');
     const late = makeAttack('late', [12, 4, 10], {}, 4);
     const { world, log, attacker, steps } = setup([attack, late]);
@@ -283,7 +283,17 @@ describe('attack executor', () => {
     startAttack(world, other, late, FORWARD);
     steps(1);
     expect(log.telegraph).toEqual([
-      { tick: 0, attacker: guard, attack: 'strike', cue: 'strike-windup' },
+      {
+        tick: 0,
+        attacker: guard,
+        attack: 'strike',
+        move: 'strike-move',
+        cue: 'strike-windup',
+        audioCue: null,
+        vfxCue: null,
+        parryable: true,
+        unblockable: false,
+      },
     ]);
     steps(30);
     expect(log.telegraph.map((e) => [e.attacker, e.tick])).toEqual([
