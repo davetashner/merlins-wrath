@@ -684,6 +684,41 @@
             "type": "string",
             "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
             "x-contentRef": "targetable"
+          },
+          "creature": {
+            "description": "Creature to spawn here (mw-e12.4); faces the spawn’s yaw.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "x-contentRef": "creature"
+          },
+          "faction": {
+            "description": "Faction the spawned creature joins instead of its definition’s (needs creature).",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "x-contentRef": "faction"
+          },
+          "patrol": {
+            "description": "Patrol route for the spawned creature: waypoints in grid cells, walked in order (needs creature; AI, e11, walks it).",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "items": false,
+              "minItems": 3,
+              "maxItems": 3,
+              "description": "Position in grid cells (x, y, z), snapped to SCENE_SNAP_STEP."
+            }
           }
         },
         "required": [

@@ -123,6 +123,37 @@ describe('scene layout (mw-e00.21)', () => {
     ]);
   });
 
+  it('lays out a creature spawn with its faction override and patrol route in metres (mw-e12.4)', () => {
+    const scene: SceneSpec = {
+      ...TEST_SCENE,
+      grid: 2,
+      spawns: [
+        {
+          id: 'den',
+          at: [1, 0, 1],
+          yaw: 90,
+          tags: [],
+          creature: { id: 'fixture-hound' },
+          faction: { id: 'unaligned' },
+          patrol: [
+            [1, 0, 1],
+            [3, 0, 1],
+          ],
+        },
+      ],
+    };
+    const [den] = layoutScene(scene, testKit).spawns;
+    expect(den).toMatchObject({
+      creature: 'fixture-hound',
+      faction: 'unaligned',
+      patrol: [
+        { x: 2, y: 0, z: 2 },
+        { x: 6, y: 0, z: 2 },
+      ],
+    });
+    expect(Object.isFrozen(den?.patrol)).toBe(true);
+  });
+
   it('is deterministic and frozen', () => {
     const a = layoutScene(TEST_SCENE, testKit);
     expect(layoutScene(TEST_SCENE, testKit)).toEqual(a);

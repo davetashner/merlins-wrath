@@ -1,8 +1,9 @@
 // Frozen test-fixture content (mw-e12.3): grey-box creatures that AI and stealth rule tests spawn
 // instead of bestiary creatures, so tuning the bestiary never breaks a rule test. The files live in
-// src/content/fixtures/creatures/<type>/, outside the game's content root, so the game bundle (which
-// globs only ./data, see game-content.ts) never includes them. Changing a fixture value requires
-// updating the scenario tests that depend on it (see the README next to the files).
+// src/content/fixtures/creatures/<type>/, outside the game's content root, so the game's content
+// (which globs only ./data, see game-content.ts) never includes them; only debug builds load them,
+// through dev-content.ts (mw-e12.4). Changing a fixture value requires updating the scenario tests
+// that depend on it (see the README next to the files).
 // Test-only: not exported from index.ts, so nothing in the game imports it.
 
 import { gameContentSources } from './game-content.ts';

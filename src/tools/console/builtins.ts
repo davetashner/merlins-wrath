@@ -1,11 +1,12 @@
-// The debug console's built-in commands (mw-e33.1): help, spawn, give, god, noclip, kill, tp,
-// timescale, scene, set and seed, and blast (mw-e04.34). Everything that changes the sim goes out as a sim command through
+// The debug console's built-in commands (mw-e33.1): help, spawn, despawn (mw-e12.4), give, god,
+// noclip, kill, tp, timescale, scene, set and seed, and blast (mw-e04.34). Everything that changes the sim goes out as a sim command through
 // `host.submit` (applied next tick, recorded in replays); the host's other members only read the
 // sim or drive the page (time scale, scene reload), never sim state.
 
 import {
   blastCommand,
   cheatCommand,
+  despawnCreaturesCommand,
   DIFFICULTY_KEYS,
   DIFFICULTY_RANGES,
   difficultyCommand,
@@ -38,6 +39,11 @@ export interface ConsoleHost {
   cheat(entity: EntityId, cheat: DebugCheat): boolean;
   /** Where `spawn` puts things: a little in front of the player, or the scene origin. */
   spawnPoint(): Vec3;
+  /**
+   * The point under the cursor (the screen centre while the pointer is locked), for
+   * `spawn … at-cursor`; undefined when nothing is under it. Absent: at-cursor is unavailable.
+   */
+  cursorPoint?(): Vec3 | undefined;
   /** Spawnable content ids (`testprop-crate`…), sorted. */
   readonly spawnables: readonly string[];
   /**
@@ -54,6 +60,9 @@ export interface ConsoleHost {
   /** Sim speed: 1 is real time. */
   timeScale: number;
 }
+
+/** The `spawn` word that puts the spawn under the cursor instead of in front of the player. */
+export const AT_CURSOR = 'at-cursor';
 
 const count = (max: number) => z.coerce.number<string>().int().min(1).max(max);
 const coordinate = z.coerce.number<string>().refine(Number.isFinite, 'expected a finite number');
@@ -130,16 +139,20 @@ export function registerBuiltins(registry: CommandRegistry<ConsoleHost>): void {
     },
   });
 
-  const spawnUsage = `<contentId> [count 1–${String(MAX_SPAWN_COUNT)}] [--option value…]`;
+  const spawnUsage = `<contentId> [count 1–${String(MAX_SPAWN_COUNT)}] [at-cursor] [--option value…]`;
   registry.registerCommand({
     name: 'spawn',
-    summary: 'spawn content in front of the player (sandbox dummies take options: type dummies)',
+    summary:
+      'spawn content or a creature in front of the player, or at-cursor (sandbox dummies take options: type dummies)',
     usage: spawnUsage,
     args: z.tuple([z.string()]).rest(z.string()),
     complete: (index, host) => (index === 0 ? host.spawnables : []),
     run: ([content, ...rest], host) => {
       const { words, options } = parsedOptions(rest);
-      const counted = z.tuple([count(MAX_SPAWN_COUNT).optional()]).safeParse(words);
+      const atCursor = words.includes(AT_CURSOR);
+      const counted = z
+        .tuple([count(MAX_SPAWN_COUNT).optional()])
+        .safeParse(words.filter((word) => word !== AT_CURSOR));
       if (!counted.success) {
         const issue = counted.error.issues.map((i) => i.message).join('; ');
         throw new ConsoleError([
@@ -159,9 +172,31 @@ export function registerBuiltins(registry: CommandRegistry<ConsoleHost>): void {
             : `${content} takes no options`
           : host.checkSpawn(content, options);
       if (problem !== undefined) throw new ConsoleError([`spawn ${content}: ${problem}`]);
-      host.submit(spawnCommand(content, n, host.spawnPoint(), options));
+      let at = host.spawnPoint();
+      if (atCursor) {
+        if (host.cursorPoint === undefined) {
+          throw new ConsoleError(['spawn: at-cursor needs the game view']);
+        }
+        const point = host.cursorPoint();
+        if (point === undefined) throw new ConsoleError(['spawn: nothing under the cursor']);
+        at = point;
+      }
+      host.submit(spawnCommand(content, n, at, options));
       const described = Object.entries(options).map(([name, value]) => `--${name} ${value}`);
-      return `spawning ${String(n)} × ${[content, ...described].join(' ')}`;
+      const where = atCursor ? ` at ${String(at.x)} ${String(at.y)} ${String(at.z)}` : '';
+      return `spawning ${String(n)} × ${[content, ...described].join(' ')}${where}`;
+    },
+  });
+
+  registry.registerCommand({
+    name: 'despawn',
+    summary: 'remove every spawned creature',
+    usage: 'all',
+    args: z.tuple([z.literal('all')]),
+    complete: (index) => (index === 0 ? ['all'] : []),
+    run: (_args, host) => {
+      host.submit(despawnCreaturesCommand());
+      return 'despawning every creature';
     },
   });
 

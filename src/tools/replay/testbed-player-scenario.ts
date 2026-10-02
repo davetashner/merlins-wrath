@@ -19,6 +19,7 @@ import {
   PLAYER_LOCK_ON_ID,
   type EnvironmentDamageTuning,
   type Frozen,
+  type GameContent,
 } from '@content/index';
 import {
   installSandboxRules,
@@ -27,6 +28,7 @@ import {
   type TestbedCombat,
   type TestbedCombatants,
 } from '@game/combat/index';
+import { prepareCreatures, startCreatures, type GameCreatures } from '@game/creatures/index';
 import { ActionSampler } from '@game/input/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
 import { installGamePhysics, playerFocus } from '@game/physics-objects';
@@ -50,6 +52,7 @@ import {
   type ActionFrame,
   type RapierModule,
   type ReplayScenario,
+  type SceneCreatures,
 } from '@sim/index';
 
 import { actionFrameCommand } from './action-frame-command';
@@ -144,6 +147,11 @@ export interface HeadlessGame<TInput> {
   readonly player: EntityId;
   readonly combat: TestbedCombat;
   readonly combatants: TestbedCombatants;
+  /** The creatures content has, and what the scene's creature spawns spawned (mw-e12.4). */
+  readonly creatures: GameCreatures;
+  readonly sceneCreatures: SceneCreatures;
+  /** Render sync with headless objects (nothing draws them). */
+  readonly sync: RenderSync;
 }
 
 /** The testbed with the player, wired as src/main.ts wires it, minus the renderer. */
@@ -156,8 +164,10 @@ export function createTestbedWorld(
 
 /**
  * Scene `scene` (default the testbed) with the player, wired as src/main.ts wires it — debug
- * commands with the sandbox's spawners, the combat sandbox rules, physics, the player and combat —
- * minus the renderer. The combat sandbox's e2e-free tests (tests/integration) run on it.
+ * commands with the sandbox's and creatures' spawners, the combat sandbox rules, physics, the
+ * player, combat and creatures — minus the renderer. The combat sandbox's and creatures' e2e-free
+ * tests (tests/integration) run on it. `content` defaults to the game's; debug builds pass the dev
+ * content (src/content/dev-content.ts), which has the fixture creatures.
  */
 export function createGameWorld<TInput>(
   rapier: RapierModule,
@@ -166,22 +176,25 @@ export function createGameWorld<TInput>(
     hz,
     scene: sceneId = 'testbed',
     environment,
+    content = loadGameContent(),
   }: {
     seed: number;
     hz: number;
     scene?: string;
     /** Environmental damage rules in place of content's (tests of other curves). */
     environment?: Frozen<EnvironmentDamageTuning>;
+    /** Content in place of the game's (debug-build content with the fixture creatures). */
+    content?: GameContent;
   },
 ): HeadlessGame<TInput> {
-  const content = loadGameContent();
   const physics = new RapierPhysics(rapier);
   const world = registerSceneComponents(new World<TInput>({ seed, hz, physics }));
   const prepared = prepareTestbedCombat(content);
   const combat = environment === undefined ? prepared : { ...prepared, environment };
+  const creatures = prepareCreatures(content, combat);
   const props = testPropSpawners(content.all('testprop').map((prop) => prop.id));
   installDebugCommands(world, {
-    spawners: new Map([...props, ...combat.spawners]),
+    spawners: new Map([...props, ...combat.spawners, ...creatures.spawners]),
     damage: combat.damage,
   });
   installSandboxRules(world, combat);
@@ -227,7 +240,8 @@ export function createGameWorld<TInput>(
   }).entity;
   focus.entity = player;
   const combatants = startTestbedCombat(world, combat, scene.layout.spawns, player);
-  return { world, player, combat, combatants };
+  const sceneCreatures = startCreatures(world, creatures, combat, scene.layout.spawns);
+  return { world, player, combat, combatants, creatures, sceneCreatures, sync };
 }
 
 /** The replay scenario, on the given Rapier module. */

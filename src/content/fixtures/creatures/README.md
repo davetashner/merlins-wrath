@@ -24,6 +24,10 @@ stable.
   `move/` and its `socket-track/` here, a single identity key): melee, 18/4/14 ticks, telegraph `fixture-guard-strike-windup`, range 0–1.8 m, 2 s
   cooldown, and two packets per hit (18 slash + 15 poise from the move, then 4 blunt). The hound and
   sentinel have none.
-- **Never shipped.** Files live under `src/content/fixtures/creatures/<type>/`, outside the game's
-  content root (`src/content/data`), so the game bundle never includes them. Tests load them with
-  `loadFixtureContent()` from `src/content/test-fixtures.ts` (game content plus these fixtures).
+- **Never shipped in a release build.** Files live under `src/content/fixtures/creatures/<type>/`,
+  outside the game's content root (`src/content/data`), so the game's own content never includes
+  them. Tests load them with `loadFixtureContent()` from `src/content/test-fixtures.ts` (game content
+  plus these fixtures). Debug builds (the debug console built in) also load them, with the dev-only
+  scenes in `src/content/fixtures/dev/`, through `loadDevContent()` in `src/content/dev-content.ts`
+  (mw-e12.4), so designers can spawn them in the grey-box testbed; a release build
+  (`VESPER_DEBUG_CONSOLE=off`) never downloads them.

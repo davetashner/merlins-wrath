@@ -3,6 +3,7 @@ import {
   CharacterController,
   cheatCommand,
   DEBUG_SPAWN_TAG,
+  despawnCreaturesCommand,
   DebugCheatsComponent,
   difficultyCommand,
   hashWorld,
@@ -189,7 +190,7 @@ describe('built-in console commands', () => {
     ]);
     expect(registry.execute('spawn testprop-crate 1 2').lines).toEqual([
       'spawn: invalid arguments: arg 2: Too big: expected array to have <=1 items',
-      'usage: spawn <contentId> [count 1–100] [--option value…]',
+      'usage: spawn <contentId> [count 1–100] [at-cursor] [--option value…]',
     ]);
     // Without a check, no spawnable takes options.
     expect(s.registry.execute('spawn testprop-crate --size big').lines).toEqual([
@@ -292,6 +293,52 @@ describe('built-in console commands', () => {
     expect(s.world.difficulty.fallDamage).toBe(0);
   });
 
+  it('mw-e12.4: spawn … at-cursor spawns at the point under the cursor, rounded to the millimetre', () => {
+    const world = registerSceneComponents(new World<unknown>({ seed: 1 }));
+    const submitted: unknown[] = [];
+    let cursor: { x: number; y: number; z: number } | undefined = { x: 1.23456, y: 0, z: -2 };
+    const host = createGameHost({
+      ...HOST_BASE(world),
+      submit: (command) => submitted.push(command),
+      spawnables: ['fixture-hound'],
+      cursorPoint: () => cursor,
+    });
+    const registry = new CommandRegistry<ConsoleHost>(host);
+    registerBuiltins(registry);
+    expect(registry.execute('spawn fixture-hound 3 at-cursor')).toEqual({
+      ok: true,
+      lines: ['spawning 3 × fixture-hound at 1.235 0 -2'],
+    });
+    expect(registry.execute('spawn fixture-hound at-cursor').ok).toBe(true);
+    expect(submitted).toEqual([
+      spawnCommand('fixture-hound', 3, { x: 1.235, y: 0, z: -2 }),
+      spawnCommand('fixture-hound', 1, { x: 1.235, y: 0, z: -2 }),
+    ]);
+    cursor = undefined;
+    expect(registry.execute('spawn fixture-hound at-cursor').lines).toEqual([
+      'spawn: nothing under the cursor',
+    ]);
+    // A host without a view has no cursor.
+    const blind = new CommandRegistry<ConsoleHost>(
+      createGameHost({ ...HOST_BASE(world), spawnables: ['fixture-hound'] }),
+    );
+    registerBuiltins(blind);
+    expect(blind.execute('spawn fixture-hound at-cursor').lines).toEqual([
+      'spawn: at-cursor needs the game view',
+    ]);
+    expect(submitted).toHaveLength(2);
+  });
+
+  it('mw-e12.4: despawn all submits a despawn of every creature', () => {
+    const s = session();
+    expect(s.registry.execute('despawn all').lines).toEqual(['despawning every creature']);
+    expect(s.queue.drain()).toEqual([despawnCreaturesCommand()]);
+    expect(s.registry.execute('despawn').ok).toBe(false);
+    expect(s.registry.execute('despawn 3').ok).toBe(false);
+    expect(s.registry.complete('despawn ').line).toBe('despawn all ');
+    expect(s.registry.complete('despawn all ').options).toEqual([]);
+  });
+
   it('seed prints the world seed; help lists every command or explains one', () => {
     const s = session();
     expect(s.registry.execute('seed').lines).toEqual(['seed 42']);
@@ -299,6 +346,7 @@ describe('built-in console commands', () => {
     const help = s.registry.execute('help').lines;
     expect(help.map((line) => line.split(' ')[0])).toEqual([
       'blast',
+      'despawn',
       'give',
       'god',
       'help',
@@ -312,11 +360,11 @@ describe('built-in console commands', () => {
       'tp',
     ]);
     expect(s.registry.execute('help spawn').lines).toEqual([
-      'usage: spawn <contentId> [count 1–100] [--option value…]',
-      'spawn content in front of the player (sandbox dummies take options: type dummies)',
+      'usage: spawn <contentId> [count 1–100] [at-cursor] [--option value…]',
+      'spawn content or a creature in front of the player, or at-cursor (sandbox dummies take options: type dummies)',
     ]);
     expect(s.registry.execute('help spwn').lines).toEqual([
-      'unknown command "spwn"; closest: spawn, scene, seed',
+      'unknown command "spwn"; closest: spawn, despawn, scene',
     ]);
   });
 

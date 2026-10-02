@@ -12,10 +12,22 @@
 // Units: metres, kilograms, degrees, metres per second. Anything timed in ticks says so in its name.
 
 import { z } from 'zod';
+import type { Frozen } from '../loader.ts';
 import { contentId, ref } from '../schema.ts';
 import { hitReactionsSchema, poiseRegenSchema, resistancesSchema } from './damage.ts';
-import { creatureLocomotionSchema } from './locomotion.ts';
-import { creatureSensesSchema } from './sense.ts';
+import {
+  creatureLocomotionSchema,
+  deriveNavAgent,
+  resolveLocomotion,
+  type LocomotionProfileLookup,
+  type NavAgent,
+} from './locomotion.ts';
+import {
+  creatureSensesSchema,
+  resolveSenses,
+  type SenseProfile,
+  type SenseProfileLookup,
+} from './sense.ts';
 
 /** Current CreatureDef schema version; bump it (and add a migration) on breaking changes. */
 export const CREATURE_SCHEMA_VERSION = 1;
@@ -172,3 +184,54 @@ export const creatureSchema = z.strictObject({
 export type CreatureDefInput = z.input<typeof creatureSchema>;
 /** A validated CreatureDef with every default filled and refs parsed. */
 export type CreatureDef = z.output<typeof creatureSchema>;
+
+/**
+ * A creature ready to spawn (mw-e12.4): its definition with the senses and locomotion profiles it
+ * names resolved, and the nav agent its locomotion derives. What the sim's creature spawner builds
+ * an entity from; the sim never resolves content itself.
+ */
+export interface RuntimeCreature {
+  readonly id: string;
+  readonly def: Frozen<CreatureDef>;
+  readonly senses: Frozen<SenseProfile>;
+  readonly nav: Frozen<NavAgent>;
+}
+
+/** Runtime creatures by id (`compileCreatures`). */
+export type CreatureTable = ReadonlyMap<string, RuntimeCreature>;
+
+/** Where compiling looks up sense and locomotion profiles; a loaded `GameContent` is one. */
+export type CreatureProfileLookup = SenseProfileLookup & LocomotionProfileLookup;
+
+const deepFreeze = <T>(value: T): T => {
+  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) deepFreeze(child);
+    Object.freeze(value);
+  }
+  return value;
+};
+
+/** Resolves one creature's profiles (see RuntimeCreature). */
+export function compileCreature(
+  def: Frozen<CreatureDef>,
+  profiles: CreatureProfileLookup,
+): RuntimeCreature {
+  return Object.freeze({
+    id: def.id,
+    def,
+    senses: deepFreeze(resolveSenses(def.senses, profiles)),
+    nav: deepFreeze(deriveNavAgent(resolveLocomotion(def.locomotion, profiles))),
+  });
+}
+
+/** The runtime creature table built from loaded creatures (e.g. `content.all('creature')`), by id. */
+export function compileCreatures(
+  defs: Iterable<Frozen<CreatureDef>>,
+  profiles: CreatureProfileLookup,
+): CreatureTable {
+  const table = new Map<string, RuntimeCreature>();
+  for (const def of [...defs].sort((a, b) => (a.id < b.id ? -1 : 1))) {
+    table.set(def.id, compileCreature(def, profiles));
+  }
+  return table;
+}

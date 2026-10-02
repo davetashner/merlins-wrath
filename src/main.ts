@@ -10,6 +10,7 @@ import {
   PLAYER_CAMERA_ID,
   PLAYER_CONTROLLER_ID,
   PLAYER_LOCK_ON_ID,
+  type GameContent,
 } from '@content/index';
 import {
   bindSandboxDummies,
@@ -23,6 +24,15 @@ import {
   TRAINING_DUMMY,
   type SandboxHud,
 } from '@game/combat/index';
+import {
+  bindCreatures,
+  creatureReadout,
+  prepareCreatures,
+  sceneCreatureErrors,
+  startCreatures,
+  viewCentrePoint,
+  type GameCreatures,
+} from '@game/creatures/index';
 import { attachGameAudio, soundPositions } from '@game/cues/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
@@ -59,6 +69,7 @@ import { missingFeatures } from '@game/support';
 import { VfxSystem } from '@game/vfx/index';
 import { createRenderBootstrap } from '@render/bootstrap/index';
 import { createSandboxDummy, createTrainingDummy } from '@render/combat/index';
+import { createCreatureProxy } from '@render/creatures/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
@@ -331,12 +342,14 @@ function startRenderer(root: HTMLElement): void {
   // Fixed-step sim on requestAnimationFrame (mw-e00.20). The sim owns its physics (mw-e03.35), so the
   // world starts once the physics module has loaded; the dynamic import keeps Rapier and its WASM
   // out of the initial bundle.
-  const startWorld = (physics: RapierPhysics): void => {
+  const startWorld = (physics: RapierPhysics, content: GameContent): void => {
     const world = registerSceneComponents(new World<GameCommand>({ seed: BOOT_SEED, physics }));
-    const content = loadGameContent();
     // The knight's sword and shield (mw-e04.6): moves, socket tracks, the wood shield and the
     // damage model with the shield rule; and the combat sandbox's tuning (mw-e04.9).
     const combat = prepareTestbedCombat(content);
+    // Every creature in content, spawnable by id from scene data and the console (mw-e12.4). The
+    // game's own content has none yet; debug builds add the frozen fixture creatures.
+    const creatures: GameCreatures = prepareCreatures(content, combat);
     // Debug commands first (mw-e33.1), so a teleport or cheat is what every later system sees. The
     // sim side is always present; only the console that issues them is dev/playtest-only. Props with
     // a body spawn as physics objects (mw-e33.16), like the scene's own movable props. God mode
@@ -346,7 +359,7 @@ function startRenderer(root: HTMLElement): void {
       content.all('testprop').map((prop) => prop.id),
       { props, materials: materialPresets(content.all('material')) },
     );
-    const spawners = new Map([...propSpawners, ...combat.spawners]);
+    const spawners = new Map([...propSpawners, ...combat.spawners, ...creatures.spawners]);
     installDebugCommands(world, { spawners, damage: combat.damage });
     // The combat sandbox's rules (mw-e04.9): its commands, attacker metronomes (before the player's
     // action timeline, so a swing starts on its beat) and infinite-health refills.
@@ -446,6 +459,18 @@ function startRenderer(root: HTMLElement): void {
       root.dataset['vfx'] = JSON.stringify(stats);
     };
 
+    // The creatures now (mw-e12.4 e2e): how many, how many drawn and in view, of which kinds.
+    let publishedCreatures = '';
+    const publishCreatures = (): void => {
+      const readout = creatureReadout(
+        world,
+        (entity) => sync.has(entity),
+        (point) => projectToNdc(camera, point),
+      );
+      const json = JSON.stringify(readout);
+      if (json !== publishedCreatures) root.dataset['creatures'] = publishedCreatures = json;
+    };
+
     let lastFrameMs: number | undefined;
     const interactions: { tick: number; verb: string; spawn: string | null }[] = [];
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
@@ -492,6 +517,7 @@ function startRenderer(root: HTMLElement): void {
           ),
         );
         hitOverlay.sync(world);
+        publishCreatures();
         if (animation !== undefined) {
           animation.driver.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
           const probe = JSON.stringify(compactProbe(animation.driver.probe()));
@@ -638,6 +664,25 @@ function startRenderer(root: HTMLElement): void {
       // Hit volumes, melee strikes, hit reactions (mw-e04.7, mw-e04.31), the player as a combatant
       // and the scene's training and sandbox dummies (mw-e04.6, mw-e04.9), after the player.
       const { dummies } = startTestbedCombat(world, combat, loaded.layout.spawns, player?.entity);
+      // The scene's creature spawns (mw-e12.4), after combat so they are hittable and lockable. A
+      // spawn naming a creature or faction that does not exist is reported, not fatal.
+      const sceneCreatures = startCreatures(world, creatures, combat, loaded.layout.spawns);
+      for (const line of sceneCreatureErrors(sceneCreatures)) console.error(line);
+      // Every creature — the scene's, the console's, respawned ones — gets a placeholder capsule.
+      const drawCreatures = (): void => {
+        bindCreatures(world, sync, (_entity, look) => {
+          const object = createCreatureProxy({
+            id: look.id,
+            radius: look.nav.radius,
+            height: look.nav.height,
+            armed: look.armed,
+          });
+          view.scene.add(object);
+          return object3DBinding(object, readSandboxDummyTransform);
+        });
+      };
+      drawCreatures();
+      afterStep.push(drawCreatures);
       // Sandbox dummies — the scene's and any the console spawns — get grey-box bodies.
       const bindDummies = (): void => {
         bindSandboxDummies(world, sync, (entity) => {
@@ -717,6 +762,9 @@ function startRenderer(root: HTMLElement): void {
                 : `${content} takes no options`,
           sandbox: (command) => checkSandboxCommand(combat.sandbox, command, world.clock.hz),
           bookmarks: () => bookmarks,
+          // `spawn … at-cursor` (mw-e12.4): where the centre of the view meets the level.
+          cursorPoint: () =>
+            viewCentrePoint(physics, { position: camera.position, quaternion: camera.quaternion }),
           scenes: scenes.available(),
           loadScene: (id) => {
             const params = new URLSearchParams(location.search);
@@ -763,6 +811,12 @@ function startRenderer(root: HTMLElement): void {
   status.setAttribute('role', 'status');
   status.dataset['testid'] = 'physics-status';
   root.append(status);
+  // Debug builds (the console built in) add the frozen fixture creatures and the dev-only scenes
+  // that place them (mw-e12.4); a release build loads only the game's content and never downloads
+  // them.
+  const content: Promise<GameContent> = __DEBUG_CONSOLE__
+    ? import('@content/dev-content').then(({ loadDevContent }) => loadDevContent())
+    : Promise.resolve(loadGameContent());
   void bootPhysics(
     () => import('@dimforge/rapier3d-deterministic'),
     (state) => {
@@ -779,7 +833,9 @@ function startRenderer(root: HTMLElement): void {
     }
     root.dataset['physicsVersion'] = boot.module.version();
     status.remove();
-    startWorld(boot.physics);
+    return content.then((loaded) => {
+      startWorld(boot.physics, loaded);
+    });
   });
 }
 

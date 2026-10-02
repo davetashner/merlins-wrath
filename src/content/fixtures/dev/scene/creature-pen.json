@@ -1,0 +1,75 @@
+{
+  "$schema": "../../../data/scene.schema.json",
+  "id": "creature-pen",
+  "name": "Creature pen",
+  "description": "A walled 12 m pen for spawning creatures from data (mw-e12.4), in debug builds only: two fixture hounds, a fixture guard with a patrol route and a fixture sentinel stand at their spawn points (no AI yet). The debug console spawns more (spawn fixture-hound 3 at-cursor) and removes them (despawn all).",
+  "grid": 1,
+  "camera": {
+    "position": [0, 8, -12],
+    "target": [0, 0, 1]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 0],
+      "scale": [6, 1, 6]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, -6],
+      "scale": [6, 0.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 6],
+      "scale": [6, 0.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-6, 0, 0],
+      "yaw": 90,
+      "scale": [6, 0.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [6, 0, 0],
+      "yaw": 90,
+      "scale": [6, 0.5, 1]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, -4],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "hound-left",
+      "at": [-3, 0, 1],
+      "yaw": 180,
+      "creature": "fixture-hound"
+    },
+    {
+      "id": "hound-right",
+      "at": [3, 0, 1],
+      "yaw": 180,
+      "creature": "fixture-hound"
+    },
+    {
+      "id": "guard-post",
+      "at": [0, 0, 3],
+      "yaw": 180,
+      "creature": "fixture-guard",
+      "patrol": [
+        [-4, 0, 3],
+        [4, 0, 3]
+      ]
+    },
+    {
+      "id": "sentinel-corner",
+      "at": [4, 0, 4],
+      "yaw": 180,
+      "creature": "fixture-sentinel"
+    }
+  ]
+}

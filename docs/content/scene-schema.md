@@ -99,3 +99,6 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].interact.anchor` | list of any (at least 3) | — | Focus point relative to the entity, metres; defaults to [0, 1, 0]. |
 | `spawns[].interact.radius` | number ≥ 0 | — | Bounding radius of the focus point, metres. |
 | `spawns[].targetable` | ref → targetable | — | Makes the spawned entity a lock-on target with this profile (mw-e02.16). |
+| `spawns[].creature` | ref → creature | — | Creature to spawn here (mw-e12.4); faces the spawn’s yaw. |
+| `spawns[].faction` | ref → faction | — | Faction the spawned creature joins instead of its definition’s (needs creature). |
+| `spawns[].patrol` | list of list of any (at least 3) (at least 1) | — | Patrol route for the spawned creature: waypoints in grid cells, walked in order (needs creature; AI, e11, walks it). |
