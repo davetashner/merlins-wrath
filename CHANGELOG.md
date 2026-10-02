@@ -23,6 +23,11 @@ check enforces this).
   rebuilds the area and puts you back in play within a few seconds. With no save yet, "Restart area"
   starts the area again from the beginning. A damaged save loads its backup and tells you so. In
   debug builds the console's `save [slot]` command saves the game (`manual-1` by default).
+- Things can break: a new `?scene=weak-wall-room` has a cracked old wall the knight smashes with a
+  heavy attack (debug console: `act sword-heavy`) to open a passage into the back room, leaving
+  stone rubble that clears after a few seconds, and a crate that breaks open and spills a plank.
+  Walls, crates and pots break by the kind of hit (blunt, slash, pierce, a blast), so arrows, thrown
+  props and falls break fragile things too, and frozen things shatter more easily.
 - The knight can shoot a bow in the testbed: press 4 to take the shortbow out, hold the left mouse
   button (RT) to draw and let go to loose an arrow, which flies, drops and sticks in what it hits
   (or glances off stone). The view narrows while you aim. Press 2 (RB) to switch between plain,

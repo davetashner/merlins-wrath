@@ -1,6 +1,8 @@
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { loadGameContent } from '@content/index';
 import {
+  applyStimulus,
+  BreakableComponent,
   InMemoryColliderSink,
   PhysicsColliderComponent,
   PhysicsObjectComponent,
@@ -23,6 +25,7 @@ import {
   DEFAULT_SCENE,
   readPhysicsObjectTransform,
   readSceneTransform,
+  readWorldFrame,
   SceneLoader,
   UnknownSceneError,
   type SceneTransformReader,
@@ -83,6 +86,7 @@ describe('scene loader glue (mw-e00.21)', () => {
       'kit-gallery',
       'lighting-room',
       'testbed',
+      'weak-wall-room',
     ]);
     expect(loader.available()).toContain(DEFAULT_SCENE);
     expect(loader.current).toBeUndefined();
@@ -150,7 +154,7 @@ describe('scene loader glue (mw-e00.21)', () => {
     const current = loader.load('testbed');
     expect(() => loader.load('does-not-exist')).toThrow(UnknownSceneError);
     expect(() => loader.load('does-not-exist')).toThrow(
-      'unknown scene "does-not-exist"; available scenes: combat-sandbox, kit-gallery, lighting-room, testbed',
+      'unknown scene "does-not-exist"; available scenes: combat-sandbox, kit-gallery, lighting-room, testbed, weak-wall-room',
     );
     expect(loader.current).toBe(current);
   });
@@ -311,5 +315,101 @@ describe('scene loader physics (mw-e03.39)', () => {
     const { drawn, reads } = physicsSetup({ noBody: true });
     expect(drawn.has('loose-crate')).toBe(true);
     expect(reads.get('loose-crate')).toBe(readPhysicsObjectTransform);
+  });
+});
+
+describe('scene loader breakables (mw-e03.11)', () => {
+  interface Drawn {
+    readonly label: string;
+    readonly crack?: boolean;
+    disposed: boolean;
+  }
+
+  function breakSetup(options: { physics?: boolean; pieces?: boolean } = {}) {
+    const content = loadGameContent();
+    const physics = new RapierPhysics(RAPIER);
+    const world = registerSceneComponents(new World({ seed: 3, physics }));
+    if (options.physics !== false) installGamePhysics(world);
+    const sync = new RenderSync(world);
+    const drawn = new Map<string, Drawn>();
+    const reads = new Map<string, SceneTransformReader>();
+    const make = (label: string, crack?: boolean): Drawn => {
+      const object: Drawn =
+        crack === undefined ? { label, disposed: false } : { label, crack, disposed: false };
+      drawn.set(label, object);
+      return object;
+    };
+    const loader = new SceneLoader({
+      world,
+      sync,
+      colliders: physics,
+      content,
+      objects: {
+        staticGeometry: (layout) => make(layout.id),
+        spawn: (spawn) => make(spawn.id),
+        ...(options.pieces !== false && {
+          piece: (piece, parts, crack) =>
+            make(`piece:${String(piece.placement)}:${String(parts.length)}`, crack),
+        }),
+      },
+      binding: (object, read) => {
+        reads.set(object.label, read);
+        return {
+          object,
+          read,
+          apply: () => undefined,
+          dispose(target) {
+            target.disposed = true;
+          },
+        };
+      },
+      ...(options.physics !== false && { physics: {} }),
+    });
+    const loaded = loader.load('weak-wall-room');
+    const wall = loaded.pieces[6] ?? -1;
+    return { world, sync, drawn, reads, loaded, wall };
+  }
+
+  it('makes the weak wall breakable and draws it on its own, cracked, in the world frame', () => {
+    const { world, drawn, reads, loaded, wall } = breakSetup();
+    const sim = world as World<never>;
+    expect(sim.get(wall, BreakableComponent)).toMatchObject({
+      profile: 'old-wall',
+      reveals: 'weak-wall-passage',
+      resistances: { blunt: 0.2, slash: 0.9, pierce: 1, force: 0.2 },
+    });
+    expect(readProperty(sim, wall, 'hp')).toBe(100);
+    const crate = loaded.spawns.find((s) => s.spawn.id === 'loot-crate')?.entity ?? -1;
+    expect(sim.get(crate, BreakableComponent)?.contents).toEqual(['plank']);
+    expect(drawn.get('piece:6:1')).toEqual({ label: 'piece:6:1', crack: true, disposed: false });
+    expect(reads.get('piece:6:1')).toBe(readWorldFrame);
+    expect(readWorldFrame(world, wall)).toEqual({
+      position: { x: 0, y: 0, z: 0 },
+      rotation: { x: 0, y: 0, z: 0, w: 1 },
+    });
+  });
+
+  it('a heavy blow takes the wall off the screen the frame the sim breaks it', () => {
+    const { world, sync, drawn, wall } = breakSetup();
+    const sim = world as World<never>;
+    applyStimulus(sim, {
+      shape: { kind: 'contact', target: wall },
+      element: 'blunt',
+      intensity: 150,
+    });
+    world.step();
+    expect(world.isAlive(wall)).toBe(false);
+    expect(readWorldFrame(world, wall)).toBeUndefined();
+    sync.render(0);
+    expect(drawn.get('piece:6:1')?.disposed).toBe(true);
+  });
+
+  it('without physics nothing is breakable, and without a piece builder breakable pieces are not drawn', () => {
+    const bare = breakSetup({ physics: false });
+    expect(bare.world.isRegistered(BreakableComponent)).toBe(false);
+    expect(bare.drawn.get('piece:6:1')?.crack).toBe(true);
+    const plain = breakSetup({ pieces: false });
+    expect(plain.sync.has(plain.wall)).toBe(false);
+    expect([...plain.drawn.keys()].some((label) => label.startsWith('piece:'))).toBe(false);
   });
 });

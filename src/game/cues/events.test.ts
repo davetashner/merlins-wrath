@@ -149,6 +149,21 @@ const SAMPLES: Record<CueEventName, unknown> = {
     hurtbox: 'head',
     region: 'head',
   },
+  breakableBroken: {
+    tick: 3,
+    entity: 7,
+    profile: 'old-wall',
+    material: 'stone',
+    cause: 'structure',
+    by: 'blunt',
+    source: 4,
+    position: origin,
+    cleared: { min: origin, max: origin },
+    debris: [10, 11],
+    spilled: [],
+    reveals: 'hidden-room',
+    loudness: 85,
+  },
 };
 
 const read = (event: CueEventName, payload: unknown, look = lookups): CueReading =>
@@ -228,6 +243,27 @@ describe('cue event bindings', () => {
     expect(dominant({ slash: 18, blunt: 4 })).toBe('slash');
     expect(dominant({ blunt: 4, slash: 18 })).toBe('slash');
     expect(dominant({ fire: 0 })).toBeUndefined();
+  });
+
+  it('mw-e03.11: read a break: what broke, of what, why, and how loud', () => {
+    expect(read('breakableBroken', SAMPLES.breakableBroken)).toEqual({
+      anchors: {
+        entity: { entity: 7, position: origin },
+        at: { position: origin },
+        source: { entity: 4 },
+      },
+      facts: {
+        entity: 'stone',
+        material: 'stone',
+        profile: 'old-wall',
+        cause: 'structure',
+        by: 'blunt',
+        loudness: 85,
+      },
+    });
+    const clay = { ...(SAMPLES.breakableBroken as object), material: 'clay', source: null };
+    expect(read('breakableBroken', clay).facts).toMatchObject({ entity: 'clay', material: 'clay' });
+    expect(read('breakableBroken', clay).anchors['source']).toBeUndefined();
   });
 
   it('read attack, stamina and fire payloads', () => {

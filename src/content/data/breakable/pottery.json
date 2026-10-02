@@ -1,0 +1,8 @@
+{
+  "$schema": "../breakable.schema.json",
+  "id": "pottery",
+  "name": "Pottery",
+  "notes": "Jars, urns and pots (mw-e03.11). Pottery breaks by fragility rather than wear: the placement sets a low fragile threshold (about 15 J, a dropped jar or any blow), and no resistance covers the rest. Four small 0.12 m shards; a shattering pot is about 70 dB at 1 m, loud enough to draw a guard.",
+  "debris": { "count": 4, "size": 0.12 },
+  "breakLoudness": 70
+}

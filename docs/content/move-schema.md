@@ -80,6 +80,11 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `motion` | object | — | Root motion of a committed move, e.g. a roll’s 3.0 m (e04.8); absent = none. |
 | `motion.distance` | number ≥ 0 | required | Metres travelled, spread evenly over the active ticks; the character stands still (grounded) on the move’s other ticks. Walls stop it; ledges do not. |
 | `motion.direction` | `"input"` \| `"backward"` | required | "input": the direction held when the move was requested, relative to the camera or lock-on target (facing when none); "backward": away from the facing. |
+| `worldImpact` | object | — | What the swing does to the world (mw-e03.11): on its first active tick its hitbox, at the middle of the swing, applies one stimulus per kind listed, so breakables, props and anything else with the right properties react. Absent: the swing touches only hurtboxes. |
+| `worldImpact.blunt` | number 0–1000000 | — | Blunt impact energy, J. |
+| `worldImpact.slash` | number 0–1000000 | — | Slash impact energy, J. |
+| `worldImpact.pierce` | number 0–1000000 | — | Pierce impact energy, J. |
+| `worldImpact.force` | number 0–1000000 | — | Shove, N·s (pushes and strains whatever it reaches). |
 | `hitStop` | `"light"` \| `"heavy"` \| `"charged"` \| `"parry"` \| `"critical"` | — | Hit-stop tier of its hits (e04.11): how long a hit freezes attacker and victim, from the hit-stop table (light, heavy, charged, parry, critical). Only with a hitbox; absent = light. |
 | `presentation` | object | required | Presentation ids: unknown ids warn (assets may lag) but never fail validation. |
 | `presentation.anim` | string | required | Animation clip id (style bible §15.1), e.g. "anim-knight-sword-light-1". |

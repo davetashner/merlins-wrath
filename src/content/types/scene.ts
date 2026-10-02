@@ -57,6 +57,21 @@ export const ledgeOverrideSchema = z.strictObject({
     .describe('false: never a ledge (decoration); true: always a ledge (the whole edge).'),
 });
 
+/**
+ * Makes a placement or spawn breakable (mw-e03.11): its profile, what it spills and the passage it
+ * opens. Its hit points and impact threshold are its world properties (`hp`, `fragile`).
+ */
+export const sceneBreakableSchema = z.strictObject({
+  profile: ref('breakable').describe('Breakable profile: resistances, debris, break loudness.'),
+  contents: z
+    .array(ref('testprop'))
+    .optional()
+    .describe('Props it spills when it breaks (props with a body; mw-e03.39).'),
+  reveals: contentId
+    .optional()
+    .describe('Passage it opens when it breaks: names the passageRevealed event (nav, quests).'),
+});
+
 export const scenePlacementSchema = z.strictObject({
   piece: ref('kit').describe('Id of the kit piece.'),
   at: gridPosition,
@@ -75,6 +90,9 @@ export const scenePlacementSchema = z.strictObject({
     .array(ledgeOverrideSchema)
     .optional()
     .describe('Ledge overrides, applied in order (a later one wins over an earlier one).'),
+  breakable: sceneBreakableSchema
+    .optional()
+    .describe('Makes the piece breakable, e.g. a cracked wall the knight can smash (mw-e03.11).'),
 });
 
 export const sceneSpawnSchema = z.strictObject({
@@ -106,6 +124,11 @@ export const sceneSpawnSchema = z.strictObject({
     .optional()
     .describe(
       'World properties of the spawned entity, e.g. a torch: { "burning": true, "fuel": 3600 } (mw-e03.37). A spawn with properties is placed in the sim, so the light field and stimuli reach it.',
+    ),
+  breakable: sceneBreakableSchema
+    .optional()
+    .describe(
+      'Makes the spawned entity breakable, e.g. a pot that spills its contents (mw-e03.11).',
     ),
 });
 

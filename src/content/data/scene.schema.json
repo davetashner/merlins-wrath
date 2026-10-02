@@ -488,6 +488,36 @@
               ],
               "additionalProperties": false
             }
+          },
+          "breakable": {
+            "description": "Makes the piece breakable, e.g. a cracked wall the knight can smash (mw-e03.11).",
+            "type": "object",
+            "properties": {
+              "profile": {
+                "description": "Breakable profile: resistances, debris, break loudness.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "breakable"
+              },
+              "contents": {
+                "description": "Props it spills when it breaks (props with a body; mw-e03.39).",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                  "x-contentRef": "testprop"
+                }
+              },
+              "reveals": {
+                "description": "Passage it opens when it breaks: names the passageRevealed event (nav, quests).",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              }
+            },
+            "required": [
+              "profile"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -1022,6 +1052,36 @@
                 "description": "Multiplier on its wearer's noise; an actor's is the product of its equipment's."
               }
             },
+            "additionalProperties": false
+          },
+          "breakable": {
+            "description": "Makes the spawned entity breakable, e.g. a pot that spills its contents (mw-e03.11).",
+            "type": "object",
+            "properties": {
+              "profile": {
+                "description": "Breakable profile: resistances, debris, break loudness.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "breakable"
+              },
+              "contents": {
+                "description": "Props it spills when it breaks (props with a body; mw-e03.39).",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                  "x-contentRef": "testprop"
+                }
+              },
+              "reveals": {
+                "description": "Passage it opens when it breaks: names the passageRevealed event (nav, quests).",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              }
+            },
+            "required": [
+              "profile"
+            ],
             "additionalProperties": false
           }
         },

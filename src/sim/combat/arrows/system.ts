@@ -32,7 +32,9 @@
 // struck entity's surfaceHardness and material. The level's colliders name their entity through
 // `bindCollider` and physics objects through their body (`physicsSurfaceOf`); unbound geometry reads
 // the properties' defaults. The momentum an arrow loses pushes what it hit through the one stimulus
-// API — a force stimulus on that entity — so a struck crate or bottle reacts by its own properties.
+// API — a force stimulus on that entity — so a struck crate or bottle reacts by its own properties —
+// and its impact energy strikes it as a pierce hit (a blunt one for a bounce head), so a pot shatters
+// and a barricade takes the hit (mw-e03.11 breakables).
 // Payloads (fire, water, rope…) are each trick arrow's bead; this system reports the impact they act on.
 //
 // Every impact emits `arrowImpact` (physicsImpact's conventions, events.ts). An arrow that flies its
@@ -403,6 +405,14 @@ export function arrowSystem<TInput>(options: ArrowSystemOptions): System<TInput>
         element: 'force',
         intensity: impulse,
         direction: lost,
+        source: flight.shooter,
+      });
+    }
+    if (other !== null && !hitCreature && world.isRegistered(StimulusQueueComponent)) {
+      applyStimulus(world, {
+        shape: { kind: 'contact', target: other },
+        element: def.onImpact === 'bounce' ? 'blunt' : 'pierce',
+        intensity: 0.5 * mass * speed * speed,
         source: flight.shooter,
       });
     }

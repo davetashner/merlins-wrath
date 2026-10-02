@@ -1,11 +1,12 @@
 // The debug console's built-in commands (mw-e33.1): help, spawn, despawn (mw-e12.4), give, god,
-// noclip, kill, prop (mw-e03.37), tp, timescale, scene, set and seed, blast (mw-e04.34) and save
-// (mw-e30.7).
+// noclip, kill, prop (mw-e03.37), tp, timescale, scene, set and seed, blast (mw-e04.34), save
+// (mw-e30.7) and act (mw-e03.11: the knight's heavy attack until the controls bind it).
 // Everything that changes the sim goes out as a sim command through
 // `host.submit` (applied next tick, recorded in replays); the host's other members only read the
 // sim or drive the page (time scale, scene reload), never sim state.
 
 import {
+  actCommand,
   blastCommand,
   cheatCommand,
   despawnCreaturesCommand,
@@ -307,6 +308,17 @@ export function registerBuiltins(registry: CommandRegistry<ConsoleHost>): void {
       const at = host.spawnPoint();
       host.submit(blastCommand(at, radius, intensity));
       return `blast of ${String(intensity)} N·s, radius ${String(radius)} m at ${String(at.x)} ${String(at.y)} ${String(at.z)}`;
+    },
+  });
+
+  registry.registerCommand({
+    name: 'act',
+    summary: 'make the player perform a move (heavy attack: act sword-heavy)',
+    usage: '<moveId>',
+    args: z.tuple([z.string()]),
+    run: ([move], host) => {
+      host.submit(actCommand(player(host), move));
+      return `player performs ${move}`;
     },
   });
 

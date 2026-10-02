@@ -227,6 +227,24 @@ export const CUE_EVENTS = {
       impulse: 'number',
     },
   },
+  breakableBroken: {
+    /** `entity` is what broke (gone after the tick; its centre is the fallback), `at` its centre. */
+    anchors: ['entity', 'at', 'source'],
+    facts: {
+      /** Impact class of its material (its `impactSound` without `sfx-impact-`), e.g. "stone". */
+      entity: 'string',
+      /** Material id of what broke. */
+      material: 'string',
+      /** Breakable profile id, e.g. "old-wall". */
+      profile: 'string',
+      /** Why it broke: "impact" (one blow over its fragile threshold) or "structure" (hp worn out). */
+      cause: 'string',
+      /** Kind of hit that broke it: blunt, slash, pierce, force or collision. */
+      by: 'string',
+      /** Break loudness 1 m away, dB: scale volume by it. */
+      loudness: 'number',
+    },
+  },
 } as const satisfies Record<string, CueEventSpec>;
 
 /** A sim event name a cue sheet may use. */

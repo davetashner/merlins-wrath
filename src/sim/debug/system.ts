@@ -14,6 +14,8 @@ import { initialCharacterState } from '../character/controller';
 import { CharacterController, CharacterTuning } from '../character/system';
 import { HealthComponent } from '../combat/damage/components';
 import { Died } from '../combat/damage/events';
+import { ActionTimelineComponent } from '../combat/timeline/components';
+import { requestMove } from '../combat/timeline/timeline';
 import type { DamageModel } from '../combat/damage/model';
 import type { ComponentType, EntityId } from '../core/component';
 import { despawnAllCreatures } from '../creatures/spawn';
@@ -30,6 +32,7 @@ import { DebugCheatsComponent, godModeModifier, NO_CHEATS, type DebugCheats } fr
 import {
   isDebugCommand,
   NO_SPAWN_PARAMS,
+  type ActCommand,
   type CheatCommand,
   type DebugCommand,
   type PropertyCommand,
@@ -164,6 +167,12 @@ function tune<TInput>(world: World<TInput>, { target, tuning }: TuneCommand): vo
   world.set(target, CharacterTuning, tuning);
 }
 
+/** Requests the move; skipped for an entity without an action timeline. */
+function act<TInput>(world: World<TInput>, { target, move }: ActCommand): void {
+  if (read(world, target, ActionTimelineComponent) === undefined) return;
+  requestMove(world, target, move);
+}
+
 /** The system applying this tick's debug commands in input order (see the file header). */
 export function debugCommandSystem<TInput>(options: DebugCommandOptions): System<TInput> {
   const { spawners } = options;
@@ -210,7 +219,8 @@ export function debugCommandSystem<TInput>(options: DebugCommandOptions): System
           continue;
         }
         if (!world.isAlive(command.target)) continue;
-        if (command.op === 'cheat') toggle(command);
+        if (command.op === 'act') act(world, command);
+        else if (command.op === 'cheat') toggle(command);
         else if (command.op === 'teleport') teleport(world, command.target, command.to);
         else if (command.op === 'property') setDebugProperty(world, command);
         else if (command.op === 'tune') tune(world, command);

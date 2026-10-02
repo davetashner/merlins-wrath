@@ -1,6 +1,6 @@
 {
   "id": "physics",
-  "notes": "Physics impact cue rules (mw-e03.40): a physics object (crate, barrel, bottle, debris) that lands, tumbles or is knocked into something plays its own material's impact set (sfx-impact-<class>, from the material's impactSound), louder the more energy the impact had: a crate dropped from head height is near full volume, a nudge or a tumble step sits well below it. Only impacts at or above the physics layer's minimum closing speed (1 m/s) are events at all, and a short per-object cooldown keeps a bouncing or rolling object from machine-gunning. Material-pair sets (wood on stone, glass on metal) can add more specific rules on top by matching entity and other; final assets arrive through the placeholder pack (e28.2) and the SFX asset groups.",
+  "notes": "Physics impact cue rules (mw-e03.40): a physics object (crate, barrel, bottle, debris) that lands, tumbles or is knocked into something plays its own material's impact set (sfx-impact-<class>, from the material's impactSound), louder the more energy the impact had: a crate dropped from head height is near full volume, a nudge or a tumble step sits well below it. Only impacts at or above the physics layer's minimum closing speed (1 m/s) are events at all, and a short per-object cooldown keeps a bouncing or rolling object from machine-gunning. Material-pair sets (wood on stone, glass on metal) can add more specific rules on top by matching entity and other; final assets arrive through the placeholder pack (e28.2) and the SFX asset groups. Breaks (mw-e03.11): a breakable that breaks plays its material's impact set once more, harder and wider-pitched, louder the louder its profile breaks (a pot at 70 dB sits below a collapsing wall at 85 dB); dedicated shatter and collapse sets can replace it per material later.",
   "rules": [
     {
       "event": "physicsImpact",
@@ -9,9 +9,24 @@
       "variants": 4,
       "pitchJitter": 0.08,
       "volumeJitterDb": 2,
-      "volumeBy": { "fact": "energy", "min": 2, "max": 250, "floorDb": -24 },
+      "volumeBy": {
+        "fact": "energy",
+        "min": 2,
+        "max": 250,
+        "floorDb": -24
+      },
       "cooldownMs": 90,
       "priority": 40
+    },
+    {
+      "event": "breakableBroken",
+      "layer": "impact",
+      "cue": "sfx-impact-{entity}",
+      "variants": 4,
+      "pitchJitter": 0.15,
+      "volumeJitterDb": 1,
+      "volumeBy": { "fact": "loudness", "min": 60, "max": 90, "floorDb": -12 },
+      "priority": 60
     }
   ]
 }

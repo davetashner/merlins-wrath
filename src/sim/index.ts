@@ -2,6 +2,7 @@
 export const layer = 'sim' as const;
 
 export * from './ai';
+export * from './breakables';
 export * from './character';
 export * from './climb';
 export * from './combat';
@@ -59,6 +60,7 @@ export * from './input';
 export * from './interaction';
 export * from './light';
 export * as simMath from './math';
+export * from './noise';
 export * from './physics';
 export * from './player';
 export * from './properties';

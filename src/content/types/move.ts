@@ -233,6 +233,26 @@ const chargeSchema = z
       'by hold time (e04.13).',
   );
 
+/** Kinds of hit a swing can deliver to the world (the sim's BREAK_TYPES). */
+export const WORLD_IMPACT_KINDS = ['blunt', 'slash', 'pierce', 'force'] as const;
+/** One kind of world impact. */
+export type WorldImpactKind = (typeof WORLD_IMPACT_KINDS)[number];
+
+const joules = z.number().nonnegative().max(1_000_000);
+
+const worldImpactSchema = z
+  .strictObject({
+    blunt: joules.optional().describe('Blunt impact energy, J.'),
+    slash: joules.optional().describe('Slash impact energy, J.'),
+    pierce: joules.optional().describe('Pierce impact energy, J.'),
+    force: joules.optional().describe('Shove, N·s (pushes and strains whatever it reaches).'),
+  })
+  .describe(
+    'What the swing does to the world (mw-e03.11): on its first active tick its hitbox, at the ' +
+      'middle of the swing, applies one stimulus per kind listed, so breakables, props and ' +
+      'anything else with the right properties react. Absent: the swing touches only hurtboxes.',
+  );
+
 const presentationSchema = z
   .strictObject({
     anim: z
@@ -291,6 +311,7 @@ export const moveSchema = z
       .describe('Move the next attack press chains into (e.g. light 1 → light 2); absent = none.'),
     charge: chargeSchema.optional(),
     motion: motionSchema.optional(),
+    worldImpact: worldImpactSchema.optional(),
     hitStop: z
       .enum(HIT_STOP_TIERS)
       .optional()
@@ -355,6 +376,9 @@ export const moveSchema = z
     });
     if (move.hitStop !== undefined && move.hitbox === undefined) {
       fail(['hitStop'], 'only a move with a hitbox has a hit-stop tier');
+    }
+    if (move.worldImpact !== undefined && move.hitbox === undefined) {
+      fail(['worldImpact'], 'only a move with a hitbox strikes the world');
     }
     if (move.motion !== undefined && move.motion.distance > 0 && active === 0) {
       fail(['motion'], 'a move with motion needs at least one active tick to travel on');
@@ -498,6 +522,8 @@ export interface RuntimeMove {
   readonly motion: RuntimeMotion | null;
   /** Hit-stop tier of its hits (light unless the move names one), or null for a move that cannot hit. */
   readonly hitStop: HitStopTier | null;
+  /** Energy per kind of hit its swing delivers to the world (mw-e03.11); absent: none. */
+  readonly worldImpact?: Readonly<Partial<Record<WorldImpactKind, number | undefined>>>;
   readonly presentation: MoveEntry['presentation'];
 }
 
@@ -548,6 +574,7 @@ export function compileMove(move: MoveEntry): RuntimeMove {
         ? null
         : Object.freeze({ distance: move.motion.distance, direction: move.motion.direction }),
     hitStop: canHit ? (move.hitStop ?? 'light') : null,
+    ...(move.worldImpact !== undefined && { worldImpact: move.worldImpact }),
     presentation: move.presentation,
   });
 }

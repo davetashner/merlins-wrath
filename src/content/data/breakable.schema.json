@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (debug tools and docs)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the numbers come from (bead, design intent), for owner review."
+    },
+    "resistances": {
+      "default": {},
+      "description": "Share of each kind of hit the structure ignores, 0 (none) … 1 (immune); a kind left out is 0.",
+      "type": "object",
+      "properties": {
+        "blunt": {
+          "description": "Share of blunt damage ignored.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "slash": {
+          "description": "Share of slash damage ignored.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "pierce": {
+          "description": "Share of pierce damage ignored.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "force": {
+          "description": "Share of a shove (force) ignored.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "debris": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16,
+          "description": "Pieces of debris a break leaves."
+        },
+        "size": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "description": "Edge of each piece, metres."
+        }
+      },
+      "required": [
+        "count",
+        "size"
+      ],
+      "additionalProperties": false,
+      "description": "Debris a break leaves, made of the broken thing’s material (budgeted by the sim)."
+    },
+    "breakLoudness": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 140,
+      "description": "Noise of the break 1 m away, dB (stealth and AI hearing)."
+    },
+    "crack": {
+      "default": false,
+      "description": "Telegraphs a weak spot: the renderer draws cracks on it so a player can spot it.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "debris",
+    "breakLoudness"
+  ],
+  "additionalProperties": false
+}

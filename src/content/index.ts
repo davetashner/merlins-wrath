@@ -134,6 +134,12 @@ export {
   type LockOnTuning,
 } from './types/lock-on.ts';
 export {
+  BREAK_KINDS,
+  breakableSchema,
+  type BreakableDef,
+  type BreakableDefInput,
+} from './types/breakable.ts';
+export {
   targetableSchema,
   TRAINING_DUMMY_TARGETABLE_ID,
   type TargetableDef,
@@ -409,6 +415,8 @@ export {
   type RuntimeMove,
   type SwingKind,
   type TickRange,
+  type WorldImpactKind,
+  WORLD_IMPACT_KINDS,
 } from './types/move.ts';
 export {
   SOCKET_ROTATION_TOLERANCE,

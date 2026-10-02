@@ -15,6 +15,7 @@ import { arrowSchema } from './types/arrow.ts';
 import { attackSchema } from './types/attack.ts';
 import { behaviourSchema } from './types/behaviour.ts';
 import { bowSchema } from './types/bow.ts';
+import { breakableSchema } from './types/breakable.ts';
 import { cameraSchema } from './types/camera.ts';
 import { capabilitySchema, checkCapabilities } from './types/capability.ts';
 import { namedConditionSchema } from './types/condition.ts';
@@ -50,6 +51,7 @@ export const contentTypes = {
   attack: attackSchema,
   behaviour: behaviourSchema,
   bow: bowSchema,
+  breakable: breakableSchema,
   camera: cameraSchema,
   capability: capabilitySchema,
   condition: namedConditionSchema,

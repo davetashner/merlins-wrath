@@ -1,0 +1,9 @@
+{
+  "$schema": "../breakable.schema.json",
+  "id": "crate",
+  "name": "Wooden crate",
+  "notes": "A plank crate, the grey-box slice's breakable (mw-e03.11, mw-e01.1). Its hit points are its wood's (100); blunt resisted 20%, slash 40%, pierce 80% (arrows stick in it), a shove 50%: two or three heavy blows open it, and it spills what it holds. Four 0.25 m plank chunks; a crate cracking open is about 72 dB at 1 m.",
+  "resistances": { "blunt": 0.2, "slash": 0.4, "pierce": 0.8, "force": 0.5 },
+  "debris": { "count": 4, "size": 0.25 },
+  "breakLoudness": 72
+}

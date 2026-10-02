@@ -16,8 +16,9 @@
 // - heat / cold [°C]: raise / lower `temperature` of entities that have one (clamped to its range).
 // - water [wetness 0–1]: raise `wetness` of entities that have one (clamped at 1).
 // - charge [charge]: raise `charge` of entities that have one.
-// - force [N·s]: an impulse on pushable or liftable entities with weight > 0, delivered through
-//   `impulseApplied` (velocity change = impulse / weight) for the physics layer to integrate.
+// - force [N·s]: an impulse on pushable, liftable or breakable entities with weight > 0, delivered
+//   through `impulseApplied` (velocity change = impulse / weight) for the physics layer to integrate;
+//   a breakable's structure takes the shove too (mw-e03.11: a blast brings an old wall down).
 // - blunt / slash / pierce [J]: impact energy on entities with `hp` or `fragile`, reported as hits
 //   for breakables to consume.
 // - gas [concentration], light [light units]: no entity targets; they act on the element field and
@@ -295,7 +296,9 @@ function isTarget(world: World<never>, effect: TargetEffect, entity: EntityId): 
       return hasProperty(world, entity, effect.key);
     case 'impulse':
       return (
-        (readProperty(world, entity, 'pushable') || readProperty(world, entity, 'liftable')) &&
+        (readProperty(world, entity, 'pushable') ||
+          readProperty(world, entity, 'liftable') ||
+          readProperty(world, entity, 'breakable')) &&
         readProperty(world, entity, 'weight') > 0
       );
     case 'impact':
