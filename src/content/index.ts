@@ -402,6 +402,15 @@ export {
   type SandboxHitRegion,
 } from './types/sandbox.ts';
 export {
+  ARCHER_BOW_ID,
+  bowSchema,
+  compileBow,
+  type BowDef,
+  type BowDefInput,
+  type BowEntry,
+  type RuntimeBow,
+} from './types/bow.ts';
+export {
   KNIGHT_SHIELD_ID,
   compileShield,
   shieldSchema,

@@ -181,6 +181,52 @@ export const CUE_EVENTS = {
       speed: 'number',
     },
   },
+  ArrowFired: {
+    /** `arrow` is the loosed arrow (following it; its launch point as the fallback). */
+    anchors: ['arrow', 'shooter', 'origin'],
+    facts: {
+      /** Arrow content id, e.g. "standard". */
+      arrow: 'string',
+      /** The arrow's own flight trail VFX cue (its `cues.trailVfx`): VFX sheets play `{trail}`. */
+      trail: 'string',
+      /** The arrow's own flight sound (its `cues.flightSfx`), when it has one. */
+      flight: 'string',
+      /** Launch speed, m/s: scale volume by it. */
+      speed: 'number',
+    },
+  },
+  arrowImpact: {
+    /** `entity` is the arrow, `other` what it hit (none for unbound geometry), `at` the contact. */
+    anchors: ['entity', 'other', 'at'],
+    facts: {
+      arrow: 'string',
+      /** What the impact did to the arrow: stick, ricochet, drop or shatter. */
+      outcome: 'string',
+      /**
+       * Impact class of the surface it hit (its material's `impactSound` without `sfx-impact-`), e.g.
+       * "stone"; named `other` as in physicsImpact, so templates expand over the impact classes.
+       */
+      other: 'string',
+      /** Material id of the surface it hit. */
+      otherMaterial: 'string',
+      /** Surface hardness of what it hit: soft, medium or hard. */
+      hardness: 'string',
+      /** It struck a creature's hurtbox (the hit's DamageApplied plays the flesh). */
+      creature: 'boolean',
+      /** Hurtbox region struck, e.g. "head" (creature hits). */
+      region: 'string',
+      /** The arrow's own impact sound (its `cues.impactSfx`, e.g. a water splash): play `{sound}`. */
+      sound: 'string',
+      /** The arrow's own impact VFX cue (its `cues.impactVfx`), for VFX sheets. */
+      vfx: 'string',
+      /** Kinetic energy at impact, J: scale volume by it. */
+      energy: 'number',
+      /** Speed at impact, m/s. */
+      speed: 'number',
+      /** Momentum the arrow lost, N·s. */
+      impulse: 'number',
+    },
+  },
 } as const satisfies Record<string, CueEventSpec>;
 
 /** A sim event name a cue sheet may use. */

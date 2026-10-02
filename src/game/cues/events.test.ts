@@ -3,7 +3,7 @@ import { CUE_EVENT_NAMES, cueEventSpec, type CueEventName } from '@content/index
 import { CUE_EVENT_BINDINGS, type CueLookups, type CueReading } from './events.ts';
 
 const MATERIALS: Record<number, string> = { 1: 'bone', 2: 'iron', 3: 'dry-wood' };
-const CLASSES: Record<string, string> = { iron: 'metal', bone: 'bone' };
+const CLASSES: Record<string, string> = { iron: 'metal', bone: 'bone', stone: 'stone' };
 const lookups: CueLookups = {
   materialOf: (e) => MATERIALS[e],
   impactClassOf: (m) => CLASSES[m],
@@ -11,6 +11,15 @@ const lookups: CueLookups = {
   moveSoundOf: (m) => (m === 'sword-light-1' ? 'sfx-knight-sword-swing-light' : undefined),
   surfaceUnder: () => 'wood',
   armorOf: (e) => (e === 4 ? 'plate' : undefined),
+  arrowCuesOf: (arrow) =>
+    arrow === 'water'
+      ? {
+          trailVfx: 'vfx-arrow-trail-water',
+          impactVfx: 'vfx-arrow-impact-water',
+          flightSfx: 'sfx-arrow-flyby',
+          impactSfx: 'sfx-arrow-water-splash',
+        }
+      : undefined,
 };
 /** Only the two required lookups: every optional fact is absent. */
 const bare: CueLookups = { materialOf: lookups.materialOf, impactClassOf: lookups.impactClassOf };
@@ -114,6 +123,31 @@ const SAMPLES: Record<CueEventName, unknown> = {
     speed: 6,
     normal: { x: 0, y: -1, z: 0 },
     position: origin,
+  },
+  ArrowFired: {
+    tick: 1,
+    entity: 9,
+    arrow: 'water',
+    shooter: 4,
+    origin,
+    velocity: { x: 0, y: 36, z: 48 },
+  },
+  arrowImpact: {
+    tick: 2,
+    entity: 9,
+    arrow: 'water',
+    shooter: 4,
+    other: 1,
+    material: 'bone',
+    hardness: 'medium',
+    outcome: 'shatter',
+    speed: 58,
+    energy: 42,
+    impulse: 1.45,
+    normal: { x: 0, y: 0, z: -1 },
+    position: origin,
+    hurtbox: 'head',
+    region: 'head',
   },
 };
 
@@ -378,5 +412,73 @@ describe('cue event bindings', () => {
       foot: 'left',
       gait: 'walk',
     });
+  });
+
+  it('mw-e05.19 AC-1: an arrow impact on stone carries entity/other/at and arrow, outcome, surface impact class (other), energy and speed', () => {
+    const stone = read('arrowImpact', {
+      ...(SAMPLES.arrowImpact as object),
+      arrow: 'standard',
+      other: 5,
+      material: 'stone',
+      hardness: 'hard',
+      outcome: 'ricochet',
+      hurtbox: undefined,
+      region: undefined,
+    });
+    expect(stone).toEqual({
+      anchors: {
+        entity: { entity: 9, position: origin },
+        other: { entity: 5 },
+        at: { position: origin },
+      },
+      facts: {
+        arrow: 'standard',
+        outcome: 'ricochet',
+        other: 'stone',
+        otherMaterial: 'stone',
+        hardness: 'hard',
+        creature: false,
+        region: undefined,
+        sound: undefined,
+        vfx: undefined,
+        energy: 42,
+        speed: 58,
+        impulse: 1.45,
+      },
+    });
+    // Unbound geometry has no `other` anchor.
+    expect(
+      read('arrowImpact', { ...(SAMPLES.arrowImpact as object), other: null }).anchors['other'],
+    ).toBeUndefined();
+  });
+
+  it('mw-e05.19: a creature hit names the region, and the arrow’s own impact sound and VFX', () => {
+    expect(read('arrowImpact', SAMPLES.arrowImpact).facts).toMatchObject({
+      creature: true,
+      region: 'head',
+      other: 'bone',
+      sound: 'sfx-arrow-water-splash',
+      vfx: 'vfx-arrow-impact-water',
+    });
+    expect(read('arrowImpact', SAMPLES.arrowImpact, bare).facts['sound']).toBeUndefined();
+  });
+
+  it('mw-e05.19 AC-3: ArrowFired is anchored at the arrow and carries its id, trail, flight sound and speed', () => {
+    expect(read('ArrowFired', SAMPLES.ArrowFired)).toEqual({
+      anchors: {
+        arrow: { entity: 9, position: origin },
+        shooter: { entity: 4 },
+        origin: { position: origin },
+      },
+      facts: {
+        arrow: 'water',
+        trail: 'vfx-arrow-trail-water',
+        flight: 'sfx-arrow-flyby',
+        speed: 60,
+      },
+    });
+    const trap = read('ArrowFired', { ...(SAMPLES.ArrowFired as object), shooter: null }, bare);
+    expect(trap.anchors['shooter']).toBeUndefined();
+    expect(trap.facts).toMatchObject({ arrow: 'water', trail: undefined });
   });
 });

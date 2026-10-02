@@ -1,0 +1,15 @@
+{
+  "$schema": "../bow.schema.json",
+  "id": "shortbow",
+  "name": "Shortbow",
+  "notes": "The archer's starting bow (mw-e05.3), starting numbers from the bead, to be tuned on the archery range (mw-e05.14): full draw in 48 ticks (800 ms); a release before 12 ticks (200 ms) cancels and returns the arrow. Launch speed lerps from 30% to 100% of 60 m/s by draw fraction, so a half draw looses at 39 m/s. Drawing costs 6 stamina; full draw holds free for 120 ticks (2 s), then drains 8 stamina/s until the draw collapses at 0. The archer walks at 50% while drawn. Aim narrows the camera from 70° to 55°.",
+  "fullDrawTicks": 48,
+  "minDrawTicks": 12,
+  "maxLaunchSpeed": 60,
+  "minLaunchFraction": 0.3,
+  "drawStaminaCost": 6,
+  "holdTicks": 120,
+  "holdDrainPerSecond": 8,
+  "walkScale": 0.5,
+  "aim": { "fov": 55, "time": 0.15 }
+}

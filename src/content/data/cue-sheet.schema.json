@@ -49,7 +49,9 @@
               "signalReceived",
               "volumeEntered",
               "volumeExited",
-              "physicsImpact"
+              "physicsImpact",
+              "ArrowFired",
+              "arrowImpact"
             ],
             "description": "The sim event that triggers the rule (see src/content/cue-events.ts for its facts)."
           },

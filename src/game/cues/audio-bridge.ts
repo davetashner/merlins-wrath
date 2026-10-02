@@ -14,6 +14,7 @@ import {
   CUE_DEDUPE_MS,
   cueEventSpec,
   type CueEventName,
+  type ArrowDefinition,
   type CueRuleDef,
   type MaterialDef,
   type MoveDef,
@@ -247,6 +248,8 @@ export type CueMaterial = Pick<MaterialDef, 'id' | 'impactSound'> &
 export interface WorldCueLookupOptions {
   /** Moves, for their presentation audio cue (swing whooshes). */
   readonly moves?: readonly Pick<MoveDef, 'id' | 'presentation'>[];
+  /** Arrows, for their own cues (impact sounds, trails). */
+  readonly arrows?: readonly Pick<ArrowDefinition, 'id' | 'cues'>[];
   /** Armour weight class of a character (e04.16 will own it); none by default. */
   readonly armorOf?: (entity: EntityId) => string | undefined;
   /** Dev warnings (an unknown footstep surface, once per surface). */
@@ -271,6 +274,7 @@ export function worldCueLookups(
   const known = new Set<string>([DEFAULT_FOOTSTEP_SURFACE]);
   for (const m of materials) if (m.footstepSurface !== undefined) known.add(m.footstepSurface);
   const sounds = new Map((options.moves ?? []).map((m) => [m.id, m.presentation.audioCue]));
+  const arrowCues = new Map((options.arrows ?? []).map((a) => [a.id, a.cues]));
   const warned = new Set<string>();
   const warn =
     options.warn ??
@@ -302,6 +306,7 @@ export function worldCueLookups(
     impactClassOf: (material) => classes.get(material),
     shieldOf: (entity) => read(entity, GuardComponent)?.shield.id,
     moveSoundOf: (move) => sounds.get(move),
+    arrowCuesOf: (arrow) => arrowCues.get(arrow),
     surfaceUnder: (entity) => {
       const ground = read(entity, CharacterController)?.groundBody;
       const owner = ground === undefined || ground === null ? undefined : ownerOf(ground);

@@ -45,6 +45,16 @@ import {
   spawnCharacter,
 } from '../character/system';
 import { CharacterLocomotion, giveLocomotion, locomotionSystem } from '../character/locomotion';
+import { DEFAULT_ARROW_RULES } from '../combat/arrows/ballistics';
+import type { ArrowLookup } from '../combat/arrows/system';
+import { giveBow, type BowLoadout } from '../combat/bow/components';
+import {
+  bowLocomotionScale,
+  installBow,
+  type BowAim,
+  type BowButtons,
+  type BowLookup,
+} from '../combat/bow/system';
 import { DodgeComponent, giveDodge, type DodgeMoves } from '../combat/dodge/components';
 import { dodgeInputSystem, dodgeMotionSystem, type DodgeFacing } from '../combat/dodge/dodge';
 import {
@@ -297,6 +307,82 @@ export interface PlayerMeleeOptions {
   readonly riposte?: string;
 }
 
+/**
+ * Where the player's arrows leave from, relative to its feet and look: `height` up and `right` along
+ * the look's right (the orbit camera's pivot height and shoulder, so a shot flies straight down the
+ * middle of the screen), then `forward` along the shot. Metres.
+ */
+export interface BowNock {
+  readonly height: number;
+  readonly right: number;
+  readonly forward: number;
+}
+
+/** The player camera's pivot (1.5 m) and shoulder (0.5 m), half a metre out along the shot. */
+export const DEFAULT_BOW_NOCK: BowNock = Object.freeze({ height: 1.5, right: 0.5, forward: 0.5 });
+
+/** The player's bow (mw-e05.3). */
+export interface PlayerBowOptions {
+  /** Bow tuning (compiled bow content). */
+  readonly bows: BowLookup;
+  /** The arrows it looses; the world's arrow system (installArrows) flies them. */
+  readonly arrows: ArrowLookup;
+  /** The bow, quiver and whether the bow starts out. */
+  readonly loadout: BowLoadout;
+  /** Defaults to DEFAULT_BOW_NOCK. */
+  readonly nock?: BowNock;
+  /** Gravity the lock-on aim leads for, m/s²; defaults to the arrow rules'. */
+  readonly gravity?: number;
+  /** Defaults to DEFAULT_BOW_BUTTONS. */
+  readonly buttons?: BowButtons;
+}
+
+/**
+ * The player's aim (mw-e05.3): from the nock point along its look (yaw and pitch), or, locked on, at
+ * the anchor point raised by the drop of a drag-free arrow at `speed` over that distance
+ * (½·g·(d/v)²), so a locked shot lands on the lock point.
+ */
+export function lookAim(
+  nock: BowNock = DEFAULT_BOW_NOCK,
+  gravity = DEFAULT_ARROW_RULES.gravity,
+): BowAim {
+  return (world, entity, speed) => {
+    const state = world.get(entity, CharacterController);
+    const look = world.get(entity, PlayerLook);
+    if (state === undefined || look === undefined) return undefined;
+    const forward = yawForward(look.yaw);
+    const { position: feet } = state;
+    const base = {
+      x: feet.x - forward.z * nock.right,
+      y: feet.y + nock.height,
+      z: feet.z + forward.x * nock.right,
+    };
+    const anchor = world.get(entity, ViewAnchor);
+    let direction: Vec3;
+    if (anchor === undefined) {
+      const flat = cos(look.pitch);
+      direction = { x: forward.x * flat, y: sin(look.pitch), z: forward.z * flat };
+    } else {
+      const { point } = anchor;
+      const to = { x: point.x - base.x, y: point.y - base.y, z: point.z - base.z };
+      const distance = Math.sqrt(to.x * to.x + to.y * to.y + to.z * to.z);
+      const time = distance / speed;
+      const lead = { ...to, y: to.y + 0.5 * gravity * time * time };
+      const length = Math.sqrt(lead.x * lead.x + lead.y * lead.y + lead.z * lead.z);
+      direction =
+        length === 0 ? forward : { x: lead.x / length, y: lead.y / length, z: lead.z / length };
+    }
+    return {
+      origin: {
+        x: base.x + direction.x * nock.forward,
+        y: base.y + direction.y * nock.forward,
+        z: base.z + direction.z * nock.forward,
+      },
+      direction,
+    };
+  };
+}
+
 /** The player's combat (mw-e04.8): what its action timeline can perform. */
 export interface PlayerCombatOptions {
   /** Every move the player may perform (`compileMoves` of the game content). */
@@ -307,6 +393,8 @@ export interface PlayerCombatOptions {
   readonly stamina?: StaminaProfile;
   /** Sword and shield (mw-e04.6); absent = no attacks or block. */
   readonly melee?: PlayerMeleeOptions;
+  /** A bow and quiver (mw-e05.3); absent = none. */
+  readonly bow?: PlayerBowOptions;
 }
 
 /** The horizontal direction a look yaw faces (yaw 0 faces −z). */
@@ -332,6 +420,17 @@ export function restrainMovement(actions: ActionFrame, scale: number): ActionFra
     sprint: UP,
     jump: scale === 0 ? UP : actions.jump,
   };
+}
+
+/** How fast the player may move: behind its shield or swinging (melee), and while it draws (bow). */
+function combatLocomotionScale(
+  world: World<never>,
+  entity: EntityId,
+  combat: PlayerCombatOptions,
+): number {
+  const melee = combat.melee === undefined ? 1 : locomotionScale(world, entity, combat.moves);
+  const bow = combat.bow === undefined ? 1 : bowLocomotionScale(world, entity, combat.bow.bows);
+  return Math.min(melee, bow);
 }
 
 /** Keeps the player's placement at its feet (the frame its swings are placed in), after it moves. */
@@ -421,6 +520,15 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
         target === undefined ? lookFacing : firstFacing(faceTarget(target, locate), lookFacing);
       world.addSystem(facingSystem({ moves, desired }));
     }
+    const { bow } = combat;
+    if (bow !== undefined) {
+      installBow(world, {
+        bows: bow.bows,
+        arrows: bow.arrows,
+        aim: lookAim(bow.nock, bow.gravity),
+        ...(bow.buttons !== undefined && { buttons: bow.buttons }),
+      });
+    }
     world.addSystem(dodgeMotionSystem({ moves, facing: lookFacing }));
   }
   const { ledges } = options;
@@ -442,9 +550,9 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
         const look = world.get(entity, PlayerLook);
         if (frame === undefined || look === undefined) return undefined;
         const actions =
-          combat?.melee === undefined
+          combat === undefined
             ? frame
-            : restrainMovement(frame, locomotionScale(world, entity, combat.moves));
+            : restrainMovement(frame, combatLocomotionScale(world, entity, combat));
         const motion = combat && world.get(entity, DodgeComponent)?.velocity;
         const anchor = world.get(entity, ViewAnchor);
         return {
@@ -479,6 +587,7 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     giveActionTimeline(world, id);
     giveActionInput(world, id, melee === undefined ? {} : meleeBindings(melee));
     giveDodge(world, id, combat.dodge ?? KNIGHT_DODGE);
+    if (combat.bow !== undefined) giveBow(world, id, combat.bow.loadout);
   }
   if (melee !== undefined) {
     giveFacing(world, id, yawForward(spawnYaw(start)));

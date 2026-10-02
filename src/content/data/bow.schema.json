@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique bow id, e.g. \"shortbow\"."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Player-facing name."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the bow is for, and where its numbers come from."
+    },
+    "fullDrawTicks": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 3600,
+      "description": "Sim ticks (60 Hz) of holding fire to reach full draw (48 = 800 ms)."
+    },
+    "minDrawTicks": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3600,
+      "description": "A release before this many ticks of draw cancels the shot and returns the arrow; ≤ fullDrawTicks."
+    },
+    "maxLaunchSpeed": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 200,
+      "description": "Launch speed at full draw, m/s."
+    },
+    "minLaunchFraction": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Fraction of maxLaunchSpeed at zero draw, 0–1; the speed lerps linearly to 1 at full draw."
+    },
+    "drawStaminaCost": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Stamina spent when a draw starts (never refunded)."
+    },
+    "holdTicks": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3600,
+      "description": "Ticks full draw may be held for free; past them stamina drains and at 0 the draw collapses."
+    },
+    "holdDrainPerSecond": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Stamina drained per second while full draw is held past holdTicks."
+    },
+    "walkScale": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Movement speed while drawn, as a fraction of the run speed (0–1); no sprint."
+    },
+    "aim": {
+      "type": "object",
+      "properties": {
+        "fov": {
+          "type": "number",
+          "minimum": 20,
+          "maximum": 120,
+          "description": "Camera vertical field of view at full draw, degrees (the camera’s is 70)."
+        },
+        "time": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 2,
+          "description": "Seconds for the field of view to ease about two thirds of the way in (and back out)."
+        }
+      },
+      "required": [
+        "fov",
+        "time"
+      ],
+      "additionalProperties": false,
+      "description": "Presentation: the over-shoulder aim view while drawn (src/game/camera)."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "fullDrawTicks",
+    "minDrawTicks",
+    "maxLaunchSpeed",
+    "minLaunchFraction",
+    "drawStaminaCost",
+    "holdTicks",
+    "holdDrainPerSecond",
+    "walkScale",
+    "aim"
+  ],
+  "additionalProperties": false
+}
