@@ -2,6 +2,8 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { gameContentSources } from '../game-content.ts';
 import { ContentLoadError, loadContent, type ContentSource } from '../loader.ts';
 import { contentChecks, contentTypes } from '../registry.ts';
+import { serializeContent } from '../schema.ts';
+import { describeContent } from '../testing.ts';
 import {
   FIXTURE_ITEM_IDS,
   ITEM_FIXTURE_ROOT,
@@ -103,7 +105,8 @@ describe('item fixtures (mw-e17.2)', () => {
           return item.category;
       }
     };
-    expect(content.all('item').map(read)).toEqual([
+    const fixtures = content.all('item').filter(({ id }) => id.startsWith('fixture-'));
+    expect(fixtures.map(read)).toEqual([
       'standard',
       'quest',
       'tool',
@@ -352,5 +355,11 @@ describe('item flags: quest items (ADR-0003)', () => {
     expect(problems({ ...misc, category: 'quest', flags: { questItem: false } })).toEqual([
       'flags.questItem: item "test-item": an item of category quest is a quest item',
     ]);
+  });
+});
+
+describe('the shipped items (mw-e19.4 starting kits)', () => {
+  describeContent('item', 'AC-1: validates and round-trips', (entry) => {
+    expect(itemSchema.parse(JSON.parse(serializeContent(entry)))).toEqual(entry);
   });
 });

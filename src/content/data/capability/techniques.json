@@ -1,0 +1,20 @@
+{
+  "$schema": "../capability.schema.json",
+  "id": "techniques",
+  "name": "Knight techniques",
+  "notes": "Knight techniques (ADR-0004: learned from trainers; chains Shield Bash → Shield Charge → Shield Vault and Parry → Riposte → Disarm). Seeded with the knight's starting pair from class data (mw-e19.4); the moves themselves are src/content/data/move/shield-bash.json and shield-parry.json (mw-e04). Combat does not check these ids yet.",
+  "capabilities": [
+    {
+      "id": "technique.shield-bash",
+      "name": "Shield Bash",
+      "description": "Drive the shield into a guard to stagger them and break their stance (ADR-0004 shield chain, step 1).",
+      "classAffinity": "knight"
+    },
+    {
+      "id": "technique.parry",
+      "name": "Parry",
+      "description": "Turn a blow aside at the last moment and open the attacker to a riposte (ADR-0004 parry chain, step 1). A knight signature: never shared.",
+      "classAffinity": "knight"
+    }
+  ]
+}

@@ -171,7 +171,11 @@ describe('character controller golden replays (mw-e02.7)', () => {
       expect(failure).toBeInstanceOf(ReplayAssertionError);
       const { outcome, message } = failure as ReplayAssertionError;
       expect(outcome.divergence.tick).toBe(checkpoint);
-      expect(message).toContain(`${pathOf(golden)}: determinism failure`);
+      // A content PR changes the content hash without re-recording (mw-e00.31), so the report may
+      // lead with "content changed since recording" instead; either way it names the divergence.
+      expect(message).toMatch(
+        new RegExp(`^${pathOf(golden)}: (determinism failure|content changed since recording)`),
+      );
       expect(message).toContain(`diverged at checkpoint tick ${String(checkpoint)}:`);
       // The golden keeps full states, so the report also names the first field that moved.
       expect(message).toMatch(

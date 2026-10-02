@@ -2,7 +2,7 @@
   "$schema": "../capability.schema.json",
   "id": "verbs",
   "name": "Traversal verbs",
-  "notes": "Climbing and ledge capabilities the sim checks today (src/sim/climb: surfaces.ts and mantle.ts name these ids). Mantling and ladders, ropes and ivy need none. The testbed grants verb.climb.ledge to the player until class data (mw-e19.4) grants each class its kit; ADR-0004 makes rough-wall climbing the thief's.",
+  "notes": "Climbing and ledge capabilities the sim checks today (src/sim/climb: surfaces.ts and mantle.ts name these ids). Mantling and ladders, ropes and ivy need none. Every class starts with verb.climb.ledge and the thief also with verb.climb.rough (class data, mw-e19.4); until class selection applies them (mw-e19.5) the testbed grants verb.climb.ledge to the player.",
   "capabilities": [
     {
       "id": "verb.climb.ledge",

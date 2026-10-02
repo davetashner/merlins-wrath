@@ -1,0 +1,14 @@
+{
+  "$schema": "../capability.schema.json",
+  "id": "senses",
+  "name": "Senses",
+  "notes": "Ways of perceiving the world the player can have. Seeded with the archer's tracking (mw-e19.4), which the Sleepers' Path (E25) reads to show sleepwalker trails in daylight; without it the trails show only at night.",
+  "capabilities": [
+    {
+      "id": "sense.tracking",
+      "name": "Tracking",
+      "description": "Read tracks, trampled grass and disturbed dust, and follow a trail by daylight.",
+      "classAffinity": "archer"
+    }
+  ]
+}

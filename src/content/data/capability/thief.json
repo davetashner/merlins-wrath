@@ -1,0 +1,20 @@
+{
+  "$schema": "../capability.schema.json",
+  "id": "thief",
+  "name": "Thief tools and tricks",
+  "notes": "Thief verbs (ADR-0004: tools on the belt grant their verb while carried; tricks are learned from contacts). Seeded with the thief's signatures from class data (mw-e19.4): Lockpicks, granted by the lockpicks item in the starting kit, and Pickpocket, a starting trick.",
+  "capabilities": [
+    {
+      "id": "tool.lockpick",
+      "name": "Pick Locks",
+      "description": "Open a lock with picks instead of a key (ADR-0004 lock chain, step 1). Held while lockpicks are carried. A thief signature: never shared.",
+      "classAffinity": "thief"
+    },
+    {
+      "id": "trick.pickpocket",
+      "name": "Pickpocket",
+      "description": "Lift an item or coin from an unaware pocket (ADR-0004 pocket chain, step 1). A thief signature: never shared.",
+      "classAffinity": "thief"
+    }
+  ]
+}

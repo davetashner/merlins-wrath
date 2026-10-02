@@ -61,14 +61,14 @@ describe('puzzle load checks (mw-e15.1)', () => {
           {
             afterSeconds: 60,
             bark: 'Hm.',
-            variants: [{ capability: 'arrow.rope', bark: 'Rope!' }],
+            variants: [{ capability: 'arrow.zz-unknown', bark: 'Rope!' }],
           },
         ],
       })),
     ]);
     expect(issues).toEqual([
       `${FILE}#/solutions/1/capabilities/1: puzzle:zz-test names unknown capability "spell.telekinesis": declare it in src/content/data/capability/`,
-      `${FILE}#/hints/0/variants/0/capability: puzzle:zz-test names unknown capability "arrow.rope": declare it in src/content/data/capability/`,
+      `${FILE}#/hints/0/variants/0/capability: puzzle:zz-test names unknown capability "arrow.zz-unknown": declare it in src/content/data/capability/`,
     ]);
   });
 

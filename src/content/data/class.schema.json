@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "enum": [
+        "knight",
+        "archer",
+        "sorcerer",
+        "thief"
+      ],
+      "description": "The class: knight, archer, sorcerer or thief."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name, e.g. \"Thief\" (docs and debug tools)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The class fantasy and where its data comes from."
+    },
+    "nameKey": {
+      "description": "Localisation key of the display name; absent = \"class.<id>.name\".",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+    },
+    "descKey": {
+      "description": "Localisation key of the class card pitch; absent = \"class.<id>.desc\".",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+    },
+    "dialogueTag": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Tag on class-gated dialogue options, shown as e.g. [Thief] (mw-e22.6). Unique per class."
+    },
+    "iconId": {
+      "type": "string",
+      "pattern": "^ui-emblem-class-[a-z0-9]+(?:-[a-z0-9]+)*-\\d{2}$",
+      "description": "Class emblem asset id (style bible §15.1); a placeholder until the art lands."
+    },
+    "portraitId": {
+      "type": "string",
+      "pattern": "^keyart-class-card-[a-z0-9]+(?:-[a-z0-9]+)*-\\d{2}$",
+      "description": "Class card illustration asset id (style bible §15.1)."
+    },
+    "startingCapabilities": {
+      "minItems": 2,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$",
+        "description": "Capability id declared in src/content/data/capability/, e.g. \"spell.mage-hand\"."
+      },
+      "description": "Capabilities granted at new game, with the permanent class source (ADR-0004)."
+    },
+    "signature": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$",
+        "description": "Capability id declared in src/content/data/capability/, e.g. \"spell.mage-hand\"."
+      },
+      "description": "Capabilities that define the class and are never shared (ADR-0004 \"simple\" rule)."
+    },
+    "startingKit": {
+      "type": "object",
+      "properties": {
+        "gold": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Starting gold."
+        },
+        "items": {
+          "description": "Starting items.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "item": {
+                "description": "The item, from src/content/data/item/.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "item"
+              },
+              "count": {
+                "default": 1,
+                "description": "How many the player starts with.",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9999
+              },
+              "equip": {
+                "default": false,
+                "description": "Starts equipped in its slot (a single unit of an equippable item).",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "item"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "gold"
+      ],
+      "additionalProperties": false,
+      "description": "What the player starts with (grey-box; tuned during m2/m3)."
+    },
+    "proficiencies": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "description": "Proficiency tags the class has, matching items’ equip.proficiencies, e.g. \"blades\", \"heavy-armor\", \"shields\". Soft (mw-e17.4)."
+    },
+    "armorCapacityKg": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 60,
+      "description": "Equipped armor weight at 100% load (ADR-0003: knight 30, others 23). Kilograms."
+    },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "health": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Starting health (ADR-0004 stats table); grows only in +10 steps up to the cap."
+        },
+        "stamina": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Starting stamina (ADR-0004 stats table); grows only in +10 steps up to the cap."
+        },
+        "mana": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "description": "Starting mana (ADR-0004 stats table); grows only in +10 steps up to the cap."
+        }
+      },
+      "required": [
+        "health",
+        "stamina",
+        "mana"
+      ],
+      "additionalProperties": false,
+      "description": "Start values of the supporting stats."
+    },
+    "unlockChannels": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "book",
+          "trainer",
+          "schematic",
+          "trick",
+          "deed",
+          "tool"
+        ]
+      },
+      "description": "Progression channels that apply, the primary one first (ADR-0004)."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "dialogueTag",
+    "iconId",
+    "portraitId",
+    "startingCapabilities",
+    "signature",
+    "startingKit",
+    "proficiencies",
+    "armorCapacityKg",
+    "stats",
+    "unlockChannels"
+  ],
+  "additionalProperties": false
+}

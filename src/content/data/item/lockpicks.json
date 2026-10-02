@@ -1,0 +1,21 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "lockpicks",
+  "category": "tool",
+  "notes": "A roll of picks and a tension wrench on the tool belt: the thief can pick locks while carrying them (tool.lockpick, ADR-0004). Breaking or losing them takes the verb away. Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
+  "icon": "icon-item-lockpick-iron-01",
+  "value": 20,
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "tool-belt",
+    "proficiencies": []
+  },
+  "grants": [
+    {
+      "capability": "tool.lockpick",
+      "while": "carried"
+    }
+  ]
+}

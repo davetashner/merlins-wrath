@@ -1,0 +1,40 @@
+{
+  "$schema": "../class.schema.json",
+  "id": "knight",
+  "name": "Knight",
+  "notes": "Weight, impact and mastery (CONSTITUTION): timing, blocking, parrying, weapons and armor. Grows through trainers and deeds (ADR-0004); the only class with room for a shield over mail or plate (armor capacity 30 kg, ADR-0003). Grey-box kit: sword, wooden shield and mail, a light load at 11 kg.",
+  "dialogueTag": "knight",
+  "iconId": "ui-emblem-class-knight-01",
+  "portraitId": "keyart-class-card-knight-01",
+  "startingCapabilities": ["verb.climb.ledge", "technique.shield-bash", "technique.parry"],
+  "signature": ["technique.parry"],
+  "startingKit": {
+    "gold": 25,
+    "items": [
+      {
+        "item": "arming-sword",
+        "equip": true
+      },
+      {
+        "item": "wooden-shield",
+        "equip": true
+      },
+      {
+        "item": "mail-hauberk",
+        "equip": true
+      },
+      {
+        "item": "healing-draught",
+        "count": 2
+      }
+    ]
+  },
+  "proficiencies": ["blades", "maces", "shields", "light-armor", "medium-armor", "heavy-armor"],
+  "armorCapacityKg": 30,
+  "stats": {
+    "health": 120,
+    "stamina": 100,
+    "mana": 20
+  },
+  "unlockChannels": ["trainer", "deed"]
+}

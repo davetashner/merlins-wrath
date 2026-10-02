@@ -1,0 +1,18 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "leather-jerkin",
+  "category": "armor",
+  "notes": "A leather body piece at ADR-0003's reference weight (3 kg): a light load for anyone. Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
+  "icon": "icon-item-leather-jerkin-01",
+  "value": 30,
+  "worldProperties": {
+    "material": "cloth"
+  },
+  "equip": {
+    "slot": "body",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 3
+  }
+}

@@ -5,7 +5,8 @@
 // (mw-e04.26), capability ids and puzzles against their scenes, capabilities and facts (mw-e15.1),
 // creature attacks' readability (windups and telegraph cues, mw-e04.20), unlock definitions against
 // the capability registry, without cycles or pure numeric upgrades (mw-e19.3), and the capability
-// ids items grant, teach or learn (mw-e17.2).
+// ids items grant, teach or learn (mw-e17.2), and the class files against the capability registry,
+// the items and the proficiency tags items call for (mw-e19.4).
 
 import { checkAnimation } from './anim-checks.ts';
 import { checkCreatureAttacks } from './attack-checks.ts';
@@ -22,6 +23,7 @@ import { bowSchema } from './types/bow.ts';
 import { breakableSchema } from './types/breakable.ts';
 import { cameraSchema } from './types/camera.ts';
 import { capabilitySchema, checkCapabilities } from './types/capability.ts';
+import { checkClasses, classSchema } from './types/class.ts';
 import { namedConditionSchema } from './types/condition.ts';
 import { controllerSchema } from './types/controller.ts';
 import { creatureSchema } from './types/creature.ts';
@@ -61,6 +63,7 @@ export const contentTypes = {
   breakable: breakableSchema,
   camera: cameraSchema,
   capability: capabilitySchema,
+  class: classSchema,
   condition: namedConditionSchema,
   controller: controllerSchema,
   creature: creatureSchema,
@@ -101,6 +104,7 @@ export const contentChecks: readonly ContentCheck[] = [
   checkCreatureAttacks,
   checkUnlocks,
   checkItems,
+  checkClasses,
 ];
 
 export type ContentTypes = typeof contentTypes;

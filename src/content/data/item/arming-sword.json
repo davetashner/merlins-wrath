@@ -1,0 +1,26 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "arming-sword",
+  "category": "weapon",
+  "notes": "The knight's one-handed sword: the light chain and the heavy swing (mw-e04). Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
+  "icon": "icon-item-arming-sword-01",
+  "value": 40,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "main-hand",
+    "proficiencies": ["blades"]
+  },
+  "weapon": {
+    "moves": [
+      "sword-light-1",
+      "sword-light-2",
+      "sword-light-3",
+      "sword-heavy",
+      "sword-heavy-charged",
+      "sword-riposte"
+    ]
+  }
+}
