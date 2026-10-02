@@ -190,7 +190,7 @@ describe('serialise / deserialise (the settings-store seam, mw-e02.22)', () => {
 });
 
 describe('gamepad bindings (mw-e02.9)', () => {
-  it('the default Xbox layout binds every button action but cycle target, with no conflicts', () => {
+  it('the default Xbox layout binds every button action but cycle target and slow walk (a light stick), with no conflicts', () => {
     expect(findConflicts(DEFAULT_PAD_BINDINGS)).toEqual([]);
     expect(DEFAULT_PAD_BINDINGS.jump).toEqual(['PadA']);
     expect(DEFAULT_PAD_BINDINGS.crouch).toEqual(['PadDown']);
@@ -205,7 +205,14 @@ describe('gamepad bindings (mw-e02.9)', () => {
     expect(DEFAULT_PAD_BINDINGS.inventory).toEqual(['PadView']);
     expect(DEFAULT_PAD_BINDINGS.ability1).toEqual(['PadY', 'PadUp']);
     const unbound = BINDABLE_ACTIONS.filter((action) => DEFAULT_PAD_BINDINGS[action].length === 0);
-    expect(unbound).toEqual(['moveForward', 'moveBack', 'moveLeft', 'moveRight', 'cycleTarget']);
+    expect(unbound).toEqual([
+      'moveForward',
+      'moveBack',
+      'moveLeft',
+      'moveRight',
+      'slowWalk',
+      'cycleTarget',
+    ]);
     for (const action of BINDABLE_ACTIONS) {
       expect(DEFAULT_PAD_BINDINGS[action].length).toBeLessThanOrEqual(MAX_SLOTS);
     }

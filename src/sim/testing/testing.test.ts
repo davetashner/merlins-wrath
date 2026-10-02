@@ -345,7 +345,7 @@ describe('running a scenario', () => {
       [false, 'was doing idle at 5.00 s'],
       [false, 'it did not'],
       [false, 'it has no brain at 2.00 s'],
-      [false, 'was combat at 4.57 s'],
+      [false, 'was combat at 4.97 s'],
     ]);
     expect(result.expectations.map((e) => e.label).slice(2, 8)).toEqual([
       'during 0.00 s–5.00 s: w enters suspicious from unaware',

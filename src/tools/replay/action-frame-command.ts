@@ -4,7 +4,11 @@
 import { z } from 'zod';
 import { ACTION_FRAME_COMMAND, BUTTON_ACTIONS, type ActionFrame } from '@sim/index';
 
-const button = z.strictObject({ pressed: z.boolean(), held: z.boolean(), released: z.boolean() });
+const UP = { pressed: false, held: false, released: false };
+// A frame recorded before an action existed (slowWalk, mw-e02.10) reads that action as up.
+const button = z
+  .strictObject({ pressed: z.boolean(), held: z.boolean(), released: z.boolean() })
+  .default(UP);
 const vector = z.strictObject({ x: z.number(), y: z.number() });
 
 /** One tick's ActionFrame, as stored in replay files. */

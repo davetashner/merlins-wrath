@@ -4,11 +4,12 @@
 // smallest honest model of that, read from each creature's own sense profile, and it is a port: a
 // scenario can pass its own senses, and the real perception replaces this one behind the same type.
 //
-// Sight, per agent with a brain, every tick: the player's centre (lower when crouched) is seen when it
-// is within far range, inside the peripheral cone horizontally and the vertical half-angle, and no
+// Sight, per agent with a brain, every tick, from the player's movement profile (mw-e02.10): the
+// player's centre (two thirds of its silhouette height, so lower when crouched) is seen when it is
+// within far range, inside the peripheral cone horizontally and the vertical half-angle, and no
 // layout wall is in the way. Awareness then builds at
 //   detectionSpeed × zone (1 primary, ½ peripheral) × range (1 to near, falling to 0 at far)
-//   × max(light at the player, darkVision) × stance (½ crouched)
+//   × max(light at the player, darkVision) × the profile's visibility (stance × gait)
 // per second; at full awareness the target counts as visible. Unseen, awareness decays 0.1 per second
 // and the target is no longer visible. While seen, the stimulus is where the player is.
 //
@@ -20,6 +21,7 @@ import type { EntityId } from '../core/component';
 import type { System, World } from '../core/world';
 import { BrainComponent } from '../ai/components';
 import { writeBlackboard } from '../ai/runtime';
+import { movementProfileOf } from '../character/profile';
 import { CharacterController } from '../character/system';
 import { CombatFacingComponent } from '../combat/melee/components';
 import { CreatureNavComponent, CreatureSensesComponent } from '../creatures/components';
@@ -76,9 +78,8 @@ const DEG = Math.PI / 180;
 const LN10 = log(10);
 /** Eye height as a fraction of the agent's height. */
 const EYE = 0.9;
-/** The player's centre above its feet, standing and crouched, metres. */
-const CENTRE = 1.2;
-const CROUCHED_CENTRE = 0.6;
+/** The player's centre above its feet as a fraction of its silhouette height. */
+const CENTRE = 2 / 3;
 
 /** The stand-in senses (see the file header). */
 export const standInSenses: ScenarioSenses = (world, { player, light, note }) => {
@@ -92,6 +93,7 @@ export const standInSenses: ScenarioSenses = (world, { player, light, note }) =>
     run: ({ clock }) => {
       const dt = 1 / clock.hz;
       const body = world.get(player, CharacterController);
+      const profile = movementProfileOf(world, player);
       const noises = heard.splice(0);
       world
         .query(
@@ -122,13 +124,9 @@ export const standInSenses: ScenarioSenses = (world, { player, light, note }) =>
           }
 
           const sight = senses.sight;
-          if (sight === undefined || body === undefined) return;
+          if (sight === undefined || body === undefined || profile === undefined) return;
           const feet = body.position;
-          const target = {
-            x: feet.x,
-            y: feet.y + (body.crouched ? CROUCHED_CENTRE : CENTRE),
-            z: feet.z,
-          };
+          const target = { x: feet.x, y: feet.y + CENTRE * profile.silhouetteHeight, z: feet.z };
           const d = distance(eye, target);
           const level = light.levelAt(target);
           const rate =
@@ -136,7 +134,7 @@ export const standInSenses: ScenarioSenses = (world, { player, light, note }) =>
             zone(facing, eye, target, d, sight) *
             (d <= sight.nearRange ? 1 : (sight.farRange - d) / (sight.farRange - sight.nearRange)) *
             Math.max(level, sight.darkVision) *
-            (body.crouched ? 0.5 : 1);
+            profile.visibility;
           const seen =
             rate > 0 &&
             light.statics.along(eye.x, eye.y, eye.z, target.x, target.y, target.z, 0).length === 0;

@@ -21,6 +21,7 @@ describe('action registry', () => {
       'jump',
       'sprint',
       'crouch',
+      'slowWalk',
       'dodge',
       'interact',
       'lockOn',

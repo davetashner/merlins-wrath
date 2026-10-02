@@ -6,10 +6,14 @@
 //
 // Per tick:
 //  1. Stance: crouch while crouch is held; on release stand up only if the standing capsule fits.
+//     Sprinting (sprint held while moving) overrides a held crouch: the character stands when the
+//     standing capsule fits, and under a low ceiling stays crouched with the sprint ignored.
 //  2. Horizontal velocity moves towards the input's target at a constant rate: run speed per
 //     accelTime speeding up, per decelTime slowing down; in the air only airControl of the
-//     acceleration applies and, with no input, momentum is kept. A committed move's root motion (a
-//     dodge roll, `CharacterInput.motion`) sets the velocity outright instead. Strafing (lock-on,
+//     acceleration applies and, with no input, momentum is kept. The slow-walk modifier caps the
+//     speed at the stealth slow-walk speed; it and a light stick mark the tick a slow walk
+//     (mw-e02.10). A committed move's root motion (a dodge roll, `CharacterInput.motion`) sets the
+//     velocity outright instead. Strafing (lock-on,
 //     mw-e02.16): with a `strafeAround` point the move input is relative to the direction to that
 //     point, and sideways input follows the circle through the character around it instead of its
 //     tangent, so circling a target keeps the distance.
@@ -46,7 +50,7 @@
 // while launched, every wall. Each carries the height of the drop that would land that fast,
 // speed² / (2 · gravity): the fall-damage rules (mw-e04.19) price every impact by it.
 
-import type { ControllerTuning, Frozen, LaunchTuning } from '@content/index';
+import type { ControllerTuning, Frozen, LaunchTuning, StealthTuning } from '@content/index';
 import type { ReadonlyClock } from '../clock';
 import type { EntityId } from '../core/component';
 import { cos, sin } from '../math';
@@ -86,6 +90,11 @@ export interface MovementActions {
   readonly jump: ButtonState;
   readonly sprint: ButtonState;
   readonly crouch: ButtonState;
+  /**
+   * The slow-walk modifier (mw-e02.10): held, the character moves at the stealth slow-walk speed.
+   * Optional so movement actions written before it existed (tests, old replays) read it as up.
+   */
+  readonly slowWalk?: ButtonState;
 }
 
 /**
@@ -159,6 +168,11 @@ export interface CharacterState {
   readonly groundBody: BodyId | null;
   readonly crouched: boolean;
   readonly sprinting: boolean;
+  /**
+   * Moving at the slow walk this tick (mw-e02.10): the modifier held, or the move stick at or below
+   * the slow-walk deflection. Absent otherwise.
+   */
+  readonly slowWalk?: true;
   /** Ticks since the character was last grounded (0 while grounded). */
   readonly airTicks: number;
   /** Left the ground by jumping (so no coyote jump until it lands). */
@@ -219,6 +233,33 @@ export const DEFAULT_LAUNCH_TUNING: Frozen<LaunchTuning> = Object.freeze({
   airControl: 0.1,
   recoveryMs: 250,
   mass: 90,
+});
+
+const standingGaits = Object.freeze({
+  still: Object.freeze({ noise: 0, visibility: 0.8 }),
+  slowWalk: Object.freeze({ noise: 0.08, visibility: 0.85 }),
+  walk: Object.freeze({ noise: 0.3, visibility: 0.9 }),
+  run: Object.freeze({ noise: 0.6, visibility: 1 }),
+  sprint: Object.freeze({ noise: 1, visibility: 1 }),
+});
+const crouchedGaits = Object.freeze({
+  still: Object.freeze({ noise: 0, visibility: 0.4 }),
+  slowWalk: Object.freeze({ noise: 0.05, visibility: 0.4 }),
+  walk: Object.freeze({ noise: 0.15, visibility: 0.45 }),
+  run: Object.freeze({ noise: 0.3, visibility: 0.5 }),
+  sprint: Object.freeze({ noise: 0.6, visibility: 0.5 }),
+});
+
+/**
+ * The defaults when a controller profile has no `stealth` block (mw-e02.10): the slow walk is
+ * 1.2 m/s with the modifier held, or any move at 30% stick deflection or less; noise standing is
+ * 0 / 0.08 / 0.3 / 0.6 / 1.0 still / slow walk / walk / run / sprint and crouched 0 / 0.05 / 0.15
+ * (run 0.3 and sprint 0.6 complete the table; the controller never moves crouched that fast), and
+ * visibility is 0.8–1.0 standing and about half crouched. The shipped player profile states its own.
+ */
+export const DEFAULT_STEALTH_TUNING: Frozen<StealthTuning> = Object.freeze({
+  slowWalk: Object.freeze({ speed: 1.2, deflection: 0.3 }),
+  profiles: Object.freeze({ standing: standingGaits, crouched: crouchedGaits }),
 });
 
 /** Values derived once from tuning and the tick rate. */
@@ -400,25 +441,33 @@ function locomotion(
   const { dt } = params;
   const mover = new Mover(world, tuning, params);
 
-  // 1. Stance.
-  const standing: Capsule = { radius: tuning.capsule.radius, height: tuning.capsule.height };
-  const crouched =
-    actions.crouch.held || (state.crouched && !mover.roomToStand(state.position, standing));
-  const capsule = capsuleOf({ ...state, crouched }, tuning);
-
-  // 2. Horizontal velocity (root motion, when a committed move supplies it, replaces steering; a
-  // launched character is carried by its launch instead).
+  // 1. Stance. Sprinting while crouched stands the character up when there is room (mw-e02.10);
+  // under a low ceiling it stays crouched and the sprint is ignored.
   const motion = launch === undefined ? input.motion : undefined;
   const raw = actions.move;
   const deflection = Math.min(1, Math.sqrt(raw.x * raw.x + raw.y * raw.y));
   const moving = deflection > 0;
-  const sprinting = motion === undefined && actions.sprint.held && !crouched && moving;
+  const wantsSprint = motion === undefined && actions.sprint.held && moving;
+  const standing: Capsule = { radius: tuning.capsule.radius, height: tuning.capsule.height };
+  const wantsCrouch = actions.crouch.held && !wantsSprint;
+  const crouched = wantsCrouch || (state.crouched && !mover.roomToStand(state.position, standing));
+  const capsule = capsuleOf({ ...state, crouched }, tuning);
+
+  // 2. Horizontal velocity (root motion, when a committed move supplies it, replaces steering; a
+  // launched character is carried by its launch instead). The slow walk (the modifier, or a light
+  // stick) caps the speed and is no sprint.
+  const sprinting = wantsSprint && !crouched;
+  const { slowWalk: slow } = tuning.stealth ?? DEFAULT_STEALTH_TUNING;
+  const slowHeld = actions.slowWalk?.held === true;
+  const slowWalk = !sprinting && moving && (slowHeld || deflection <= slow.deflection);
   const top = crouched
     ? tuning.speeds.crouch
     : sprinting
       ? tuning.speeds.sprint
       : tuning.speeds.run;
-  const target = moveTarget(state.position, input, raw, top * deflection, dt);
+  const wishSpeed =
+    slowHeld && !sprinting ? Math.min(top * deflection, slow.speed) : top * deflection;
+  const target = moveTarget(state.position, input, raw, wishSpeed, dt);
   const current = flat(state.velocity);
   let horizontal = current;
   if (motion !== undefined) {
@@ -525,6 +574,7 @@ function locomotion(
     groundBody: ground?.body ?? null,
     crouched,
     sprinting,
+    ...(slowWalk && { slowWalk }),
     airTicks: grounded ? 0 : state.airTicks + 1,
     jumped: !grounded && (state.jumped || jumping),
     jumpAge: jumping ? -1 : jumpAge,

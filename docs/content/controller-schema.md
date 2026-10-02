@@ -77,6 +77,43 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `climb.jumpOff` | object | required | Jumping off a climbed surface. |
 | `climb.jumpOff.away` | number 0–20 | required | Speed away from the surface, m/s. |
 | `climb.jumpOff.up` | number 0–20 | required | Upward speed, m/s. |
+| `stealth` | object | — | MovementStance and gait movement profiles; absent = the sim’s defaults (DEFAULT_STEALTH_TUNING). |
+| `stealth.slowWalk` | object | required | The slow walk: the quietest gait, from the modifier or a light stick. |
+| `stealth.slowWalk.speed` | number > 0 ≤ 50 | required | Top speed while the slow-walk modifier is held, m/s; at most speeds.crouch. |
+| `stealth.slowWalk.deflection` | number > 0 < 1 | required | Move-stick deflection at or below which moving counts as a slow walk (a light stick), 0–1. |
+| `stealth.profiles` | object | required | Noise and visibility for every stance × gait (every combination must be defined). |
+| `stealth.profiles.standing` | object | required | Every gait standing. |
+| `stealth.profiles.standing.still` | object | required | At the still gait. |
+| `stealth.profiles.standing.still.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `stealth.profiles.standing.still.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `stealth.profiles.standing.slowWalk` | object | required | At the slowWalk gait. |
+| `stealth.profiles.standing.slowWalk.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `stealth.profiles.standing.slowWalk.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `stealth.profiles.standing.walk` | object | required | At the walk gait. |
+| `stealth.profiles.standing.walk.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `stealth.profiles.standing.walk.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `stealth.profiles.standing.run` | object | required | At the run gait. |
+| `stealth.profiles.standing.run.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `stealth.profiles.standing.run.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `stealth.profiles.standing.sprint` | object | required | At the sprint gait. |
+| `stealth.profiles.standing.sprint.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `stealth.profiles.standing.sprint.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `stealth.profiles.crouched` | object | required | Every gait crouched. |
+| `stealth.profiles.crouched.still` | object | required | At the still gait. |
+| `stealth.profiles.crouched.still.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `stealth.profiles.crouched.still.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `stealth.profiles.crouched.slowWalk` | object | required | At the slowWalk gait. |
+| `stealth.profiles.crouched.slowWalk.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `stealth.profiles.crouched.slowWalk.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `stealth.profiles.crouched.walk` | object | required | At the walk gait. |
+| `stealth.profiles.crouched.walk.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `stealth.profiles.crouched.walk.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `stealth.profiles.crouched.run` | object | required | At the run gait. |
+| `stealth.profiles.crouched.run.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `stealth.profiles.crouched.run.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `stealth.profiles.crouched.sprint` | object | required | At the sprint gait. |
+| `stealth.profiles.crouched.sprint.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `stealth.profiles.crouched.sprint.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
 | `classes` | map of `"knight"` \| `"archer"` \| `"sorcerer"` \| `"thief"` → object | — | Per-class overrides (mw-e02.3): class → only the values it changes; the rest come from this profile. Armor load effects are not overrides (mw-e17.13). |
 | `classes.<key>.capsule` | object | — |  |
 | `classes.<key>.capsule.radius` | number > 0 ≤ 1 | — | Capsule radius, m. |
@@ -145,3 +182,40 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `classes.<key>.climb.jumpOff` | object | — |  |
 | `classes.<key>.climb.jumpOff.away` | number 0–20 | — | Speed away from the surface, m/s. |
 | `classes.<key>.climb.jumpOff.up` | number 0–20 | — | Upward speed, m/s. |
+| `classes.<key>.stealth` | object | — |  |
+| `classes.<key>.stealth.slowWalk` | object | — |  |
+| `classes.<key>.stealth.slowWalk.speed` | number > 0 ≤ 50 | — | Top speed while the slow-walk modifier is held, m/s; at most speeds.crouch. |
+| `classes.<key>.stealth.slowWalk.deflection` | number > 0 < 1 | — | Move-stick deflection at or below which moving counts as a slow walk (a light stick), 0–1. |
+| `classes.<key>.stealth.profiles` | object | — |  |
+| `classes.<key>.stealth.profiles.standing` | object | — |  |
+| `classes.<key>.stealth.profiles.standing.still` | object | — |  |
+| `classes.<key>.stealth.profiles.standing.still.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `classes.<key>.stealth.profiles.standing.still.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `classes.<key>.stealth.profiles.standing.slowWalk` | object | — |  |
+| `classes.<key>.stealth.profiles.standing.slowWalk.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `classes.<key>.stealth.profiles.standing.slowWalk.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `classes.<key>.stealth.profiles.standing.walk` | object | — |  |
+| `classes.<key>.stealth.profiles.standing.walk.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `classes.<key>.stealth.profiles.standing.walk.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `classes.<key>.stealth.profiles.standing.run` | object | — |  |
+| `classes.<key>.stealth.profiles.standing.run.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `classes.<key>.stealth.profiles.standing.run.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `classes.<key>.stealth.profiles.standing.sprint` | object | — |  |
+| `classes.<key>.stealth.profiles.standing.sprint.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `classes.<key>.stealth.profiles.standing.sprint.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `classes.<key>.stealth.profiles.crouched` | object | — |  |
+| `classes.<key>.stealth.profiles.crouched.still` | object | — |  |
+| `classes.<key>.stealth.profiles.crouched.still.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `classes.<key>.stealth.profiles.crouched.still.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `classes.<key>.stealth.profiles.crouched.slowWalk` | object | — |  |
+| `classes.<key>.stealth.profiles.crouched.slowWalk.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `classes.<key>.stealth.profiles.crouched.slowWalk.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `classes.<key>.stealth.profiles.crouched.walk` | object | — |  |
+| `classes.<key>.stealth.profiles.crouched.walk.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `classes.<key>.stealth.profiles.crouched.walk.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `classes.<key>.stealth.profiles.crouched.run` | object | — |  |
+| `classes.<key>.stealth.profiles.crouched.run.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `classes.<key>.stealth.profiles.crouched.run.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `classes.<key>.stealth.profiles.crouched.sprint` | object | — |  |
+| `classes.<key>.stealth.profiles.crouched.sprint.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
+| `classes.<key>.stealth.profiles.crouched.sprint.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |

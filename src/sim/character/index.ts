@@ -1,11 +1,13 @@
-// The player's kinematic character controller (mw-e02.2), the collision interface it runs on and the
-// locomotion state and events it publishes (mw-e02.6).
+// The player's kinematic character controller (mw-e02.2), the collision interface it runs on, the
+// locomotion state and events it publishes (mw-e02.6) and its movement profiles for stealth
+// (mw-e02.10).
 // Not exported here, by design: collision-world.contract.ts (Vitest only).
 export type { BodyId, Capsule, CollisionHit, CollisionWorld } from './collision-world';
 export {
   capsuleOf,
   controllerParams,
   DEFAULT_LAUNCH_TUNING,
+  DEFAULT_STEALTH_TUNING,
   IDLE_INPUT,
   initialCharacterState,
   MIN_STRAFE_RADIUS,
@@ -26,6 +28,14 @@ export {
   type MovementState,
   type PendingImpulses,
 } from './controller';
+export {
+  CharacterEncumbrance,
+  movementGait,
+  movementProfile,
+  movementProfileOf,
+  type Encumbrance,
+  type MovementProfile,
+} from './profile';
 export { FakeCollisionWorld } from './fake-collision-world';
 export {
   box,

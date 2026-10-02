@@ -17,6 +17,7 @@ B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT
 | Look             | Right stick                        | Mouse                    |
 | Jump             | A                                  | Space                    |
 | Crouch           | D-pad Down                         | C                        |
+| Slow walk        | Light left-stick push              | X (hold)                 |
 | Dodge            | B                                  | R                        |
 | Interact         | X                                  | E                        |
 | Sprint           | LS click (toggle)                  | Left Shift (hold)        |
@@ -52,6 +53,11 @@ out the attack button (left click, RT) draws instead of swinging (hold to draw, 
 ability 2 (2, RB) cycles the arrow type. Cycle stays off ability 3, the knight's parry
 (`TESTBED_BOW_BUTTONS`, src/game/combat/testbed-combat.ts). While drawn the camera narrows from 70° to
 the bow's aim field of view; `?frames` shows the selected arrow type and how many are left.
+
+**Slow walk.** The quietest way to move (mw-e02.10): hold X to walk at 1.2 m/s, or push the left
+stick 30% or less. It works standing or crouched. Sprint while crouched stands you up (not under a
+low ceiling, where the sprint is ignored). How loud and visible each stance and gait is lives in the
+controller profile's `stealth` block (`src/content/data/controller/player.json`).
 
 **Sprint toggle.** On the pad, clicking the left stick latches sprint on; it stays on until the stick
 comes back to centre or is clicked again (`GamepadSettings.sprintToggle`, default on). Off, sprint is
