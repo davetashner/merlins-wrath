@@ -1,0 +1,750 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Behaviour id creatures name in `behaviour.profile`."
+    },
+    "schemaVersion": {
+      "default": 1,
+      "description": "Behaviour schema version, for future migrations.",
+      "type": "number",
+      "const": 1
+    },
+    "notes": {
+      "description": "What it is for, for owner review.",
+      "type": "string",
+      "minLength": 1
+    },
+    "tuning": {
+      "description": "Default tuning values `{ \"tuning\": key }` reads; creatures override them.",
+      "default": {},
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": "number"
+      }
+    },
+    "thinkHz": {
+      "default": 10,
+      "description": "Thinks per second (it acts every tick).",
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 60
+    },
+    "inertia": {
+      "default": 0.1,
+      "description": "Score bonus of the running activity (hysteresis).",
+      "type": "number",
+      "minimum": 0
+    },
+    "initial": {
+      "default": "unaware",
+      "description": "State it spawns in.",
+      "type": "string",
+      "enum": [
+        "unaware",
+        "suspicious",
+        "investigating",
+        "searching",
+        "alerted",
+        "combat"
+      ]
+    },
+    "states": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "enum": [
+          "unaware",
+          "suspicious",
+          "investigating",
+          "searching",
+          "alerted",
+          "combat"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "timeoutS": {
+            "description": "Seconds in this state before `onTimeout`; absent = no timeout.",
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "tuning": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Tuning key."
+                  }
+                },
+                "required": [
+                  "tuning"
+                ],
+                "additionalProperties": false,
+                "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+              }
+            ]
+          },
+          "onTimeout": {
+            "description": "State it falls back to on timeout.",
+            "type": "string",
+            "enum": [
+              "unaware",
+              "suspicious",
+              "investigating",
+              "searching",
+              "alerted",
+              "combat"
+            ]
+          },
+          "transitions": {
+            "description": "Checked in order after the timeout; at most one is taken per think.",
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "to": {
+                  "type": "string",
+                  "enum": [
+                    "unaware",
+                    "suspicious",
+                    "investigating",
+                    "searching",
+                    "alerted",
+                    "combat"
+                  ],
+                  "description": "State it moves to (defined in this behaviour)."
+                },
+                "when": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "input": {
+                          "type": "string",
+                          "description": "An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, trait.<trait> or need.<need>."
+                        },
+                        "gte": {
+                          "description": "True when the input is at least this.",
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "tuning": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "description": "Tuning key."
+                                }
+                              },
+                              "required": [
+                                "tuning"
+                              ],
+                              "additionalProperties": false,
+                              "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                            }
+                          ]
+                        },
+                        "lt": {
+                          "description": "True when the input is below this.",
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "tuning": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "description": "Tuning key."
+                                }
+                              },
+                              "required": [
+                                "tuning"
+                              ],
+                              "additionalProperties": false,
+                              "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "input"
+                      ],
+                      "additionalProperties": false,
+                      "description": "An input threshold (trait, timer, stimulus, need…)."
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "event": {
+                          "type": "string",
+                          "enum": [
+                            "damaged-by-unseen",
+                            "ally-alarm"
+                          ],
+                          "description": "Queued external event."
+                        }
+                      },
+                      "required": [
+                        "event"
+                      ],
+                      "additionalProperties": false,
+                      "description": "An external event queued since the last think."
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "done": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                          "description": "Activity of this state."
+                        }
+                      },
+                      "required": [
+                        "done"
+                      ],
+                      "additionalProperties": false,
+                      "description": "The activity finished its last step."
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "failed": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                          "description": "Activity of this state."
+                        }
+                      },
+                      "required": [
+                        "failed"
+                      ],
+                      "additionalProperties": false,
+                      "description": "A step of the activity failed."
+                    }
+                  ],
+                  "description": "Transition condition."
+                }
+              },
+              "required": [
+                "to",
+                "when"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "activities": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "description": "Activities scored in this state, in tie order."
+          }
+        },
+        "required": [
+          "activities"
+        ],
+        "additionalProperties": false
+      },
+      "description": "The alert states it uses, by name."
+    },
+    "activities": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "weight": {
+            "default": 1,
+            "description": "Score multiplier.",
+            "type": "number",
+            "minimum": 0
+          },
+          "interruptible": {
+            "default": true,
+            "description": "false holds the activity until it ends or the state changes.",
+            "type": "boolean"
+          },
+          "retryAfterS": {
+            "default": 2,
+            "description": "Seconds a failed activity is excluded from scoring.",
+            "type": "number",
+            "minimum": 0
+          },
+          "considerations": {
+            "description": "Input × curve factors; none = always its weight.",
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "input": {
+                  "type": "string",
+                  "description": "An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, trait.<trait> or need.<need>."
+                },
+                "curve": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "linear"
+                        },
+                        "slope": {
+                          "type": "number"
+                        },
+                        "intercept": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "slope",
+                        "intercept"
+                      ],
+                      "additionalProperties": false,
+                      "description": "slope × input + intercept, clamped to 0–1."
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "step"
+                        },
+                        "at": {
+                          "type": "number"
+                        },
+                        "below": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "above": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "at",
+                        "below",
+                        "above"
+                      ],
+                      "additionalProperties": false,
+                      "description": "`above` when input ≥ at, else `below`."
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "power"
+                        },
+                        "exponent": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 8
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "exponent"
+                      ],
+                      "additionalProperties": false,
+                      "description": "input (clamped to 0–1) to an integer power."
+                    }
+                  ],
+                  "description": "Response curve."
+                }
+              },
+              "required": [
+                "input",
+                "curve"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "steps": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "move-to"
+                    },
+                    "target": {
+                      "type": "string",
+                      "enum": [
+                        "stimulus",
+                        "target",
+                        "nearest-waypoint",
+                        "origin"
+                      ],
+                      "description": "Where to go."
+                    },
+                    "within": {
+                      "default": 0.5,
+                      "description": "Arrives within this many metres.",
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tuning": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Tuning key."
+                            }
+                          },
+                          "required": [
+                            "tuning"
+                          ],
+                          "additionalProperties": false,
+                          "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                        }
+                      ]
+                    },
+                    "gait": {
+                      "default": "walk",
+                      "description": "Gait (its speed comes from the creature).",
+                      "type": "string",
+                      "enum": [
+                        "sneak",
+                        "walk",
+                        "run"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "target"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Walks to a target; fails when it is gone or unreachable."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "follow-route"
+                    },
+                    "dwellS": {
+                      "default": 0,
+                      "description": "Seconds it stands at each waypoint.",
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tuning": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Tuning key."
+                            }
+                          },
+                          "required": [
+                            "tuning"
+                          ],
+                          "additionalProperties": false,
+                          "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                        }
+                      ]
+                    },
+                    "gait": {
+                      "default": "walk",
+                      "description": "Gait (its speed comes from the creature).",
+                      "type": "string",
+                      "enum": [
+                        "sneak",
+                        "walk",
+                        "run"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "do"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Walks its patrol route in a loop (never ends); fails without a route."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "look-at"
+                    },
+                    "target": {
+                      "type": "string",
+                      "enum": [
+                        "stimulus",
+                        "target",
+                        "nearest-waypoint",
+                        "origin"
+                      ],
+                      "description": "What to face."
+                    },
+                    "seconds": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tuning": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Tuning key."
+                            }
+                          },
+                          "required": [
+                            "tuning"
+                          ],
+                          "additionalProperties": false,
+                          "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                        }
+                      ],
+                      "description": "How long it looks."
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "target",
+                    "seconds"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Turns to face a target for a while; fails when it is gone."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "look-around"
+                    },
+                    "seconds": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tuning": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Tuning key."
+                            }
+                          },
+                          "required": [
+                            "tuning"
+                          ],
+                          "additionalProperties": false,
+                          "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                        }
+                      ],
+                      "description": "How long it looks around."
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "seconds"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Faces a new seeded-random direction every second."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "wait"
+                    },
+                    "seconds": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tuning": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Tuning key."
+                            }
+                          },
+                          "required": [
+                            "tuning"
+                          ],
+                          "additionalProperties": false,
+                          "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                        }
+                      ],
+                      "description": "How long it waits."
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "seconds"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Stands still."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "play-cue"
+                    },
+                    "cue": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "description": "Cue id."
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "cue"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Emits a presentation cue (bark, animation) and succeeds."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "emit-noise"
+                    },
+                    "db": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 140
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tuning": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Tuning key."
+                            }
+                          },
+                          "required": [
+                            "tuning"
+                          ],
+                          "additionalProperties": false,
+                          "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                        }
+                      ],
+                      "description": "Loudness at the source, dB."
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "db"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Makes a noise at its position (stealth hearing) and succeeds."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "attack"
+                    },
+                    "attack": {
+                      "description": "Attack id.",
+                      "type": "string",
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "x-contentRef": "attack"
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "attack"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Performs an attack on its target; fails when the attack may not start."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "forget-stimulus"
+                    }
+                  },
+                  "required": [
+                    "do"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Drops its stimulus and awareness (it calls it off)."
+                }
+              ]
+            },
+            "description": "Primitives run in order."
+          }
+        },
+        "required": [
+          "steps"
+        ],
+        "additionalProperties": false
+      },
+      "description": "Activities by id."
+    }
+  },
+  "required": [
+    "id",
+    "states",
+    "activities"
+  ],
+  "additionalProperties": false
+}

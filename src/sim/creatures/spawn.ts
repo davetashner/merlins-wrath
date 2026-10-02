@@ -14,9 +14,9 @@
 // - an idle attacker when it has attacks and the world runs the attack executor (mw-e12.5);
 // - a lock-on target when the world has lock-on (mw-e02.16), lock points up its body;
 // - a member of its faction (or the spawn's override) with its disposition toward the player;
-// - its creature state: origin (for respawn), behaviour profile, needs, senses and nav agent.
-//
-// AI (e11) decides what it does; until then it stands where it spawned. Spawning never throws for bad
+// - its creature state: origin (for respawn), behaviour profile, needs, senses and nav agent;
+// - a brain running its behaviour profile, with its personality and gait speeds, when the world runs
+//   AI (`installAi`, mw-e11.2) and that AI knows the profile. Without one it stands where it spawned. Spawning never throws for bad
 // data: an unknown creature or faction comes back as a typed SpawnError and nothing is created.
 //
 // Register the components first (`registerCreatureComponents`) and install factions
@@ -24,6 +24,7 @@
 // tick; between steps at once.
 
 import type { CreatureTable, RuntimeCreature } from '@content/index';
+import { aiBehaviour, giveBrain } from '../ai/runtime';
 import { giveAttacker, AttackerComponent } from '../combat/attacks/components';
 import {
   combatantFromCreature,
@@ -237,6 +238,14 @@ export function spawnCreature(
   world.add(entity, CreatureComponent, creatureState(creature, originOf(request, facing)));
   world.add(entity, CreatureSensesComponent, creature.senses);
   world.add(entity, CreatureNavComponent, nav);
+  const profile = def.behaviour.profile;
+  if (aiBehaviour(world, profile) !== undefined) {
+    giveBrain(world, entity, {
+      behaviour: profile,
+      traits: def.personality,
+      gaits: creature.gaits,
+    });
+  }
   return { ok: true, entity };
 }
 

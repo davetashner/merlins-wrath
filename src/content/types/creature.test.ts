@@ -5,8 +5,9 @@ import { contentTypes } from '../registry.ts';
 import { ContentRef, serializeContent } from '../schema.ts';
 import type { AttackDefInput } from './attack.ts';
 import { loadFixtureContent } from '../test-fixtures.ts';
-import { compileCreatures, creatureSchema, type CreatureDefInput } from './creature.ts';
-import { deriveNavAgent, resolveLocomotion } from './locomotion.ts';
+import type { Frozen } from '../loader.ts';
+import { compileCreatures, creatureSchema, gaitSpeeds, type CreatureDefInput } from './creature.ts';
+import { deriveNavAgent, resolveLocomotion, type LocomotionProfile } from './locomotion.ts';
 import { resolveSenses } from './sense.ts';
 import type { MoveDefInput } from './move.ts';
 
@@ -257,5 +258,22 @@ describe('compileCreatures (mw-e12.4)', () => {
     expect(Object.isFrozen(hound)).toBe(true);
     expect(Object.isFrozen(hound?.senses)).toBe(true);
     expect(Object.isFrozen(hound?.nav)).toBe(true);
+    expect(hound?.gaits).toEqual(gaitSpeeds(resolveLocomotion(def.locomotion, content)));
+  });
+
+  it('gait speeds (mw-e11.2) come from the walk mode, else the first moving mode, else are 0', () => {
+    const speeds = (sneak: number) => ({ speeds: { sneak, walk: sneak * 2, run: sneak * 4 } });
+    const profile = (modes: object) => ({ modes }) as unknown as Frozen<LocomotionProfile>;
+    expect(gaitSpeeds(profile({ fly: speeds(2), walk: speeds(1) }))).toEqual({
+      sneak: 1,
+      walk: 2,
+      run: 4,
+    });
+    expect(gaitSpeeds(profile({ swim: speeds(3), fly: speeds(2) }))).toEqual({
+      sneak: 2,
+      walk: 4,
+      run: 8,
+    });
+    expect(gaitSpeeds(profile({ stationary: {} }))).toEqual({ sneak: 0, walk: 0, run: 0 });
   });
 });

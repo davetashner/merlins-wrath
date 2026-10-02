@@ -1,6 +1,7 @@
 // The deterministic game rules (backlog contract §2). No DOM, renderer, wall clock or Math.random.
 export const layer = 'sim' as const;
 
+export * from './ai';
 export * from './character';
 export * from './climb';
 export * from './combat';

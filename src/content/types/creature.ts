@@ -19,6 +19,8 @@ import {
   creatureLocomotionSchema,
   deriveNavAgent,
   resolveLocomotion,
+  type Gait,
+  type LocomotionProfile,
   type LocomotionProfileLookup,
   type NavAgent,
 } from './locomotion.ts';
@@ -195,6 +197,8 @@ export interface RuntimeCreature {
   readonly def: Frozen<CreatureDef>;
   readonly senses: Frozen<SenseProfile>;
   readonly nav: Frozen<NavAgent>;
+  /** Speed per gait, m/s, of its walking mode (else its first moving mode; 0 when stationary). AI moves it. */
+  readonly gaits: Readonly<Record<Gait, number>>;
 }
 
 /** Runtime creatures by id (`compileCreatures`). */
@@ -211,16 +215,28 @@ const deepFreeze = <T>(value: T): T => {
   return value;
 };
 
+/** Moving modes in the order `gaitSpeeds` prefers them. */
+const GAIT_MODES = ['walk', 'climb', 'fly', 'swim', 'burrow', 'wallcrawl'] as const;
+
+/** The gait speeds AI moves a creature at: its walk mode's, else its first moving mode's, else 0. */
+export function gaitSpeeds(profile: Frozen<LocomotionProfile>): Readonly<Record<Gait, number>> {
+  const mode = GAIT_MODES.map((m) => profile.modes[m]).find((m) => m !== undefined);
+  const speeds = mode?.speeds ?? { sneak: 0, walk: 0, run: 0 };
+  return Object.freeze({ sneak: speeds.sneak, walk: speeds.walk, run: speeds.run });
+}
+
 /** Resolves one creature's profiles (see RuntimeCreature). */
 export function compileCreature(
   def: Frozen<CreatureDef>,
   profiles: CreatureProfileLookup,
 ): RuntimeCreature {
+  const locomotion = resolveLocomotion(def.locomotion, profiles);
   return Object.freeze({
     id: def.id,
     def,
     senses: deepFreeze(resolveSenses(def.senses, profiles)),
-    nav: deepFreeze(deriveNavAgent(resolveLocomotion(def.locomotion, profiles))),
+    nav: deepFreeze(deriveNavAgent(locomotion)),
+    gaits: gaitSpeeds(locomotion),
   });
 }
 
