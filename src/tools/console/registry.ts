@@ -24,7 +24,7 @@ export class ConsoleError extends Error {
 }
 
 export interface CommandSpec<TArgs, THost> {
-  /** Lower-case, no spaces. */
+  /** Lower-case, no spaces; a dot groups related commands (`ctl.get`, `ctl.set`). */
   readonly name: string;
   /** One line for `help`. */
   readonly summary: string;
@@ -67,8 +67,10 @@ export class CommandRegistry<THost> {
 
   /** Adds a command. @throws Error for a malformed or duplicate name. */
   registerCommand<TArgs>(spec: CommandSpec<TArgs, THost>): void {
-    if (!/^[a-z][a-z0-9-]*$/.test(spec.name)) {
-      throw new Error(`command name "${spec.name}" must be lower-case letters, digits and dashes`);
+    if (!/^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*)*$/.test(spec.name)) {
+      throw new Error(
+        `command name "${spec.name}" must be lower-case letters, digits and dashes, with dots between words of a group (ctl.set)`,
+      );
     }
     if (this.commands.has(spec.name)) throw new Error(`command "${spec.name}" already exists`);
     this.commands.set(spec.name, spec);

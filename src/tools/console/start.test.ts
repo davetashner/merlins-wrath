@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { loadGameContent, PLAYER_CONTROLLER_ID } from '@content/index';
 import { CommandQueue } from '@game/loop/command-queue';
 import { registerSceneComponents, spawnCommand, World } from '@sim/index';
 import { UiRoot } from '@ui/index';
@@ -68,6 +69,31 @@ describe('startDebugConsole', () => {
     });
     expect(sandbox.registry.get('attacker')).toBeDefined();
     expect(sandbox.registry.get('dummies')).toBeDefined();
+  });
+
+  it('adds ctl.get, ctl.set and ctl.dump when given the controller profile (mw-e02.3)', () => {
+    expect(start(false).console.registry.get('ctl.set')).toBeUndefined();
+    document.body.innerHTML = '';
+    const ui = new UiRoot(document.body, { unstyled: true });
+    const tuned = startDebugConsole({
+      world: registerSceneComponents(new World<never>({ seed: 1 })),
+      submit: () => undefined,
+      player: () => 1,
+      spawnables: [],
+      bookmarks: () => new Map(),
+      scenes: [],
+      loadScene: () => undefined,
+      loop: { timeScale: 1 },
+      dom: { document, keys: window, screens: ui },
+      controller: loadGameContent().get('controller', PLAYER_CONTROLLER_ID),
+    });
+    for (const name of ['ctl.get', 'ctl.set', 'ctl.dump']) {
+      expect(tuned.registry.get(name)).toBeDefined();
+    }
+    // A world without character tuning has no player to tune.
+    expect(tuned.registry.execute('ctl.get').lines).toEqual([
+      'no player with controller tuning in this scene',
+    ]);
   });
 
   it('works without a toggle callback', () => {

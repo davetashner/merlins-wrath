@@ -36,6 +36,7 @@ export interface JsonSchemaNode {
   readonly minimum?: number;
   readonly maximum?: number;
   readonly exclusiveMinimum?: number;
+  readonly exclusiveMaximum?: number;
   readonly minItems?: number;
   readonly anyOf?: readonly JsonSchemaNode[];
   /** Emitted for discriminated unions; documented like anyOf. */
@@ -61,7 +62,7 @@ interface Row {
 
 const code = (value: unknown): string => `\`${JSON.stringify(value)}\``;
 
-/** `integer 0–100`, `number ≥ 0`, `integer > 0`… (zod's ±MAX_SAFE_INTEGER int bounds are omitted). */
+/** `integer 0–100`, `number ≥ 0`, `integer > 0`, `number > 0 < 90`… (zod's ±MAX_SAFE_INTEGER int bounds are omitted). */
 function numberType(node: JsonSchemaNode): string {
   const max = node.maximum === Number.MAX_SAFE_INTEGER ? undefined : node.maximum;
   const min = node.minimum === -Number.MAX_SAFE_INTEGER ? undefined : node.minimum;
@@ -71,6 +72,7 @@ function numberType(node: JsonSchemaNode): string {
     node.exclusiveMinimum === undefined ? undefined : `> ${String(node.exclusiveMinimum)}`,
     min === undefined ? undefined : `≥ ${String(min)}`,
     max === undefined ? undefined : `≤ ${String(max)}`,
+    node.exclusiveMaximum === undefined ? undefined : `< ${String(node.exclusiveMaximum)}`,
   ].filter((b) => b !== undefined);
   return [node.type, ...bounds].join(' ');
 }

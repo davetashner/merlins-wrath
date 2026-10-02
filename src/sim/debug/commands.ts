@@ -5,6 +5,7 @@
 // these inside the tick. Builders validate at the call site so a bad value fails where it is typed,
 // not deep inside a tick.
 
+import type { ControllerTuning, Frozen } from '@content/index';
 import type { EntityId } from '../core/component';
 import { isWorldPropertyKey, validateProperty, type WorldPropertyKey } from '../properties/spec';
 import type { Vec3 } from '../stimulus/shapes';
@@ -103,8 +104,21 @@ export interface PropertyCommand {
   readonly value: unknown;
 }
 
+/**
+ * Replaces a character's controller tuning (mw-e02.3: the console's `ctl.set`), from this tick on.
+ * The console validates `tuning` against the controller schema before sending it; the sim cannot
+ * (content schemas are not sim code), so a command is only as good as the build that recorded it.
+ */
+export interface TuneCommand {
+  readonly kind: typeof DEBUG_COMMAND;
+  readonly op: 'tune';
+  readonly target: EntityId;
+  readonly tuning: Frozen<ControllerTuning>;
+}
+
 export type DebugCommand =
   | SpawnCommand
+  | TuneCommand
   | CheatCommand
   | TeleportCommand
   | KillCommand
@@ -218,6 +232,14 @@ export function propertyCommand(target: EntityId, key: string, value: unknown): 
   const problem = validateProperty(key, value);
   if (problem !== undefined) throw new RangeError(problem);
   return { kind: DEBUG_COMMAND, op: 'property', target: entity(target), key, value };
+}
+
+/**
+ * A controller tuning change for `target`; pass tuning that passed `controllerTuningSchema`.
+ * @throws RangeError for an invalid target.
+ */
+export function tuneCommand(target: EntityId, tuning: Frozen<ControllerTuning>): TuneCommand {
+  return { kind: DEBUG_COMMAND, op: 'tune', target: entity(target), tuning };
 }
 
 /** True for a DebugCommand among arbitrary step inputs. */

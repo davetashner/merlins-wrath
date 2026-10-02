@@ -120,7 +120,7 @@ function deepFreeze<T>(value: T): T {
 }
 
 /** `$schema` only points editors at the generated JSON Schema; it isn't part of the entry. */
-function withoutSchemaKey(json: unknown): unknown {
+export function withoutSchemaKey(json: unknown): unknown {
   if (typeof json !== 'object' || json === null || Array.isArray(json)) return json;
   return Object.fromEntries(Object.entries(json).filter(([key]) => key !== '$schema'));
 }

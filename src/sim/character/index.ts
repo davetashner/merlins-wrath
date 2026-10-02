@@ -53,7 +53,9 @@ export {
 export {
   CharacterController,
   CharacterImpacted,
+  CharacterTuning,
   characterControllerSystem,
+  characterTuning,
   spawnCharacter,
   type CharacterImpactInfo,
   type CharacterSystemOptions,

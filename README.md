@@ -56,6 +56,7 @@ you every 2.0 s for block, parry and dodge practice. Click to take control (the 
 | `dummies --infinite off` | Mortal dummies (infinite ones refill 3 s after the last hit) |
 | `timescale 0.1`, `god`, `tp player-start` | The console's usual speed, cheat and teleport commands |
 | `blast [intensity 1500] [radius 4]` | Set off a force blast in front of you: it throws you (and props) back |
+| `ctl.get [runSpeed]`, `ctl.set runSpeed 6`, `ctl.dump` | Read and live-edit the player's movement values (validated, from the next tick; replays record it), then print the edited `src/content/data/controller/player.json`. In `pnpm dev`, saving that file retunes the player without a reload |
 
 The dummies and the knight's placeholder numbers are content: `src/content/data/sandbox/combat-sandbox.json`
 (all flagged placeholders to tune). The overlay's World column shows the latest harm the world dealt

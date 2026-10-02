@@ -2,7 +2,13 @@ import type { ControllerTuning, Frozen } from '@content/index';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { FakeCollisionWorld } from '../character/fake-collision-world';
-import { CharacterController, spawnCharacter } from '../character/system';
+import { CharacterLocomotion } from '../character/locomotion';
+import {
+  CharacterController,
+  CharacterTuning,
+  characterTuning,
+  spawnCharacter,
+} from '../character/system';
 import { DAMAGE_COMPONENTS, giveCombatant, HealthComponent } from '../combat/damage/components';
 import { DamageApplied, Died, type DamageResult, type Death } from '../combat/damage/events';
 import { DamageModel } from '../combat/damage/model';
@@ -48,6 +54,7 @@ import {
   propertyCommand,
   spawnCommand,
   teleportCommand,
+  tuneCommand,
   type DebugCommand,
   type SpawnParams,
 } from './commands';
@@ -388,6 +395,88 @@ describe('noclip on the player', () => {
     expect(replay.inputs[0]?.[1]).toEqual([cheatCommand(player, 'noclip', true)]);
     const outcome = playReplay(replay, {
       name: 'debug',
+      usesContent: false,
+      command: z.custom<ActionFrame | DebugCommand>(() => true),
+      create: () => build().world,
+      drive: () => [],
+    });
+    expect(outcome.status).toBe('passed');
+  });
+});
+
+describe('controller tuning (mw-e02.3)', () => {
+  const forward: ActionFrame = actionFrame({
+    move: actionVector(0, 1),
+    look: actionVector(0, 0),
+    buttons: () => UP_BUTTON,
+  });
+  const faster: Frozen<ControllerTuning> = { ...TUNING, speeds: { ...TUNING.speeds, run: 6 } };
+  const speedOf = (world: World<ActionFrame | DebugCommand>, entity: EntityId) => {
+    const v = world.get(entity, CharacterController)?.velocity ?? ORIGIN;
+    return Math.sqrt(v.x * v.x + v.z * v.z);
+  };
+  function playerWorld() {
+    const world = registerSceneComponents(new World<ActionFrame | DebugCommand>({ seed: 5 }));
+    installDebugCommands(world, { spawners: new Map() });
+    const layout = layoutScene(TEST_SCENE, testKit);
+    const collision = new FakeCollisionWorld(layout.parts.flatMap((part) => part.collider ?? []));
+    const player = installPlayer(world, { spawns: layout.spawns, collision, tuning: TUNING });
+    return { world, player };
+  }
+
+  it('builds a JSON-safe command and rejects a bad target at the call site', () => {
+    expect(tuneCommand(7, faster)).toEqual({
+      kind: DEBUG_COMMAND,
+      op: 'tune',
+      target: 7,
+      tuning: faster,
+    });
+    expect(isDebugCommand(tuneCommand(7, faster))).toBe(true);
+    expect(() => tuneCommand(0, faster)).toThrow(RangeError);
+  });
+
+  it('AC-4: the player carries its tuning, and the tick a tune command arrives moves with it', () => {
+    const { world, player } = playerWorld();
+    expect(world.get(player, CharacterTuning)).toBe(TUNING);
+    for (let i = 0; i < 40; i++) world.step([forward]);
+    expect(speedOf(world, player)).toBeCloseTo(5, 9);
+    world.step([tuneCommand(player, faster), forward]);
+    expect(world.get(player, CharacterTuning)).toEqual(faster);
+    // Accelerating toward 6 m/s at run / accelTime: one tick's worth above 5 already.
+    expect(speedOf(world, player)).toBeCloseTo(5 + 6 / 0.15 / 60, 9);
+    for (let i = 0; i < 20; i++) world.step([forward]);
+    expect(speedOf(world, player)).toBeCloseTo(6, 9);
+    // Locomotion reads the same tuning: full speed is a normalised 1 at the new run speed.
+    expect(world.get(player, CharacterLocomotion)?.normalizedSpeed).toBeCloseTo(1, 9);
+  });
+
+  it('skips characters without their own tuning, which move with the systems’ tuning', () => {
+    const { world, player } = playerWorld();
+    const other = spawnCharacter(world, { x: 3, y: 1, z: 3 });
+    world.step([tuneCommand(other, faster), tuneCommand(99, faster)]);
+    expect(world.has(other, CharacterTuning)).toBe(false);
+    expect(characterTuning(world, other, TUNING)).toBe(TUNING);
+    expect(characterTuning(world, player, faster)).toBe(TUNING);
+    const bare = debugWorld();
+    const lone = bare.spawn();
+    bare.step([tuneCommand(lone, faster)]);
+    expect(characterTuning(bare, lone, TUNING)).toBe(TUNING);
+  });
+
+  it('records and replays a live retune to the same hashes', () => {
+    const build = () => playerWorld();
+    const { world, player } = build();
+    const recorder = new ReplayRecorder(world, {
+      scenario: 'tune',
+      buildSha: 'test',
+      contentHash: null,
+      checkpointInterval: 10,
+    });
+    for (let i = 0; i < 10; i++) recorder.step([forward]);
+    recorder.step([tuneCommand(player, faster), forward]);
+    for (let i = 0; i < 20; i++) recorder.step([forward]);
+    const outcome = playReplay(recorder.finish(), {
+      name: 'tune',
       usesContent: false,
       command: z.custom<ActionFrame | DebugCommand>(() => true),
       create: () => build().world,

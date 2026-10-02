@@ -49,6 +49,8 @@ import { radians } from '../character/greybox';
 import {
   CharacterController,
   characterControllerSystem,
+  CharacterTuning,
+  characterTuning,
   spawnCharacter,
 } from '../character/system';
 import { CharacterLocomotion, giveLocomotion, locomotionSystem } from '../character/locomotion';
@@ -469,15 +471,15 @@ function meleeBindings(melee: PlayerMeleeOptions): Partial<Record<ButtonAction, 
  * hook lets go when it reaches 0. Runs after the controller, so the regen pause restarts every tick
  * of a climb.
  */
-function climbStaminaSystem<TInput>(tuning: { readonly staminaPerSecond: number }): System<TInput> {
+function climbStaminaSystem<TInput>(tuning: Frozen<ControllerTuning>): System<TInput> {
   return {
     name: 'climb-stamina',
     run: ({ world, clock }) => {
-      if (tuning.staminaPerSecond === 0) return;
       const w: World<never> = world;
       w.query(CharacterController, StaminaComponent).forEach((entity, state) => {
-        if (state.traversal === 'climb')
-          drainStamina(w, entity, tuning.staminaPerSecond / clock.hz);
+        if (state.traversal !== 'climb') return;
+        const climb = characterTuning(w, entity, tuning).climb ?? DEFAULT_CLIMB_TUNING;
+        if (climb.staminaPerSecond > 0) drainStamina(w, entity, climb.staminaPerSecond / clock.hz);
       });
     },
   };
@@ -537,7 +539,7 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
   }
   const look: LookSettings = { ...DEFAULT_LOOK_SETTINGS, ...options.look };
   const { combat } = options;
-  world.register(CharacterController, CharacterLocomotion, PlayerLook, ViewAnchor);
+  world.register(CharacterController, CharacterTuning, CharacterLocomotion, PlayerLook, ViewAnchor);
   world.addSystem(playerLookSystem(look));
   const melee = combat?.melee;
   if (combat !== undefined) {
@@ -621,7 +623,7 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     }),
   );
   if (climb !== undefined && combat !== undefined) {
-    world.addSystem(climbStaminaSystem(options.tuning.climb ?? DEFAULT_CLIMB_TUNING));
+    world.addSystem(climbStaminaSystem(options.tuning));
   }
   world.addSystem(
     locomotionSystem<TInput>({
@@ -638,6 +640,8 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
   );
   const { x, y, z } = start.position;
   const id = spawnCharacter(world, { x, y: y + SKIN, z });
+  // Its own tuning, so the debug console's ctl.set changes it from the very next tick (mw-e02.3).
+  world.add(id, CharacterTuning, options.tuning);
   giveLocomotion(world, id);
   world.add(id, PlayerLook, { yaw: spawnYaw(start), pitch: clampPitch(options.pitch ?? 0, look) });
   if (combat !== undefined) {

@@ -27,7 +27,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `coyoteMs` | integer 0–120 | required | After walking off a ledge a jump still works for this long, whole ms (≤ 120). |
 | `jumpBufferMs` | integer 0–150 | required | A jump pressed this long before landing fires on landing, whole ms (≤ 150). |
 | `stepHeight` | number 0–1 | required | Tallest step walked up without jumping, m; also how far the player snaps down to stay on stairs and ramps. Below crouchHeight. |
-| `slopeLimit` | number > 0 | required | Steepest walkable slope, degrees; steeper ground is a wall the player slides off. |
+| `slopeLimit` | number > 0 < 90 | required | Steepest walkable slope, degrees; steeper ground is a wall the player slides off. |
 | `gait` | object | — | Locomotion states and events; absent = the sim’s defaults (DEFAULT_GAIT_TUNING). |
 | `gait.walkFrom` | number > 0 ≤ 10 | required | Horizontal speed from which a character with move input walks (below: idle), m/s. |
 | `gait.runFrom` | number > 0 ≤ 20 | required | Horizontal speed from which it runs (below: walk), m/s; above walkFrom. |
@@ -49,7 +49,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `ledge.hangDepth` | number > 0 ≤ 5 | required | How far below the ledge top the feet hang, m; at most hangReach. Grabs lower than this pull straight up. |
 | `ledge.reach` | number > 0 ≤ 3 | required | How far ahead of the capsule a jump press finds a ledge to mantle or grab from the ground, m. |
 | `ledge.grabReach` | number > 0 ≤ 1 | required | How far ahead of the capsule hands catch a ledge in the air, or walking into one (auto-mantle), m. |
-| `ledge.maxTopSlope` | number ≥ 0 | required | Steepest ledge top a mantle stands on, degrees. |
+| `ledge.maxTopSlope` | number ≥ 0 < 90 | required | Steepest ledge top a mantle stands on, degrees. |
 | `ledge.autoMantleMs` | integer 1–3000 | required | Duration of a mantle onto a ledge up to autoMantleHeight, whole ms. |
 | `ledge.mantleMs` | integer 1–3000 | required | Duration of a mantle onto a higher ledge, whole ms. |
 | `ledge.pullUpMs` | integer 1–3000 | required | Duration of a pull-up from a hang (or a catch low on a ledge), whole ms. |
@@ -73,7 +73,75 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `climb.handHeight` | number > 0 ≤ 5 | required | Hands above the feet while climbing, m: the surface must reach this high, and a ledge this high above the feet is pulled up onto. |
 | `climb.maxCornerAngle` | number 0–90 | required | Sharpest turn between two faces a climber follows round a corner, degrees. |
 | `climb.slipGraceMs` | integer 0–10000 | required | How long a climber holds a surface that became impossible to hold (frozen, burning) before falling, whole ms. |
-| `climb.staminaPerSecond` | number 0–1000 | required | Stamina drained per second while climbing (characters with a stamina pool); at 0 stamina the climber falls. Progression may change it (mw-e10.9). |
+| `climb.staminaPerSecond` | number 0–1000 | required | Stamina drained while climbing (characters with a stamina pool), stamina/s; at 0 stamina the climber falls. Progression may change it (mw-e10.9). |
 | `climb.jumpOff` | object | required | Jumping off a climbed surface. |
 | `climb.jumpOff.away` | number 0–20 | required | Speed away from the surface, m/s. |
 | `climb.jumpOff.up` | number 0–20 | required | Upward speed, m/s. |
+| `classes` | map of `"knight"` \| `"archer"` \| `"sorcerer"` \| `"thief"` → object | — | Per-class overrides (mw-e02.3): class → only the values it changes; the rest come from this profile. Armor load effects are not overrides (mw-e17.13). |
+| `classes.<key>.capsule` | object | — |  |
+| `classes.<key>.capsule.radius` | number > 0 ≤ 1 | — | Capsule radius, m. |
+| `classes.<key>.capsule.height` | number > 0 ≤ 4 | — | Standing capsule height, feet to crown, m; at least 2 × radius. |
+| `classes.<key>.capsule.crouchHeight` | number > 0 ≤ 4 | — | Crouched capsule height, m; at least 2 × radius and at most height. The feet stay put, the top lowers. |
+| `classes.<key>.speeds` | object | — |  |
+| `classes.<key>.speeds.run` | number > 0 ≤ 50 | — | Top speed with the move input fully deflected, m/s. Partial input walks. |
+| `classes.<key>.speeds.sprint` | number > 0 ≤ 50 | — | Top speed while sprint is held, m/s; at least run. |
+| `classes.<key>.speeds.crouch` | number > 0 ≤ 50 | — | Top speed while crouched, m/s; at most run. |
+| `classes.<key>.accelTime` | number > 0 ≤ 2 | — | Time to reach run speed from rest on the ground, s. |
+| `classes.<key>.decelTime` | number > 0 ≤ 2 | — | Time to stop from run speed on the ground once input is released, s. |
+| `classes.<key>.airControl` | number 0–1 | — | Share of ground acceleration available in the air, 0–1; with no input the player keeps momentum. |
+| `classes.<key>.gravity` | number > 0 ≤ 100 | — | Downward acceleration, m/s². |
+| `classes.<key>.maxFallSpeed` | number > 0 ≤ 50 | — | Terminal falling speed, m/s. |
+| `classes.<key>.jumpApex` | number > 0 ≤ 5 | — | Jump height from standing, feet to feet, m. |
+| `classes.<key>.coyoteMs` | integer 0–120 | — | After walking off a ledge a jump still works for this long, whole ms (≤ 120). |
+| `classes.<key>.jumpBufferMs` | integer 0–150 | — | A jump pressed this long before landing fires on landing, whole ms (≤ 150). |
+| `classes.<key>.stepHeight` | number 0–1 | — | Tallest step walked up without jumping, m; also how far the player snaps down to stay on stairs and ramps. Below crouchHeight. |
+| `classes.<key>.slopeLimit` | number > 0 < 90 | — | Steepest walkable slope, degrees; steeper ground is a wall the player slides off. |
+| `classes.<key>.gait` | object | — |  |
+| `classes.<key>.gait.walkFrom` | number > 0 ≤ 10 | — | Horizontal speed from which a character with move input walks (below: idle), m/s. |
+| `classes.<key>.gait.runFrom` | number > 0 ≤ 20 | — | Horizontal speed from which it runs (below: walk), m/s; above walkFrom. |
+| `classes.<key>.gait.landingMs` | integer 0–1000 | — | How long the landing state lasts after a hard landing, whole ms. |
+| `classes.<key>.gait.hardLanding` | number 0–50 | — | Impact speed from which a landing counts as hard (shows the landing state), m/s. |
+| `classes.<key>.gait.footstep` | object | — |  |
+| `classes.<key>.gait.footstep.walk` | number > 0 ≤ 5 | — | Walking, m. |
+| `classes.<key>.gait.footstep.run` | number > 0 ≤ 5 | — | Running, m. |
+| `classes.<key>.gait.footstep.sprint` | number > 0 ≤ 5 | — | Sprinting, m. |
+| `classes.<key>.gait.footstep.crouch` | number > 0 ≤ 5 | — | Crouching, m. |
+| `classes.<key>.launch` | object | — |  |
+| `classes.<key>.launch.airControl` | number 0–1 | — | Share of ground acceleration available while flying from an impulse the player chose (a self-cast Gust), 0–1; a staggering launch (a blast, a troll’s blow) has none. |
+| `classes.<key>.launch.recoveryMs` | integer 0–1000 | — | After a staggering launch lands, movement and jump input are ignored this long, whole ms (≤ 1000). |
+| `classes.<key>.launch.mass` | number > 0 ≤ 1000 | — | The character’s mass for force stimuli (its `weight` world property), kg: a blast’s impulse in N·s over this is the velocity change it gets. |
+| `classes.<key>.ledge` | object | — |  |
+| `classes.<key>.ledge.autoMantleHeight` | number > 0 ≤ 5 | — | Ledges up to this high above the feet are mantled by walking into them, no jump needed, m. |
+| `classes.<key>.ledge.mantleHeight` | number > 0 ≤ 5 | — | Ledges up to this high are mantled by pressing jump at them (every class), m; at least autoMantleHeight. |
+| `classes.<key>.ledge.hangReach` | number > 0 ≤ 5 | — | Highest ledge above the feet a grab reaches (ledge hang, capability-gated), m; at least mantleHeight. |
+| `classes.<key>.ledge.hangDepth` | number > 0 ≤ 5 | — | How far below the ledge top the feet hang, m; at most hangReach. Grabs lower than this pull straight up. |
+| `classes.<key>.ledge.reach` | number > 0 ≤ 3 | — | How far ahead of the capsule a jump press finds a ledge to mantle or grab from the ground, m. |
+| `classes.<key>.ledge.grabReach` | number > 0 ≤ 1 | — | How far ahead of the capsule hands catch a ledge in the air, or walking into one (auto-mantle), m. |
+| `classes.<key>.ledge.maxTopSlope` | number ≥ 0 < 90 | — | Steepest ledge top a mantle stands on, degrees. |
+| `classes.<key>.ledge.autoMantleMs` | integer 1–3000 | — | Duration of a mantle onto a ledge up to autoMantleHeight, whole ms. |
+| `classes.<key>.ledge.mantleMs` | integer 1–3000 | — | Duration of a mantle onto a higher ledge, whole ms. |
+| `classes.<key>.ledge.pullUpMs` | integer 1–3000 | — | Duration of a pull-up from a hang (or a catch low on a ledge), whole ms. |
+| `classes.<key>.ledge.grabMs` | integer 1–3000 | — | Duration of catching a ledge into a hang, whole ms. |
+| `classes.<key>.ledge.lowerMs` | integer 1–3000 | — | Duration of lowering over an edge into a hang, whole ms. |
+| `classes.<key>.ledge.shimmySpeed` | number > 0 ≤ 10 | — | Sideways speed while hanging, at full stick deflection, m/s. |
+| `classes.<key>.ledge.shimmyGap` | number 0–2 | — | Widest gap between ledges a shimmy crosses, m; wider gaps stop it. |
+| `classes.<key>.ledge.slipGraceMs` | integer 0–10000 | — | How long hands hold a ledge that became impossible to hold (frozen, burning) before the character drops, whole ms. |
+| `classes.<key>.ledge.jumpBack` | object | — |  |
+| `classes.<key>.ledge.jumpBack.away` | number 0–20 | — | Speed away from the wall, m/s. |
+| `classes.<key>.ledge.jumpBack.up` | number 0–20 | — | Upward speed, m/s. |
+| `classes.<key>.climb` | object | — |  |
+| `classes.<key>.climb.speeds` | object | — |  |
+| `classes.<key>.climb.speeds.ladder` | number > 0 ≤ 10 | — | Climbing speed on a ladder, m/s. |
+| `classes.<key>.climb.speeds.rope` | number > 0 ≤ 10 | — | Climbing speed on a rope, m/s. |
+| `classes.<key>.climb.speeds.ivy` | number > 0 ≤ 10 | — | Climbing speed on ivy, m/s. |
+| `classes.<key>.climb.speeds.rough` | number > 0 ≤ 10 | — | Climbing speed on rough stone or timber, m/s. |
+| `classes.<key>.climb.speeds.sheer` | number > 0 ≤ 10 | — | Climbing speed on a sheer face (with a tool), m/s. |
+| `classes.<key>.climb.walkOn` | list of `"ladder"` \| `"rope"` \| `"ivy"` \| `"rough"` \| `"sheer"` | — | Grades a character attaches to by walking into them; every other grade needs a jump at it (or a catch in the air), so bumping a stone wall never starts a climb. |
+| `classes.<key>.climb.reach` | number > 0 ≤ 1 | — | How far ahead of the capsule a surface or rope can be caught, m. |
+| `classes.<key>.climb.handHeight` | number > 0 ≤ 5 | — | Hands above the feet while climbing, m: the surface must reach this high, and a ledge this high above the feet is pulled up onto. |
+| `classes.<key>.climb.maxCornerAngle` | number 0–90 | — | Sharpest turn between two faces a climber follows round a corner, degrees. |
+| `classes.<key>.climb.slipGraceMs` | integer 0–10000 | — | How long a climber holds a surface that became impossible to hold (frozen, burning) before falling, whole ms. |
+| `classes.<key>.climb.staminaPerSecond` | number 0–1000 | — | Stamina drained while climbing (characters with a stamina pool), stamina/s; at 0 stamina the climber falls. Progression may change it (mw-e10.9). |
+| `classes.<key>.climb.jumpOff` | object | — |  |
+| `classes.<key>.climb.jumpOff.away` | number 0–20 | — | Speed away from the surface, m/s. |
+| `classes.<key>.climb.jumpOff.up` | number 0–20 | — | Upward speed, m/s. |

@@ -1,13 +1,21 @@
 // Character controller tuning (mw-e02.2): the numbers behind how the player moves. Feel is found by
 // iteration, so every speed, acceleration time, jump height and timing window the kinematic
 // controller (src/sim/character) reads lives here as data, not in code. One file per profile,
-// `src/content/data/controller/<id>.json`; the player uses `player`. Per-class overrides, live
-// editing and hot reload arrive with mw-e02.3.
+// `src/content/data/controller/<id>.json`; the player uses `player`.
+//
+// Per-class overrides (mw-e02.3): a profile's `classes` holds, per class, only the values that class
+// changes (the thief crouches faster); `controllerTuningFor` merges one over the profile, so every
+// other value comes from the base. Each merged class profile is validated like the base, so a bad
+// override fails the load with its path (`classes.thief.speeds.crouch`). Armor load effects are not
+// overrides: they are modifiers on top of whichever profile applies (ADR-0003, mw-e17.13).
+// The debug console's ctl.get / ctl.set / ctl.dump (src/tools/console/controller.ts) edit the live
+// values, and in dev a saved controller file is applied without a page reload.
 //
 // Units: metres, seconds, metres per second, metres per second squared, degrees; the two input
 // timing windows are whole milliseconds so the sim converts them to ticks with `ReadonlyClock.ticksFor`.
 
 import { z } from 'zod';
+import type { Frozen } from '../loader.ts';
 import { contentId } from '../schema.ts';
 
 /** The longest coyote time the design allows (mw-e02.2: ≤ 120 ms). */
@@ -249,7 +257,7 @@ export const climbTuningSchema = z
       .min(0)
       .max(1000)
       .describe(
-        'Stamina drained per second while climbing (characters with a stamina pool); at 0 stamina the climber falls. Progression may change it (mw-e10.9).',
+        'Stamina drained while climbing (characters with a stamina pool), stamina/s; at 0 stamina the climber falls. Progression may change it (mw-e10.9).',
       ),
     jumpOff: z
       .strictObject({
@@ -391,6 +399,120 @@ export const controllerTuningSchema = z
 /** Validated controller tuning (the sim reads it frozen). */
 export type ControllerTuning = z.output<typeof controllerTuningSchema>;
 
+/** The four playable classes (CONSTITUTION §1), which may each override controller values. */
+export const PLAYER_CLASSES = ['knight', 'archer', 'sorcerer', 'thief'] as const;
+
+/** A playable class. */
+export type PlayerClass = (typeof PLAYER_CLASSES)[number];
+
+/**
+ * A class's changes to a profile: any tuning value, nested objects merged field by field (arrays are
+ * replaced whole). Bounds and units are those of the base fields; the merged profile is validated.
+ */
+export const controllerOverrideSchema = z
+  .strictObject(tuningShape)
+  .partial()
+  .extend({
+    capsule: capsuleSchema.partial().optional(),
+    speeds: speedsSchema.partial().optional(),
+    gait: gaitTuningSchema
+      .partial()
+      .extend({ footstep: footstepSchema.partial().optional() })
+      .optional(),
+    launch: launchTuningSchema.partial().optional(),
+    ledge: ledgeTuningSchema
+      .partial()
+      .extend({ jumpBack: ledgeTuningSchema.shape.jumpBack.partial().optional() })
+      .optional(),
+    climb: climbTuningSchema
+      .partial()
+      .extend({
+        speeds: climbTuningSchema.shape.speeds.partial().optional(),
+        jumpOff: climbTuningSchema.shape.jumpOff.partial().optional(),
+      })
+      .optional(),
+  })
+  .describe(
+    'Values one class changes; every value it leaves out comes from the base profile (mw-e02.3).',
+  );
+
+/** A class's changes to a controller profile (see controllerOverrideSchema). */
+export type ControllerOverride = z.output<typeof controllerOverrideSchema>;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** `base` with `override` merged over it: objects field by field, everything else replaced. */
+function mergeDeep(base: unknown, override: unknown): unknown {
+  if (!isRecord(base) || !isRecord(override)) return override;
+  const merged: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(override)) merged[key] = mergeDeep(base[key], value);
+  return merged;
+}
+
+/**
+ * `base` with a class override merged over it (see controllerOverrideSchema). Not validated: the
+ * load validates every class's merged profile (controllerSchema), the console validates its edits.
+ */
+export function mergeControllerTuning(
+  base: Frozen<ControllerTuning>,
+  override: Frozen<ControllerOverride>,
+): Frozen<ControllerTuning> {
+  return mergeDeep(base, override) as Frozen<ControllerTuning>;
+}
+
+const ENTRY_FIELDS = new Set(['$schema', 'id', 'name', 'notes', 'classes']);
+
+/** A profile's tuning values without its entry fields (id, name, notes, classes). */
+export function tuningOf(profile: Frozen<ControllerTuning>): Frozen<ControllerTuning> {
+  return Object.fromEntries(
+    Object.entries(profile).filter(([key]) => !ENTRY_FIELDS.has(key)),
+  ) as Frozen<ControllerTuning>;
+}
+
+function freeze<T>(value: T): T {
+  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) freeze(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
+/**
+ * The tuning a character of class `playerClass` moves with: the profile's values with that class's
+ * override merged over them (all of the base when the class has none, or with no class). A new,
+ * deep-frozen object holding only tuning values.
+ */
+export function controllerTuningFor(
+  profile: Frozen<ControllerDef>,
+  playerClass?: PlayerClass,
+): Frozen<ControllerTuning> {
+  const override = playerClass === undefined ? undefined : profile.classes?.[playerClass];
+  const base = structuredClone(tuningOf(profile));
+  return freeze(override === undefined ? base : mergeControllerTuning(base, override));
+}
+
+/** Adds an issue for every class whose merged profile is invalid, under `classes.<class>`. */
+function checkClasses(
+  def: TuningFields & {
+    readonly classes?: Partial<Record<PlayerClass, ControllerOverride>> | undefined;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  for (const playerClass of PLAYER_CLASSES) {
+    const override = def.classes?.[playerClass];
+    if (override === undefined) continue;
+    const merged = mergeControllerTuning(tuningOf(def), override);
+    for (const issue of controllerTuningSchema.safeParse(merged).error?.issues ?? []) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['classes', playerClass, ...issue.path],
+        message: `with the ${playerClass} override: ${issue.message}`,
+      });
+    }
+  }
+}
+
 /** One controller profile: `src/content/data/controller/<id>.json`. */
 export const controllerSchema = z
   .strictObject({
@@ -401,8 +523,15 @@ export const controllerSchema = z
       .min(1)
       .describe('Why these values (feel targets, references), for owner review.'),
     ...tuningShape,
+    classes: z
+      .partialRecord(z.enum(PLAYER_CLASSES), controllerOverrideSchema)
+      .optional()
+      .describe(
+        'Per-class overrides (mw-e02.3): class → only the values it changes; the rest come from this profile. Armor load effects are not overrides (mw-e17.13).',
+      ),
   })
-  .superRefine(checkTuning, whenValid);
+  .superRefine(checkTuning, whenValid)
+  .superRefine(checkClasses, whenValid);
 
 /** A controller profile as written in a data file. */
 export type ControllerDefInput = z.input<typeof controllerSchema>;

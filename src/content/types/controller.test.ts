@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
+import { gameContentSources, loadGameContent } from '../game-content.ts';
+import { contentJsonSchema } from '../json-schema.ts';
+import { ContentLoadError, loadContent } from '../loader.ts';
+import { contentTypes } from '../registry.ts';
 import { serializeContent } from '../schema.ts';
 import { describeContent } from '../testing.ts';
 import {
   MAX_COYOTE_MS,
   MAX_JUMP_BUFFER_MS,
+  PLAYER_CLASSES,
   PLAYER_CONTROLLER_ID,
+  controllerOverrideSchema,
   controllerSchema,
+  controllerTuningFor,
   controllerTuningSchema,
+  mergeControllerTuning,
+  tuningOf,
   type ControllerDefInput,
 } from './controller.ts';
 
@@ -131,6 +140,120 @@ describe('controller schema', () => {
     ]);
     expect(problems({ ...valid, ledge: { ...ledge, mantleMs: 0.5 } })).toEqual([
       'ledge.mantleMs: Invalid input: expected int, received number',
+    ]);
+  });
+});
+
+/** A numeric JSON Schema node, with the path that reaches it. */
+interface NumberField {
+  readonly path: string;
+  readonly node: Readonly<Record<string, unknown>>;
+}
+
+/** Every number and integer field of a JSON Schema, with its dotted path (`*` for a map's values). */
+function numberFields(node: unknown, path: readonly string[] = []): NumberField[] {
+  if (typeof node !== 'object' || node === null) return [];
+  const n = node as Readonly<Record<string, unknown>>;
+  if (n['type'] === 'number' || n['type'] === 'integer') return [{ path: path.join('.'), node: n }];
+  const properties = (n['properties'] ?? {}) as Readonly<Record<string, unknown>>;
+  return [
+    ...Object.entries(properties).flatMap(([key, child]) => numberFields(child, [...path, key])),
+    ...numberFields(n['additionalProperties'], [...path, '*']),
+  ];
+}
+
+/** How a description declares its unit: `…, m.`, `…, m/s;`, `…, whole ms (≤ 120)`, `…, 0–1;`… */
+const UNIT = /[,:;] (?:whole ms|m\/s²|m\/s|m|s|kg|degrees|0–1|stamina\/s)(?=[.;:,) ]|$)/;
+
+describe('controller data (mw-e02.3)', () => {
+  const fields = numberFields(contentJsonSchema(controllerSchema));
+
+  it('AC-1: every numeric field declares its unit and its range', () => {
+    expect(fields.length).toBeGreaterThan(100); // base fields and the class overrides' copies
+    const missing = fields.flatMap(({ path, node }) => {
+      const low = node['minimum'] ?? node['exclusiveMinimum'];
+      const high = node['maximum'] ?? node['exclusiveMaximum'];
+      const description = typeof node['description'] === 'string' ? node['description'] : '';
+      return [
+        ...(UNIT.test(description) ? [] : [`${path}: no unit in "${description}"`]),
+        ...(typeof low === 'number' && typeof high === 'number' ? [] : [`${path}: no range`]),
+      ];
+    });
+    expect(missing).toEqual([]);
+  });
+
+  it('AC-1: the default player file passes, with every class merged over it', () => {
+    const content = loadGameContent();
+    const player = content.get('controller', PLAYER_CONTROLLER_ID);
+    expect(controllerTuningSchema.parse(controllerTuningFor(player))).toEqual(tuningOf(player));
+    for (const playerClass of PLAYER_CLASSES) {
+      expect(() =>
+        controllerTuningSchema.parse(controllerTuningFor(player, playerClass)),
+      ).not.toThrow();
+    }
+  });
+
+  it('AC-2: a class override that sets only crouchSpeed takes every other value from the base', () => {
+    const def = controllerSchema.parse({
+      ...valid,
+      gait: {
+        walkFrom: 0.2,
+        runFrom: 2.5,
+        landingMs: 150,
+        hardLanding: 6,
+        footstep: { walk: 0.7, run: 1, sprint: 1.25, crouch: 0.5 },
+      },
+      classes: { thief: { speeds: { crouch: 2.6 } } },
+    });
+    const thief = controllerTuningFor(def, 'thief');
+    const base = controllerTuningFor(def);
+    expect(thief).toEqual({ ...base, speeds: { ...base.speeds, crouch: 2.6 } });
+    expect(thief.speeds.run).toBe(5);
+    expect(thief.speeds.sprint).toBe(7.5);
+    // Classes without an override, and no class, move on the base profile alone.
+    expect(controllerTuningFor(def, 'knight')).toEqual(base);
+    expect(Object.keys(thief)).not.toContain('classes');
+    expect(Object.isFrozen(thief.speeds)).toBe(true);
+    // Nested objects merge field by field; lists are replaced whole.
+    expect(
+      mergeControllerTuning(base, { gait: { footstep: { crouch: 0.4 } }, launch: { mass: 70 } }),
+    ).toEqual({
+      ...base,
+      gait: { ...base.gait, footstep: { ...base.gait?.footstep, crouch: 0.4 } },
+      launch: { ...base.launch, mass: 70 },
+    });
+  });
+
+  it('AC-2: an override names only tuning fields, each within its own bounds', () => {
+    expect(controllerOverrideSchema.parse({ speeds: { crouch: 2.6 } })).toEqual({
+      speeds: { crouch: 2.6 },
+    });
+    expect(controllerOverrideSchema.safeParse({ speeds: { crawl: 1 } }).success).toBe(false);
+    expect(controllerOverrideSchema.safeParse({ speeds: { crouch: -1 } }).success).toBe(false);
+    expect(problems({ ...valid, classes: { bard: {} } })).toHaveLength(1);
+    // A section the base leaves to the sim's defaults must then be given whole.
+    expect(problems({ ...valid, classes: { thief: { gait: { walkFrom: 0.3 } } } })).toContain(
+      'classes.thief.gait.runFrom: with the thief override: Invalid input: expected number, received undefined',
+    );
+  });
+
+  it('AC-3: negative gravity fails the load with the field path in the error', () => {
+    const player = gameContentSources().find((s) => s.path.endsWith('controller/player.json'));
+    if (player === undefined) throw new Error('no player controller file');
+    const json = JSON.parse(player.text) as Record<string, unknown>;
+    const load = (value: unknown) => () =>
+      loadContent(contentTypes, [{ path: player.path, text: JSON.stringify(value) }]);
+    expect(load({ ...json, gravity: -9.8 })).toThrow(ContentLoadError);
+    expect(load({ ...json, gravity: -9.8 })).toThrow(
+      /controller\/player\.json#\/gravity: Too small: expected number to be >0/,
+    );
+    // In a class override, the error names the class and the field.
+    expect(load({ ...json, classes: { thief: { gravity: -9.8 } } })).toThrow(
+      /#\/classes\/thief\/gravity: Too small: expected number to be >0/,
+    );
+    // An override within bounds that breaks the merged profile names the class and the field.
+    expect(problems({ ...valid, classes: { thief: { speeds: { crouch: 6 } } } })).toEqual([
+      'classes.thief.speeds.crouch: with the thief override: speeds.crouch must not be higher than speeds.run',
     ]);
   });
 });
