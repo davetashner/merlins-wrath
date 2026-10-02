@@ -158,9 +158,65 @@ function renderDefs(defs: Readonly<Record<string, JsonSchemaNode>>): string[] {
   ]);
 }
 
+/**
+ * For an entry that is a discriminated union (a top-level `oneOf`, e.g. items by category): the
+ * fields every option shares go in the main table, then a section per option lists the rest.
+ */
+function splitOptions(options: readonly JsonSchemaNode[]): {
+  shared: string[];
+  sections: string[];
+} {
+  const perOption = options.map(tableRows);
+  const shared = (perOption[0] ?? []).filter((row) =>
+    perOption.every((rows) => rows.includes(row)),
+  );
+  const sections = perOption.flatMap((rows, i) => [
+    '',
+    `## ${String(i + 1)}. ${options[i]?.description ?? 'Option'}`,
+    '',
+    ...TABLE_HEAD,
+    ...rows.filter((row) => !shared.includes(row)),
+  ]);
+  return {
+    shared,
+    sections: [
+      '',
+      'An entry is exactly one of the objects below: the fields above, plus those of its option.',
+      ...sections,
+    ],
+  };
+}
+
+/** `option` with each top-level property that is a `$ref` into `defs` replaced by the definition. */
+function inlineRefs(
+  option: JsonSchemaNode,
+  defs: Readonly<Record<string, JsonSchemaNode>>,
+): JsonSchemaNode {
+  const resolve = (node: JsonSchemaNode): JsonSchemaNode =>
+    defs[node.$ref?.replace('#/$defs/', '') ?? ''] ?? node;
+  const properties = Object.entries(option.properties ?? {}).map(([key, node]) => [
+    key,
+    resolve(node),
+  ]);
+  return {
+    ...option,
+    properties: Object.fromEntries(properties) as Record<string, JsonSchemaNode>,
+  };
+}
+
 /** The Markdown field reference for content type `type`. */
 export function renderDoc(type: string, schema: JsonSchemaNode): string {
-  const rows = tableRows(schema);
+  const defs = schema.$defs ?? {};
+  // A union's shared nested objects are hoisted into $defs (contentJsonSchema): document them inline.
+  const hoisted = new Set(
+    (schema.oneOf ?? []).flatMap((option) =>
+      Object.values(option.properties ?? {}).flatMap((node) => node.$ref ?? []),
+    ),
+  );
+  const { shared: rows, sections } =
+    schema.oneOf === undefined
+      ? { shared: tableRows(schema), sections: [] }
+      : splitOptions(schema.oneOf.map((option) => inlineRefs(option, defs)));
   return [
     `# \`${type}\` content schema`,
     '',
@@ -171,7 +227,10 @@ export function renderDoc(type: string, schema: JsonSchemaNode): string {
     '',
     ...TABLE_HEAD,
     ...rows,
-    ...renderDefs(schema.$defs ?? {}),
+    ...sections,
+    ...renderDefs(
+      Object.fromEntries(Object.entries(defs).filter(([name]) => !hoisted.has(`#/$defs/${name}`))),
+    ),
     '',
   ].join('\n');
 }

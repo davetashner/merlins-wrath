@@ -3,8 +3,9 @@
 // `contentChecks` are the checks across entries every load runs: fact references (mw-e27.2),
 // conditions against the fact registry (mw-e27.5), animation (mw-e02.20) and socket tracks
 // (mw-e04.26), capability ids and puzzles against their scenes, capabilities and facts (mw-e15.1),
-// creature attacks' readability (windups and telegraph cues, mw-e04.20), and unlock definitions
-// against the capability registry, without cycles or pure numeric upgrades (mw-e19.3).
+// creature attacks' readability (windups and telegraph cues, mw-e04.20), unlock definitions against
+// the capability registry, without cycles or pure numeric upgrades (mw-e19.3), and the capability
+// ids items grant, teach or learn (mw-e17.2).
 
 import { checkAnimation } from './anim-checks.ts';
 import { checkCreatureAttacks } from './attack-checks.ts';
@@ -28,6 +29,7 @@ import { cueSheetSchema } from './types/cue-sheet.ts';
 import { environmentDamageSchema } from './types/environment-damage.ts';
 import { factSchema } from './types/fact.ts';
 import { factionSchema } from './types/faction.ts';
+import { checkItems, itemSchema } from './types/item.ts';
 import { hitStopSchema } from './types/hit-stop.ts';
 import { kitSchema } from './types/kit.ts';
 import { lockOnSchema } from './types/lock-on.ts';
@@ -67,6 +69,7 @@ export const contentTypes = {
   fact: factSchema,
   faction: factionSchema,
   'hit-stop': hitStopSchema,
+  item: itemSchema,
   kit: kitSchema,
   'lock-on': lockOnSchema,
   locomotion: locomotionSchema,
@@ -97,6 +100,7 @@ export const contentChecks: readonly ContentCheck[] = [
   checkPuzzles,
   checkCreatureAttacks,
   checkUnlocks,
+  checkItems,
 ];
 
 export type ContentTypes = typeof contentTypes;

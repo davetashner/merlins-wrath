@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-tower-key",
+  "category": "key",
+  "notes": "Opens the fixture tower door; consumed when used.",
+  "icon": "icon-item-fixture-tower-key-01",
+  "value": 0,
+  "key": {
+    "opens": ["fixture-tower-door"],
+    "singleUse": true
+  }
+}

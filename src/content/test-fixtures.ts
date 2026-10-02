@@ -86,3 +86,50 @@ export function loadSpellFixtureContent(): GameContent {
     contentChecks,
   );
 }
+
+// Fixture items (mw-e17.2): one small item per category, for the item schema's and the inventory's
+// tests (mw-e17.3+) — never shipped; game items are world content.
+const itemFiles = import.meta.glob<string>('./fixtures/items/*/*.json', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+});
+
+/** Where the fixture item files live, relative to the repo root. */
+export const ITEM_FIXTURE_ROOT = 'src/content/fixtures/items';
+
+/** The fixture item ids, by category. */
+export const FIXTURE_ITEM_IDS = {
+  weapon: 'fixture-sword',
+  armor: 'fixture-mail-hauberk',
+  shield: 'fixture-wooden-shield',
+  ammo: 'fixture-arrow',
+  book: 'fixture-primer',
+  key: 'fixture-tower-key',
+  consumable: 'fixture-oil-flask',
+  tool: 'fixture-climbing-hook',
+  quest: 'fixture-bell-tongue',
+  artifact: 'fixture-lodestone-charm',
+  currency: 'fixture-gold',
+  misc: 'fixture-pebble',
+} as const;
+
+/** Every fixture item file, with repo-relative paths. */
+export function itemFixtureSources(): ContentSource[] {
+  return Object.entries(itemFiles).map(([path, text]) => ({
+    path: `${ITEM_FIXTURE_ROOT}/${path.slice('./fixtures/items/'.length)}`,
+    text,
+  }));
+}
+
+/**
+ * The game's content and the fixture items (which name its moves, arrows, shields, materials and
+ * capabilities), loaded and validated together. Throws a ContentLoadError listing every problem.
+ */
+export function loadItemFixtureContent(): GameContent {
+  return loadContent(
+    contentTypes,
+    [...gameContentSources(), ...itemFixtureSources()],
+    contentChecks,
+  );
+}

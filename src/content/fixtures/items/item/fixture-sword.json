@@ -1,0 +1,19 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-sword",
+  "category": "weapon",
+  "notes": "A one-handed sword whose moves are the knight light chain (mw-e04).",
+  "icon": "icon-item-fixture-sword-01",
+  "value": 40,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "main-hand",
+    "proficiencies": ["blades"]
+  },
+  "weapon": {
+    "moves": ["sword-light-1", "sword-light-2", "sword-light-3"]
+  }
+}

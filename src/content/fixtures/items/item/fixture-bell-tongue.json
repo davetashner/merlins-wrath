@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-bell-tongue",
+  "category": "quest",
+  "notes": "A quest item: noSell and noDrop come from the defaults.",
+  "icon": "icon-item-fixture-bell-tongue-01",
+  "value": 0,
+  "weightClass": "heavy",
+  "flags": {
+    "unique": true
+  }
+}

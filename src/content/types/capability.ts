@@ -21,7 +21,8 @@ export const capabilityId = z
   .regex(CAPABILITY_ID_PATTERN, 'must be a capability id, e.g. "spell.mage-hand"')
   .describe('Capability id declared in src/content/data/capability/, e.g. "spell.mage-hand".');
 
-const localisationKey = z
+/** A localisation key, e.g. "capability.spell.ember.name" (dot- or dash-separated lowercase segments). */
+export const localisationKey = z
   .string()
   .regex(
     /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/,

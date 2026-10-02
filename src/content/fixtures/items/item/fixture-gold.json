@@ -1,0 +1,13 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-gold",
+  "category": "currency",
+  "notes": "Gold coins.",
+  "icon": "icon-item-fixture-gold-01",
+  "value": 1,
+  "stackable": true,
+  "maxStack": 9999,
+  "worldProperties": {
+    "material": "copper"
+  }
+}

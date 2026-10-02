@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-oil-flask",
+  "category": "consumable",
+  "notes": "Lamp oil: drinkable in a pinch, flammable when thrown or dropped (e03 world properties).",
+  "icon": "icon-item-fixture-oil-flask-01",
+  "value": 5,
+  "stackable": true,
+  "maxStack": 10,
+  "worldProperties": {
+    "material": "oil",
+    "flammable": true
+  },
+  "use": [
+    {
+      "op": "restore",
+      "pool": "stamina",
+      "amount": 20
+    }
+  ]
+}

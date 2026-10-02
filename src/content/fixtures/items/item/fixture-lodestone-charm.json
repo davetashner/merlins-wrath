@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-lodestone-charm",
+  "category": "artifact",
+  "notes": "A trinket that grants Mage Hand while worn.",
+  "icon": "icon-item-fixture-lodestone-charm-01",
+  "value": 200,
+  "equip": {
+    "slot": "trinket"
+  },
+  "grants": [
+    {
+      "capability": "spell.mage-hand",
+      "while": "equipped"
+    }
+  ],
+  "flags": {
+    "unique": true
+  }
+}
