@@ -1,4 +1,4 @@
-# ADR-0005: Encumbrance model — weightless inventory, weighted armor, physical carrying
+# ADR-0003: Encumbrance model — weightless inventory, weighted armor, physical carrying
 
 - **Status:** Accepted
 - **Date:** 2026-10-02
@@ -96,29 +96,32 @@ thresholds already in `mw-e04.16`.
 | Class | Armor capacity (kg) |
 |---|---|
 | Knight | 30 |
-| Archer, thief, sorcerer | 20 |
+| Archer, thief, sorcerer | 23 |
 
 Armor capacity is class data, not a stat: nothing raises it. It is how armor proficiency is expressed
 (`mw-e17.4`'s soft proficiency), so a sorcerer can put on plate and live with the result.
 
 Reference armor weights (content tunes per piece within ±25%):
 
-| Set | Head | Body | Hands | Feet | Set total | Knight (cap 30) | Others (cap 20) |
+| Set | Head | Body | Hands | Feet | Set total | Knight (cap 30) | Others (cap 23) |
 |---|---|---|---|---|---|---|---|
-| Cloth / robes | 0.5 | 2 | 0.5 | 0.5 | 3.5 | 12% Light | 18% Light |
-| Leather | 1 | 3 | 1 | 1 | 6 | 20% Light | 30% Light |
-| Mail | 2 | 8 | 2 | 2 | 14 | 47% Medium | 70% Medium |
-| Plate | 4 | 12 | 3 | 3 | 22 | 73% Heavy | 110% Overloaded |
+| Cloth / robes | 0.5 | 2 | 0.5 | 0.5 | 3.5 | 12% Light | 15% Light |
+| Leather | 1 | 3 | 1 | 1 | 6 | 20% Light | 26% Light |
+| Mail | 2 | 8 | 2 | 2 | 14 | 47% Medium | 61% Medium |
+| Plate | 4 | 12 | 3 | 3 | 22 | 73% Heavy | 96% Heavy |
 
 Shields: buckler 1 kg, wooden shield 3 kg, kite or tower shield 6 kg. Plate with a kite shield is
-28 kg, 93% for a knight: Heavy, still able to roll.
+28 kg, 93% for a knight: Heavy, still able to roll. For any other class it is 122%: Overloaded. Plate
+alone is Heavy for every class (owner decision 2026-10-02: non-knight capacity 23 kg, not 20, so plate
+is a hard trade-off for everyone rather than knight-only); the knight's edge is room for a shield:
+plate plus a wooden shield (25 kg) is Heavy for a knight (83%) but Overloaded for anyone else (109%).
 
 | Load class | Load ratio | Typical wearer |
 |---|---|---|
 | Light | ≤ 30% | Thief in leather, sorcerer in robes, knight in leather |
 | Medium | > 30% and ≤ 70% | Knight or archer in mail |
-| Heavy | > 70% and ≤ 100% | Knight in plate |
-| Overloaded | > 100% | Anyone but a knight in plate |
+| Heavy | > 70% and ≤ 100% | Anyone in plate; knight in plate with a shield |
+| Overloaded | > 100% | Non-knight in plate with any shield heavier than a buckler |
 
 ### What the load class changes
 

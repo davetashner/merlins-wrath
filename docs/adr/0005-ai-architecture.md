@@ -1,6 +1,6 @@
 # ADR-0005: AI decision architecture — HFSM alert states with utility inside
 
-- **Status:** Proposed
+- **Status:** Accepted (owner, 2026-10-02)
 - **Date:** 2026-10-02
 - **Decider:** Owner
 - **Bead:** `mw-e11.1`
