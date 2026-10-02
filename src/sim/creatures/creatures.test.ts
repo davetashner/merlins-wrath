@@ -1,4 +1,6 @@
-import type { CreatureTable, RuntimeCreature } from '@content/index';
+import type { BehaviourDef, CreatureTable, Frozen, RuntimeCreature } from '@content/index';
+import { compileBehaviours } from '../ai/behaviour';
+import { brainOf, installAi } from '../ai/runtime';
 import { describe, expect, it } from 'vitest';
 import { ATTACK_COMPONENTS, AttackerComponent } from '../combat/attacks/components';
 import {
@@ -64,6 +66,7 @@ function creature(
     def,
     senses: Object.freeze({ sight: { range: 20 } }) as unknown as RuntimeCreature['senses'],
     nav: Object.freeze({ mask: 1, radius: 0.4, height: 0.9 }) as unknown as RuntimeCreature['nav'],
+    gaits: Object.freeze({ sneak: 1, walk: 1.5, run: 4 }),
   });
 }
 
@@ -172,6 +175,37 @@ describe('creature spawner (mw-e12.4)', () => {
     // Not an attacker (no attacks) nor lockable (no lock-on in this world).
     expect(w.isRegistered(AttackerComponent)).toBe(false);
     expect(isCreature(w, entity)).toBe(true);
+  });
+
+  it('gets a brain running its behaviour profile where AI knows the profile (mw-e11.2)', () => {
+    const w = world();
+    const profile = {
+      id: 'hound-profile',
+      schemaVersion: 1,
+      tuning: {},
+      thinkHz: 10,
+      inertia: 0.1,
+      initial: 'unaware',
+      states: { unaware: { transitions: [], activities: ['idle'] } },
+      activities: {
+        idle: {
+          weight: 1,
+          interruptible: true,
+          retryAfterS: 2,
+          considerations: [],
+          steps: [{ do: 'wait', seconds: 1 }],
+        },
+      },
+    } as unknown as Frozen<BehaviourDef>;
+    installAi(w, { behaviours: compileBehaviours([profile]) });
+    const hound = spawned(w, { creature: 'hound', at: { x: 0, y: 0, z: 0 } });
+    const guard = spawned(w, { creature: 'guard', at: { x: 2, y: 0, z: 0 } });
+    expect(brainOf(w, hound)).toMatchObject({
+      behaviour: 'hound-profile',
+      state: 'unaware',
+      gaits: { sneak: 1, walk: 1.5, run: 4 },
+    });
+    expect(brainOf(w, guard)).toBeUndefined(); // AI does not know "guard-profile"
   });
 
   it('faces +z without a facing or with one that has no horizontal part', () => {

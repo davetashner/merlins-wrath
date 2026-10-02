@@ -1,0 +1,364 @@
+// Behaviour definitions (mw-e11.2, ADR-0005): what a creature does, as data. A behaviour is a
+// hierarchical state machine over the six alert states (constitution §5) whose transitions,
+// timeouts and fallbacks are a table, with utility scoring inside each state: every activity a state
+// lists is scored `weight × Π curve(input)` and the best runs. An activity is a short, ordered list of
+// action primitives (`move-to`, `look-at`, `wait`…). The runtime that executes these is the sim's
+// (src/sim/ai); this file is the schema, and it validates every name at load: an unknown primitive,
+// input, event, state or activity fails loading with its path and name (ADR-0005 §5).
+//
+// A creature names its behaviour with `behaviour.profile` and may override any `tuning` key with
+// `behaviour.tuning`. A number in a behaviour may be written as `{ "tuning": "<key>" }` to read that
+// key, so tuning changes without touching structure (the AI tuning profiles of mw-e11.16 will
+// supply the defaults; until then they live in the behaviour's own `tuning`).
+//
+// The lists of primitives, inputs and events are the runtime's vocabulary: a new primitive is one
+// step schema here plus its handler in src/sim/ai/primitives.ts (typed against this file, so the two
+// cannot drift). Units: seconds, metres, dB, hertz.
+
+import { z } from 'zod';
+import { contentId, ref } from '../schema.ts';
+import { PERSONALITY_TRAITS } from './creature.ts';
+import { GAITS } from './locomotion.ts';
+
+/** Current behaviour schema version; bump it (and add a migration) on breaking changes. */
+export const BEHAVIOUR_SCHEMA_VERSION = 1;
+
+/** The six alert states, calmest first (constitution §5). A behaviour defines the ones it uses. */
+export const ALERT_STATES = [
+  'unaware',
+  'suspicious',
+  'investigating',
+  'searching',
+  'alerted',
+  'combat',
+] as const;
+
+/** An alert state name. */
+export type AlertState = (typeof ALERT_STATES)[number];
+
+/**
+ * Inputs every agent has, read by considerations and transition conditions (ADR-0005 §5), besides
+ * `trait.<trait>` (personality, 0–1) and `need.<need>` (need level / 100, 0 when it has no such need).
+ */
+export const BEHAVIOUR_INPUTS = [
+  'awareness',
+  'hasStimulus',
+  'targetVisible',
+  'targetLostS',
+  'healthFraction',
+  'timeInState',
+  'offRoute',
+] as const;
+
+/** A fixed input name. */
+export type BehaviourInput = (typeof BEHAVIOUR_INPUTS)[number];
+
+/** External events queued on an agent and read by `{ "event": … }` conditions. */
+export const BEHAVIOUR_EVENTS = ['damaged-by-unseen', 'ally-alarm'] as const;
+
+/** An external AI event name. */
+export type BehaviourEvent = (typeof BEHAVIOUR_EVENTS)[number];
+
+/** Where a step moves or looks: the stimulus, the target, the nearest patrol waypoint, the spawn. */
+export const BEHAVIOUR_TARGETS = ['stimulus', 'target', 'nearest-waypoint', 'origin'] as const;
+
+/** A step target. */
+export type BehaviourTarget = (typeof BEHAVIOUR_TARGETS)[number];
+
+/** Action primitives, in the order of the step schemas below. */
+export const BEHAVIOUR_PRIMITIVES = [
+  'move-to',
+  'follow-route',
+  'look-at',
+  'look-around',
+  'wait',
+  'play-cue',
+  'emit-noise',
+  'attack',
+  'forget-stimulus',
+] as const;
+
+/** An action primitive name. */
+export type BehaviourPrimitive = (typeof BEHAVIOUR_PRIMITIVES)[number];
+
+/** Whether `name` is an input: a fixed one, `trait.<personality trait>` or `need.<content id>`. */
+export function isBehaviourInput(name: string): boolean {
+  if ((BEHAVIOUR_INPUTS as readonly string[]).includes(name)) return true;
+  if (name.startsWith('trait.')) {
+    return (PERSONALITY_TRAITS as readonly string[]).includes(name.slice('trait.'.length));
+  }
+  return name.startsWith('need.') && contentId.safeParse(name.slice('need.'.length)).success;
+}
+
+const inputName = z
+  .string()
+  .superRefine((name, ctx) => {
+    if (isBehaviourInput(name)) return;
+    ctx.addIssue({
+      code: 'custom',
+      message: `unknown input "${name}"; inputs: ${BEHAVIOUR_INPUTS.join(', ')}, trait.<trait>, need.<need>`,
+    });
+  })
+  .describe(`An input: ${BEHAVIOUR_INPUTS.join(', ')}, trait.<trait> or need.<need>.`);
+
+/** A number, or `{ "tuning": key }` read from the creature's tuning, else the behaviour's. */
+const tunable = (base: z.ZodNumber) =>
+  z.union([
+    base,
+    z
+      .strictObject({ tuning: z.string().min(1).describe('Tuning key.') })
+      .describe('Reads this tuning key (the creature’s override, else the behaviour’s default).'),
+  ]);
+
+const seconds = tunable(z.number().nonnegative());
+const unit = z.number().min(0).max(1);
+
+/** A response curve: maps an input to 0–1 (ADR-0005 §3). */
+const curveSchema = z
+  .discriminatedUnion('kind', [
+    z
+      .strictObject({ kind: z.literal('linear'), slope: z.number(), intercept: z.number() })
+      .describe('slope × input + intercept, clamped to 0–1.'),
+    z
+      .strictObject({ kind: z.literal('step'), at: z.number(), below: unit, above: unit })
+      .describe('`above` when input ≥ at, else `below`.'),
+    z
+      .strictObject({ kind: z.literal('power'), exponent: z.int().min(1).max(8) })
+      .describe('input (clamped to 0–1) to an integer power.'),
+  ])
+  .describe('Response curve.');
+
+const considerationSchema = z.strictObject({
+  input: inputName,
+  curve: curveSchema,
+});
+
+const gait = z.enum(GAITS).default('walk').describe('Gait (its speed comes from the creature).');
+const target = z.enum(BEHAVIOUR_TARGETS);
+
+/** One step: a primitive and its parameters, discriminated by `do`. */
+const stepSchema = z.discriminatedUnion(
+  'do',
+  [
+    z
+      .strictObject({
+        do: z.literal('move-to'),
+        target: target.describe('Where to go.'),
+        within: tunable(z.number().positive())
+          .default(0.5)
+          .describe('Arrives within this many metres.'),
+        gait,
+      })
+      .describe('Walks to a target; fails when it is gone or unreachable.'),
+    z
+      .strictObject({
+        do: z.literal('follow-route'),
+        dwellS: seconds.default(0).describe('Seconds it stands at each waypoint.'),
+        gait,
+      })
+      .describe('Walks its patrol route in a loop (never ends); fails without a route.'),
+    z
+      .strictObject({
+        do: z.literal('look-at'),
+        target: target.describe('What to face.'),
+        seconds: seconds.describe('How long it looks.'),
+      })
+      .describe('Turns to face a target for a while; fails when it is gone.'),
+    z
+      .strictObject({
+        do: z.literal('look-around'),
+        seconds: seconds.describe('How long it looks around.'),
+      })
+      .describe('Faces a new seeded-random direction every second.'),
+    z
+      .strictObject({ do: z.literal('wait'), seconds: seconds.describe('How long it waits.') })
+      .describe('Stands still.'),
+    z
+      .strictObject({ do: z.literal('play-cue'), cue: contentId.describe('Cue id.') })
+      .describe('Emits a presentation cue (bark, animation) and succeeds.'),
+    z
+      .strictObject({
+        do: z.literal('emit-noise'),
+        db: tunable(z.number().min(0).max(140)).describe('Loudness at the source, dB.'),
+      })
+      .describe('Makes a noise at its position (stealth hearing) and succeeds.'),
+    z
+      .strictObject({ do: z.literal('attack'), attack: ref('attack').describe('Attack id.') })
+      .describe('Performs an attack on its target; fails when the attack may not start.'),
+    z
+      .strictObject({ do: z.literal('forget-stimulus') })
+      .describe('Drops its stimulus and awareness (it calls it off).'),
+  ],
+  {
+    error: (issue) =>
+      `unknown primitive ${JSON.stringify((issue.input as { do?: unknown } | undefined)?.do)}; primitives: ${BEHAVIOUR_PRIMITIVES.join(', ')}`,
+  },
+);
+
+/** What a transition waits for (ADR-0005 §2). */
+const conditionSchema = z
+  .union([
+    z
+      .strictObject({
+        input: inputName,
+        gte: tunable(z.number()).optional().describe('True when the input is at least this.'),
+        lt: tunable(z.number()).optional().describe('True when the input is below this.'),
+      })
+      .refine((c) => c.gte !== undefined || c.lt !== undefined, 'needs gte, lt or both')
+      .describe('An input threshold (trait, timer, stimulus, need…).'),
+    z
+      .strictObject({ event: z.enum(BEHAVIOUR_EVENTS).describe('Queued external event.') })
+      .describe('An external event queued since the last think.'),
+    z
+      .strictObject({ done: contentId.describe('Activity of this state.') })
+      .describe('The activity finished its last step.'),
+    z
+      .strictObject({ failed: contentId.describe('Activity of this state.') })
+      .describe('A step of the activity failed.'),
+  ])
+  .describe('Transition condition.');
+
+const transitionSchema = z.strictObject({
+  to: z.enum(ALERT_STATES).describe('State it moves to (defined in this behaviour).'),
+  when: conditionSchema,
+});
+
+const stateSchema = z.strictObject({
+  timeoutS: tunable(z.number().positive())
+    .optional()
+    .describe('Seconds in this state before `onTimeout`; absent = no timeout.'),
+  onTimeout: z.enum(ALERT_STATES).optional().describe('State it falls back to on timeout.'),
+  transitions: z
+    .array(transitionSchema)
+    .prefault([])
+    .describe('Checked in order after the timeout; at most one is taken per think.'),
+  activities: z.array(contentId).min(1).describe('Activities scored in this state, in tie order.'),
+});
+
+const activitySchema = z.strictObject({
+  weight: z.number().nonnegative().default(1).describe('Score multiplier.'),
+  interruptible: z
+    .boolean()
+    .default(true)
+    .describe('false holds the activity until it ends or the state changes.'),
+  retryAfterS: z
+    .number()
+    .nonnegative()
+    .default(2)
+    .describe('Seconds a failed activity is excluded from scoring.'),
+  considerations: z
+    .array(considerationSchema)
+    .prefault([])
+    .describe('Input × curve factors; none = always its weight.'),
+  steps: z.array(stepSchema).min(1).describe('Primitives run in order.'),
+});
+
+interface BehaviourShape {
+  readonly id: string;
+  readonly tuning: Readonly<Record<string, number>>;
+  readonly initial: AlertState;
+  readonly states: Readonly<Partial<Record<AlertState, z.output<typeof stateSchema>>>>;
+  readonly activities: Readonly<Record<string, z.output<typeof activitySchema>>>;
+}
+
+/** Every `{ tuning: key }` in `value` with its path (the top-level `tuning` record is not one). */
+function tuningRefs(value: unknown, path: (string | number)[], out: [string, PropertyKey[]][]) {
+  if (typeof value !== 'object' || value === null) return;
+  const keys = Object.keys(value);
+  const record = value as Record<string, unknown>;
+  if (keys.length === 1 && typeof record['tuning'] === 'string') {
+    out.push([record['tuning'], [...path, 'tuning']]);
+    return;
+  }
+  for (const key of keys) tuningRefs(record[key], [...path, key], out);
+}
+
+/** Adds an issue for every reference to a state, activity or tuning key this behaviour lacks. */
+function checkBehaviour(b: BehaviourShape, ctx: z.RefinementCtx): void {
+  const issue = (path: PropertyKey[], message: string) => {
+    ctx.addIssue({ code: 'custom', path, message });
+  };
+  const hasState = (s: AlertState) => b.states[s] !== undefined;
+  if (!hasState(b.initial)) issue(['initial'], `unknown state "${b.initial}"`);
+  for (const [name, state] of Object.entries(b.states)) {
+    const at = ['states', name];
+    if ((state.timeoutS === undefined) !== (state.onTimeout === undefined)) {
+      issue(at, 'timeoutS and onTimeout go together');
+    }
+    if (state.onTimeout !== undefined && !hasState(state.onTimeout)) {
+      issue([...at, 'onTimeout'], `unknown state "${state.onTimeout}"`);
+    }
+    state.activities.forEach((activity, i) => {
+      if (!Object.hasOwn(b.activities, activity)) {
+        issue([...at, 'activities', i], `unknown activity "${activity}"`);
+      }
+    });
+    state.transitions.forEach((t, i) => {
+      const where = [...at, 'transitions', i];
+      if (!hasState(t.to)) issue([...where, 'to'], `unknown state "${t.to}"`);
+      else if (t.to === name) issue([...where, 'to'], `transition to its own state "${t.to}"`);
+      const ends = 'done' in t.when ? t.when.done : 'failed' in t.when ? t.when.failed : null;
+      if (ends !== null && !state.activities.includes(ends)) {
+        issue([...where, 'when'], `unknown activity "${ends}" (not listed in state "${name}")`);
+      }
+    });
+  }
+  const refs: [string, PropertyKey[]][] = [];
+  tuningRefs({ states: b.states, activities: b.activities }, [], refs);
+  for (const [key, path] of refs) {
+    if (!Object.hasOwn(b.tuning, key)) issue(path, `unknown tuning key "${key}"`);
+  }
+}
+
+const whenValid = {
+  when: (payload: { issues: readonly unknown[] }) => payload.issues.length === 0,
+};
+
+/** Schema of one behaviour file, `src/content/data/behaviour/<id>.json`. */
+export const behaviourSchema = z
+  .strictObject({
+    id: contentId.describe('Behaviour id creatures name in `behaviour.profile`.'),
+    schemaVersion: z
+      .literal(BEHAVIOUR_SCHEMA_VERSION)
+      .default(BEHAVIOUR_SCHEMA_VERSION)
+      .describe('Behaviour schema version, for future migrations.'),
+    notes: z.string().min(1).optional().describe('What it is for, for owner review.'),
+    tuning: z
+      .record(z.string().min(1), z.number())
+      .prefault({})
+      .describe('Default tuning values `{ "tuning": key }` reads; creatures override them.'),
+    thinkHz: z
+      .number()
+      .positive()
+      .max(60)
+      .default(10)
+      .describe('Thinks per second (it acts every tick).'),
+    inertia: z
+      .number()
+      .nonnegative()
+      .default(0.1)
+      .describe('Score bonus of the running activity (hysteresis).'),
+    initial: z.enum(ALERT_STATES).default('unaware').describe('State it spawns in.'),
+    states: z
+      .partialRecord(z.enum(ALERT_STATES), stateSchema)
+      .describe('The alert states it uses, by name.'),
+    activities: z.record(contentId, activitySchema).describe('Activities by id.'),
+  })
+  .superRefine(checkBehaviour, whenValid);
+
+/** A behaviour as written in JSON. */
+export type BehaviourDefInput = z.input<typeof behaviourSchema>;
+/** A validated behaviour with defaults filled. */
+export type BehaviourDef = z.output<typeof behaviourSchema>;
+/** One state of a behaviour. */
+export type BehaviourStateDef = z.output<typeof stateSchema>;
+/** One activity of a behaviour. */
+export type BehaviourActivityDef = z.output<typeof activitySchema>;
+/** One step of an activity. */
+export type BehaviourStepDef = z.output<typeof stepSchema>;
+/** A transition condition. */
+export type BehaviourConditionDef = z.output<typeof conditionSchema>;
+/** A response curve. */
+export type BehaviourCurveDef = z.output<typeof curveSchema>;
+/** A number or a tuning reference. */
+export type Tunable = number | { readonly tuning: string };

@@ -24,6 +24,10 @@ stable.
   `move/` and its `socket-track/` here, a single identity key): melee, 18/4/14 ticks, telegraph `fixture-guard-strike-windup`, range 0–1.8 m, 2 s
   cooldown, and two packets per hit (18 slash + 15 poise from the move, then 4 blunt). The hound and
   sentinel have none.
+- **Behaviour** (mw-e11.2): only `fixture-guard` has a behaviour file (`behaviour/fixture-guard.json`), the
+  ADR-0005 guard reduced to what the AI runtime's tests need: patrol (or nap when sleepy and lax), look
+  toward a stimulus when Suspicious, walk to it and look around when Investigating, fight a visible target
+  in Combat. The hound's and sentinel's profiles have no behaviour yet, so they spawn without a brain.
 - **Never shipped in a release build.** Files live under `src/content/fixtures/creatures/<type>/`,
   outside the game's content root (`src/content/data`), so the game's own content never includes
   them. Tests load them with `loadFixtureContent()` from `src/content/test-fixtures.ts` (game content

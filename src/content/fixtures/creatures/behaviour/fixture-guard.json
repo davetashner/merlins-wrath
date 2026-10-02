@@ -1,0 +1,130 @@
+{
+  "$schema": "../../../data/behaviour.schema.json",
+  "id": "fixture-guard",
+  "notes": "Frozen test fixture (mw-e11.2), not bestiary content: the ADR-0005 guard reduced to what the runtime's tests need. Patrols its route (or naps when sleepy and lax), turns toward a noise when Suspicious, walks to it and looks around when Investigating, and fights a visible target in Combat.",
+  "tuning": {
+    "suspiciousAt": 0.3,
+    "investigateAt": 0.6,
+    "suspiciousTimeoutS": 8,
+    "investigatingTimeoutS": 20,
+    "combatLostS": 5
+  },
+  "thinkHz": 10,
+  "inertia": 0.1,
+  "initial": "unaware",
+  "states": {
+    "unaware": {
+      "transitions": [
+        {
+          "to": "suspicious",
+          "when": { "input": "awareness", "gte": { "tuning": "suspiciousAt" } }
+        },
+        { "to": "combat", "when": { "event": "damaged-by-unseen" } }
+      ],
+      "activities": ["patrol", "return-to-route", "nap"]
+    },
+    "suspicious": {
+      "timeoutS": { "tuning": "suspiciousTimeoutS" },
+      "onTimeout": "unaware",
+      "transitions": [
+        {
+          "to": "investigating",
+          "when": { "input": "awareness", "gte": { "tuning": "investigateAt" } }
+        },
+        { "to": "combat", "when": { "input": "targetVisible", "gte": 1 } },
+        { "to": "unaware", "when": { "done": "shrug-off" } }
+      ],
+      "activities": ["look-toward-stimulus", "shrug-off"]
+    },
+    "investigating": {
+      "timeoutS": { "tuning": "investigatingTimeoutS" },
+      "onTimeout": "unaware",
+      "transitions": [
+        { "to": "combat", "when": { "input": "targetVisible", "gte": 1 } },
+        { "to": "unaware", "when": { "done": "investigate" } },
+        { "to": "unaware", "when": { "failed": "investigate" } },
+        { "to": "unaware", "when": { "done": "call-it-off" } }
+      ],
+      "activities": ["investigate", "call-it-off"]
+    },
+    "combat": {
+      "transitions": [
+        {
+          "to": "investigating",
+          "when": { "input": "targetLostS", "gte": { "tuning": "combatLostS" } }
+        }
+      ],
+      "activities": ["engage"]
+    }
+  },
+  "activities": {
+    "patrol": {
+      "considerations": [
+        { "input": "offRoute", "curve": { "kind": "step", "at": 1.5, "below": 1, "above": 0 } },
+        {
+          "input": "trait.diligence",
+          "curve": { "kind": "linear", "slope": 0.5, "intercept": 0.5 }
+        }
+      ],
+      "steps": [{ "do": "follow-route", "dwellS": 2 }]
+    },
+    "return-to-route": {
+      "considerations": [
+        { "input": "offRoute", "curve": { "kind": "step", "at": 1.5, "below": 0, "above": 1 } }
+      ],
+      "steps": [{ "do": "move-to", "target": "nearest-waypoint" }]
+    },
+    "nap": {
+      "weight": 1.5,
+      "considerations": [
+        { "input": "need.sleep", "curve": { "kind": "power", "exponent": 2 } },
+        { "input": "trait.diligence", "curve": { "kind": "linear", "slope": -1, "intercept": 1.2 } }
+      ],
+      "steps": [
+        { "do": "play-cue", "cue": "guard-yawn" },
+        { "do": "wait", "seconds": 8 }
+      ]
+    },
+    "look-toward-stimulus": {
+      "steps": [{ "do": "look-at", "target": "stimulus", "seconds": 1 }]
+    },
+    "shrug-off": {
+      "weight": 2,
+      "considerations": [
+        { "input": "timeInState", "curve": { "kind": "step", "at": 6, "below": 0, "above": 1 } }
+      ],
+      "steps": [{ "do": "play-cue", "cue": "guard-shrug" }, { "do": "forget-stimulus" }]
+    },
+    "investigate": {
+      "considerations": [
+        {
+          "input": "trait.curiosity",
+          "curve": { "kind": "linear", "slope": 0.5, "intercept": 0.5 }
+        }
+      ],
+      "steps": [
+        { "do": "move-to", "target": "stimulus", "gait": "sneak" },
+        { "do": "look-around", "seconds": 3 },
+        { "do": "forget-stimulus" }
+      ]
+    },
+    "call-it-off": {
+      "considerations": [
+        { "input": "trait.curiosity", "curve": { "kind": "linear", "slope": -1, "intercept": 1 } },
+        { "input": "timeInState", "curve": { "kind": "linear", "slope": 0.1, "intercept": 0 } }
+      ],
+      "steps": [{ "do": "forget-stimulus" }]
+    },
+    "engage": {
+      "interruptible": false,
+      "considerations": [
+        { "input": "healthFraction", "curve": { "kind": "linear", "slope": 1, "intercept": 0.2 } }
+      ],
+      "steps": [
+        { "do": "emit-noise", "db": 70 },
+        { "do": "move-to", "target": "target", "within": 1.6, "gait": "run" },
+        { "do": "attack", "attack": "fixture-guard-strike" }
+      ]
+    }
+  }
+}
