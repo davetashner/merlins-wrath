@@ -331,6 +331,30 @@ describe('built-in console commands', () => {
     ]);
   });
 
+  it('mw-e30.7: save writes the game into a slot (manual-1 by default) and checks the slot', () => {
+    const saved: string[] = [];
+    const host = createGameHost({
+      ...HOST_BASE(new World({ seed: 1 })),
+      save: (slot) => {
+        saved.push(slot);
+      },
+    });
+    const registry = new CommandRegistry<ConsoleHost>(host);
+    registerBuiltins(registry);
+    expect(registry.execute('save').lines).toEqual(['saving to manual-1']);
+    expect(registry.execute('save auto-2').lines).toEqual(['saving to auto-2']);
+    expect(registry.execute('save manual-11')).toMatchObject({ ok: false });
+    expect(saved).toEqual(['manual-1', 'auto-2']);
+    expect(registry.complete('save q').line).toBe('save quick ');
+    expect(registry.complete('save quick x').options).toEqual([]);
+    // Without a save hook (a host that cannot save) the command says so.
+    const s = session();
+    expect(s.registry.execute('save')).toEqual({
+      ok: false,
+      lines: ['saving is unavailable here'],
+    });
+  });
+
   it('set changes a difficulty multiplier through a difficulty command, within its range', () => {
     const s = session();
     expect(s.registry.execute('set damageTaken 0.5').lines).toEqual(['damageTaken = 0.5']);
@@ -402,6 +426,7 @@ describe('built-in console commands', () => {
       'kill',
       'noclip',
       'prop',
+      'save',
       'scene',
       'seed',
       'set',
@@ -414,7 +439,7 @@ describe('built-in console commands', () => {
       'spawn content or a creature in front of the player, or at-cursor (sandbox dummies take options: type dummies)',
     ]);
     expect(s.registry.execute('help spwn').lines).toEqual([
-      'unknown command "spwn"; closest: spawn, despawn, scene',
+      'unknown command "spwn"; closest: spawn, despawn, save',
     ]);
   });
 
