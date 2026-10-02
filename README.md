@@ -119,6 +119,18 @@ lock movement: after an intended controller or tuning change run `pnpm replay:re
 each changed golden and prints its first changed checkpoint and field; after editing an input log run
 `pnpm replay:record <name> --force`.
 
+Replays check **outcomes, not the content hash** (mw-e00.31). A golden's `contentHash` (and `buildSha`)
+records what its outcomes were last blessed against and is diagnostic only: when a replay diverges and the
+content differs from that, the report says "content changed since recording" rather than "determinism
+failure". A content change that moves no checkpoint hash passes every golden, and `pnpm replay:rebless`
+leaves those files byte-for-byte untouched, so two PRs that add unrelated content never conflict on
+`tests/replays/` or the `tests/integration/fixtures/*.replay.json` fixtures; don't rebless or re-record just
+because content changed. A content change that does move an outcome still fails until re-blessed, and the
+rebless then refreshes the stored hash with the new checkpoints. (Chosen over per-scenario content
+fingerprints, which would need every scenario to declare the content it reads, and over moving the hash to
+one shared generated file, which would still conflict on every content PR.) Real nondeterminism is caught
+independently by the tests that replay a log twice and compare final hashes.
+
 **Secrets** never go in the repo. The `secrets` CI job (`.github/workflows/security.yml`) runs gitleaks over
 every PR's commits and the full history on main, and GitHub push protection is on. Locally,
 `pnpm hooks:install` (or `bd hooks install`) points git at `.beads/hooks`, whose pre-commit also scans staged
