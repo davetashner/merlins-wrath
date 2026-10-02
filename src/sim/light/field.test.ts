@@ -502,6 +502,59 @@ describe('light environment', () => {
   });
 });
 
+describe('light field views for the renderer (mw-e03.37)', () => {
+  it('reports the environment in effect: the ambient level overrides the default, directions are unit', () => {
+    const field = new LightField({ defaultAmbient: 0.1 });
+    expect(field.environment).toEqual({ ambient: 0.1, ambientZones: [], directional: [] });
+    const zone = { id: 'z', min: at(0, 0, 0), max: at(1, 1, 1), level: 0.5 };
+    field.setEnvironment({
+      ambient: 0.05,
+      ambientZones: [zone],
+      directional: [{ id: 'moon', direction: at(0, -2, 0), level: 0.3, reach: 20 }],
+    });
+    expect(field.environment).toEqual({
+      ambient: 0.05,
+      ambientZones: [zone],
+      directional: [{ id: 'moon', direction: at(0, -1, 0), level: 0.3, reach: 20 }],
+    });
+    expect(field.levelAt(at(5, 5, 5))).toBeCloseTo(0.35, 12); // ambient + moon
+    expect(field.levelAt(at(0.5, 0.5, 0.5))).toBeCloseTo(0.8, 12); // zone + moon
+    field.setEnvironment({});
+    expect(field.environment.ambient).toBe(0.1);
+    expect(field.levelAt(at(5, 5, 5))).toBe(0.1);
+    for (const ambient of [-0.1, 1.1, NaN]) {
+      expect(() => {
+        field.setEnvironment({ ambient });
+      }).toThrow(RangeError);
+    }
+    expect(field.environment.ambient).toBe(0.1); // a rejected environment changes nothing
+  });
+
+  it("lists this tick's point and spot lights with their position, reach, level and cone", () => {
+    const { world, field } = lightWorld();
+    const torch = thing(world, at(1, 2, 3), { burning: true });
+    const spot = lamp(world, at(-1, 1, 0), 50, 4);
+    setLightCone(world, spot, { direction: at(0, -2, 0), halfAngle: Math.PI / 3 });
+    world.step();
+    const lights = field.lights();
+    expect(lights).toHaveLength(2);
+    expect(lights[0]).toEqual({
+      source: { kind: 'emitter', entity: torch },
+      entity: torch,
+      position: at(1, 2, 3),
+      radius: 8,
+      level: 1,
+      cone: null,
+    });
+    expect(lights[1]).toMatchObject({ entity: spot, radius: 4, level: 0.5 });
+    expect(lights[1]?.cone?.direction).toEqual(at(0, -1, 0));
+    expect(lights[1]?.cone?.cosHalfAngle).toBeCloseTo(0.5, 6);
+    setProperty(world, torch, 'burning', false);
+    world.step();
+    expect(field.lights().map((light) => light.entity)).toEqual([spot]);
+  });
+});
+
 describe('light field determinism', () => {
   it('answers do not depend on which positions were sampled before', () => {
     const build = () => {

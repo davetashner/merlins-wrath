@@ -1,0 +1,82 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "lighting-room",
+  "name": "Lighting room",
+  "description": "A roofed 10 m room at night for checking that rendered light matches the sim's light field (mw-e03.37): two wall torches, a burning crate on a stack, moonlight falling through the north doorway, and a pillar and dark corners to hide in.",
+  "grid": 1,
+  "camera": {
+    "position": [-4.25, 2.5, -4.25],
+    "target": [1, 0, 1.5]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 0],
+      "scale": [5, 1, 5]
+    },
+    {
+      "piece": "floor",
+      "at": [0, 3, 0],
+      "scale": [5.5, 1, 5.5],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, -5],
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-5, 0, 0],
+      "yaw": 90,
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [5, 0, 0],
+      "yaw": 90,
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-2, 0, 5],
+      "scale": [3, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [2, 0, 5]
+    },
+    {
+      "piece": "wall",
+      "at": [4, 0, 5]
+    },
+    {
+      "piece": "pillar",
+      "at": [-1, 0, 1]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "torch-west",
+      "at": [-4.75, 2.25, -2],
+      "tags": ["torch"],
+      "properties": { "flammable": true, "burning": true, "fuel": 3600 }
+    },
+    {
+      "id": "torch-east",
+      "at": [4.75, 2.25, -3],
+      "tags": ["torch"],
+      "properties": { "flammable": true, "burning": true, "fuel": 3600 }
+    },
+    {
+      "id": "burning-crate",
+      "at": [-3, 0, 3.5],
+      "prop": "crate",
+      "properties": { "burning": true, "fuel": 3600 }
+    }
+  ],
+  "light": {
+    "ambient": 0.04,
+    "directional": [{ "id": "moon", "direction": [0, -0.6, -1], "level": 0.35, "reach": 30 }]
+  }
+}

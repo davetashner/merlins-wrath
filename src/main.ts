@@ -52,6 +52,17 @@ import {
 } from '@game/physics-objects';
 import { createUiGameBridge } from '@game/ui/index';
 import {
+  createGameLight,
+  installGameLight,
+  isFire,
+  lightProbe,
+  lightReadout,
+  lightSpawns,
+  probeGrid,
+  selectLights,
+  type LightSpawn,
+} from '@game/light/index';
+import {
   attachPlayerInput,
   interactPromptModel,
   lockMarkerModel,
@@ -72,6 +83,7 @@ import { createSandboxDummy, createTrainingDummy } from '@render/combat/index';
 import { createCreatureProxy } from '@render/creatures/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
+import { createLightRig } from '@render/light/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
 import { createPlayerBody, projectToNdc } from '@render/player/index';
 import { createVfxRenderer } from '@render/vfx/index';
@@ -99,7 +111,9 @@ import {
   type DifficultyCommand,
   type SandboxCommand,
   type EntityId,
+  type LightEmitterView,
   type RapierPhysics,
+  type Vec3,
 } from '@sim/index';
 import {
   compactProbe,
@@ -375,13 +389,18 @@ function startRenderer(root: HTMLElement): void {
     // near the player never get forced to sleep. Budget warnings go to the console and to the
     // `data-physics-budget` debug attribute.
     const focus = playerFocus(world);
+    // The light field (mw-e03.37): level geometry goes into physics and the field's occluders through
+    // one sink, so a piece that burns away stops blocking both.
+    const light = createGameLight(physics);
     installGamePhysics(world, {
       focus: focus.read,
       onBudgetExceeded: (warning) => {
         console.warn(formatBudgetWarning(warning));
         root.dataset['physicsBudget'] = JSON.stringify(warning);
       },
+      levelColliders: light.colliders,
     });
+    installGameLight(world, light.field);
     const hitOverlay = createHitVolumeOverlay();
     hitOverlay.enabled = new URLSearchParams(location.search).has('hitboxes');
     view.scene.add(hitOverlay.object);
@@ -473,6 +492,47 @@ function startRenderer(root: HTMLElement): void {
       if (json !== publishedCreatures) root.dataset['creatures'] = publishedCreatures = json;
     };
 
+    // Rendered light mirrors the sim's light field (mw-e03.37): the greybox fill and sun follow its
+    // environment, a capped pool of point/spot lights follows the emitters nearest the camera. The
+    // e2e reads sim and rendered light of the scene's lit spawns from #app[data-lights], and with
+    // ?lightprobe the sim level at visible floor points from #app[data-light-probe].
+    const lightRig = createLightRig(view.scene);
+    const sightWorld = new RapierSightWorld(physics);
+    const probeLight = new URLSearchParams(location.search).has('lightprobe');
+    let watchedLights: readonly LightSpawn[] = [];
+    let probePoints: readonly Vec3[] = [];
+    let shownEnvironment: unknown;
+    let publishedLights = '';
+    let publishedLightProbe = '';
+    const drawLights = (): void => {
+      const { field } = light;
+      if (field.environment !== shownEnvironment) {
+        shownEnvironment = field.environment;
+        greybox.setEnvironment(field.environment);
+      }
+      const chosen = selectLights(field.lights(), camera.position, lightRig.caps);
+      const withFire = (l: LightEmitterView) => ({ ...l, fire: isFire(world, l) });
+      const drawn = lightRig.sync(chosen.points.map(withFire), chosen.spots.map(withFire));
+      if (watchedLights.length > 0) {
+        const readout = lightReadout(world, field, watchedLights, drawn);
+        const key = JSON.stringify(readout.spawns);
+        if (key !== publishedLights) {
+          publishedLights = key;
+          root.dataset['lights'] = JSON.stringify(readout);
+        }
+      }
+      if (probeLight && probePoints.length > 0) {
+        const samples = lightProbe(
+          field,
+          probePoints,
+          (point) => projectToNdc(camera, point),
+          (point) => sightWorld.firstCrossing(camera.position, point) === undefined,
+        );
+        const json = JSON.stringify(samples);
+        if (json !== publishedLightProbe) root.dataset['lightProbe'] = publishedLightProbe = json;
+      }
+    };
+
     let lastFrameMs: number | undefined;
     const interactions: { tick: number; verb: string; spawn: string | null }[] = [];
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
@@ -532,6 +592,7 @@ function startRenderer(root: HTMLElement): void {
         showVfxStats(elapsedMs);
         audio.update(listenerPose(camera.position, camera.quaternion));
         publishAudio();
+        drawLights();
         view.renderFrame(timeMs);
       },
     });
@@ -543,11 +604,12 @@ function startRenderer(root: HTMLElement): void {
     const scenes = new SceneLoader({
       world,
       sync,
-      colliders: physics,
+      colliders: light.colliders,
       content,
       objects: greybox,
       binding: (object, read) => object3DBinding(object, read),
       physics: {},
+      light: light.field,
     });
     const request = resolveSceneRequest(location.search, scenes.available());
     if (request.kind === 'scene') {
@@ -555,6 +617,9 @@ function startRenderer(root: HTMLElement): void {
       const loaded = scenes.load(scene.id);
       camera.position.set(...scene.camera.position);
       camera.lookAt(...scene.camera.target);
+      watchedLights = lightSpawns(loaded);
+      const floor = loaded.layout.pieces[0];
+      if (probeLight && floor !== undefined) probePoints = probeGrid(floor.min, floor.max, 0.02);
       // A controllable player (mw-e02.23) in scenes with a player start; it collides with the
       // scene through the sim's Rapier world (mw-e02.21) and brings the orbit camera (mw-e02.4),
       // which queries the same world read-only to stay out of walls.

@@ -102,3 +102,71 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].creature` | ref → creature | — | Creature to spawn here (mw-e12.4); faces the spawn’s yaw. |
 | `spawns[].faction` | ref → faction | — | Faction the spawned creature joins instead of its definition’s (needs creature). |
 | `spawns[].patrol` | list of list of any (at least 3) (at least 1) | — | Patrol route for the spawned creature: waypoints in grid cells, walked in order (needs creature; AI, e11, walks it). |
+| `spawns[].properties` | object | — | World properties of the spawned entity, e.g. a torch: { "burning": true, "fuel": 3600 } (mw-e03.37). A spawn with properties is placed in the sim, so the light field and stimuli reach it. |
+| `spawns[].properties.material` | ref → material | — | Material preset id (a material content entry). |
+| `spawns[].properties.temperature` | number -273.15–10000 | — | Current temperature, °C. |
+| `spawns[].properties.flammable` | boolean | — | Fire can ignite it. |
+| `spawns[].properties.ignitionPoint` | number -273.15–10000 | — | Temperature at which it ignites, °C. |
+| `spawns[].properties.fuel` | number 0–86400 | — | Seconds of burning left. |
+| `spawns[].properties.burning` | boolean | — | On fire right now. |
+| `spawns[].properties.wetness` | number 0–1 | — | How soaked it is (dry … saturated), 0 … 1. |
+| `spawns[].properties.frozen` | boolean | — | Frozen solid. |
+| `spawns[].properties.freezePoint` | number -273.15–10000 | — | Temperature at or below which it freezes, °C. |
+| `spawns[].properties.conductive` | boolean | — | Conducts electric charge. |
+| `spawns[].properties.charge` | number 0–1000000 | — | Stored electric charge. |
+| `spawns[].properties.weight` | number 0–1000000 | — | Mass, kg. |
+| `spawns[].properties.fragile` | number 0–1000000000 | — | Impact energy that breaks it, J. |
+| `spawns[].properties.hp` | number 0–1000000 | — | Structural hit points. |
+| `spawns[].properties.density` | number 0.01–100000 | — | Density, kg/m³; below 1000 it floats in water. |
+| `spawns[].properties.climbable` | `"none"` \| `"ladder"` \| `"rope"` \| `"ivy"` \| `"rough"` \| `"sheer"` | — | Climbing grade: none, ladder, rope, ivy (easy), rough (needs a climber), sheer (needs a tool). |
+| `spawns[].properties.liftable` | boolean | — | Can be picked up and carried. |
+| `spawns[].properties.pushable` | boolean | — | Can be pushed or dragged. |
+| `spawns[].properties.hideable` | boolean | — | An actor can hide in or behind it. |
+| `spawns[].properties.reflective` | boolean | — | Reflects light beams and bolts. |
+| `spawns[].properties.transparent` | boolean | — | Light and sight pass through it. |
+| `spawns[].properties.opaque` | boolean | — | Fully blocks light and sight. |
+| `spawns[].properties.lightEmitter` | object | — | Emits light. |
+| `spawns[].properties.lightEmitter.intensity` | number 0–100000 | required | Light output (a torch is about 100). |
+| `spawns[].properties.lightEmitter.radius` | number 0–100 | required | Reach, m. |
+| `spawns[].properties.soundDamping` | number 0–1 | — | Fraction of sound it absorbs, 0 … 1. |
+| `spawns[].properties.friction` | number 0–2 | — | Surface friction coefficient. |
+| `spawns[].properties.impactAbsorb` | number 0–1 | — | Fraction of impact energy it absorbs, 0 … 1. |
+| `spawns[].properties.owner` | id | — | Ownership tag (faction or owner id). |
+| `spawns[].properties.liquid` | boolean | — | A liquid: it pours, puddles and can have a water surface. |
+| `spawns[].properties.flammableGas` | boolean | — | A gas that ignites (flares or explodes) when fire reaches it. |
+| `spawns[].properties.extinguishable` | boolean | — | A fire or light source that water, force or an interaction puts out. |
+| `spawns[].properties.waterSurface` | boolean | — | Top surface of a body of liquid: cold freezes it into walkable ice (needs a liquid material). |
+| `spawns[].properties.unstable` | number 0–1000000000 | — | Force of one push, blast or quake that topples it, J. |
+| `spawns[].properties.suspended` | boolean | — | Hangs from its support; falls when the support breaks, burns or is cut. |
+| `spawns[].properties.support` | integer ≥ 0 | — | Entity a suspended object hangs from (0 = none); set when the level spawns. |
+| `spawns[].properties.breakable` | boolean | — | A single hit at or above its toughness for that kind of hit breaks it. |
+| `spawns[].properties.toughness` | object | — | Per kind of hit, the single-hit energy that breaks a breakable object; a kind left out never does. |
+| `spawns[].properties.toughness.blunt` | number 0–1000000000 | — | Blunt hit energy that breaks it, J. |
+| `spawns[].properties.toughness.slash` | number 0–1000000000 | — | Slash hit energy that breaks it, J. |
+| `spawns[].properties.toughness.pierce` | number 0–1000000000 | — | Pierce hit energy that breaks it, J. |
+| `spawns[].properties.toughness.force` | number 0–1000000000 | — | Force (blast, quake, boulder) energy that breaks it, J. |
+| `spawns[].properties.bashable` | boolean | — | A shield bash or kick shoves it (or breaks it when breakable). |
+| `spawns[].properties.cuttable` | boolean | — | Slash or pierce damage severs it. |
+| `spawns[].properties.shootable` | number 0–1000000 | — | Projectile impulse that fires its signal, N·s. |
+| `spawns[].properties.softAnchor` | boolean | — | Rope arrows and hooks embed in it. |
+| `spawns[].properties.surfaceHardness` | `"soft"` \| `"medium"` \| `"hard"` | — | Footstep loudness and whether arrows stick (soft, medium) or ricochet (hard). |
+| `spawns[].properties.chargeActivated` | number 0–1000000000 | — | Stored charge at which the mechanism fires. |
+| `spawns[].properties.lightActivated` | number 0–1000000000 | — | Light level on it at which the mechanism fires. |
+| `spawns[].properties.hidden` | boolean | — | Not perceivable or targetable until revealed. |
+| `spawns[].properties.trapped` | boolean | — | Interacting with it triggers its trap unless disarmed first (needs a trap). |
+| `spawns[].properties.trap` | id | — | Trap definition id a trapped object triggers. |
+| `spawns[].properties.container` | boolean | — | Holds items (contents live in the e18 container component). |
+| `spawns[].properties.remains` | boolean | — | Inert skeletal or corpse remains that summoning can raise. |
+| `spawns[].properties.noiseMultiplier` | number 0.2–3 | — | Multiplier on its wearer's noise; an actor's is the product of its equipment's. |
+| `light` | object | — | Static lighting: ambient level, ambient zones, directional lights (mw-e03.37). |
+| `light.ambient` | number 0–1 | — | Ambient level wherever no ambient zone applies, 0–1. |
+| `light.ambientZones` | list of object | `[]` | Boxes with their own ambient level; later zones win where they overlap. |
+| `light.ambientZones[].id` | id | required | Name of the zone, e.g. moonlit-yard. |
+| `light.ambientZones[].min` | list of any (at least 3) | required | Lower corner, grid cells. |
+| `light.ambientZones[].max` | list of any (at least 3) | required | Upper corner, grid cells; above min on every axis. |
+| `light.ambientZones[].level` | number 0–1 | required | Ambient level inside, 0–1. |
+| `light.directional` | list of object | `[]` | Directional lights (moon, sun); the brightest is the rendered key light. |
+| `light.directional[].id` | id | required | Name of the light, e.g. moon. |
+| `light.directional[].direction` | list of any (at least 3) | required | Direction the light travels, e.g. [0, -1, 0] straight down. |
+| `light.directional[].level` | number 0–1 | required | Level where it reaches, 0–1. |
+| `light.directional[].reach` | number > 0 | required | How far back towards the light a position must be clear to receive it, metres. |

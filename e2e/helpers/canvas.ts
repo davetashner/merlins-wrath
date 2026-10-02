@@ -7,6 +7,8 @@ import type { Page, TestInfo } from '@playwright/test';
 export interface Frame {
   /** A 64×36 RGB sample of the frame. */
   rgb: number[];
+  /** Luma (0–255) around each requested point, averaged over 5×5 pixels of the full frame. */
+  luma?: number[];
   /** The whole frame as a PNG data URL, when asked for. */
   png?: string;
 }
@@ -21,16 +23,21 @@ export interface Frame {
  */
 export function captureFrame(
   page: Page,
-  options: { afterMs?: number; png?: boolean } = {},
+  options: {
+    afterMs?: number;
+    png?: boolean;
+    /** Points in normalised device coordinates (−1…1, +y up) to read luma at. */
+    points?: readonly { x: number; y: number }[];
+  } = {},
 ): Promise<Frame> {
   return page.evaluate(
-    async ({ afterMs, png }) => {
+    async ({ afterMs, png, points }) => {
       const source = document.querySelector<HTMLCanvasElement>('[data-testid="game-canvas"]');
       if (!source) throw new Error('no game canvas');
       const copy = document.createElement('canvas');
       copy.width = source.width;
       copy.height = source.height;
-      const full = copy.getContext('2d');
+      const full = copy.getContext('2d', { willReadFrequently: points.length > 0 });
       if (!full) throw new Error('no 2d context');
       await new Promise<void>((resolve) => {
         let start: number | undefined;
@@ -56,9 +63,21 @@ export function captureFrame(
       for (let i = 0; i < data.length; i += 4) {
         rgb.push(((data[i] ?? 0) << 16) | ((data[i + 1] ?? 0) << 8) | (data[i + 2] ?? 0));
       }
-      return png ? { rgb, png: copy.toDataURL('image/png') } : { rgb };
+      const luma = points.map(({ x, y }) => {
+        const px = Math.round(((x + 1) / 2) * copy.width);
+        const py = Math.round(((1 - y) / 2) * copy.height);
+        const patch = full.getImageData(px - 2, py - 2, 5, 5).data;
+        let sum = 0;
+        for (let i = 0; i < patch.length; i += 4) {
+          sum +=
+            0.2126 * (patch[i] ?? 0) + 0.7152 * (patch[i + 1] ?? 0) + 0.0722 * (patch[i + 2] ?? 0);
+        }
+        return sum / 25;
+      });
+      const frame = png ? { rgb, png: copy.toDataURL('image/png') } : { rgb };
+      return points.length > 0 ? { ...frame, luma } : frame;
     },
-    { afterMs: options.afterMs ?? 0, png: options.png ?? false },
+    { afterMs: options.afterMs ?? 0, png: options.png ?? false, points: options.points ?? [] },
   );
 }
 

@@ -248,5 +248,9 @@
       "yaw": 180,
       "targetable": "training-dummy"
     }
-  ]
+  ],
+  "light": {
+    "ambient": 0.26,
+    "directional": [{ "id": "sun", "direction": [-0.45, -1, 0.3], "level": 0.5, "reach": 60 }]
+  }
 }

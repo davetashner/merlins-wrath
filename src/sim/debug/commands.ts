@@ -6,6 +6,7 @@
 // not deep inside a tick.
 
 import type { EntityId } from '../core/component';
+import { isWorldPropertyKey, validateProperty, type WorldPropertyKey } from '../properties/spec';
 import type { Vec3 } from '../stimulus/shapes';
 
 /** The `kind` tag of a debug command. */
@@ -89,8 +90,27 @@ export interface DespawnCommand {
   readonly what: 'creatures';
 }
 
+/**
+ * Sets one world property of an entity (mw-e03.37: put a torch out with `burning false`), exactly as
+ * a rule would: the entity gains the property if it lacks it, and `propertyChanged` fires.
+ */
+export interface PropertyCommand {
+  readonly kind: typeof DEBUG_COMMAND;
+  readonly op: 'property';
+  readonly target: EntityId;
+  readonly key: WorldPropertyKey;
+  /** A valid value of `key` (plain JSON: a number, boolean, id or flat record). */
+  readonly value: unknown;
+}
+
 export type DebugCommand =
-  SpawnCommand | CheatCommand | TeleportCommand | KillCommand | BlastCommand | DespawnCommand;
+  | SpawnCommand
+  | CheatCommand
+  | TeleportCommand
+  | KillCommand
+  | BlastCommand
+  | DespawnCommand
+  | PropertyCommand;
 
 /** A finite position with -0 folded to 0 (replays reject -0). */
 function position(what: string, v: Vec3): Vec3 {
@@ -187,6 +207,17 @@ export function blastCommand(at: Vec3, radius: number, intensity: number): Blast
 /** A despawn of every creature. */
 export function despawnCreaturesCommand(): DespawnCommand {
   return { kind: DEBUG_COMMAND, op: 'despawn', what: 'creatures' };
+}
+
+/**
+ * A property write. @throws RangeError for an invalid target, an unknown property or a value the
+ * property does not accept (the message says why, e.g. "wetness must be ≤ 1, got 1.4").
+ */
+export function propertyCommand(target: EntityId, key: string, value: unknown): PropertyCommand {
+  if (!isWorldPropertyKey(key)) throw new RangeError(`unknown world property "${key}"`);
+  const problem = validateProperty(key, value);
+  if (problem !== undefined) throw new RangeError(problem);
+  return { kind: DEBUG_COMMAND, op: 'property', target: entity(target), key, value };
 }
 
 /** True for a DebugCommand among arbitrary step inputs. */

@@ -19,6 +19,8 @@ import { despawnAllCreatures } from '../creatures/spawn';
 import type { BodyShape } from '../physics/bodies';
 import type { System, World } from '../core/world';
 import { PhysicsObjectComponent, teleportPhysicsObject } from '../physics/objects';
+import { assignProperty, WorldProperties } from '../properties/components';
+import { validateProperty, type WorldPropertyValues } from '../properties/spec';
 import { SceneSpawnComponent, SceneTransformComponent } from '../scene/loader';
 import { addPropPhysics, type ScenePhysicsOptions } from '../scene/physics';
 import type { Vec3 } from '../stimulus/shapes';
@@ -29,6 +31,7 @@ import {
   NO_SPAWN_PARAMS,
   type CheatCommand,
   type DebugCommand,
+  type PropertyCommand,
   type SpawnParams,
 } from './commands';
 
@@ -141,6 +144,15 @@ function kill<TInput>(world: World<TInput>, target: EntityId, tick: number): voi
   if (read(world, target, CharacterController) === undefined) world.destroy(target);
 }
 
+/** Writes a property; skipped when the world has no world properties or the value is invalid. */
+function setDebugProperty<TInput>(world: World<TInput>, command: PropertyCommand): void {
+  const { target, key, value } = command;
+  if (!world.isRegistered(WorldProperties[key])) return;
+  if (validateProperty(key, value) !== undefined) return; // a replay from a stricter or older build
+  const sim = world as unknown as World<never>; // properties never read inputs
+  assignProperty(sim, target, key, value as WorldPropertyValues[typeof key]);
+}
+
 /** The system applying this tick's debug commands in input order (see the file header). */
 export function debugCommandSystem<TInput>(options: DebugCommandOptions): System<TInput> {
   const { spawners } = options;
@@ -189,6 +201,7 @@ export function debugCommandSystem<TInput>(options: DebugCommandOptions): System
         if (!world.isAlive(command.target)) continue;
         if (command.op === 'cheat') toggle(command);
         else if (command.op === 'teleport') teleport(world, command.target, command.to);
+        else if (command.op === 'property') setDebugProperty(world, command);
         else kill(world, command.target, tick);
       }
       for (const [target, value] of cheats) {

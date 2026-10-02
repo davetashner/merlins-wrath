@@ -19,6 +19,11 @@ check enforces this).
   drains stamina, so an empty bar makes you fall. The testbed room has an ivy-covered wall to try it.
 - Your hands stay on the wall: dodging, attacking, blocking and drawing the bow do nothing while you
   are mantling, hanging from a ledge or climbing.
+- Torches and fires now light the grey-box scenes the way the game's stealth light model sees
+  them, with moonlight and ambient light from the scene: the new lighting room
+  (`?scene=lighting-room`) shows wall torches, a burning crate and moonlight through a doorway, and
+  the debug console's `prop` command changes an object's properties (`prop 12 burning false` puts a
+  torch out).
 - Debug builds can put creatures into the grey-box scenes from data: the new creature pen
   (`?scene=creature-pen`) places two test hounds, a patrolling guard and a sentinel as placeholder
   capsules, and the debug console spawns any creature by id (`spawn fixture-hound 3`, or

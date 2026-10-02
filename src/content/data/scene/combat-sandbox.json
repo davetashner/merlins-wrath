@@ -54,6 +54,22 @@
       "at": [2, 0, 1],
       "yaw": 180,
       "tags": ["sandbox-attacker"]
+    },
+    {
+      "id": "torch-west",
+      "at": [-5.75, 1.75, 3],
+      "tags": ["torch"],
+      "properties": { "flammable": true, "burning": true, "fuel": 3600 }
+    },
+    {
+      "id": "torch-east",
+      "at": [5.75, 1.75, 3],
+      "tags": ["torch"],
+      "properties": { "flammable": true, "burning": true, "fuel": 3600 }
     }
-  ]
+  ],
+  "light": {
+    "ambient": 0.26,
+    "directional": [{ "id": "sun", "direction": [-0.45, -1, 0.3], "level": 0.5, "reach": 60 }]
+  }
 }

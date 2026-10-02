@@ -102,6 +102,55 @@ export const sceneSpawnSchema = z.strictObject({
     .describe(
       'Patrol route for the spawned creature: waypoints in grid cells, walked in order (needs creature; AI, e11, walks it).',
     ),
+  properties: worldPropertiesSchema
+    .optional()
+    .describe(
+      'World properties of the spawned entity, e.g. a torch: { "burning": true, "fuel": 3600 } (mw-e03.37). A spawn with properties is placed in the sim, so the light field and stimuli reach it.',
+    ),
+});
+
+const lightLevel = z.number().min(0).max(1);
+
+/** A box of the scene with its own ambient light (mw-e03.37; see src/sim/light/field.ts). */
+export const sceneAmbientZoneSchema = z
+  .strictObject({
+    id: contentId.describe('Name of the zone, e.g. moonlit-yard.'),
+    min: vec3Schema.describe('Lower corner, grid cells.'),
+    max: vec3Schema.describe('Upper corner, grid cells; above min on every axis.'),
+    level: lightLevel.describe('Ambient level inside, 0–1.'),
+  })
+  .refine(({ min, max }) => max[0] > min[0] && max[1] > min[1] && max[2] > min[2], {
+    message: 'max must be above min on every axis',
+    path: ['max'],
+  });
+
+/** Light from far away along one direction: moonlight, sun (mw-e03.37). */
+export const sceneDirectionalLightSchema = z.strictObject({
+  id: contentId.describe('Name of the light, e.g. moon.'),
+  direction: vec3Schema
+    .refine((d) => d.some((v) => v !== 0), { message: 'direction must not be zero' })
+    .describe('Direction the light travels, e.g. [0, -1, 0] straight down.'),
+  level: lightLevel.describe('Level where it reaches, 0–1.'),
+  reach: z
+    .number()
+    .positive()
+    .describe('How far back towards the light a position must be clear to receive it, metres.'),
+});
+
+/**
+ * The scene's static lighting (mw-e03.37), loaded into the sim's light field; the renderer mirrors
+ * it. Without it a scene is dark apart from its light-emitting and burning entities.
+ */
+export const sceneLightSchema = z.strictObject({
+  ambient: lightLevel.optional().describe('Ambient level wherever no ambient zone applies, 0–1.'),
+  ambientZones: z
+    .array(sceneAmbientZoneSchema)
+    .default([])
+    .describe('Boxes with their own ambient level; later zones win where they overlap.'),
+  directional: z
+    .array(sceneDirectionalLightSchema)
+    .default([])
+    .describe('Directional lights (moon, sun); the brightest is the rendered key light.'),
 });
 
 const cameraSchema = z.strictObject({
@@ -118,6 +167,9 @@ export const sceneSchema = z
     camera: cameraSchema.describe('Where the view camera starts.'),
     placements: z.array(scenePlacementSchema).min(1).describe('Kit pieces in the scene.'),
     spawns: z.array(sceneSpawnSchema).default([]).describe('Entity spawns: markers and props.'),
+    light: sceneLightSchema
+      .optional()
+      .describe('Static lighting: ambient level, ambient zones, directional lights (mw-e03.37).'),
   })
   .superRefine((scene, ctx) => {
     const seen = new Set<string>();
@@ -146,3 +198,4 @@ export type SceneDef = z.output<typeof sceneSchema>;
 export type SceneDefInput = z.input<typeof sceneSchema>;
 export type ScenePlacementDef = z.output<typeof scenePlacementSchema>;
 export type SceneSpawnDef = z.output<typeof sceneSpawnSchema>;
+export type SceneLightDef = z.output<typeof sceneLightSchema>;
