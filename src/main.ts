@@ -395,8 +395,8 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
     // The knight's sword and shield (mw-e04.6): moves, socket tracks, the wood shield and the
     // damage model with the shield rule; and the combat sandbox's tuning (mw-e04.9).
     const combat = prepareTestbedCombat(content);
-    // Every creature in content, spawnable by id from scene data and the console (mw-e12.4). The
-    // game's own content has none yet; debug builds add the frozen fixture creatures.
+    // Every creature in content, spawnable by id from scene data and the console (mw-e12.4): the
+    // bestiary's (the Forgotten miner, mw-e13.1), plus the frozen fixture creatures in debug builds.
     const creatures: GameCreatures = prepareCreatures(content, combat);
     // Debug commands first (mw-e33.1), so a teleport or cheat is what every later system sees. The
     // sim side is always present; only the console that issues them is dev/playtest-only. Props with
@@ -869,7 +869,8 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
       // spawn naming a creature or faction that does not exist is reported, not fatal.
       const sceneCreatures = startCreatures(world, creatures, combat, loaded.layout.spawns);
       for (const line of sceneCreatureErrors(sceneCreatures)) console.error(line);
-      // Every creature — the scene's, the console's, respawned ones — gets a placeholder capsule.
+      // Every creature — the scene's, the console's, respawned ones — gets a placeholder capsule
+      // (with bones for the Forgotten's placeholder-capsule-bones mesh, mw-e13.1).
       // Its body glows while it winds up a telegraphed move (mw-e04.20); the telegraph watch exists
       // only where creatures do, and a step with no telegraph change costs one empty check.
       const creatureProxies = new Map<EntityId, ReturnType<typeof createCreatureProxy>>();
@@ -880,6 +881,7 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
             radius: look.nav.radius,
             height: look.nav.height,
             armed: look.armed,
+            mesh: creatures.table.get(look.id)?.def.presentation.mesh,
           });
           view.scene.add(object);
           creatureProxies.set(entity, object);

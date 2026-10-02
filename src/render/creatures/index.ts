@@ -4,6 +4,10 @@
 // front shows which way it faces. A creature carrying attacks is rust-red, one without is slate, so
 // a glance tells what might fight back.
 //
+// The `placeholder-capsule-bones` mesh (the Forgotten, mw-e13.1) adds pale bones over the capsule: a
+// skull, a spine down its back and ribs across its chest, so a skeleton reads as one before its
+// model lands (mw-e37.368). Any other mesh id draws the plain capsule.
+//
 // Telegraphs (mw-e04.20): while a creature winds up a telegraphed move its body glows — ember for a
 // swing a parry deflects, pale steel for one only a shield stops, red for an unblockable move or a
 // grab — until the move turns active. `showCreatureTelegraph` only touches the body's material when
@@ -19,12 +23,17 @@ import {
   Group,
   Mesh,
   MeshStandardMaterial,
+  SphereGeometry,
   type Object3D,
 } from 'three';
 
 const SLATE = 0x6f7f8c;
 const RUST = 0x9c4a32;
 const VISOR = 0x22222e;
+const BONE = 0xd8cfb4;
+
+/** The mesh id that draws the capsule with bones (see the file header). */
+export const CAPSULE_BONES_MESH = 'placeholder-capsule-bones';
 
 /** Body glow per telegraph look (see the file header). */
 const TELEGRAPH_GLOW = { parry: 0xe0912e, block: 0xc8d4e8, unblockable: 0xd2321e } as const;
@@ -38,11 +47,14 @@ export function createCreatureProxy({
   radius,
   height,
   armed,
+  mesh,
 }: {
   readonly id: string;
   readonly radius: number;
   readonly height: number;
   readonly armed: boolean;
+  /** CreatureDef.presentation.mesh; absent = the plain capsule. */
+  readonly mesh?: string | undefined;
 }): Object3D {
   const group = new Group();
   group.name = `creature:${id}`;
@@ -56,12 +68,28 @@ export function createCreatureProxy({
     new MeshStandardMaterial({ color: new Color(VISOR), roughness: 0.6 }),
   );
   visor.position.set(0, Math.max(height - radius * 0.9, radius), radius * 0.8);
-  for (const mesh of [body, visor]) {
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    group.add(mesh);
+  const parts = [body, visor, ...(mesh === CAPSULE_BONES_MESH ? bones(radius, height) : [])];
+  for (const part of parts) {
+    part.castShadow = true;
+    part.receiveShadow = true;
+    group.add(part);
   }
   return group;
+}
+
+/** A skull, a spine and four ribs over a capsule of `radius` and `height`, facing +z. */
+function bones(radius: number, height: number): Mesh[] {
+  const bone = new MeshStandardMaterial({ color: new Color(BONE), roughness: 0.9 });
+  const skull = new Mesh(new SphereGeometry(radius * 0.55, 10, 8), bone);
+  skull.position.set(0, height - radius * 0.35, radius * 0.25);
+  const spine = new Mesh(new BoxGeometry(radius * 0.18, height * 0.55, radius * 0.18), bone);
+  spine.position.set(0, height * 0.5, -radius * 0.95);
+  const ribs = [0.42, 0.5, 0.58, 0.66].map((fraction) => {
+    const rib = new Mesh(new BoxGeometry(radius * 2.1, radius * 0.1, radius * 0.12), bone);
+    rib.position.set(0, height * fraction, radius * 0.92);
+    return rib;
+  });
+  return [skull, spine, ...ribs];
 }
 
 /** Lights `proxy`'s body for a telegraph of `look`, or puts it out (null). */

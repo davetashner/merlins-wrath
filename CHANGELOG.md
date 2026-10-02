@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- The first creature: the Forgotten miner, a shambling skeleton with an overhead chop and a two-hit
+  slash you can parry and riposte, and a lunging thrust you can only block. Clubs and maces hurt it
+  more, arrows and thrusts less, and poison does nothing. It stands in as a grey-box capsule with
+  bones until its model arrives.
 - Hits, parries, impacts, breaks and fires now show visual effects, driven by the same events as
   their sounds: a clean hit puffs dust and metal on metal or stone throws sparks (both spraying back
   out of the struck surface, bigger for harder hits), a blocked blow sparks, a parry flashes a bright

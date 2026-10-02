@@ -1,0 +1,18 @@
+{
+  "$schema": "../creature.schema.json",
+  "id": "forgotten-miner",
+  "family": "forgotten",
+  "tags": ["undead", "forgotten", "miner"],
+  "stats": { "health": 100, "poise": 40, "mass": 40, "size": "medium" },
+  "senses": {
+    "base": "undead",
+    "sight": { "detectionSpeed": 1 },
+    "special": { "life-sense": null }
+  },
+  "locomotion": "forgotten",
+  "attacks": ["forgotten-overhead-chop", "forgotten-two-hit-slash", "forgotten-lunging-thrust"],
+  "resistances": { "blunt": 1.5, "pierce": 0.5, "poison": 0 },
+  "needs": {},
+  "behaviour": { "profile": "forgotten" },
+  "presentation": { "mesh": "placeholder-capsule-bones", "sfx": "placeholder" }
+}

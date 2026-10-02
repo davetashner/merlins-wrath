@@ -29,8 +29,11 @@ describe('debug-build content (mw-e12.4)', () => {
       'fixture-guard',
       'fixture-sentinel',
     ]);
-    // None of it is in the game's own content.
+    // None of it is in the game's own content, whose creatures are the bestiary's (E13).
     expect(loadGameContent().has('scene', 'creature-pen')).toBe(false);
-    expect(loadGameContent().all('creature')).toEqual([]);
+    const shipped = loadGameContent()
+      .all('creature')
+      .map((c) => c.id);
+    for (const fixture of FIXTURE_CREATURE_IDS) expect(shipped).not.toContain(fixture);
   });
 });
