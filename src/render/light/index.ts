@@ -14,10 +14,13 @@
 //   by LIGHT_SCALE and divided by the colour's luminance, so a warm torch and a white moon of the same
 //   sim level brighten a surface equally. The greybox's hemisphere fill and key light use the same
 //   mapping for the field's ambient level and directional lights.
-// - Fixed pools: the style bible allows ≤ 8 dynamic point lights per pixel on High (≤ 4 on Low) and no
-//   shadow-casting point lights. The rig holds a fixed pool (6 point + 2 spot by default) that never
-//   changes size, because adding or removing a light recompiles every material; unused lights sit at
-//   intensity 0. The game picks which emitters fill it (src/game/light selectLights).
+// - Pools that only grow: the style bible allows ≤ 8 dynamic point lights per pixel on High (≤ 4 on
+//   Low) and no shadow-casting point lights. Every light in the scene costs every lit fragment, even
+//   at intensity 0, and adding or removing one recompiles every material. So the rig starts empty (a
+//   scene with no emitters pays nothing) and grows its pools in steps of POOL_STEP up to the caps
+//   (6 point + 2 spot by default) the first time more emitters are lit at once; it never shrinks, so
+//   materials recompile at most a few times per session. Unused lights sit at intensity 0. The game
+//   picks which emitters fill it (src/game/light selectLights).
 //
 // Point lights cast no shadows (budget), so a wall between a torch and a floor darkens that floor in
 // the sim but not on screen; see the follow-up bead noted in the PR.
@@ -102,18 +105,27 @@ export interface RigLight extends LightEmitterView {
 }
 
 export interface LightRigOptions {
-  /** Point lights in the pool (default 6). */
+  /** Most point lights the pool grows to (default 6). */
   readonly points?: number;
-  /** Spotlights in the pool (default 2). */
+  /** Most spotlights the pool grows to (default 2). */
   readonly spots?: number;
 }
 
+/** Lights added at a time when a pool grows (each growth recompiles every lit material). */
+export const POOL_STEP = 2;
+
+/** The pool size that holds `wanted` lights: whole steps, never below `size`, at most `cap`. */
+export function grownPool(size: number, wanted: number, cap: number): number {
+  if (wanted <= size) return size;
+  return Math.min(cap, Math.ceil(wanted / POOL_STEP) * POOL_STEP);
+}
+
 export interface LightRig {
-  /** Pool sizes, for the game's selection. */
+  /** Most lights of each kind the rig draws, for the game's selection. */
   readonly caps: { readonly points: number; readonly spots: number };
   /**
-   * Draws exactly these lights (at most the pool sizes; extras are ignored) and switches the rest
-   * off. Returns the intensity drawn for each emitting entity.
+   * Draws exactly these lights (at most the caps; extras are ignored), growing the pools if they
+   * are too small, and switches the rest off. Returns the intensity drawn for each emitting entity.
    */
   sync(points: readonly RigLight[], spots: readonly RigLight[]): ReadonlyMap<EntityId, number>;
   dispose(): void;
@@ -126,19 +138,26 @@ export function createLightRig(scene: Scene, options: LightRigOptions = {}): Lig
   useSimFalloff();
   const flameGeometry = new SphereGeometry(FLAME_RADIUS, 8, 6);
   const flameMaterial = new MeshBasicMaterial({ color: FIRE_COLOUR });
-  const points = Array.from({ length: options.points ?? 6 }, () => {
-    const light = new PointLight(FIRE_COLOUR, 0, 1, 0);
-    const flame = new Mesh(flameGeometry, flameMaterial);
-    flame.visible = false;
-    light.add(flame);
-    scene.add(light);
-    return { light, flame };
-  });
-  const spots = Array.from({ length: options.spots ?? 2 }, () => {
-    const light = new SpotLight(LAMP_COLOUR, 0, 1, Math.PI / 4, 0, 0);
-    scene.add(light, light.target);
-    return light;
-  });
+  const caps = { points: options.points ?? 6, spots: options.spots ?? 2 };
+  const points: { light: PointLight; flame: Mesh }[] = [];
+  const spots: SpotLight[] = [];
+  const grow = (wantedPoints: number, wantedSpots: number): void => {
+    const pointCount = grownPool(points.length, wantedPoints, caps.points);
+    while (points.length < pointCount) {
+      const light = new PointLight(FIRE_COLOUR, 0, 1, 0);
+      const flame = new Mesh(flameGeometry, flameMaterial);
+      flame.visible = false;
+      light.add(flame);
+      scene.add(light);
+      points.push({ light, flame });
+    }
+    const spotCount = grownPool(spots.length, wantedSpots, caps.spots);
+    while (spots.length < spotCount) {
+      const light = new SpotLight(LAMP_COLOUR, 0, 1, Math.PI / 4, 0, 0);
+      scene.add(light, light.target);
+      spots.push(light);
+    }
+  };
 
   const place = (light: PointLight | SpotLight, source: RigLight, drawn: Map<EntityId, number>) => {
     const colour = source.fire ? FIRE_COLOUR : LAMP_COLOUR;
@@ -151,8 +170,9 @@ export function createLightRig(scene: Scene, options: LightRigOptions = {}): Lig
   };
 
   return {
-    caps: { points: points.length, spots: spots.length },
+    caps,
     sync(pointLights, spotLights) {
+      grow(pointLights.length, spotLights.filter((light) => light.cone !== null).length);
       const drawn = new Map<EntityId, number>();
       points.forEach(({ light, flame }, i) => {
         const source = pointLights[i];
