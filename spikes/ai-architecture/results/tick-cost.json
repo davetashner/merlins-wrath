@@ -1,0 +1,221 @@
+{
+  "bead": "mw-e11.1",
+  "date": "2026-10-02",
+  "machine": {
+    "cpu": "Apple M1 Pro",
+    "cores": 10,
+    "memGb": 16,
+    "os": "darwin 27.0.0",
+    "node": "v24.21.0",
+    "loadAvg1mBefore": 19.134,
+    "loadAvg1mAfter": 19.134
+  },
+  "method": {
+    "agents": 50,
+    "simSeconds": 60,
+    "ticksPerRound": 3600,
+    "warmupSeconds": 10,
+    "rounds": 7,
+    "note": "Per-tick wall time of ScenarioWorld.step: decision = think (at thinkHz, staggered by id) + act for every agent; perception = shared hearing/awareness. Each statistic is the median over rounds of the per-round value, in microseconds."
+  },
+  "results": [
+    {
+      "candidate": "bt",
+      "label": "Behaviour tree",
+      "thinkHz": 10,
+      "decisionUs": {
+        "mean": 3.205,
+        "p50": 3,
+        "p95": 3.542,
+        "p99": 6.084,
+        "max": 194.584
+      },
+      "perceptionUs": {
+        "mean": 0.315,
+        "p50": 0.292,
+        "p95": 0.334,
+        "p99": 0.375,
+        "max": 14.75
+      },
+      "totalUs": {
+        "mean": 3.514,
+        "p50": 3.291,
+        "p95": 3.875,
+        "p99": 6.542,
+        "max": 194.917
+      },
+      "alertTransitionsPerRun": 110,
+      "alertEdgesAllRounds": {
+        "unaware>suspicious": 282,
+        "suspicious>investigating": 190,
+        "investigating>unaware": 186,
+        "suspicious>unaware": 91
+      }
+    },
+    {
+      "candidate": "hybrid",
+      "label": "HFSM + utility",
+      "thinkHz": 10,
+      "decisionUs": {
+        "mean": 4.277,
+        "p50": 4,
+        "p95": 4.667,
+        "p99": 6.875,
+        "max": 220.583
+      },
+      "perceptionUs": {
+        "mean": 0.328,
+        "p50": 0.292,
+        "p95": 0.334,
+        "p99": 0.417,
+        "max": 15.541
+      },
+      "totalUs": {
+        "mean": 4.604,
+        "p50": 4.292,
+        "p95": 5,
+        "p99": 7.458,
+        "max": 220.875
+      },
+      "alertTransitionsPerRun": 108,
+      "alertEdgesAllRounds": {
+        "unaware>suspicious": 285,
+        "suspicious>investigating": 190,
+        "investigating>unaware": 185,
+        "suspicious>unaware": 93
+      }
+    },
+    {
+      "candidate": "flat",
+      "label": "Flat utility",
+      "thinkHz": 10,
+      "decisionUs": {
+        "mean": 5.1,
+        "p50": 4.792,
+        "p95": 6.167,
+        "p99": 8.542,
+        "max": 181.833
+      },
+      "perceptionUs": {
+        "mean": 0.324,
+        "p50": 0.292,
+        "p95": 0.334,
+        "p99": 0.375,
+        "max": 17.625
+      },
+      "totalUs": {
+        "mean": 5.413,
+        "p50": 5.125,
+        "p95": 6.75,
+        "p99": 9,
+        "max": 182.166
+      },
+      "alertTransitionsPerRun": 72,
+      "alertEdgesAllRounds": {
+        "unaware>investigating": 133,
+        "investigating>unaware": 134,
+        "unaware>suspicious": 139,
+        "suspicious>unaware": 128
+      }
+    },
+    {
+      "candidate": "bt",
+      "label": "Behaviour tree",
+      "thinkHz": 60,
+      "decisionUs": {
+        "mean": 13.085,
+        "p50": 12.75,
+        "p95": 14.625,
+        "p99": 16.25,
+        "max": 217.916
+      },
+      "perceptionUs": {
+        "mean": 0.322,
+        "p50": 0.292,
+        "p95": 0.334,
+        "p99": 0.417,
+        "max": 8.416
+      },
+      "totalUs": {
+        "mean": 13.406,
+        "p50": 13.083,
+        "p95": 15,
+        "p99": 16.625,
+        "max": 218.208
+      },
+      "alertTransitionsPerRun": 103,
+      "alertEdgesAllRounds": {
+        "unaware>suspicious": 281,
+        "suspicious>investigating": 182,
+        "investigating>unaware": 187,
+        "suspicious>unaware": 91
+      }
+    },
+    {
+      "candidate": "hybrid",
+      "label": "HFSM + utility",
+      "thinkHz": 60,
+      "decisionUs": {
+        "mean": 19.316,
+        "p50": 18.583,
+        "p95": 20.167,
+        "p99": 24.334,
+        "max": 201.5
+      },
+      "perceptionUs": {
+        "mean": 0.34,
+        "p50": 0.333,
+        "p95": 0.334,
+        "p99": 0.5,
+        "max": 7.667
+      },
+      "totalUs": {
+        "mean": 19.665,
+        "p50": 18.917,
+        "p95": 20.541,
+        "p99": 25.042,
+        "max": 201.917
+      },
+      "alertTransitionsPerRun": 101,
+      "alertEdgesAllRounds": {
+        "unaware>suspicious": 284,
+        "suspicious>investigating": 182,
+        "investigating>unaware": 187,
+        "suspicious>unaware": 93
+      }
+    },
+    {
+      "candidate": "flat",
+      "label": "Flat utility",
+      "thinkHz": 60,
+      "decisionUs": {
+        "mean": 24.157,
+        "p50": 24.292,
+        "p95": 25.875,
+        "p99": 29.083,
+        "max": 220.041
+      },
+      "perceptionUs": {
+        "mean": 0.343,
+        "p50": 0.333,
+        "p95": 0.375,
+        "p99": 0.5,
+        "max": 8.833
+      },
+      "totalUs": {
+        "mean": 24.504,
+        "p50": 24.625,
+        "p95": 26.25,
+        "p99": 30,
+        "max": 220.375
+      },
+      "alertTransitionsPerRun": 74,
+      "alertEdgesAllRounds": {
+        "unaware>investigating": 132,
+        "investigating>unaware": 135,
+        "unaware>suspicious": 141,
+        "suspicious>unaware": 130
+      }
+    }
+  ]
+}

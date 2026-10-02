@@ -1,0 +1,88 @@
+{
+  "id": "fixture-guard",
+  "thinkHz": 10,
+  "inertia": 0.1,
+  "initial": "unaware",
+  "states": {
+    "unaware": {
+      "transitions": [{ "to": "suspicious", "when": { "input": "awareness", "gte": 0.3 } }],
+      "activities": ["patrol", "return-to-route", "nap"]
+    },
+    "suspicious": {
+      "timeoutS": 8,
+      "onTimeout": "unaware",
+      "transitions": [
+        { "to": "investigating", "when": { "input": "awareness", "gte": 0.6 } },
+        { "to": "unaware", "when": { "done": "shrug-off" } }
+      ],
+      "activities": ["look-toward-noise", "shrug-off"]
+    },
+    "investigating": {
+      "timeoutS": 20,
+      "onTimeout": "unaware",
+      "transitions": [
+        { "to": "unaware", "when": { "done": "investigate" } },
+        { "to": "unaware", "when": { "failed": "investigate" } },
+        { "to": "unaware", "when": { "done": "call-it-off" } }
+      ],
+      "activities": ["investigate", "call-it-off"]
+    }
+  },
+  "activities": {
+    "patrol": {
+      "considerations": [
+        { "input": "offRoute", "curve": { "kind": "step", "at": 1.5, "below": 1, "above": 0 } },
+        {
+          "input": "trait.diligence",
+          "curve": { "kind": "linear", "slope": 0.5, "intercept": 0.5 }
+        }
+      ],
+      "steps": [{ "do": "follow-route" }]
+    },
+    "return-to-route": {
+      "considerations": [
+        { "input": "offRoute", "curve": { "kind": "step", "at": 1.5, "below": 0, "above": 1 } }
+      ],
+      "steps": [{ "do": "move-to", "target": "nearest-waypoint" }]
+    },
+    "nap": {
+      "weight": 1.5,
+      "considerations": [
+        { "input": "need.sleep", "curve": { "kind": "power", "exponent": 2 } },
+        { "input": "trait.diligence", "curve": { "kind": "linear", "slope": -1, "intercept": 1.2 } }
+      ],
+      "steps": [{ "do": "rest", "seconds": 8 }]
+    },
+    "look-toward-noise": {
+      "considerations": [],
+      "steps": [{ "do": "look-toward", "target": "stimulus", "seconds": 1 }]
+    },
+    "shrug-off": {
+      "weight": 2,
+      "considerations": [
+        { "input": "timeInState", "curve": { "kind": "step", "at": 6, "below": 0, "above": 1 } }
+      ],
+      "steps": [{ "do": "clear-stimulus" }]
+    },
+    "investigate": {
+      "considerations": [
+        {
+          "input": "trait.curiosity",
+          "curve": { "kind": "linear", "slope": 0.5, "intercept": 0.5 }
+        }
+      ],
+      "steps": [
+        { "do": "move-to", "target": "stimulus" },
+        { "do": "look-around", "seconds": 3 },
+        { "do": "clear-stimulus" }
+      ]
+    },
+    "call-it-off": {
+      "considerations": [
+        { "input": "trait.curiosity", "curve": { "kind": "linear", "slope": -1, "intercept": 1 } },
+        { "input": "timeInState", "curve": { "kind": "linear", "slope": 0.1, "intercept": 0 } }
+      ],
+      "steps": [{ "do": "clear-stimulus" }]
+    }
+  }
+}

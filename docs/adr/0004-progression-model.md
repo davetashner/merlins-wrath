@@ -45,7 +45,7 @@ loot and shop data would otherwise be authored against guesses.
 |---|---|---|
 | **Three pools (health, stamina, mana) that grow from shrines and found items** | Class start values, +10 steps, hard caps, every source one-time. | **Chosen** |
 | No stats at all | Fixed pools for the whole game. | **Rejected**: removes the *Zelda* heart-container joy of a rare find and leaves no reward for some secrets |
-| Attribute set (Strength, Dexterity, Intelligence…) | *QfG5*/*DOS2* attributes that scale damage and carry weight. | **Rejected**: numbers that define play, the opposite of §3; carry weight is gone per ADR-0003 |
+| Attribute set (Strength, Dexterity, Intelligence…) | *QfG5*/*DOS2* attributes that scale damage and carry weight. | **Rejected**: numbers that define play, the opposite of §3; carry weight is gone per ADR-0005 |
 
 ### Q3 — How each class earns verbs
 
@@ -96,7 +96,7 @@ Each step is a new verb or a new way to use one, following *Ember → Firebolt �
 
 ### Supporting stats
 
-Three stats; poise, carry limit and armor capacity are class constants (ADR-0003), not stats, and
+Three stats; poise, carry limit and armor capacity are class constants (ADR-0005), not stats, and
 nothing raises them.
 
 | Stat | Knight | Archer | Thief | Sorcerer | Step | Cap |

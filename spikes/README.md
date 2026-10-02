@@ -1,5 +1,10 @@
 # Engine and physics spike (mw-e00.13, ADR-0001)
 
+> **Other spikes here.** [`ai-architecture/`](ai-architecture/README.md) is the mw-e11.1 AI architecture
+> spike (ADR-0005). It is not part of this pnpm workspace: it runs on the root toolchain through its own
+> Vitest and TypeScript configs and, like everything in `spikes/`, stays out of the root gates. Removal of
+> finished spikes is tracked by `mw-e00.30`.
+
 > **Archived reference material.** ADR-0001 was accepted on 2026-09-28 (Three.js + Rapier deterministic,
 > physics in `src/sim`). This directory is kept only so that the ADR's evidence stays reproducible. It is
 > not maintained, and it stays out of the game build, lint, typecheck, tests and coverage. Do not import

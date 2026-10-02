@@ -1,0 +1,158 @@
+{
+  "id": "fixture-guard",
+  "thinkHz": 10,
+  "root": {
+    "type": "selector",
+    "name": "root",
+    "children": [
+      {
+        "type": "sequence",
+        "name": "investigate",
+        "memory": true,
+        "children": [
+          {
+            "type": "condition",
+            "test": {
+              "any": [
+                { "input": "alert.investigating" },
+                { "all": [{ "input": "alert.suspicious" }, { "input": "awareness", "gte": 0.6 }] }
+              ]
+            }
+          },
+          {
+            "type": "action",
+            "name": "enter-investigating",
+            "action": { "do": "set-alert", "state": "investigating" }
+          },
+          {
+            "type": "selector",
+            "name": "pursue-or-give-up",
+            "children": [
+              {
+                "type": "condition",
+                "name": "give-up?",
+                "test": {
+                  "any": [
+                    { "input": "timeInState", "gte": 20 },
+                    {
+                      "all": [
+                        { "input": "trait.curiosity", "lt": 0.3 },
+                        { "input": "timeInState", "gte": 8 }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "sequence",
+                "name": "check-spot",
+                "memory": true,
+                "children": [
+                  {
+                    "type": "action",
+                    "name": "go-to-noise",
+                    "action": { "do": "move-to", "target": "stimulus" }
+                  },
+                  {
+                    "type": "action",
+                    "name": "look-around",
+                    "action": { "do": "look-around", "seconds": 3 }
+                  }
+                ]
+              }
+            ]
+          },
+          { "type": "action", "name": "forget-noise", "action": { "do": "clear-stimulus" } },
+          {
+            "type": "action",
+            "name": "stand-down",
+            "action": { "do": "set-alert", "state": "unaware" }
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "name": "suspicious",
+        "memory": true,
+        "children": [
+          {
+            "type": "condition",
+            "test": {
+              "any": [{ "input": "alert.suspicious" }, { "input": "awareness", "gte": 0.3 }]
+            }
+          },
+          {
+            "type": "action",
+            "name": "enter-suspicious",
+            "action": { "do": "set-alert", "state": "suspicious" }
+          },
+          {
+            "type": "selector",
+            "name": "look-or-time-out",
+            "children": [
+              {
+                "type": "sequence",
+                "name": "time-out",
+                "children": [
+                  { "type": "condition", "test": { "input": "timeInState", "gte": 6 } },
+                  {
+                    "type": "action",
+                    "name": "forget-noise",
+                    "action": { "do": "clear-stimulus" }
+                  },
+                  {
+                    "type": "action",
+                    "name": "stand-down",
+                    "action": { "do": "set-alert", "state": "unaware" }
+                  }
+                ]
+              },
+              {
+                "type": "action",
+                "name": "look-toward-noise",
+                "action": { "do": "look-toward", "target": "stimulus", "seconds": 1 }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "sequence",
+        "name": "return",
+        "memory": true,
+        "children": [
+          { "type": "condition", "test": { "input": "offRoute", "gte": 1.5 } },
+          {
+            "type": "action",
+            "name": "walk-back",
+            "action": { "do": "move-to", "target": "nearest-waypoint" }
+          }
+        ]
+      },
+      {
+        "type": "selector",
+        "name": "routine",
+        "children": [
+          {
+            "type": "sequence",
+            "name": "nap",
+            "memory": true,
+            "children": [
+              {
+                "type": "condition",
+                "test": {
+                  "all": [
+                    { "input": "need.sleep", "gte": 0.8 },
+                    { "input": "trait.diligence", "lt": 0.7 }
+                  ]
+                }
+              },
+              { "type": "action", "name": "rest", "action": { "do": "rest", "seconds": 8 } }
+            ]
+          },
+          { "type": "action", "name": "patrol", "action": { "do": "follow-route" } }
+        ]
+      }
+    ]
+  }
+}
