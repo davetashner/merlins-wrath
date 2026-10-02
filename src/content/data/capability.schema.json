@@ -41,6 +41,39 @@
             "type": "string",
             "minLength": 1,
             "description": "What the capability lets the player do in the world, for designers and review."
+          },
+          "nameKey": {
+            "description": "Localisation key of the display name; absent = \"capability.<id>.name\".",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+          },
+          "descKey": {
+            "description": "Localisation key of the description; absent = \"capability.<id>.desc\".",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+          },
+          "icon": {
+            "description": "UI icon id (hotbar, prompts); absent = the family icon.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "classAffinity": {
+            "description": "The class whose fantasy it belongs to (ADR-0004); absent = any class.",
+            "type": "string",
+            "enum": [
+              "knight",
+              "archer",
+              "sorcerer",
+              "thief"
+            ]
+          },
+          "crossClass": {
+            "description": "Other classes may learn it through the same source (ADR-0004 \"simple\" rule); default false.",
+            "type": "boolean"
+          },
+          "supporting": {
+            "description": "A supporting (numeric) entry rather than a verb (ADR-0004 P1, P2); default false.",
+            "type": "boolean"
           }
         },
         "required": [

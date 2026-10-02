@@ -1,0 +1,29 @@
+{
+  "$schema": "../capability.schema.json",
+  "id": "verbs",
+  "name": "Traversal verbs",
+  "notes": "Climbing and ledge capabilities the sim checks today (src/sim/climb: surfaces.ts and mantle.ts name these ids). Mantling and ladders, ropes and ivy need none. The testbed grants verb.climb.ledge to the player until class data (mw-e19.4) grants each class its kit; ADR-0004 makes rough-wall climbing the thief's.",
+  "capabilities": [
+    {
+      "id": "verb.climb.ledge",
+      "name": "Ledge Hang",
+      "description": "Grab a ledge up to hand reach, hang from it, shimmy along it and lower off an edge into a hang (mw-e02.12)."
+    },
+    {
+      "id": "verb.climb.rough",
+      "name": "Climb Rough Stone",
+      "description": "Jump at a rough stone or timber wall and climb it (mw-e02.13).",
+      "classAffinity": "thief"
+    },
+    {
+      "id": "verb.climb.sheer",
+      "name": "Climb Sheer Faces",
+      "description": "Climb a sheer face with claws or a climbing tool (mw-e10). Nothing grants it yet."
+    },
+    {
+      "id": "verb.climb.ice",
+      "name": "Grip Ice",
+      "description": "Keep hold of a frozen surface or ledge instead of slipping off (ice tools, future). Nothing grants it yet."
+    }
+  ]
+}

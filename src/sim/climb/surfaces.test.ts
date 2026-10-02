@@ -66,7 +66,7 @@ describe('climbable surfaces (mw-e03.22)', () => {
     expect(difficulties).toEqual([0, 1, 1, 1, 2, 3, 3]);
   });
 
-  it('any class attaches to a ladder; rough needs climb.rough; sheer needs a tool', () => {
+  it('any class attaches to a ladder; rough needs verb.climb.rough; sheer needs a tool', () => {
     const w = world();
     const ladder = surface(w, { climbable: 'ladder' });
     const rough = surface(w, { climbable: 'rough' });

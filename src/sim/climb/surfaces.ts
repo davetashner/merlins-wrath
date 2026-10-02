@@ -28,11 +28,11 @@ export interface ClimbGradeRule {
 }
 
 /** Capability that lets an actor climb rough stone and timber (the thief's). */
-export const CLIMB_ROUGH_CAPABILITY = 'climb.rough';
+export const CLIMB_ROUGH_CAPABILITY = 'verb.climb.rough';
 /** Capability that lets an actor climb sheer faces (claws, tools: mw-e10). Nobody has it yet. */
-export const CLIMB_SHEER_CAPABILITY = 'climb.sheer';
+export const CLIMB_SHEER_CAPABILITY = 'verb.climb.sheer';
 /** Capability that lets an actor climb a frozen, slippery surface (ice tools, future). */
-export const CLIMB_ICE_CAPABILITY = 'climb.ice';
+export const CLIMB_ICE_CAPABILITY = 'verb.climb.ice';
 
 /**
  * Per grade: nav difficulty and the capability needed. Ladders, ropes and ivy are for everyone;

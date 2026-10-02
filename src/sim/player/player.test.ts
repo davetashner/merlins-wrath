@@ -21,6 +21,7 @@ import { sceneLedges } from '../climb/ledges';
 import { LEDGE_HANG_CAPABILITY } from '../climb/mantle';
 import { layoutScene, type SceneSpawnPlacement } from '../scene/layout';
 import { hashWorld } from '../snapshot';
+import { addCapabilities, CapabilityRegistry } from '../progression/capabilities';
 import {
   clampPitch,
   DEFAULT_LOOK_SETTINGS,
@@ -269,7 +270,7 @@ describe('mantling and ledge hangs (mw-e02.12)', () => {
     });
     const state = () => world.get(player, CharacterController);
     world.step([frame({})]); // the first tick finds the ground
-    return { world, state };
+    return { world, state, player };
   }
 
   it('AC-1: a jump at a 1.4 m crate while moving forward mantles the player onto it', () => {
@@ -288,6 +289,22 @@ describe('mantling and ledge hangs (mw-e02.12)', () => {
     const climber = crateRoom(2.1, [LEDGE_HANG_CAPABILITY]);
     climber.world.step([frame({ move: [0, 1], pressed: ['jump'], held: ['jump'] })]);
     expect(climber.state()?.traversal).toBe('hang');
+  });
+
+  it('reads the capability registry live: a granted ledge hang grabs, a revoked one does not', () => {
+    const registry = new CapabilityRegistry([LEDGE_HANG_CAPABILITY]);
+    const { world, state, player } = crateRoom(2.1);
+    addCapabilities(world, player);
+    registry.grant(world, player, LEDGE_HANG_CAPABILITY, 'class');
+    world.step([frame({ move: [0, 1], pressed: ['jump'], held: ['jump'] })]);
+    expect(state()?.traversal).toBe('hang');
+
+    const revoked = crateRoom(2.1);
+    addCapabilities(revoked.world, revoked.player);
+    registry.grant(revoked.world, revoked.player, LEDGE_HANG_CAPABILITY, 'class');
+    registry.revoke(revoked.world, revoked.player, LEDGE_HANG_CAPABILITY, 'class');
+    revoked.world.step([frame({ move: [0, 1], pressed: ['jump'], held: ['jump'] })]);
+    expect(revoked.state()?.traversal).toBeNull();
   });
 });
 

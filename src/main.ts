@@ -38,6 +38,7 @@ import {
   type GameCreatures,
 } from '@game/creatures/index';
 import { bindBreakLeftovers, BreakWatch, hasBreakables } from '@game/breakables/index';
+import { createCapabilityRegistry } from '@game/capabilities';
 import { attachGameAudio, soundPositions } from '@game/cues/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
@@ -109,6 +110,7 @@ import { AnimationController, compileGraph } from '@render/animation/index';
 import { createPlayerBody, projectToNdc } from '@render/player/index';
 import { createVfxRenderer } from '@render/vfx/index';
 import {
+  addCapabilities,
   AttackerDummyComponent,
   checkSandboxCommand,
   checkSandboxSpawn,
@@ -708,9 +710,9 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
           melee: combat.melee,
           // The shortbow and a quiver (mw-e05.21): 4 takes it out, hold the attack button to draw.
           bow: combat.bow,
-          // Mantling for every class; ledge hangs are capability-gated (mw-e02.12), granted here
-          // until class data (mw-e02.3) says who climbs.
-          ledges: { capabilities: [LEDGE_HANG_CAPABILITY] },
+          // Mantling for every class; ledge hangs are capability-gated (mw-e02.12) and granted
+          // through the capability registry below.
+          ledges: {},
           // Ladders, ropes and ivy for every class (mw-e02.13); rough walls need the climbing
           // capability, which class data (mw-e02.3) will grant the thief.
           climb: {},
@@ -767,6 +769,15 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
           },
         });
         focus.entity = player.entity; // bodies near the player never get forced to sleep
+        // The player's capabilities (mw-e19.2): ledge hangs come from the registry as a class grant
+        // until class kits (mw-e19.4, mw-e19.5) grant each class its own.
+        addCapabilities(world, player.entity);
+        createCapabilityRegistry(content).grant(
+          world,
+          player.entity,
+          LEDGE_HANG_CAPABILITY,
+          'class',
+        );
         // Dev hot reload (mw-e02.3): a saved player controller file retunes the player from the
         // next tick, through the same recorded command as the console's ctl.set; no page reload.
         const tuned = player.entity;

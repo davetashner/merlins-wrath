@@ -281,13 +281,13 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
 
 /** The player's climbing (mw-e02.13). */
 export interface TestbedClimbOptions {
-  /** The player's climbing capabilities (e.g. CLIMB_ROUGH_CAPABILITY) until class data (mw-e02.3). */
+  /** The player's climbing capabilities (e.g. CLIMB_ROUGH_CAPABILITY), on top of the registry's (mw-e19.2). */
   readonly capabilities?: readonly string[];
 }
 
 /** The player's mantling and ledge hangs (mw-e02.12). */
 export interface TestbedLedgeOptions {
-  /** The player's capabilities (e.g. LEDGE_HANG_CAPABILITY) until class data (mw-e02.3). */
+  /** The player's capabilities (e.g. LEDGE_HANG_CAPABILITY), on top of the registry's (mw-e19.2). */
   readonly capabilities?: readonly string[];
 }
 

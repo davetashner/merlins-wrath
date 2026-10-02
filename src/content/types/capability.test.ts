@@ -4,7 +4,12 @@ import { ContentLoadError, loadContent, type ContentSource } from '../loader.ts'
 import { contentChecks, contentTypes } from '../registry.ts';
 import { serializeContent } from '../schema.ts';
 import { describeContent } from '../testing.ts';
-import { capabilitySchema, type CapabilityGroupInput } from './capability.ts';
+import {
+  CAPABILITY_ID_PATTERN,
+  capabilityKeys,
+  capabilitySchema,
+  type CapabilityGroupInput,
+} from './capability.ts';
 
 const group = (id: string, ids: readonly string[]): CapabilityGroupInput => ({
   id,
@@ -51,6 +56,64 @@ describe('capability schema (mw-e15.1)', () => {
     expect(loadIssues([extra])).toEqual([
       'src/content/data/capability/zz-test.json#/capabilities/0/id: capability "spell.mage-hand" is already declared in src/content/data/capability/spells.json',
     ]);
+  });
+});
+
+describe('capability definitions (mw-e19.2)', () => {
+  const one = (fields: Record<string, unknown>) => ({
+    id: 'test',
+    name: 'Test',
+    notes: 'Test.',
+    capabilities: [{ id: 'spell.ember', name: 'Ember', description: 'Ignite.', ...fields }],
+  });
+
+  it('takes localisation keys, an icon, a class affinity and the cross-class and supporting flags', () => {
+    const full = {
+      nameKey: 'capability.spell.ember.name',
+      descKey: 'capability.spell.ember.desc',
+      icon: 'spell-ember',
+      classAffinity: 'sorcerer',
+      crossClass: true,
+      supporting: false,
+    };
+    expect(problems(one(full))).toEqual([]);
+    expect(problems(one({}))).toEqual([]);
+  });
+
+  it('rejects a cross-class flag without a class, a bad key, an unknown class and stray fields', () => {
+    expect(problems(one({ crossClass: true }))).toEqual([
+      'capabilities.0.crossClass: crossClass needs a classAffinity: a capability without one is already for any class',
+    ]);
+    expect(problems(one({ nameKey: 'Ember Name' }))).toEqual([
+      'capabilities.0.nameKey: must be a localisation key, e.g. "capability.spell.ember.name"',
+    ]);
+    expect(problems(one({ classAffinity: 'bard' }))).toHaveLength(1);
+    expect(problems(one({ xp: 100 }))).toHaveLength(1);
+  });
+
+  it('defaults the localisation keys from the id', () => {
+    const def = { id: 'spell.ember', name: 'Ember', description: 'Ignite.' };
+    expect(capabilityKeys(def)).toEqual({
+      nameKey: 'capability.spell.ember.name',
+      descKey: 'capability.spell.ember.desc',
+    });
+    expect(capabilityKeys({ ...def, nameKey: 'a.b', descKey: 'c.d' })).toEqual({
+      nameKey: 'a.b',
+      descKey: 'c.d',
+    });
+  });
+
+  it('AC-4: the capability data files declare unique ids that match the id pattern', () => {
+    const content = loadContent(contentTypes, gameContentSources(), contentChecks);
+    const ids = content
+      .all('capability')
+      .flatMap((group) => group.capabilities.map(({ id }) => id));
+    expect(ids.length).toBeGreaterThan(0);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(CAPABILITY_ID_PATTERN.source).toBe(
+      '^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$',
+    );
+    for (const id of ids) expect(id, id).toMatch(CAPABILITY_ID_PATTERN);
   });
 });
 

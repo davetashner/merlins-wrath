@@ -1,14 +1,16 @@
 // Capability ids as content (mw-e15.1): `src/content/data/capability/<group>.json` declares the verbs
 // a player can have ("can the player do X?"): spell.mage-hand, arrow.rope, verb.climb.ledge. Puzzle
 // solutions (and later obstacles, dialogue and equipment) name capabilities, so a typo'd id must fail
-// at load rather than silently make a solution unreachable. This is only the id registry: the
-// runtime per-actor registry with source-tracked grants, and richer fields (name/description keys,
-// icon, class affinity, supporting flag), are mw-e19.2. Ids are unique across every group file
-// (`checkCapabilities`); a capability's id is not a content id, so groups are the entries.
+// at load rather than silently make a solution unreachable. mw-e19.2 adds what the UI and the
+// progression rules (ADR-0004) need: localisation keys, an icon, the class affinity, whether other
+// classes may learn it (`crossClass`) and the `supporting` flag; the runtime per-actor registry with
+// source-tracked grants is src/sim/progression/capabilities.ts. Ids are unique across every group
+// file (`checkCapabilities`); a capability's id is not a content id, so groups are the entries.
 
 import { z } from 'zod';
 import type { ContentCheck, ContentIssue, LoadedEntry } from '../loader.ts';
 import { contentId } from '../schema.ts';
+import { PLAYER_CLASSES } from './controller.ts';
 
 /** Capability ids: a family, a dot, then kebab-case segments joined by dots (mw-e19.2 AC-4). */
 export const CAPABILITY_ID_PATTERN = /^(verb|spell|arrow|tool|trick|technique|sense)\.[a-z0-9.-]+$/;
@@ -19,16 +21,65 @@ export const capabilityId = z
   .regex(CAPABILITY_ID_PATTERN, 'must be a capability id, e.g. "spell.mage-hand"')
   .describe('Capability id declared in src/content/data/capability/, e.g. "spell.mage-hand".');
 
-const capabilityDefSchema = z.strictObject({
-  id: capabilityId.describe(
-    'Capability id: verb., spell., arrow., tool., trick., technique. or sense. then a name.',
-  ),
-  name: z.string().min(1).describe('Display name, e.g. "Mage Hand".'),
-  description: z
-    .string()
-    .min(1)
-    .describe('What the capability lets the player do in the world, for designers and review.'),
-});
+const localisationKey = z
+  .string()
+  .regex(
+    /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/,
+    'must be a localisation key, e.g. "capability.spell.ember.name"',
+  );
+
+const capabilityDefSchema = z
+  .strictObject({
+    id: capabilityId.describe(
+      'Capability id: verb., spell., arrow., tool., trick., technique. or sense. then a name.',
+    ),
+    name: z.string().min(1).describe('Display name, e.g. "Mage Hand".'),
+    description: z
+      .string()
+      .min(1)
+      .describe('What the capability lets the player do in the world, for designers and review.'),
+    nameKey: localisationKey
+      .optional()
+      .describe('Localisation key of the display name; absent = "capability.<id>.name".'),
+    descKey: localisationKey
+      .optional()
+      .describe('Localisation key of the description; absent = "capability.<id>.desc".'),
+    icon: contentId.optional().describe('UI icon id (hotbar, prompts); absent = the family icon.'),
+    classAffinity: z
+      .enum(PLAYER_CLASSES)
+      .optional()
+      .describe('The class whose fantasy it belongs to (ADR-0004); absent = any class.'),
+    crossClass: z
+      .boolean()
+      .optional()
+      .describe(
+        'Other classes may learn it through the same source (ADR-0004 "simple" rule); default false.',
+      ),
+    supporting: z
+      .boolean()
+      .optional()
+      .describe(
+        'A supporting (numeric) entry rather than a verb (ADR-0004 P1, P2); default false.',
+      ),
+  })
+  .superRefine((def, ctx) => {
+    if (def.crossClass === true && def.classAffinity === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['crossClass'],
+        message:
+          'crossClass needs a classAffinity: a capability without one is already for any class',
+      });
+    }
+  });
+
+/** The localisation keys of a capability's name and description (explicit or by convention). */
+export function capabilityKeys(def: CapabilityDef): { nameKey: string; descKey: string } {
+  return {
+    nameKey: def.nameKey ?? `capability.${def.id}.name`,
+    descKey: def.descKey ?? `capability.${def.id}.desc`,
+  };
+}
 
 /** One file of the capability registry: `src/content/data/capability/<id>.json`. */
 export const capabilitySchema = z
@@ -56,6 +107,8 @@ export const capabilitySchema = z
 export type CapabilityGroupInput = z.input<typeof capabilitySchema>;
 /** A validated capability group. */
 export type CapabilityGroup = z.output<typeof capabilitySchema>;
+/** One validated capability definition. */
+export type CapabilityDef = CapabilityGroup['capabilities'][number];
 
 /** Every declared capability id across the loaded capability groups. */
 export function capabilityIds(entries: readonly LoadedEntry[]): ReadonlySet<string> {
