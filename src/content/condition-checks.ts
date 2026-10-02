@@ -4,7 +4,7 @@
 // bool template, and every operator suits the fact's type (a bare test or `true`/`false` needs a
 // bool, `gte` an int or tick, an enum value is one of its values). Issues name the file, the JSON
 // pointer and the problem. Each content type with condition fields registers where they are in
-// CONDITION_USAGES: named conditions and puzzle goals (mw-e15.1) today; dialogue (mw-e22) and quests (mw-e23) add a line.
+// CONDITION_USAGES: named conditions, puzzle goals (mw-e15.1) and unlock requirements (mw-e19.3) today; dialogue (mw-e22) and quests (mw-e23) add a line.
 
 import { factIndex, lookupFact, type FactIndex } from './fact-checks.ts';
 import type { ContentCheck, ContentIssue, Frozen } from './loader.ts';
@@ -19,6 +19,7 @@ import {
 } from './types/condition.ts';
 import type { FactDef, FactGroup } from './types/fact.ts';
 import type { Puzzle } from './types/puzzle.ts';
+import type { UnlockGroup } from './types/unlock.ts';
 
 /** One condition in a content entry. */
 export interface ConditionUsage {
@@ -33,6 +34,12 @@ export const CONDITION_USAGES: Readonly<
 > = {
   condition: (entry: NamedCondition) => [{ pointer: '/when', condition: entry.when }],
   puzzle: (entry: Puzzle) => [{ pointer: '/goal', condition: entry.goal }],
+  unlock: (entry: UnlockGroup) =>
+    entry.unlocks.flatMap(({ requirements }, i) =>
+      requirements === undefined
+        ? []
+        : [{ pointer: `/unlocks/${String(i)}/requirements`, condition: requirements }],
+    ),
 };
 
 /** A problem in a condition, at a JSON pointer relative to the condition. */

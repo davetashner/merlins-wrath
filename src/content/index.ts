@@ -266,6 +266,15 @@ export {
   type CapabilityGroupInput,
 } from './types/capability.ts';
 export {
+  checkUnlocks,
+  UNLOCK_CHANNELS,
+  unlockCycles,
+  unlockSchema,
+  type UnlockEntry,
+  type UnlockGroup,
+  type UnlockGroupInput,
+} from './types/unlock.ts';
+export {
   MVP_MIN_SOLUTIONS,
   MVP_TAG,
   PUZZLE_CLASSES,
