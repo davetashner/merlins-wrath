@@ -234,7 +234,7 @@ describe('climbing through the player (mw-e02.13)', () => {
     const thief = room({
       height: 3,
       block: { climbable: 'rough' },
-      climb: { capabilities: ['climb.rough'] },
+      climb: { capabilities: ['verb.climb.rough'] },
     });
     thief.run(20, FORWARD);
     thief.run(1, JUMP_FORWARD);

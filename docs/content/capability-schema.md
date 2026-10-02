@@ -14,3 +14,9 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `capabilities[].id` | string | required | Capability id: verb., spell., arrow., tool., trick., technique. or sense. then a name. |
 | `capabilities[].name` | string | required | Display name, e.g. "Mage Hand". |
 | `capabilities[].description` | string | required | What the capability lets the player do in the world, for designers and review. |
+| `capabilities[].nameKey` | string | — | Localisation key of the display name; absent = "capability.<id>.name". |
+| `capabilities[].descKey` | string | — | Localisation key of the description; absent = "capability.<id>.desc". |
+| `capabilities[].icon` | id | — | UI icon id (hotbar, prompts); absent = the family icon. |
+| `capabilities[].classAffinity` | `"knight"` \| `"archer"` \| `"sorcerer"` \| `"thief"` | — | The class whose fantasy it belongs to (ADR-0004); absent = any class. |
+| `capabilities[].crossClass` | boolean | — | Other classes may learn it through the same source (ADR-0004 "simple" rule); default false. |
+| `capabilities[].supporting` | boolean | — | A supporting (numeric) entry rather than a verb (ADR-0004 P1, P2); default false. |

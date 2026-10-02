@@ -63,6 +63,7 @@ export * as simMath from './math';
 export * from './noise';
 export * from './physics';
 export * from './player';
+export * from './progression';
 export * from './properties';
 export * from './scene';
 export * from './sight';

@@ -304,7 +304,7 @@ describe('climbing (mw-e02.13)', () => {
     expect(top.climb).toBeUndefined();
   });
 
-  it('AC-2: a rough wall needs climb.rough: without it a jump at it attaches nothing', () => {
+  it('AC-2: a rough wall needs verb.climb.rough: without it a jump at it attaches nothing', () => {
     const without = new Rig([tower(ROUGH)], { feet: v(1.6, 0, 0) });
     without.step(input({ forward: 1, jump: true }));
     expect(without.state.traversal).toBeNull();
@@ -604,7 +604,7 @@ describe('climbing (mw-e02.13)', () => {
   });
 
   it('does not climb from a holdable surface on to one the climber cannot hold', () => {
-    // Ivy on a stone wall: without climb.rough the stone beside the ivy stops the climber.
+    // Ivy on a stone wall: without verb.climb.rough the stone beside the ivy stops the climber.
     const rig = new Rig([tower(ROUGH), block([1.95, 0, -0.5], [2, 3, 0.5], IVY)], {
       feet: v(1, 0, 0),
     });

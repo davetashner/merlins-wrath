@@ -107,6 +107,7 @@ import { climbTraversal, DEFAULT_CLIMB_TUNING } from '../climb/climb';
 import type { LedgeIndex } from '../climb/ledges';
 import { ledgeTraversal, type LedgeTraversalHook } from '../climb/mantle';
 import { ClimbRopeComponent } from '../climb/ropes';
+import { capabilitiesOf } from '../progression/capabilities';
 import type { TraversalHook } from '../character/traversal';
 import type { SceneSpawnPlacement } from '../scene/layout';
 import type { Vec3 } from '../stimulus/shapes';
@@ -505,9 +506,9 @@ export interface PlayerOptions {
 /** The player's climbing (mw-e02.13). */
 export interface PlayerClimbOptions {
   /**
-   * The player's climbing capabilities (class data, mw-e02.3), e.g. CLIMB_ROUGH_CAPABILITY; none by
-   * default (ladders, ropes and ivy need none). Mantling and climbing share one list: these and the
-   * ledge options' capabilities apply to both.
+   * Fixed climbing capabilities, e.g. CLIMB_ROUGH_CAPABILITY (tests and tools); none by default
+   * (ladders, ropes and ivy need none). Mantling and climbing share one list: these, the ledge
+   * options' and whatever the capability registry grants the player (mw-e19.2) apply to both.
    */
   readonly capabilities?: readonly string[];
 }
@@ -516,7 +517,10 @@ export interface PlayerClimbOptions {
 export interface PlayerLedgeOptions {
   /** The scene's ledges (`sceneLedges` of the loaded scene). */
   readonly index: LedgeIndex;
-  /** The player's capabilities (class data, mw-e02.3), e.g. LEDGE_HANG_CAPABILITY; none by default. */
+  /**
+   * Fixed capabilities, e.g. LEDGE_HANG_CAPABILITY (tests and tools), on top of what the capability
+   * registry grants the player (mw-e19.2); none by default.
+   */
   readonly capabilities?: readonly string[];
 }
 
@@ -576,11 +580,17 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     world.addSystem(dodgeMotionSystem({ moves, facing: lookFacing }));
   }
   const { ledges, climb } = options;
-  const capabilities = [...(ledges?.capabilities ?? []), ...(climb?.capabilities ?? [])];
+  // The options' fixed list plus whatever the capability registry grants the player (mw-e19.2), read
+  // live so a grant or revoke changes traversal from the next check.
+  const fixed = [...(ledges?.capabilities ?? []), ...(climb?.capabilities ?? [])];
+  const capabilities = (entity: EntityId | undefined): readonly string[] => {
+    const held = capabilitiesOf(world, entity);
+    return held.length === 0 ? fixed : [...fixed, ...held];
+  };
   const hooks: TraversalHook[] = [];
   let ledgeHook: LedgeTraversalHook | undefined;
   if (ledges !== undefined) {
-    ledgeHook = ledgeTraversal({ world, ledges: ledges.index, capabilities: () => capabilities });
+    ledgeHook = ledgeTraversal({ world, ledges: ledges.index, capabilities });
     hooks.push(ledgeHook);
   }
   if (climb !== undefined) {
@@ -588,7 +598,7 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     hooks.push(
       climbTraversal({
         world,
-        capabilities: () => capabilities,
+        capabilities,
         stamina: (entity) =>
           combat === undefined || entity === undefined
             ? undefined

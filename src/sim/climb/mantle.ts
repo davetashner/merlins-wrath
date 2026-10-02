@@ -52,7 +52,7 @@ import type { Ledge, LedgeIndex } from './ledges';
 import { CLIMB_ICE_CAPABILITY } from './surfaces';
 
 /** Capability that lets an actor grab, hang from and shimmy along ledges (class data, mw-e02.3). */
-export const LEDGE_HANG_CAPABILITY = 'climb.ledge';
+export const LEDGE_HANG_CAPABILITY = 'verb.climb.ledge';
 
 /**
  * The defaults when a controller profile has no `ledge` block (the shipped player profile states
