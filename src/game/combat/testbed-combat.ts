@@ -24,13 +24,21 @@
 //    its controller with its capsule as the sphere stimuli reach, force stimuli push characters
 //    through the impulse API, the player is pushable with its launch.mass, and the environmental
 //    damage rules (falls, wall strikes, crushing objects, burning hazards, from `environment-damage`
-//    content) resolve through the same damage model as every blow.
+//    content) resolve through the same damage model as every blow. And the arrow system
+//    (mw-e05.21): arrows the player's bow looses fly against the level (the collision world given)
+//    and every hurtbox, honouring the same i-frames, and resolve hits through the same damage model.
+//
+// The player's bow (mw-e05.21): `bow` goes to setupTestbedPlayer with the shortbow and a testbed
+// quiver (TESTBED_QUIVER), put away at the start so the attack button still swings the sword. Its
+// buttons (TESTBED_BOW_BUTTONS) keep clear of the knight's parry on ability 3.
 //
 // The caller registers the hit-volume, damage and placement components (src/main.ts does at world
 // creation; installGamePhysics registers placement).
 
 import {
+  ARCHER_BOW_ID,
   COMBAT_SANDBOX_ID,
+  compileBow,
   compileHitStop,
   compileMoves,
   compileSandbox,
@@ -50,6 +58,9 @@ import {
 } from '@content/index';
 import {
   ACTION_TIMELINE_COMPONENTS,
+  ArrowComponent,
+  arrowLookup,
+  bowLookup,
   CharacterController,
   CombatFacingComponent,
   DamageModel,
@@ -67,6 +78,7 @@ import {
   installCombatSandbox,
   installEnvironmentDamage,
   installHitReactions,
+  installArrows,
   installHitStop,
   installMeleeStrikes,
   installParry,
@@ -84,19 +96,54 @@ import {
   spawnSceneDummies,
   StaminaComponent,
   withAttackerVariants,
+  type BowButtons,
+  type CollisionWorld,
   type CombatSandboxOptions,
   type ComponentType,
   type DummyLockProfile,
   type EntityId,
   type FacingReader,
+  type PlayerBowOptions,
   type PlayerMeleeOptions,
   type Pusher,
+  type QuiverSlot,
   type SceneSpawnPlacement,
   type SocketTrackLookup,
   type Spawner,
   type World,
 } from '@sim/index';
 import { spawnTrainingDummy, trainingDummySpawns } from './training-dummy';
+
+/**
+ * The testbed's bow buttons: fire on the primary attack (left click, RT), take out and put away on
+ * ability 4 (4, D-pad Left), cycle arrows on ability 2 (2, RB) — not the sim's default ability 3,
+ * which is the knight's parry (docs/design/controls.md). Until class kits bind them (mw-e02.3).
+ */
+export const TESTBED_BOW_BUTTONS: BowButtons = Object.freeze({
+  fire: 'primaryAttack',
+  cycle: 'ability2',
+  toggle: 'ability4',
+});
+
+/** The testbed player's quiver, in cycle order: plain, broadhead and blunt arrows. */
+export const TESTBED_QUIVER: readonly QuiverSlot[] = Object.freeze([
+  Object.freeze({ arrow: 'standard', count: 20 }),
+  Object.freeze({ arrow: 'broadhead', count: 10 }),
+  Object.freeze({ arrow: 'blunt', count: 10 }),
+]);
+
+/** How the camera narrows while the bow is drawn (the bow's `aim`, presentation). */
+export interface BowAimView {
+  /** Vertical field of view at full aim, degrees. */
+  readonly fov: number;
+  /** Seconds to ease about two thirds of the way in (and back out). */
+  readonly time: number;
+}
+
+/** The player's bow: the sim's options plus the aim camera's. */
+export interface TestbedBow extends PlayerBowOptions {
+  readonly aim: BowAimView;
+}
 
 /** The first half of the testbed's combat wiring. */
 export interface TestbedCombat {
@@ -119,6 +166,8 @@ export interface TestbedCombat {
   readonly character: Frozen<ControllerTuning>;
   /** The environmental damage rules (mw-e04.34). */
   readonly environment: Frozen<EnvironmentDamageTuning>;
+  /** The player's shortbow and quiver (mw-e05.21), for setupTestbedPlayer. */
+  readonly bow: TestbedBow;
 }
 
 /** Compiles the knight's combat from `content` (see the file header, step 1). */
@@ -127,6 +176,7 @@ export function prepareTestbedCombat(content: GameContent): TestbedCombat {
   damage.register(shieldGuard());
   const moves = withAttackerVariants(compileMoves(content.all('move')));
   const targetable = content.get('targetable', TRAINING_DUMMY_TARGETABLE_ID);
+  const shortbow = content.get('bow', ARCHER_BOW_ID);
   const sandbox = {
     tuning: compileSandbox(content.get('sandbox', COMBAT_SANDBOX_ID)),
     moves,
@@ -147,6 +197,13 @@ export function prepareTestbedCombat(content: GameContent): TestbedCombat {
     targetable,
     character: content.get('controller', PLAYER_CONTROLLER_ID),
     environment: content.get('environment-damage', DEFAULT_ENVIRONMENT_DAMAGE_ID),
+    bow: {
+      bows: bowLookup(content.all('bow').map(compileBow)),
+      arrows: arrowLookup(content.all('arrow')),
+      loadout: { bow: shortbow.id, quiver: TESTBED_QUIVER },
+      buttons: TESTBED_BOW_BUTTONS,
+      aim: { fov: shortbow.aim.fov, time: shortbow.aim.time },
+    },
   };
 }
 
@@ -231,15 +288,17 @@ export interface TestbedCombatants {
 }
 
 /**
- * Adds the hit-volume system, the melee strikes and hit reactions to `world`, arms `player` (when
- * given) and spawns the scene's dummies (see the file header, step 2). Call `installSandboxRules`
- * first.
+ * Adds the hit-volume system, the melee strikes, hit reactions and arrows to `world`, arms `player`
+ * (when given) and spawns the scene's dummies (see the file header, step 2). Arrows hit the level in
+ * `collision` (RapierCollisionWorld in the game); without it they meet only hurtboxes. Call
+ * `installSandboxRules` first.
  */
 export function startTestbedCombat<TInput>(
   world: World<TInput>,
   combat: TestbedCombat,
   spawns: readonly SceneSpawnPlacement[],
   player?: EntityId,
+  collision?: CollisionWorld,
 ): TestbedCombatants {
   // A scene without a player has no timeline, stamina or melee yet; console-spawned dummies need them.
   ensureRegistered(world, [...ACTION_TIMELINE_COMPONENTS, ...MELEE_COMPONENTS, StaminaComponent]);
@@ -264,6 +323,14 @@ export function startTestbedCombat<TInput>(
     pushers,
     facing: bodyFacing,
   });
+  if (!world.isRegistered(ArrowComponent)) {
+    installArrows(world, {
+      arrows: combat.bow.arrows,
+      damage: combat.damage,
+      invulnerable: invulnerabilityRule(combat.moves),
+      ...(collision !== undefined && { collision }),
+    });
+  }
   if (player !== undefined) arm(world, combat, player);
   installWorldHarm(world, combat, player);
   return {

@@ -1,3 +1,5 @@
-// The third-person orbit camera (mw-e02.4) and its lock-on framing (mw-e02.16).
+// The third-person orbit camera (mw-e02.4), its lock-on framing (mw-e02.16) and the bow's aim zoom
+// (mw-e05.21).
+export * from './aim-zoom';
 export * from './lock-framing';
 export * from './orbit-camera';

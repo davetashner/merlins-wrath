@@ -248,6 +248,10 @@ export class OrbitCamera {
 export interface OrbitCameraTarget extends CameraLens {
   readonly position: { set(x: number, y: number, z: number): unknown };
   lookAt(x: number, y: number, z: number): unknown;
+  /** Vertical field of view, degrees: the bow's aim zoom writes it (mw-e05.21). */
+  fov: number;
+  /** Rebuilds the projection after `fov` changed (Three.js needs it; absent = nothing to do). */
+  updateProjectionMatrix?(): unknown;
 }
 
 /** Moves `camera` to `pose`, looking along its forward direction. */

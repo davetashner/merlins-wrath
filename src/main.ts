@@ -13,11 +13,14 @@ import {
   type GameContent,
 } from '@content/index';
 import {
+  arrowReadout,
+  bindArrows,
   bindSandboxDummies,
   createSandboxHud,
   dummyReadout,
   installSandboxRules,
   prepareTestbedCombat,
+  readArrowTransform,
   readDummyTransform,
   readSandboxDummyTransform,
   startTestbedCombat,
@@ -79,7 +82,12 @@ import { openSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { VfxSystem } from '@game/vfx/index';
 import { createRenderBootstrap } from '@render/bootstrap/index';
-import { createSandboxDummy, createTrainingDummy } from '@render/combat/index';
+import {
+  createArrowShaft,
+  createSandboxDummy,
+  createTrainingDummy,
+  disposeArrowShaft,
+} from '@render/combat/index';
 import { createCreatureProxy } from '@render/creatures/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
@@ -533,6 +541,29 @@ function startRenderer(root: HTMLElement): void {
       }
     };
 
+    // Arrows (mw-e05.21): every arrow the sim flies or rests gets a grey-box shaft after each step.
+    // Once any arrow exists, the e2e reads them from #app[data-arrows]; until then nothing is done.
+    let arrowsSeen = false;
+    let publishedArrows = '';
+    const drawArrows = (): void => {
+      const bound = bindArrows(world, sync, () => {
+        const shaft = createArrowShaft();
+        view.scene.add(shaft);
+        return { ...object3DBinding(shaft, readArrowTransform), dispose: disposeArrowShaft };
+      });
+      if (bound > 0) arrowsSeen = true;
+    };
+    const publishArrows = (): void => {
+      if (!arrowsSeen) return;
+      const readout = arrowReadout(
+        world,
+        (entity) => sync.has(entity),
+        (point) => projectToNdc(camera, point),
+      );
+      const json = JSON.stringify(readout);
+      if (json !== publishedArrows) root.dataset['arrows'] = publishedArrows = json;
+    };
+
     let lastFrameMs: number | undefined;
     const interactions: { tick: number; verb: string; spawn: string | null }[] = [];
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
@@ -580,6 +611,7 @@ function startRenderer(root: HTMLElement): void {
         );
         hitOverlay.sync(world);
         publishCreatures();
+        publishArrows();
         if (animation !== undefined) {
           animation.driver.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
           const probe = JSON.stringify(compactProbe(animation.driver.probe()));
@@ -623,6 +655,8 @@ function startRenderer(root: HTMLElement): void {
       // A controllable player (mw-e02.23) in scenes with a player start; it collides with the
       // scene through the sim's Rapier world (mw-e02.21) and brings the orbit camera (mw-e02.4),
       // which queries the same world read-only to stay out of walls.
+      // The controller, the camera and arrows (mw-e05.21) all collide with the sim's Rapier world.
+      const collision = new RapierCollisionWorld(physics);
       if (playerStart(loaded.layout.spawns) !== undefined) {
         const tuning = content.get('controller', PLAYER_CONTROLLER_ID);
         const cameraTuning = content.get('camera', PLAYER_CAMERA_ID);
@@ -642,11 +676,13 @@ function startRenderer(root: HTMLElement): void {
           sync,
           tuning,
           cameraTuning,
-          collision: new RapierCollisionWorld(physics),
+          collision,
           // The knight's moves: the dodge roll and backstep (mw-e04.8), the light chain and the
           // shield (mw-e04.6) are playable.
           moves: combat.moves,
           melee: combat.melee,
+          // The shortbow and a quiver (mw-e05.21): 4 takes it out, hold the attack button to draw.
+          bow: combat.bow,
           // Mantling for every class; ledge hangs are capability-gated (mw-e02.12), granted here
           // until class data (mw-e02.3) says who climbs.
           ledges: { capabilities: [LEDGE_HANG_CAPABILITY] },
@@ -733,7 +769,16 @@ function startRenderer(root: HTMLElement): void {
       }
       // Hit volumes, melee strikes, hit reactions (mw-e04.7, mw-e04.31), the player as a combatant
       // and the scene's training and sandbox dummies (mw-e04.6, mw-e04.9), after the player.
-      const { dummies } = startTestbedCombat(world, combat, loaded.layout.spawns, player?.entity);
+      // Arrows fly against the level and every hurtbox (mw-e05.21).
+      const { dummies } = startTestbedCombat(
+        world,
+        combat,
+        loaded.layout.spawns,
+        player?.entity,
+        collision,
+      );
+      drawArrows();
+      afterStep.push(drawArrows);
       // The scene's creature spawns (mw-e12.4), after combat so they are hittable and lockable. A
       // spawn naming a creature or faction that does not exist is reported, not fatal.
       const sceneCreatures = startCreatures(world, creatures, combat, loaded.layout.spawns);

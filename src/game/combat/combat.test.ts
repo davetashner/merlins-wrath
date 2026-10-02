@@ -2,6 +2,8 @@ import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
 import { KNIGHT_SHIELD_ID, loadGameContent } from '@content/index';
 import {
+  ARROW_COMPONENTS,
+  ArrowComponent,
   BlameComponent,
   CharacterController,
   DAMAGE_COMPONENTS,
@@ -135,5 +137,16 @@ describe('training dummy (mw-e04.6)', () => {
     const bare = world();
     startTestbedCombat(bare, prepareTestbedCombat(loadGameContent()), []);
     expect(bare.isRegistered(BlameComponent)).toBe(false);
+  });
+
+  it('mw-e05.21: installs the arrow system, unless the world already has one', () => {
+    const combat = prepareTestbedCombat(loadGameContent());
+    expect(combat.bow.loadout).toMatchObject({ bow: 'shortbow' });
+    expect(combat.bow.aim).toEqual({ fov: 55, time: 0.15 });
+    const w = world();
+    startTestbedCombat(w, combat, []);
+    expect(w.isRegistered(ArrowComponent)).toBe(true);
+    const own = world().register(...ARROW_COMPONENTS);
+    expect(() => startTestbedCombat(own, combat, [])).not.toThrow();
   });
 });

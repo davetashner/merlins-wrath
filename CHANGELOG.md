@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- The knight can shoot a bow in the testbed: press 4 to take the shortbow out, hold the left mouse
+  button (RT) to draw and let go to loose an arrow, which flies, drops and sticks in what it hits
+  (or glances off stone). The view narrows while you aim. Press 2 (RB) to switch between plain,
+  broadhead and blunt arrows; `?frames` shows the selected type and how many are left. The testbed
+  room has a wooden target board on its back wall to shoot at.
 - You can climb: walk into a ladder, a rope or ivy to grab it and climb (1.2 m/s on a ladder, slower on
   ivy), hold forward at the top to pull yourself up onto the ledge, jump to push off or crouch to let
   go. Ivy that burns away drops you, frozen or burning holds slip after a second, and climbing
