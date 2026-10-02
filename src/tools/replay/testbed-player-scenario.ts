@@ -31,6 +31,7 @@ import {
 } from '@game/combat/index';
 import { prepareCreatures, startCreatures, type GameCreatures } from '@game/creatures/index';
 import { ActionSampler } from '@game/input/index';
+import { prepareWorldItems, startWorldItems } from '@game/items/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
 import { installGamePhysics, playerFocus } from '@game/physics-objects';
 import { setupTestbedPlayer, type TransformReader } from '@game/player/index';
@@ -54,6 +55,7 @@ import {
   type RapierModule,
   type ReplayScenario,
   type SceneCreatures,
+  type WorldItems,
 } from '@sim/index';
 
 import { actionFrameCommand } from './action-frame-command';
@@ -148,6 +150,8 @@ export interface HeadlessGame<TInput> {
   readonly player: EntityId;
   readonly combat: TestbedCombat;
   readonly combatants: TestbedCombatants;
+  /** The world-item rules (mw-e17.7); the player has an inventory. */
+  readonly items: WorldItems;
   /** The creatures content has, and what the scene's creature spawns spawned (mw-e12.4). */
   readonly creatures: GameCreatures;
   readonly sceneCreatures: SceneCreatures;
@@ -166,7 +170,7 @@ export function createTestbedWorld(
 /**
  * Scene `scene` (default the testbed) with the player, wired as src/main.ts wires it — debug
  * commands with the sandbox's and creatures' spawners, the combat sandbox rules, physics, the
- * player, combat and creatures — minus the renderer. The combat sandbox's and creatures' e2e-free
+ * player, combat, world items and creatures — minus the renderer. The combat sandbox's and creatures' e2e-free
  * tests (tests/integration) run on it. `content` defaults to the game's; debug builds pass the dev
  * content (src/content/dev-content.ts), which has the fixture creatures.
  */
@@ -244,8 +248,11 @@ export function createGameWorld<TInput>(
   }).entity;
   focus.entity = player;
   const combatants = startTestbedCombat(world, combat, scene.layout.spawns, player, collision);
+  // World items (mw-e17.7): the scene's items, taken with Interact, dropped and thrown.
+  const items = prepareWorldItems(content);
+  startWorldItems(world, items, scene.spawns, player);
   const sceneCreatures = startCreatures(world, creatures, combat, scene.layout.spawns);
-  return { world, player, combat, combatants, creatures, sceneCreatures, sync };
+  return { world, player, combat, combatants, items, creatures, sceneCreatures, sync };
 }
 
 /** The replay scenario, on the given Rapier module. */

@@ -30,6 +30,8 @@ B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT
 | Ability 3 / parry (knight) | LB                       | 3                        |
 | Ability 4        | D-pad Left                         | 4                        |
 | Inventory        | View                               | I                        |
+| Drop item        | (inventory screen, mw-e17.10)      | G                        |
+| Throw item       | (inventory screen, mw-e17.10)      | T                        |
 | Pause            | Menu                               | Esc, P                   |
 
 B is the souls-like dodge button (mw-e04.8), which moved crouch to D-pad Down; the rest of the d-pad
@@ -53,6 +55,12 @@ out the attack button (left click, RT) draws instead of swinging (hold to draw, 
 ability 2 (2, RB) cycles the arrow type. Cycle stays off ability 3, the knight's parry
 (`TESTBED_BOW_BUTTONS`, src/game/combat/testbed-combat.ts). While drawn the camera narrows from 70° to
 the bow's aim field of view; `?frames` shows the selected arrow type and how many are left.
+
+**Items.** Interact takes an item lying in reach ("Take <name>"; mw-e17.7). Until the inventory
+screen (mw-e17.10) lets you pick which item, G drops the most recently picked-up item that may be
+dropped (a whole stack, in front of you) and T throws one of it along your look; quest items cannot
+be dropped or thrown. The pad gets drop and throw from the inventory screen, so they have no pad
+button yet.
 
 **Slow walk.** The quietest way to move (mw-e02.10): hold X to walk at 1.2 m/s, or push the left
 stick 30% or less. It works standing or crouched. Sprint while crouched stands you up (not under a

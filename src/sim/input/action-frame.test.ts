@@ -33,6 +33,8 @@ describe('action registry', () => {
       'ability3',
       'ability4',
       'inventory',
+      'drop',
+      'throw',
       'pause',
     ]);
     expect(ACTIONS.move.kind).toBe('vector');

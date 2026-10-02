@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { contentId, ref } from '../schema.ts';
 import { worldPropertiesSchema } from '../world-properties.ts';
 import { interactableSchema } from './interaction.ts';
+import { ITEM_STACK_GUARD } from './item.ts';
 import { KIT_PURPOSES, vec3Schema } from './kit.ts';
 
 /** Placements snap to this fraction of a grid cell. */
@@ -107,6 +108,20 @@ export const sceneSpawnSchema = z.strictObject({
   targetable: ref('targetable')
     .optional()
     .describe('Makes the spawned entity a lock-on target with this profile (mw-e02.16).'),
+  item: z
+    .strictObject({
+      id: ref('item').describe('The item lying here.'),
+      count: z
+        .int()
+        .min(1)
+        .max(ITEM_STACK_GUARD)
+        .default(1)
+        .describe('Units in the one world item (a pile of arrows); default 1.'),
+    })
+    .optional()
+    .describe(
+      'Places an item here as a world item the player can take, drop and throw (mw-e17.7).',
+    ),
   creature: ref('creature')
     .optional()
     .describe('Creature to spawn here (mw-e12.4); faces the spawn’s yaw.'),

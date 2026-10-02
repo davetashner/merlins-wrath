@@ -51,6 +51,20 @@ describe('scene schema (mw-e00.21)', () => {
     ]);
   });
 
+  it('mw-e17.7: an item spawn names an item and a count of 1 by default, within the unit guard', () => {
+    const loot = { id: 'loot', at: [0, 0, 0], item: { id: 'healing-draught' } };
+    expect(sceneSchema.parse({ ...room, spawns: [loot] }).spawns[0]?.item).toEqual({
+      id: new ContentRef('item', 'healing-draught'),
+      count: 1,
+    });
+    expect(problems({ ...room, spawns: [{ ...loot, item: { id: 'gold', count: 0 } }] })).toEqual([
+      expect.stringMatching(/^spawns\.0\.item\.count: Too small/),
+    ]);
+    expect(
+      problems({ ...room, spawns: [{ ...loot, item: { id: 'gold', count: 10_000 } }] }),
+    ).toEqual([expect.stringMatching(/^spawns\.0\.item\.count: Too big/)]);
+  });
+
   it('AC-3: rejects two spawns with the same id', () => {
     const spawn = { id: 'player-start', at: [0, 0, 0] };
     expect(problems({ ...room, spawns: [spawn, spawn] })).toEqual([

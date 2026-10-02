@@ -106,6 +106,8 @@ export interface SceneSpawnSpec {
   readonly interact?: InteractableSpec | undefined;
   /** Makes the spawned entity a lock-on target with this profile (mw-e02.16). */
   readonly targetable?: { readonly id: string } | undefined;
+  /** An item lying here as a world item (mw-e17.7). */
+  readonly item?: { readonly id: { readonly id: string }; readonly count: number } | undefined;
   /** A creature to spawn here (mw-e12.4). */
   readonly creature?: { readonly id: string } | undefined;
   /** The faction the creature joins instead of its definition's. */
@@ -205,6 +207,8 @@ export interface SceneSpawnPlacement {
   readonly interact?: InteractableSpec | undefined;
   /** Its lock-on target profile, when it is targetable (see src/sim/targeting). */
   readonly targetable?: string | undefined;
+  /** The item lying here (see src/sim/items), when there is one. */
+  readonly item?: { readonly id: string; readonly count: number };
   /** The creature spawned here (see src/sim/creatures), when there is one. */
   readonly creature?: string;
   /** The faction that creature joins instead of its definition's. */
@@ -368,6 +372,9 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       tags: Object.freeze([...spawn.tags]),
       interact: spawn.interact,
       targetable: spawn.targetable?.id,
+      ...(spawn.item !== undefined && {
+        item: Object.freeze({ id: spawn.item.id.id, count: spawn.item.count }),
+      }),
       ...(spawn.creature !== undefined && { creature: spawn.creature.id }),
       ...(spawn.faction !== undefined && { faction: spawn.faction.id }),
       ...(spawn.patrol !== undefined && {
