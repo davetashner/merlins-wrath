@@ -297,6 +297,7 @@ export {
 export {
   ARMOR_SLOTS,
   checkItems,
+  DEFAULT_NON_PROFICIENT_PENALTY,
   EQUIP_SLOTS,
   ITEM_CATEGORIES,
   ITEM_ICON_PATTERN,
@@ -307,6 +308,7 @@ export {
   itemKeys,
   itemSchema,
   MAX_ARMOR_PIECE_KG,
+  MAX_PENALTY_MULTIPLIER,
   WEIGHT_CLASSES,
   type EquipSlot,
   type ItemCategory,

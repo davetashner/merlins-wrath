@@ -14,6 +14,9 @@
 //   stack.
 // - Quest items default to `noSell` and `noDrop` (AC-5); an item of category `quest` is a quest item.
 // - Armor pieces never carry their own `noiseMultiplier`: the load class sets the wearer's noise.
+// - Proficiency is soft (mw-e17.4): any class may equip anything. An item worn by a class lacking
+//   one of its `equip.proficiencies` applies its `equip.nonProficient` penalty (slower draw, dearer
+//   stamina, optionally louder; DEFAULT_NON_PROFICIENT_PENALTY when the file sets none).
 //
 // What ADR-0004 (progression) fixes: equipment grants capabilities (`grants`), each a capability id
 // from the registry (src/content/data/capability/) that the player has while the item is equipped
@@ -85,6 +88,49 @@ export const ITEM_ICON_PATTERN = /^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const kilograms = (doc: string) =>
   z.number().positive().max(MAX_ARMOR_PIECE_KG).describe(`${doc} Kilograms (ADR-0003).`);
 
+/** Upper bound of a non-proficiency penalty multiplier. */
+export const MAX_PENALTY_MULTIPLIER = 3;
+
+/**
+ * The non-proficiency penalty an item applies when its wearer's class lacks one of its proficiency
+ * tags and the item does not set its own (mw-e17.4): slower to draw or ready, dearer in stamina, no
+ * louder. Armor proficiency proper is the class's armor capacity (ADR-0003).
+ */
+export const DEFAULT_NON_PROFICIENT_PENALTY = {
+  drawTimeMultiplier: 1.5,
+  staminaCostMultiplier: 1.25,
+  noiseMultiplier: 1,
+} as const;
+
+const penaltyMultiplier = (doc: string, fallback: number) =>
+  z
+    .number()
+    .min(1)
+    .max(MAX_PENALTY_MULTIPLIER)
+    .default(fallback)
+    .describe(`${doc} 1 = no penalty; default ${String(fallback)}.`);
+
+const nonProficientSchema = z
+  .strictObject({
+    drawTimeMultiplier: penaltyMultiplier(
+      'Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05).',
+      DEFAULT_NON_PROFICIENT_PENALTY.drawTimeMultiplier,
+    ),
+    staminaCostMultiplier: penaltyMultiplier(
+      'Multiplier on the stamina its moves cost (combat reads it, mw-e04).',
+      DEFAULT_NON_PROFICIENT_PENALTY.staminaCostMultiplier,
+    ),
+    noiseMultiplier: penaltyMultiplier(
+      'Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003).',
+      DEFAULT_NON_PROFICIENT_PENALTY.noiseMultiplier,
+    ),
+  })
+  .default({ ...DEFAULT_NON_PROFICIENT_PENALTY })
+  .describe(
+    'The penalty while worn by a class lacking any of its proficiencies (soft proficiency, ' +
+      'mw-e17.4): the equip succeeds and the wearer pays this instead.',
+  );
+
 const equipSchema = <const S extends readonly [EquipSlot, ...EquipSlot[]]>(slots: S) =>
   z
     .strictObject({
@@ -96,6 +142,7 @@ const equipSchema = <const S extends readonly [EquipSlot, ...EquipSlot[]]>(slots
           'Class proficiency tags it calls for, e.g. "blades", "heavy-armor" (class data, mw-e19.4). ' +
             'Soft: any class may equip it (mw-e17.4).',
         ),
+      nonProficient: nonProficientSchema,
     })
     .describe('How it is equipped.');
 

@@ -11,11 +11,13 @@ import {
   loadItemFixtureContent,
 } from '../test-fixtures.ts';
 import {
+  DEFAULT_NON_PROFICIENT_PENALTY,
   ITEM_CATEGORIES,
   ITEM_STACK_GUARD,
   itemIconProblems,
   itemKeys,
   itemSchema,
+  MAX_PENALTY_MULTIPLIER,
   type ItemDef,
   type ItemDefInput,
   type ItemEntry,
@@ -209,6 +211,41 @@ describe('item schema: weight (ADR-0003)', () => {
   it('weightClass is light, medium or heavy', () => {
     expect(parse({ ...misc, weightClass: 'heavy' }).weightClass).toBe('heavy');
     expect(problems({ ...misc, weightClass: 'huge' })).toHaveLength(1);
+  });
+});
+
+describe('item schema: non-proficiency penalty (mw-e17.4)', () => {
+  const plate = {
+    ...misc,
+    category: 'armor',
+    equip: { slot: 'body', proficiencies: ['heavy-armor'] },
+    armor: { weightKg: 12 },
+  } satisfies ItemDefInput;
+
+  const penalty = (value: ItemDefInput) => {
+    const item = parse(value);
+    return 'equip' in item ? item.equip?.nonProficient : undefined;
+  };
+
+  it('defaults to DEFAULT_NON_PROFICIENT_PENALTY, field by field', () => {
+    expect(penalty(plate)).toEqual(DEFAULT_NON_PROFICIENT_PENALTY);
+    expect(
+      penalty({ ...plate, equip: { ...plate.equip, nonProficient: { noiseMultiplier: 1.2 } } }),
+    ).toEqual({ ...DEFAULT_NON_PROFICIENT_PENALTY, noiseMultiplier: 1.2 });
+  });
+
+  it('every multiplier is between 1 (no penalty) and the maximum', () => {
+    const withPenalty = (nonProficient: unknown) => ({
+      ...plate,
+      equip: { ...plate.equip, nonProficient },
+    });
+    expect(problems(withPenalty({ drawTimeMultiplier: 1 }))).toEqual([]);
+    expect(problems(withPenalty({ drawTimeMultiplier: MAX_PENALTY_MULTIPLIER }))).toEqual([]);
+    expect(problems(withPenalty({ staminaCostMultiplier: 0.9 }))).toHaveLength(1);
+    expect(problems(withPenalty({ noiseMultiplier: MAX_PENALTY_MULTIPLIER + 0.1 }))).toHaveLength(
+      1,
+    );
+    expect(problems(withPenalty({ louder: 2 }))).toHaveLength(1);
   });
 });
 

@@ -96,6 +96,39 @@
                 "type": "string",
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
               }
+            },
+            "nonProficient": {
+              "default": {
+                "drawTimeMultiplier": 1.5,
+                "staminaCostMultiplier": 1.25,
+                "noiseMultiplier": 1
+              },
+              "description": "The penalty while worn by a class lacking any of its proficiencies (soft proficiency, mw-e17.4): the equip succeeds and the wearer pays this instead.",
+              "type": "object",
+              "properties": {
+                "drawTimeMultiplier": {
+                  "default": 1.5,
+                  "description": "Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05). 1 = no penalty; default 1.5.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                },
+                "staminaCostMultiplier": {
+                  "default": 1.25,
+                  "description": "Multiplier on the stamina its moves cost (combat reads it, mw-e04). 1 = no penalty; default 1.25.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                },
+                "noiseMultiplier": {
+                  "default": 1,
+                  "description": "Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003). 1 = no penalty; default 1.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                }
+              },
+              "additionalProperties": false
             }
           },
           "required": [
@@ -229,6 +262,39 @@
                 "type": "string",
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
               }
+            },
+            "nonProficient": {
+              "default": {
+                "drawTimeMultiplier": 1.5,
+                "staminaCostMultiplier": 1.25,
+                "noiseMultiplier": 1
+              },
+              "description": "The penalty while worn by a class lacking any of its proficiencies (soft proficiency, mw-e17.4): the equip succeeds and the wearer pays this instead.",
+              "type": "object",
+              "properties": {
+                "drawTimeMultiplier": {
+                  "default": 1.5,
+                  "description": "Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05). 1 = no penalty; default 1.5.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                },
+                "staminaCostMultiplier": {
+                  "default": 1.25,
+                  "description": "Multiplier on the stamina its moves cost (combat reads it, mw-e04). 1 = no penalty; default 1.25.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                },
+                "noiseMultiplier": {
+                  "default": 1,
+                  "description": "Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003). 1 = no penalty; default 1.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                }
+              },
+              "additionalProperties": false
             }
           },
           "required": [
@@ -359,6 +425,39 @@
                 "type": "string",
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
               }
+            },
+            "nonProficient": {
+              "default": {
+                "drawTimeMultiplier": 1.5,
+                "staminaCostMultiplier": 1.25,
+                "noiseMultiplier": 1
+              },
+              "description": "The penalty while worn by a class lacking any of its proficiencies (soft proficiency, mw-e17.4): the equip succeeds and the wearer pays this instead.",
+              "type": "object",
+              "properties": {
+                "drawTimeMultiplier": {
+                  "default": 1.5,
+                  "description": "Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05). 1 = no penalty; default 1.5.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                },
+                "staminaCostMultiplier": {
+                  "default": 1.25,
+                  "description": "Multiplier on the stamina its moves cost (combat reads it, mw-e04). 1 = no penalty; default 1.25.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                },
+                "noiseMultiplier": {
+                  "default": 1,
+                  "description": "Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003). 1 = no penalty; default 1.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                }
+              },
+              "additionalProperties": false
             }
           },
           "required": [
@@ -910,6 +1009,39 @@
                 "type": "string",
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
               }
+            },
+            "nonProficient": {
+              "default": {
+                "drawTimeMultiplier": 1.5,
+                "staminaCostMultiplier": 1.25,
+                "noiseMultiplier": 1
+              },
+              "description": "The penalty while worn by a class lacking any of its proficiencies (soft proficiency, mw-e17.4): the equip succeeds and the wearer pays this instead.",
+              "type": "object",
+              "properties": {
+                "drawTimeMultiplier": {
+                  "default": 1.5,
+                  "description": "Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05). 1 = no penalty; default 1.5.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                },
+                "staminaCostMultiplier": {
+                  "default": 1.25,
+                  "description": "Multiplier on the stamina its moves cost (combat reads it, mw-e04). 1 = no penalty; default 1.25.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                },
+                "noiseMultiplier": {
+                  "default": 1,
+                  "description": "Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003). 1 = no penalty; default 1.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                }
+              },
+              "additionalProperties": false
             }
           },
           "required": [
@@ -1108,6 +1240,39 @@
                 "type": "string",
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
               }
+            },
+            "nonProficient": {
+              "default": {
+                "drawTimeMultiplier": 1.5,
+                "staminaCostMultiplier": 1.25,
+                "noiseMultiplier": 1
+              },
+              "description": "The penalty while worn by a class lacking any of its proficiencies (soft proficiency, mw-e17.4): the equip succeeds and the wearer pays this instead.",
+              "type": "object",
+              "properties": {
+                "drawTimeMultiplier": {
+                  "default": 1.5,
+                  "description": "Multiplier on the time to draw, ready or raise it (combat reads it, mw-e04/mw-e05). 1 = no penalty; default 1.5.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                },
+                "staminaCostMultiplier": {
+                  "default": 1.25,
+                  "description": "Multiplier on the stamina its moves cost (combat reads it, mw-e04). 1 = no penalty; default 1.25.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                },
+                "noiseMultiplier": {
+                  "default": 1,
+                  "description": "Multiplier on the wearer’s noise, on top of the load class (clamped with it, ADR-0003). 1 = no penalty; default 1.",
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 3
+                }
+              },
+              "additionalProperties": false
             }
           },
           "required": [
