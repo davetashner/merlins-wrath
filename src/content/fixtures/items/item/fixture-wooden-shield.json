@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-wooden-shield",
+  "category": "shield",
+  "notes": "A wooden shield: ADR-0003 reference weight 3 kg, blocking like the knight starting shield.",
+  "icon": "icon-item-fixture-wooden-shield-01",
+  "value": 30,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "wood"
+  },
+  "equip": {
+    "slot": "off-hand",
+    "proficiencies": ["shields"]
+  },
+  "shield": {
+    "weightKg": 3,
+    "profile": "wood-shield"
+  }
+}

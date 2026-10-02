@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-climbing-hook",
+  "category": "tool",
+  "notes": "A climbing hook on the belt grants rough-wall climbing to any class while carried (ADR-0004).",
+  "icon": "icon-item-fixture-climbing-hook-01",
+  "value": 15,
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "tool-belt"
+  },
+  "grants": [
+    {
+      "capability": "verb.climb.rough",
+      "while": "carried",
+      "crossClass": true
+    }
+  ]
+}

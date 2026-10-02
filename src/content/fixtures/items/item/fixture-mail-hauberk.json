@@ -1,0 +1,19 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-mail-hauberk",
+  "category": "armor",
+  "notes": "A mail body piece at the ADR-0003 reference weight (mail body 8 kg).",
+  "icon": "icon-item-fixture-mail-hauberk-01",
+  "value": 120,
+  "weightClass": "heavy",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "body",
+    "proficiencies": ["medium-armor"]
+  },
+  "armor": {
+    "weightKg": 8
+  }
+}

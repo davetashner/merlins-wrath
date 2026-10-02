@@ -1,0 +1,1751 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "weapon"
+        },
+        "equip": {
+          "type": "object",
+          "properties": {
+            "slot": {
+              "type": "string",
+              "enum": [
+                "main-hand",
+                "off-hand",
+                "both-hands"
+              ],
+              "description": "Slot it is worn or held in: main-hand, off-hand, both-hands."
+            },
+            "proficiencies": {
+              "default": [],
+              "description": "Class proficiency tags it calls for, e.g. \"blades\", \"heavy-armor\" (class data, mw-e19.4). Soft: any class may equip it (mw-e17.4).",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              }
+            }
+          },
+          "required": [
+            "slot"
+          ],
+          "additionalProperties": false,
+          "description": "How it is equipped."
+        },
+        "weapon": {
+          "type": "object",
+          "properties": {
+            "moves": {
+              "description": "Moves it adds to the wielder’s moveset; its heft lives there (mw-e04).",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "move"
+              }
+            }
+          },
+          "additionalProperties": false,
+          "description": "Weapon data."
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category",
+        "equip",
+        "weapon"
+      ],
+      "additionalProperties": false,
+      "description": "A weapon. Weightless for load (ADR-0003): its heft is in its moves."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "armor"
+        },
+        "equip": {
+          "type": "object",
+          "properties": {
+            "slot": {
+              "type": "string",
+              "enum": [
+                "head",
+                "body",
+                "hands",
+                "feet"
+              ],
+              "description": "Slot it is worn or held in: head, body, hands, feet."
+            },
+            "proficiencies": {
+              "default": [],
+              "description": "Class proficiency tags it calls for, e.g. \"blades\", \"heavy-armor\" (class data, mw-e19.4). Soft: any class may equip it (mw-e17.4).",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              }
+            }
+          },
+          "required": [
+            "slot"
+          ],
+          "additionalProperties": false,
+          "description": "How it is equipped."
+        },
+        "armor": {
+          "type": "object",
+          "properties": {
+            "weightKg": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 20,
+              "description": "Weight counted towards the wearer’s load. Kilograms (ADR-0003)."
+            }
+          },
+          "required": [
+            "weightKg"
+          ],
+          "additionalProperties": false,
+          "description": "Armor data."
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category",
+        "equip",
+        "armor"
+      ],
+      "additionalProperties": false,
+      "description": "An armor piece for the head, body, hands or feet."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "shield"
+        },
+        "equip": {
+          "type": "object",
+          "properties": {
+            "slot": {
+              "type": "string",
+              "enum": [
+                "off-hand"
+              ],
+              "description": "Slot it is worn or held in: off-hand."
+            },
+            "proficiencies": {
+              "default": [],
+              "description": "Class proficiency tags it calls for, e.g. \"blades\", \"heavy-armor\" (class data, mw-e19.4). Soft: any class may equip it (mw-e17.4).",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              }
+            }
+          },
+          "required": [
+            "slot"
+          ],
+          "additionalProperties": false,
+          "description": "How it is equipped."
+        },
+        "shield": {
+          "type": "object",
+          "properties": {
+            "weightKg": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 20,
+              "description": "Weight counted towards the wearer’s load. Kilograms (ADR-0003)."
+            },
+            "profile": {
+              "description": "What a block with it does (mw-e04.6).",
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "x-contentRef": "shield"
+            }
+          },
+          "required": [
+            "weightKg",
+            "profile"
+          ],
+          "additionalProperties": false,
+          "description": "Shield data."
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category",
+        "equip",
+        "shield"
+      ],
+      "additionalProperties": false,
+      "description": "A shield, held in the off hand."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "ammo"
+        },
+        "ammo": {
+          "type": "object",
+          "properties": {
+            "arrow": {
+              "description": "The arrow it fires as (mw-e05).",
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+              "x-contentRef": "arrow"
+            }
+          },
+          "required": [
+            "arrow"
+          ],
+          "additionalProperties": false,
+          "description": "Ammunition data."
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category",
+        "ammo"
+      ],
+      "additionalProperties": false,
+      "description": "Ammunition. Must be stackable."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "book"
+        },
+        "book": {
+          "type": "object",
+          "properties": {
+            "textKey": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$",
+              "description": "Localisation key of the readable text."
+            },
+            "teaches": {
+              "default": [],
+              "description": "Capabilities studying it can teach, as a learned book source (ADR-0004).",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$",
+                "description": "Capability id declared in src/content/data/capability/, e.g. \"spell.mage-hand\"."
+              }
+            }
+          },
+          "required": [
+            "textKey"
+          ],
+          "additionalProperties": false,
+          "description": "Book data."
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category",
+        "book"
+      ],
+      "additionalProperties": false,
+      "description": "A book, note or scroll the player reads."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "key"
+        },
+        "key": {
+          "type": "object",
+          "properties": {
+            "opens": {
+              "default": [],
+              "description": "Lock ids it opens (mw-e17.5 keyring).",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              }
+            },
+            "opensTag": {
+              "description": "A master key: opens every lock with this tag.",
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "singleUse": {
+              "default": false,
+              "description": "Consumed when it opens a lock.",
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Key data: opens and/or opensTag."
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category",
+        "key"
+      ],
+      "additionalProperties": false,
+      "description": "A key. Lives on the keyring (mw-e17.5)."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "consumable"
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category"
+      ],
+      "additionalProperties": false,
+      "description": "A consumable: using it spends one unit. Needs at least one use effect."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "tool"
+        },
+        "equip": {
+          "type": "object",
+          "properties": {
+            "slot": {
+              "type": "string",
+              "enum": [
+                "tool-belt"
+              ],
+              "description": "Slot it is worn or held in: tool-belt."
+            },
+            "proficiencies": {
+              "default": [],
+              "description": "Class proficiency tags it calls for, e.g. \"blades\", \"heavy-armor\" (class data, mw-e19.4). Soft: any class may equip it (mw-e17.4).",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              }
+            }
+          },
+          "required": [
+            "slot"
+          ],
+          "additionalProperties": false,
+          "description": "How it is equipped."
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category"
+      ],
+      "additionalProperties": false,
+      "description": "A tool, e.g. lockpicks; usually grants its verb while carried (ADR-0004)."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "quest"
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category"
+      ],
+      "additionalProperties": false,
+      "description": "A quest item: noSell and noDrop by default."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "artifact"
+        },
+        "equip": {
+          "type": "object",
+          "properties": {
+            "slot": {
+              "type": "string",
+              "enum": [
+                "trinket"
+              ],
+              "description": "Slot it is worn or held in: trinket."
+            },
+            "proficiencies": {
+              "default": [],
+              "description": "Class proficiency tags it calls for, e.g. \"blades\", \"heavy-armor\" (class data, mw-e19.4). Soft: any class may equip it (mw-e17.4).",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              }
+            }
+          },
+          "required": [
+            "slot"
+          ],
+          "additionalProperties": false,
+          "description": "How it is equipped."
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category"
+      ],
+      "additionalProperties": false,
+      "description": "An artifact or trinket."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "currency"
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category"
+      ],
+      "additionalProperties": false,
+      "description": "Money. Must be stackable; gold clamps at its cap (mw-e17.3)."
+    },
+    {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Editor hint only; ignored by the loader."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Unique item id, e.g. \"oil-flask\". Stable once shipped (saves)."
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the item is for, for designers and review."
+        },
+        "nameKey": {
+          "description": "Localisation key of the display name; absent = \"item.<id>.name\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "descKey": {
+          "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Inventory icon asset id (style bible §15.1); a placeholder until the art lands."
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Base price in gold (merchants adjust it, mw-e20)."
+        },
+        "stackable": {
+          "default": false,
+          "description": "Several units share one inventory entry.",
+          "type": "boolean"
+        },
+        "maxStack": {
+          "description": "Units shown per stack (display chunking only, ADR-0003); required when stackable, forbidden otherwise.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9999
+        },
+        "weightClass": {
+          "default": "light",
+          "description": "Impact noise and physics when dropped or thrown; never carried weight (ADR-0003).",
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy"
+          ]
+        },
+        "worldProperties": {
+          "$ref": "#/$defs/worldProperties"
+        },
+        "grants": {
+          "$ref": "#/$defs/grants"
+        },
+        "use": {
+          "$ref": "#/$defs/use"
+        },
+        "flags": {
+          "$ref": "#/$defs/flags"
+        },
+        "category": {
+          "type": "string",
+          "const": "misc"
+        }
+      },
+      "required": [
+        "id",
+        "notes",
+        "icon",
+        "value",
+        "category"
+      ],
+      "additionalProperties": false,
+      "description": "Anything else."
+    }
+  ],
+  "$defs": {
+    "worldProperties": {
+      "description": "World properties when dropped or thrown (an oil flask is flammable).",
+      "type": "object",
+      "properties": {
+        "material": {
+          "description": "Material preset id (a material content entry).",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "x-contentRef": "material"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": -273.15,
+          "maximum": 10000,
+          "description": "Current temperature, °C."
+        },
+        "flammable": {
+          "type": "boolean",
+          "description": "Fire can ignite it."
+        },
+        "ignitionPoint": {
+          "type": "number",
+          "minimum": -273.15,
+          "maximum": 10000,
+          "description": "Temperature at which it ignites, °C."
+        },
+        "fuel": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 86400,
+          "description": "Seconds of burning left."
+        },
+        "burning": {
+          "type": "boolean",
+          "description": "On fire right now."
+        },
+        "wetness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How soaked it is (dry … saturated), 0 … 1."
+        },
+        "frozen": {
+          "type": "boolean",
+          "description": "Frozen solid."
+        },
+        "freezePoint": {
+          "type": "number",
+          "minimum": -273.15,
+          "maximum": 10000,
+          "description": "Temperature at or below which it freezes, °C."
+        },
+        "conductive": {
+          "type": "boolean",
+          "description": "Conducts electric charge."
+        },
+        "charge": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Stored electric charge."
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Mass, kg."
+        },
+        "fragile": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000,
+          "description": "Impact energy that breaks it, J."
+        },
+        "hp": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Structural hit points."
+        },
+        "density": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 100000,
+          "description": "Density, kg/m³; below 1000 it floats in water."
+        },
+        "climbable": {
+          "type": "string",
+          "enum": [
+            "none",
+            "ladder",
+            "rope",
+            "ivy",
+            "rough",
+            "sheer"
+          ],
+          "description": "Climbing grade: none, ladder, rope, ivy (easy), rough (needs a climber), sheer (needs a tool)."
+        },
+        "liftable": {
+          "type": "boolean",
+          "description": "Can be picked up and carried."
+        },
+        "pushable": {
+          "type": "boolean",
+          "description": "Can be pushed or dragged."
+        },
+        "hideable": {
+          "type": "boolean",
+          "description": "An actor can hide in or behind it."
+        },
+        "reflective": {
+          "type": "boolean",
+          "description": "Reflects light beams and bolts."
+        },
+        "transparent": {
+          "type": "boolean",
+          "description": "Light and sight pass through it."
+        },
+        "opaque": {
+          "type": "boolean",
+          "description": "Fully blocks light and sight."
+        },
+        "lightEmitter": {
+          "type": "object",
+          "properties": {
+            "intensity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000,
+              "description": "Light output (a torch is about 100)."
+            },
+            "radius": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Reach, m."
+            }
+          },
+          "required": [
+            "intensity",
+            "radius"
+          ],
+          "additionalProperties": false,
+          "description": "Emits light."
+        },
+        "soundDamping": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of sound it absorbs, 0 … 1."
+        },
+        "friction": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Surface friction coefficient."
+        },
+        "impactAbsorb": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fraction of impact energy it absorbs, 0 … 1."
+        },
+        "owner": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Ownership tag (faction or owner id)."
+        },
+        "liquid": {
+          "type": "boolean",
+          "description": "A liquid: it pours, puddles and can have a water surface."
+        },
+        "flammableGas": {
+          "type": "boolean",
+          "description": "A gas that ignites (flares or explodes) when fire reaches it."
+        },
+        "extinguishable": {
+          "type": "boolean",
+          "description": "A fire or light source that water, force or an interaction puts out."
+        },
+        "waterSurface": {
+          "type": "boolean",
+          "description": "Top surface of a body of liquid: cold freezes it into walkable ice (needs a liquid material)."
+        },
+        "unstable": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000,
+          "description": "Force of one push, blast or quake that topples it, J."
+        },
+        "suspended": {
+          "type": "boolean",
+          "description": "Hangs from its support; falls when the support breaks, burns or is cut."
+        },
+        "support": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Entity a suspended object hangs from (0 = none); set when the level spawns."
+        },
+        "breakable": {
+          "type": "boolean",
+          "description": "A single hit at or above its toughness for that kind of hit breaks it."
+        },
+        "toughness": {
+          "type": "object",
+          "properties": {
+            "blunt": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000,
+              "description": "Blunt hit energy that breaks it, J."
+            },
+            "slash": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000,
+              "description": "Slash hit energy that breaks it, J."
+            },
+            "pierce": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000,
+              "description": "Pierce hit energy that breaks it, J."
+            },
+            "force": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000,
+              "description": "Force (blast, quake, boulder) energy that breaks it, J."
+            }
+          },
+          "additionalProperties": false,
+          "description": "Per kind of hit, the single-hit energy that breaks a breakable object; a kind left out never does."
+        },
+        "bashable": {
+          "type": "boolean",
+          "description": "A shield bash or kick shoves it (or breaks it when breakable)."
+        },
+        "cuttable": {
+          "type": "boolean",
+          "description": "Slash or pierce damage severs it."
+        },
+        "shootable": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000,
+          "description": "Projectile impulse that fires its signal, N·s."
+        },
+        "softAnchor": {
+          "type": "boolean",
+          "description": "Rope arrows and hooks embed in it."
+        },
+        "surfaceHardness": {
+          "type": "string",
+          "enum": [
+            "soft",
+            "medium",
+            "hard"
+          ],
+          "description": "Footstep loudness and whether arrows stick (soft, medium) or ricochet (hard)."
+        },
+        "chargeActivated": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000,
+          "description": "Stored charge at which the mechanism fires."
+        },
+        "lightActivated": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000000,
+          "description": "Light level on it at which the mechanism fires."
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Not perceivable or targetable until revealed."
+        },
+        "trapped": {
+          "type": "boolean",
+          "description": "Interacting with it triggers its trap unless disarmed first (needs a trap)."
+        },
+        "trap": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "description": "Trap definition id a trapped object triggers."
+        },
+        "container": {
+          "type": "boolean",
+          "description": "Holds items (contents live in the e18 container component)."
+        },
+        "remains": {
+          "type": "boolean",
+          "description": "Inert skeletal or corpse remains that summoning can raise."
+        },
+        "noiseMultiplier": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 3,
+          "description": "Multiplier on its wearer's noise; an actor's is the product of its equipment's."
+        }
+      },
+      "additionalProperties": false
+    },
+    "grants": {
+      "default": [],
+      "description": "Capabilities the item grants while equipped or carried (ADR-0004).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "capability": {
+            "type": "string",
+            "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$",
+            "description": "Capability id declared in src/content/data/capability/, e.g. \"spell.mage-hand\"."
+          },
+          "while": {
+            "type": "string",
+            "enum": [
+              "equipped",
+              "carried"
+            ],
+            "description": "When the player has it: while the item is equipped (an equipment:<id> source), or while it is carried, e.g. a tool on the belt (ADR-0004)."
+          },
+          "crossClass": {
+            "description": "Any class gains it through this item, e.g. a crowbar’s pry (ADR-0004 \"simple\" rule); default false.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "capability",
+          "while"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "use": {
+      "description": "Effects of using it; absent = no use.",
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "restore"
+              },
+              "pool": {
+                "type": "string",
+                "enum": [
+                  "health",
+                  "stamina",
+                  "mana"
+                ]
+              },
+              "amount": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 1000,
+                "description": "Points restored."
+              }
+            },
+            "required": [
+              "op",
+              "pool",
+              "amount"
+            ],
+            "additionalProperties": false,
+            "description": "Restore points of a pool (a potion, a ration)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "stat-step"
+              },
+              "pool": {
+                "type": "string",
+                "enum": [
+                  "health",
+                  "stamina",
+                  "mana"
+                ]
+              },
+              "amount": {
+                "type": "number",
+                "const": 10,
+                "description": "Always +10 (ADR-0004 P5)."
+              }
+            },
+            "required": [
+              "op",
+              "pool",
+              "amount"
+            ],
+            "additionalProperties": false,
+            "description": "A found boon item: raise a pool’s maximum one step, once (ADR-0004)."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "op": {
+                "type": "string",
+                "const": "learn"
+              },
+              "capability": {
+                "type": "string",
+                "pattern": "^(verb|spell|arrow|tool|trick|technique|sense)\\.[a-z0-9.-]+$",
+                "description": "Capability id declared in src/content/data/capability/, e.g. \"spell.mage-hand\"."
+              }
+            },
+            "required": [
+              "op",
+              "capability"
+            ],
+            "additionalProperties": false,
+            "description": "Learn a capability permanently, e.g. a schematic or a scroll."
+          }
+        ]
+      }
+    },
+    "flags": {
+      "type": "object",
+      "properties": {
+        "unique": {
+          "description": "At most one; never stacks. Default false.",
+          "type": "boolean"
+        },
+        "questItem": {
+          "description": "Needed by a quest. Default true for category quest, else false.",
+          "type": "boolean"
+        },
+        "noSell": {
+          "description": "Merchants refuse it. Default: questItem.",
+          "type": "boolean"
+        },
+        "noDrop": {
+          "description": "Cannot be dropped or thrown. Default: questItem.",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Item rules; omitted flags take their defaults (quest items: noSell, noDrop)."
+    }
+  }
+}

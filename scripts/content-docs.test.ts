@@ -192,6 +192,68 @@ describe('fieldRows / renderDoc', () => {
     expect(lines).toEqual(['| `node.id` | id | required |  |']);
   });
 
+  it('documents a top-level discriminated union: shared fields once, then each option (mw-e17.2)', () => {
+    const union = jsonSchema(
+      z.discriminatedUnion('kind', [
+        z.strictObject({ id: contentId, kind: z.literal('a'), x: z.number() }).describe('An a.'),
+        z.strictObject({ id: contentId, kind: z.literal('b') }),
+      ]),
+    );
+    expect(renderDoc('thing', union).split('\n').slice(7)).toEqual([
+      '| Field | Type | Default | Description |',
+      '| --- | --- | --- | --- |',
+      '| `id` | id | required |  |',
+      '',
+      'An entry is exactly one of the objects below: the fields above, plus those of its option.',
+      '',
+      '## 1. An a.',
+      '',
+      '| Field | Type | Default | Description |',
+      '| --- | --- | --- | --- |',
+      '| `kind` | `"a"` | required |  |',
+      '| `x` | number | required |  |',
+      '',
+      '## 2. Option',
+      '',
+      '| Field | Type | Default | Description |',
+      '| --- | --- | --- | --- |',
+      '| `kind` | `"b"` | required |  |',
+      '',
+    ]);
+  });
+
+  it('documents the nested objects a top-level union shares in place, not as $defs sections', () => {
+    const meta = z.strictObject({ a: z.number().describe('An a.') }).describe('Shared.');
+    const union = jsonSchema(
+      z.discriminatedUnion('kind', [
+        z.strictObject({ kind: z.literal('a'), meta }),
+        z.strictObject({ kind: z.literal('b'), meta }),
+      ]),
+    );
+    const doc = renderDoc('thing', union);
+    expect(doc).toContain(
+      '| `meta` | object | required | Shared. |\n| `meta.a` | number | required | An a. |',
+    );
+    expect(doc).not.toContain('## `meta`');
+    const lines = renderDoc('thing', {
+      ...union,
+      $defs: { ...union.$defs, other: { type: 'string' } },
+    });
+    expect(lines).toContain('## `other`');
+  });
+
+  it('documents a top-level union option without fields, and a $ref it cannot inline by name', () => {
+    const doc = renderDoc('thing', {
+      oneOf: [{ description: 'Bare.' }, { properties: { r: { $ref: '#/$defs/missing' } } }],
+    });
+    expect(doc).toContain('## 1. Bare.');
+    expect(doc).toContain('| `r` | `missing` | — |  |');
+  });
+
+  it('documents an empty top-level union without shared fields', () => {
+    expect(renderDoc('thing', { oneOf: [] })).toContain('| --- | --- | --- | --- |\n\nAn entry');
+  });
+
   it('has no rows for a schema without properties', () => {
     expect(fieldRows({ type: 'string' })).toEqual([]);
   });

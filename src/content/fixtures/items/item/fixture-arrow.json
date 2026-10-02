@@ -1,0 +1,16 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-arrow",
+  "category": "ammo",
+  "notes": "A bundle of standard arrows.",
+  "icon": "icon-item-fixture-arrow-01",
+  "value": 1,
+  "stackable": true,
+  "maxStack": 50,
+  "worldProperties": {
+    "material": "wood"
+  },
+  "ammo": {
+    "arrow": "standard"
+  }
+}

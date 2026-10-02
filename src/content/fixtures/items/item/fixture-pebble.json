@@ -1,0 +1,11 @@
+{
+  "$schema": "../../../data/item.schema.json",
+  "id": "fixture-pebble",
+  "category": "misc",
+  "notes": "A pebble to throw as a distraction.",
+  "icon": "icon-item-fixture-pebble-01",
+  "value": 0,
+  "worldProperties": {
+    "material": "stone"
+  }
+}

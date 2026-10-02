@@ -281,6 +281,28 @@ export {
   type UnlockGroupInput,
 } from './types/unlock.ts';
 export {
+  ARMOR_SLOTS,
+  checkItems,
+  EQUIP_SLOTS,
+  ITEM_CATEGORIES,
+  ITEM_ICON_PATTERN,
+  ITEM_POOLS,
+  ITEM_STACK_GUARD,
+  itemCapabilityUsages,
+  itemIconProblems,
+  itemKeys,
+  itemSchema,
+  MAX_ARMOR_PIECE_KG,
+  WEIGHT_CLASSES,
+  type EquipSlot,
+  type ItemCategory,
+  type ItemDef,
+  type ItemDefInput,
+  type ItemEntry,
+  type ItemOf,
+  type WeightClass,
+} from './types/item.ts';
+export {
   MVP_MIN_SOLUTIONS,
   MVP_TAG,
   PUZZLE_CLASSES,
