@@ -41,6 +41,7 @@ import {
 import { ActionSampler } from '../input';
 import { prepareTestbedCombat, startTestbedCombat, TRAINING_DUMMY } from '../combat';
 import { createGameLoop, FakeFrames, RenderSync, type SceneBinding, type Transform } from '../loop';
+import { installGamePhysics } from '../physics-objects';
 import { readSceneTransform, SceneLoader } from '../scene';
 import { lookForward, toRadians } from '../camera';
 import type { CharacterProbe } from '../animation';
@@ -109,8 +110,11 @@ function testbed(options: Extra | ((physics: RapierPhysics) => Extra) = {}) {
   const physics = new RapierPhysics(RAPIER);
   const extra = typeof options === 'function' ? options(physics) : options;
   const world = registerSceneComponents(new World<ActionFrame>({ seed: 1, physics }));
-  if (extra.interaction !== undefined) registerWorldProperties(world).register(PlacementComponent);
-  else if (extra.ledges !== undefined) registerWorldProperties(world);
+  // Climbing reads the pieces' properties through their bound colliders: the game's scene physics.
+  if (extra.climb !== undefined) installGamePhysics(world);
+  else if (extra.interaction !== undefined) {
+    registerWorldProperties(world).register(PlacementComponent);
+  } else if (extra.ledges !== undefined) registerWorldProperties(world);
   const sampler = new ActionSampler();
   const frames = new FakeFrames();
   const { loop, sync } = createGameLoop<ActionFrame>({
@@ -132,6 +136,7 @@ function testbed(options: Extra | ((physics: RapierPhysics) => Extra) = {}) {
     content,
     objects: { staticGeometry: () => ({}), spawn: () => ({}) },
     binding: (object: Box) => binding(object, readSceneTransform),
+    ...(extra.climb !== undefined && { physics: {} }),
   });
   const scene = loader.load('testbed');
   const capsule: Box = {};
@@ -346,6 +351,7 @@ describe('testbed player wiring (mw-e02.23)', () => {
       tick: 0,
       position: { x: 0, y: SKIN, z: -1 },
       grounded: false,
+      traversal: null,
       yaw: Math.round(Math.PI * 1e4) / 1e4,
       pitch: Math.round(toRadians(cameraTuning.pitch.initial) * 1e4) / 1e4,
     });
@@ -942,5 +948,54 @@ describe('testbed player mantling (mw-e02.12)', () => {
     expect(readout.position.y).toBeCloseTo(0, 1);
     expect(body.last()?.layers[0]?.state).toBe('hang');
     expect(rig.world.get(rig.player.entity, CharacterController)?.traversal).toBe('hang');
+  });
+});
+
+describe('testbed player climbing (mw-e02.13)', () => {
+  /** Holds `key` until `done` (or `seconds` run out). */
+  function holdUntil(
+    rig: ReturnType<typeof testbed>,
+    key: string,
+    done: (readout: PlayerReadout) => boolean,
+    seconds = 3,
+  ) {
+    rig.sampler.down(key);
+    for (let i = 0; i < seconds * 60 && !done(rig.state()); i++) rig.run(1 / 60);
+    rig.sampler.up(key);
+  }
+
+  it('AC-6: walking into the testbed’s ivy wall climbs it and pulls up onto the platform on top', ({
+    task,
+  }) => {
+    markExercised(task, 'material', 'ivy');
+    const rig = testbed({ ledges: {}, climb: {} });
+    rig.run(0.2);
+    // Sideways (−x) from the spawn to the ivy's line, then forward (+z) into it.
+    holdUntil(rig, 'KeyD', (r) => r.position.x <= -3.3);
+    rig.run(0.3);
+    const modes: (string | null)[] = [];
+    holdUntil(
+      rig,
+      'KeyW',
+      (r) => {
+        if (modes.at(-1) !== r.traversal) modes.push(r.traversal);
+        return r.traversal === null && r.grounded && r.position.y > 2.9;
+      },
+      6,
+    );
+    expect(modes).toEqual([null, 'climb', 'mantle', null]);
+    const top = rig.state();
+    expect(top.position.y).toBeCloseTo(3 + SKIN, 3);
+    expect(top.position.z).toBeGreaterThan(3.9);
+  });
+
+  it('without climbing a walk into the ivy wall just stops at it', () => {
+    const rig = testbed({ ledges: {} });
+    rig.run(0.2);
+    holdUntil(rig, 'KeyD', (r) => r.position.x <= -3.3);
+    holdUntil(rig, 'KeyW', () => false, 2);
+    expect(rig.state().traversal).toBeNull();
+    expect(rig.state().position.y).toBeCloseTo(SKIN, 3);
+    expect(rig.state().position.z).toBeLessThan(3.9);
   });
 });

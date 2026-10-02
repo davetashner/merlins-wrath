@@ -39,6 +39,10 @@
 // bound button requests its move, in BUTTON_ACTIONS order, so of two presses on one tick the later
 // in that order wins. Anything else (AI, scripts, tests) calls `requestMove`.
 //
+// Traversal. While the entity's character controller is in a traversal mode (mantle, hang, climb:
+// `handsBusy`), buffered requests are dropped with ActionRejected{reason:"traversal"} and `canActNow`
+// says no (so the shield stays down): combat and traversal never overlap (mw-e02.33).
+//
 // Interrupts. `interruptAction` ends the move now (ActionEnded{reason:"interrupted"}), so it reaches
 // no later phase and never opens its hitbox; it clears the buffer and may lock the entity for a hit
 // reaction's length (e04.7 chooses it). Hitbox rules (e04.2) read `activeHitbox` or listen for
@@ -51,6 +55,7 @@ import type {
   RuntimeCancelWindow,
   RuntimeMove,
 } from '@content/index';
+import { CharacterController } from '../../character/system';
 import type { EntityId } from '../../core/component';
 import type { System, World } from '../../core/world';
 import { actionFrameOf, BUTTON_ACTIONS } from '../../input/action-frame';
@@ -141,6 +146,18 @@ function inWindow(move: RuntimeMove, tick: number, into: MoveVerb | CancelTarget
 }
 
 /**
+ * Whether `entity`'s hands are busy with traversal (mw-e02.33): a character controller in a
+ * traversal mode (mantling, hanging from a ledge, climbing). This is the one gate that keeps combat
+ * and traversal apart: while it holds, no move starts (a dodge, an attack: the request is dropped
+ * with ActionRejected{reason:"traversal"}) and the shield cannot go up (`canActNow`). A move already
+ * running plays out.
+ */
+export function handsBusy(world: World<never>, entity: EntityId): boolean {
+  if (!world.isRegistered(CharacterController)) return false;
+  return (world.get(entity, CharacterController)?.traversal ?? null) !== null;
+}
+
+/**
  * Whether an action of kind `into` could start for `entity` now: it is idle and not locked, or its
  * move's current tick is in a cancel window into `into`. The block rule (e04.6) asks this for the
  * shield, which is a stance rather than a move. Throws when `entity` has no timeline.
@@ -152,6 +169,7 @@ export function canActNow(
   into: CancelTarget,
 ): boolean {
   const { current, lockTicks } = timelineOf(world, entity);
+  if (handsBusy(world, entity)) return false;
   if (current === null) return lockTicks === 0;
   return inWindow(lookup(moves, current.move), current.tick, into);
 }
@@ -352,6 +370,16 @@ function localStep(
   }
   const locked = current === null && lockTicks > 0;
   if (locked) lockTicks--;
+  if (buffer !== null && handsBusy(world, entity)) {
+    // Hands on a ledge or a wall (mw-e02.33): the press is refused outright, not kept for later.
+    world.events.emit(ActionRejected, {
+      entity,
+      action: lookup(moves, buffer.move).verb,
+      reason: 'traversal',
+      tick: world.tick,
+    });
+    buffer = null;
+  }
   if (buffer !== null) {
     const previous = chain === null ? null : lookup(moves, chain.move);
     const attempt = tryStart(world, rules, entity, { current, locked, previous }, buffer.move);

@@ -409,6 +409,29 @@ describe('the bow: draw and release (mw-e05.3)', () => {
     expect(a.fired).toEqual([]);
   });
 
+  it('mw-e02.33: with the hands on a ledge or a wall fire draws nothing, and a draw in progress ends', () => {
+    const a = archer();
+    /** Puts the player in `mode` for the next tick (the controller hands it back after). */
+    const traverse = (mode: 'hang' | 'climb') => {
+      const state = a.world.get(a.player, CharacterController);
+      if (state === undefined) throw new Error('no player');
+      a.world.set(a.player, CharacterController, { ...state, traversal: mode });
+    };
+    const before = a.stamina();
+    traverse('hang');
+    a.run(1, PRESS_FIRE);
+    expect(a.rejected).toEqual([expect.objectContaining({ action: 'bow', reason: 'traversal' })]);
+    expect(a.bow()?.draw).toBeNull();
+    expect(a.count()).toBe(5);
+    expect(a.stamina()).toBe(before);
+    a.run(1, PRESS_FIRE);
+    a.run(10, HOLD_FIRE);
+    traverse('climb');
+    a.run(1, HOLD_FIRE);
+    expect(a.ended).toEqual([expect.objectContaining({ reason: 'interrupted', ticks: 11 })]);
+    expect(a.count()).toBe(5);
+  });
+
   it('raising the shield cancels the draw; fire mid-move or behind the shield is refused as busy', () => {
     const a = archer({ melee: true });
     a.run(1, PRESS_FIRE);

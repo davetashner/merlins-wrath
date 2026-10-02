@@ -53,6 +53,20 @@ export interface LedgeTraversal {
   readonly slipping: number;
 }
 
+/**
+ * The surface a climbing character holds (mw-e02.13): plain data, snapshotted and hashed. Ropes and
+ * walls alike: `normal` points from the surface (or the rope's line) out to the climber, who faces
+ * against it.
+ */
+export interface ClimbTraversal {
+  /** The climbable entity held (a piece bound to the wall's collider, or a rope). */
+  readonly surface: EntityId;
+  /** Unit horizontal normal out of the surface towards the climber. */
+  readonly normal: Vec3;
+  /** Ticks the surface has been impossible to hold (frozen, burning); 0 when it holds. */
+  readonly slipping: number;
+}
+
 /** A traversal mode that can take over the character from locomotion. */
 export interface TraversalHook {
   /** The modes this hook runs; it is asked to step whenever the character is in one of them. */

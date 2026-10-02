@@ -18,7 +18,9 @@
 // 24-tick draw looses at 65% of 60 m/s. Held at full draw for more than `holdTicks`, the draw drains
 // `holdDrainPerSecond` each tick and collapses (`collapsed`, arrow returned) when stamina reaches 0.
 // A dodge, a block, any other move or a hit reaction (the action timeline is busy, or the shield up)
-// interrupts a draw (`interrupted`, arrow returned) — the dodge itself still happens: this system runs
+// interrupts a draw (`interrupted`, arrow returned), and so does a traversal taking the hands (a
+// mantle, a ledge hang, a climb: `handsBusy`, mw-e02.33), which also refuses a draw with
+// ActionRejected{reason:"traversal"} — the dodge itself still happens: this system runs
 // after the timeline, so it sees the roll the dodge button started this tick. While drawn the archer
 // walks at `walkScale` (`bowLocomotionScale`).
 //
@@ -34,6 +36,7 @@ import { ActionRejected } from '../actions';
 import { fireArrow, type ArrowLookup } from '../arrows/system';
 import { drainStamina, spendStamina, StaminaComponent, type Stamina } from '../stamina';
 import { ActionTimelineComponent } from '../timeline/components';
+import { handsBusy } from '../timeline/timeline';
 import {
   BOW_COMPONENTS,
   BowComponent,
@@ -207,7 +210,7 @@ export function bowSystem<TInput>(options: BowSystemOptions): System<TInput> {
     hz: number,
   ): BowState {
     const ticks = draw.ticks + 1;
-    if (frame === undefined || busy(world, entity)) {
+    if (frame === undefined || busy(world, entity) || handsBusy(world, entity)) {
       return end(world, entity, state, draw, 'interrupted', ticks);
     }
     if (!frame[buttons.fire].held) return release(world, entity, state, draw, ticks);
@@ -224,6 +227,10 @@ export function bowSystem<TInput>(options: BowSystemOptions): System<TInput> {
   /** A press of fire with the bow out and nothing drawn. */
   function startDraw(world: World<never>, entity: EntityId, state: BowState): BowState {
     const tick = world.tick;
+    if (handsBusy(world, entity)) {
+      world.events.emit(ActionRejected, { entity, action: 'bow', reason: 'traversal', tick });
+      return state;
+    }
     if (busy(world, entity)) {
       world.events.emit(ActionRejected, { entity, action: 'bow', reason: 'busy', tick });
       return state;

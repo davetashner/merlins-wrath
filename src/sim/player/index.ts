@@ -25,6 +25,7 @@ export {
   type LookInput,
   type LookSettings,
   type LookTurn,
+  type PlayerClimbOptions,
   type PlayerCombatOptions,
   type PlayerLedgeOptions,
   type PlayerMeleeOptions,

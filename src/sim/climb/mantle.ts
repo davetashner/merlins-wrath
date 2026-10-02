@@ -28,8 +28,8 @@
 // off, keeping the launch.
 //
 // The ledge and move in progress are CharacterState.ledge (plain data: snapshotted, hashed,
-// replayed). Climbing walls and ladders is mw-e02.13; it shares the hold rules (canHoldLedge) and the
-// capability checks of surfaces.ts.
+// replayed). Climbing walls, ladders and ropes is mw-e02.13 (climb.ts): it hands a climber reaching
+// the top of its surface over to this hook's pull-up (`climbOut`).
 
 import type { Frozen, LedgeTuning } from '@content/index';
 import type { Capsule, CollisionWorld } from '../character/collision-world';
@@ -173,7 +173,7 @@ function pathLength(points: readonly Vec3[]): number {
 const ticksOf = (ms: number, dt: number): number => Math.max(1, Math.round(ms / 1000 / dt));
 
 /** The move input in world space (camera-relative, length at most 1). */
-function moveVector(input: CharacterInput): Vec3 {
+export function moveVector(input: CharacterInput): Vec3 {
   const { x, y } = input.actions.move;
   const deflection = Math.sqrt(x * x + y * y);
   const k = deflection > 1 ? 1 / deflection : 1;
@@ -211,11 +211,22 @@ function release(state: CharacterState, velocity: Vec3): CharacterState {
   return next;
 }
 
+/** The ledge hook, which also pulls climbers up at the top of what they climb (mw-e02.13). */
+export interface LedgeTraversalHook extends TraversalHook {
+  /**
+   * The pull-up a climber facing against `normal` starts onto a ledge of that face within `reach`
+   * above its feet (and within the jump reach ahead), when its hands can hold the ledge and there is
+   * room on top: the state starting the mantle, or undefined. `ctx.state` must carry no other
+   * traversal's data (the climb hook hands over a bare state).
+   */
+  climbOut(ctx: TraversalContext, normal: Vec3, reach: number): CharacterState | undefined;
+}
+
 /**
  * The mantle and ledge-hang traversal hook (see the file header). Put it in the character
  * controller's `hooks`; it owns the `mantle` and `hang` modes.
  */
-export function ledgeTraversal(options: LedgeTraversalOptions): TraversalHook {
+export function ledgeTraversal(options: LedgeTraversalOptions): LedgeTraversalHook {
   const { world, ledges } = options;
   const capabilitiesOf = options.capabilities ?? (() => []);
 
@@ -586,6 +597,20 @@ export function ledgeTraversal(options: LedgeTraversalOptions): TraversalHook {
   return {
     modes: ['mantle', 'hang'],
     shouldEnter: (ctx) => plan(withTuning(ctx)) !== undefined,
+    climbOut(traversal, normal, reach) {
+      const ctx = withTuning(traversal);
+      const { radius } = ctx.tuning.capsule;
+      const capabilities = capabilitiesOf(ctx.entity);
+      for (const spot of spots(ctx)) {
+        if (dot(spot.ledge.normal, normal) < FACING) continue;
+        if (spot.out < radius - TOUCH || spot.out > radius + ctx.lt.reach) continue;
+        if (spot.height <= 0 || spot.height > reach) continue;
+        if (ledgeSlip(world, spot.entity, capabilities) !== undefined) continue;
+        const up = mantle(ctx, spot, ctx.state.position, ctx.lt.pullUpMs);
+        if (up !== undefined) return start(ctx, up);
+      }
+      return undefined;
+    },
     step(traversal) {
       const ctx = withTuning(traversal);
       const { state } = ctx;

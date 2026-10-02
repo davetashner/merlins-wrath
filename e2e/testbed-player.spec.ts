@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 // mw-e02.23: a controllable player (mw-e02.6: an animated grey-box rig) in ?scene=testbed, against the production build
 // (Chromium). The page publishes the player's sim state on #app[data-player] (JSON: tick, feet
-// position, grounded, yaw, pitch) after every sim tick a frame shows, and the orbit camera's
+// position, grounded, traversal, yaw, pitch) after every sim tick a frame shows, and the orbit camera's
 // (mw-e02.4) on #app[data-orbit-camera] after every frame it draws; the tests only read them.
 //
 // Input counts only while the pointer is locked to the canvas, and headless Chromium refuses pointer
@@ -262,6 +262,68 @@ test('AC-4 (mw-e02.6): running and jumping play the rig’s run and jump clips, 
     order(probe.clipHistory, ['anim-humanoid-run', 'anim-humanoid-jump', 'anim-humanoid-fall']),
   ).toBe(true);
   expect(Object.keys(probe.layers)).toEqual(['base', 'action', 'hit']);
+  expect(problems).toEqual([]);
+});
+
+// mw-e02.13 AC-6: the testbed's climbing wall is an ivy panel (x −3.9…−3.1, face at z = 3.9) on a
+// 3 m block against the room's front wall. The bot sidesteps from the spawn to the ivy's line, walks
+// into it and holds forward: it climbs, pulls up at the top and stands on the platform. It drives from
+// inside the page, paced by the published sim tick, and records every traversal mode it passes.
+test('AC-6 (mw-e02.13): the bot climbs the ivy wall and mantles onto the platform on top, with no console errors', async ({
+  page,
+}) => {
+  const problems = collectProblems(page);
+  await play(page);
+  const route = await page.evaluate(
+    () =>
+      new Promise<{ modes: (string | null)[]; ticks: number }>((resolve) => {
+        const app = document.querySelector<HTMLElement>('#app');
+        const read = () =>
+          JSON.parse(app?.dataset['player'] ?? 'null') as {
+            tick: number;
+            position: { x: number; y: number; z: number };
+            grounded: boolean;
+            traversal: string | null;
+          };
+        const key = (type: string, code: string, k: string) => {
+          window.dispatchEvent(new KeyboardEvent(type, { code, key: k }));
+        };
+        const start = read().tick;
+        const modes: (string | null)[] = [];
+        let phase: 'side' | 'settle' | 'climb' = 'side';
+        let settledAt = 0;
+        key('keydown', 'KeyD', 'd');
+        const drive = () => {
+          const data = read();
+          const ticks = data.tick - start;
+          if (modes.at(-1) !== data.traversal) modes.push(data.traversal);
+          if (phase === 'side' && data.position.x <= -3.3) {
+            key('keyup', 'KeyD', 'd');
+            phase = 'settle';
+            settledAt = data.tick;
+          } else if (phase === 'settle' && data.tick - settledAt >= 20) {
+            key('keydown', 'KeyW', 'w');
+            phase = 'climb';
+          }
+          const done =
+            phase === 'climb' && data.traversal === null && data.grounded && data.position.y > 2.9;
+          if (done || ticks >= 900) {
+            key('keyup', 'KeyD', 'd');
+            key('keyup', 'KeyW', 'w');
+            resolve({ modes, ticks });
+            return;
+          }
+          requestAnimationFrame(drive);
+        };
+        requestAnimationFrame(drive);
+      }),
+  );
+  test.info().annotations.push({ type: 'climb route', description: JSON.stringify(route) });
+  expect(route.modes).toEqual([null, 'climb', 'mantle', null]);
+  const top = await player(page);
+  expect(top.grounded).toBe(true);
+  expect(top.position.y).toBeCloseTo(3, 1);
+  expect(top.position.z).toBeGreaterThan(3.9);
   expect(problems).toEqual([]);
 });
 

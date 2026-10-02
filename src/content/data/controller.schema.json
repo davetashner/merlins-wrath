@@ -383,6 +383,134 @@
         "jumpBack"
       ],
       "additionalProperties": false
+    },
+    "climb": {
+      "description": "Climbing surfaces and ropes; absent = the sim’s defaults (DEFAULT_CLIMB_TUNING).",
+      "type": "object",
+      "properties": {
+        "speeds": {
+          "type": "object",
+          "properties": {
+            "ladder": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10,
+              "description": "Climbing speed on a ladder, m/s."
+            },
+            "rope": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10,
+              "description": "Climbing speed on a rope, m/s."
+            },
+            "ivy": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10,
+              "description": "Climbing speed on ivy, m/s."
+            },
+            "rough": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10,
+              "description": "Climbing speed on rough stone or timber, m/s."
+            },
+            "sheer": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10,
+              "description": "Climbing speed on a sheer face (with a tool), m/s."
+            }
+          },
+          "required": [
+            "ladder",
+            "rope",
+            "ivy",
+            "rough",
+            "sheer"
+          ],
+          "additionalProperties": false,
+          "description": "Surface-space speed per climbing grade at full stick deflection, m/s (a frozen surface climbs at its own grade’s speed)."
+        },
+        "walkOn": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "ladder",
+              "rope",
+              "ivy",
+              "rough",
+              "sheer"
+            ]
+          },
+          "description": "Grades a character attaches to by walking into them; every other grade needs a jump at it (or a catch in the air), so bumping a stone wall never starts a climb."
+        },
+        "reach": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "description": "How far ahead of the capsule a surface or rope can be caught, m."
+        },
+        "handHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 5,
+          "description": "Hands above the feet while climbing, m: the surface must reach this high, and a ledge this high above the feet is pulled up onto."
+        },
+        "maxCornerAngle": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 90,
+          "description": "Sharpest turn between two faces a climber follows round a corner, degrees."
+        },
+        "slipGraceMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000,
+          "description": "How long a climber holds a surface that became impossible to hold (frozen, burning) before falling, whole ms."
+        },
+        "staminaPerSecond": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "Stamina drained per second while climbing (characters with a stamina pool); at 0 stamina the climber falls. Progression may change it (mw-e10.9)."
+        },
+        "jumpOff": {
+          "type": "object",
+          "properties": {
+            "away": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 20,
+              "description": "Speed away from the surface, m/s."
+            },
+            "up": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 20,
+              "description": "Upward speed, m/s."
+            }
+          },
+          "required": [
+            "away",
+            "up"
+          ],
+          "additionalProperties": false,
+          "description": "Jumping off a climbed surface."
+        }
+      },
+      "required": [
+        "speeds",
+        "walkOn",
+        "reach",
+        "handHeight",
+        "maxCornerAngle",
+        "slipGraceMs",
+        "staminaPerSecond",
+        "jumpOff"
+      ],
+      "additionalProperties": false
     }
   },
   "required": [

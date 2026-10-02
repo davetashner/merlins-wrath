@@ -53,7 +53,7 @@ import { cos, sin } from '../math';
 import type { Vec3 } from '../stimulus/shapes';
 import type { BodyId, Capsule, CollisionHit, CollisionWorld } from './collision-world';
 import { radians } from './greybox';
-import type { LedgeTraversal, TraversalHook, TraversalMode } from './traversal';
+import type { ClimbTraversal, LedgeTraversal, TraversalHook, TraversalMode } from './traversal';
 import { add, clip, dot, DOWN, flat, length, normalize, scale, sub, UP, vec, ZERO } from './vec';
 
 /** Gap kept between the capsule and everything it touches, metres. */
@@ -175,6 +175,8 @@ export interface CharacterState {
   readonly impulses?: PendingImpulses;
   /** The ledge being mantled onto or hung from (mw-e02.12); absent otherwise. */
   readonly ledge?: LedgeTraversal;
+  /** The surface being climbed (mw-e02.13); absent otherwise. */
+  readonly climb?: ClimbTraversal;
 }
 
 /** Something the character struck hard this tick (see the file header). */
@@ -327,7 +329,7 @@ export function stepCharacterWithImpacts(
       ? hooks.find((h) => h.shouldEnter(ctx))
       : hooks.find((h) => h.modes.includes(traversal));
   if (hook !== undefined) return { state: hook.step(ctx), impacts: [] };
-  // Locomotion builds a fresh state: a ledge left behind by a traversal mode is dropped with it.
+  // Locomotion builds a fresh state: a ledge or climb left behind by a traversal mode is dropped.
   return locomotion({ ...state, traversal: null }, input, world, tuning, params);
 }
 
