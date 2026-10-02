@@ -431,8 +431,8 @@
       "priority": 70
     },
     {
-      "event": "AttackTelegraph",
-      "cue": "sfx-telegraph-{telegraph}",
+      "event": "TelegraphStarted",
+      "cue": "{telegraphSound}",
       "priority": 80
     },
     {

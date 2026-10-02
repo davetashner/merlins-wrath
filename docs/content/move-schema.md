@@ -90,3 +90,6 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `presentation.anim` | string | required | Animation clip id (style bible §15.1), e.g. "anim-knight-sword-light-1". |
 | `presentation.audioCue` | string | — | Audio cue id (audio bible §6) of the move’s sound, e.g. "sfx-knight-sword-swing-light". |
 | `presentation.vfxCue` | string | — | VFX cue id (style bible §15.1), e.g. "vfx-sword-trail-light". |
+| `presentation.telegraph` | object | — | The telegraph’s own cues (TelegraphStarted, e04.20), played on its telegraphTick. Required for a creature’s unblockable or grab move, and distinct from every blockable creature move’s, so the player can tell it apart (attack-checks.ts); absent = the attack’s telegraph cue plays. |
+| `presentation.telegraph.audioCue` | string | required | Audio cue id the telegraph plays, e.g. "sfx-telegraph-forgotten-lunge". |
+| `presentation.telegraph.vfxCue` | string | required | VFX cue id the telegraph plays on the attacker, e.g. "vfx-telegraph-flare". |

@@ -1,6 +1,7 @@
 // The combat sandbox's frame data (mw-e04.9): what the frame-data overlay (src/ui/frame-data.ts)
 // shows, read from the sim after each tick — never written back. For every fighter (the knight, the
-// attacker dummies, the training dummies): the move it performs, its phase and move tick, whether
+// attacker dummies, the training dummies, and creatures, whose attacks run on the same move system,
+// mw-e04.20): the move it performs, its phase and move tick, whether
 // the invulnerability rule (dodge and wake-up i-frames) or its move's hyperarmor applies right now,
 // the hit-stop freezing it (mw-e04.11: its tier and frozen ticks left), the hit reaction holding it,
 // its parry (mw-e04.12: the parry's phase — startup, window, counter or recovery —, the Parried stun
@@ -34,6 +35,7 @@ import {
   riposteTargetOf,
   SandboxDummyComponent,
   ActionTimelineComponent,
+  CreatureComponent,
   HitReactionComponent,
   type EntityId,
   type InvulnerabilityRule,
@@ -111,7 +113,7 @@ export class DamageMeter {
 /** One fighter's frame data. */
 export interface FighterFrame {
   readonly entity: EntityId;
-  readonly role: 'player' | 'attacker' | 'dummy';
+  readonly role: 'player' | 'attacker' | 'dummy' | 'creature';
   /** The move in progress, or null. */
   readonly move: string | null;
   readonly phase: FramePhase;
@@ -250,10 +252,18 @@ export function sandboxFrameData(world: World<never>, options: FrameDataOptions)
   }
   for (const entity of attackers) add(entity, 'attacker');
   for (const entity of dummies) add(entity, 'dummy');
+  if (world.isRegistered(CreatureComponent)) {
+    for (const entity of world.query(CreatureComponent).ids()) add(entity, 'creature');
+  }
   return { tick: world.tick, hz: world.clock.hz, speed: options.speed ?? 1, fighters };
 }
 
-const ROLE_LABELS = { player: 'Knight', attacker: 'Attacker', dummy: 'Dummy' } as const;
+const ROLE_LABELS = {
+  player: 'Knight',
+  attacker: 'Attacker',
+  dummy: 'Dummy',
+  creature: 'Creature',
+} as const;
 
 /** Points as the overlay shows them: whole when whole, else one decimal. */
 const points = (n: number): string => (Number.isInteger(n) ? String(n) : n.toFixed(1));

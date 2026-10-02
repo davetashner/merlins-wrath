@@ -31,6 +31,7 @@ import {
 import {
   bindCreatures,
   creatureReadout,
+  CreatureTelegraphs,
   prepareCreatures,
   sceneCreatureErrors,
   startCreatures,
@@ -102,7 +103,7 @@ import {
   createTrainingDummy,
   disposeArrowShaft,
 } from '@render/combat/index';
-import { createCreatureProxy } from '@render/creatures/index';
+import { createCreatureProxy, showCreatureTelegraph } from '@render/creatures/index';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { createLightRig } from '@render/light/index';
@@ -125,6 +126,7 @@ import {
   playerStart,
   RapierCollisionWorld,
   RapierSightWorld,
+  creaturesInstalled,
   registerSceneComponents,
   SceneSpawnComponent,
   SpilledComponent,
@@ -868,8 +870,11 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
       const sceneCreatures = startCreatures(world, creatures, combat, loaded.layout.spawns);
       for (const line of sceneCreatureErrors(sceneCreatures)) console.error(line);
       // Every creature — the scene's, the console's, respawned ones — gets a placeholder capsule.
+      // Its body glows while it winds up a telegraphed move (mw-e04.20); the telegraph watch exists
+      // only where creatures do, and a step with no telegraph change costs one empty check.
+      const creatureProxies = new Map<EntityId, ReturnType<typeof createCreatureProxy>>();
       const drawCreatures = (): void => {
-        bindCreatures(world, sync, (_entity, look) => {
+        bindCreatures(world, sync, (entity, look) => {
           const object = createCreatureProxy({
             id: look.id,
             radius: look.nav.radius,
@@ -877,11 +882,28 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
             armed: look.armed,
           });
           view.scene.add(object);
-          return object3DBinding(object, readSandboxDummyTransform);
+          creatureProxies.set(entity, object);
+          const binding = object3DBinding(object, readSandboxDummyTransform);
+          return {
+            ...binding,
+            dispose: (target: typeof object) => {
+              creatureProxies.delete(entity);
+              binding.dispose(target);
+            },
+          };
         });
       };
       drawCreatures();
       afterStep.push(drawCreatures);
+      if (creaturesInstalled(world)) {
+        const telegraphs = new CreatureTelegraphs(world);
+        afterStep.push(() => {
+          for (const [entity, look] of telegraphs.drain()) {
+            const proxy = creatureProxies.get(entity);
+            if (proxy !== undefined) showCreatureTelegraph(proxy, look);
+          }
+        });
+      }
       // Sandbox dummies — the scene's and any the console spawns — get grey-box bodies.
       const bindDummies = (): void => {
         bindSandboxDummies(world, sync, (entity) => {

@@ -1,0 +1,14 @@
+{
+  "$schema": "../attack.schema.json",
+  "id": "forgotten-overhead-chop",
+  "notes": "The grey-box Forgotten skeleton's overhead chop (mw-e04.20, adopted by mw-e13.1): the parry-practice swing. Used from 0-1.6 m (the chop's reach is about 1.5 m plus the knight's body), every 3 s at most, twice as likely as the thrust.",
+  "kind": "melee",
+  "move": "forgotten-overhead-chop",
+  "telegraph": "forgotten-windup",
+  "range": {
+    "min": 0,
+    "max": 1.6
+  },
+  "cooldown": 3,
+  "weight": 2
+}

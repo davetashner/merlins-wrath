@@ -271,6 +271,24 @@ const presentationSchema = z
       .regex(VFX_CUE_PATTERN, 'must be a VFX cue id, e.g. "vfx-sword-trail-light"')
       .optional()
       .describe('VFX cue id (style bible §15.1), e.g. "vfx-sword-trail-light".'),
+    telegraph: z
+      .strictObject({
+        audioCue: z
+          .string()
+          .regex(AUDIO_CUE_PATTERN, 'must be an audio cue id, e.g. "sfx-telegraph-forgotten-lunge"')
+          .describe('Audio cue id the telegraph plays, e.g. "sfx-telegraph-forgotten-lunge".'),
+        vfxCue: z
+          .string()
+          .regex(VFX_CUE_PATTERN, 'must be a VFX cue id, e.g. "vfx-telegraph-flare"')
+          .describe('VFX cue id the telegraph plays on the attacker, e.g. "vfx-telegraph-flare".'),
+      })
+      .optional()
+      .describe(
+        'The telegraph’s own cues (TelegraphStarted, e04.20), played on its telegraphTick. Required ' +
+          'for a creature’s unblockable or grab move, and distinct from every blockable creature ' +
+          'move’s, so the player can tell it apart (attack-checks.ts); absent = the attack’s ' +
+          'telegraph cue plays.',
+      ),
   })
   .describe('Presentation ids: unknown ids warn (assets may lag) but never fail validation.');
 
@@ -428,7 +446,8 @@ export interface KnownCues {
 /**
  * Warnings for legal but unusual moves; they never fail validation. Reports a move that is both
  * parryable and unblockable without a `flags.parryNote`, and every presentation id (anim, audioCue,
- * vfxCue) missing from the matching `known` list. Order: by move, then field.
+ * vfxCue, then the telegraph's audioCue and vfxCue) missing from the matching `known` list. Order: by
+ * move, then field.
  */
 export function moveWarnings(moves: Iterable<MoveEntry>, known: KnownCues = {}): MoveWarning[] {
   const sets = {
@@ -448,13 +467,25 @@ export function moveWarnings(moves: Iterable<MoveEntry>, known: KnownCues = {}):
           'add flags.parryNote to explain it, or set parryable: false',
       });
     }
-    for (const field of ['anim', 'audioCue', 'vfxCue'] as const) {
-      const id = move.presentation[field];
+    const { telegraph } = move.presentation;
+    const cues = [
+      ...(['anim', 'audioCue', 'vfxCue'] as const).map((field) => ({
+        field,
+        path: `presentation.${field}`,
+        id: move.presentation[field],
+      })),
+      ...(['audioCue', 'vfxCue'] as const).map((field) => ({
+        field,
+        path: `presentation.telegraph.${field}`,
+        id: telegraph?.[field],
+      })),
+    ];
+    for (const { field, path, id } of cues) {
       const set = sets[field];
       if (id !== undefined && set !== undefined && !set.has(id)) {
         warnings.push({
           move: move.id,
-          path: `presentation.${field}`,
+          path,
           message: `move "${move.id}": unknown ${field} id "${id}" (placeholder until the asset lands)`,
         });
       }

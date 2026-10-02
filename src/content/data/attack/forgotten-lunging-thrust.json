@@ -1,0 +1,14 @@
+{
+  "$schema": "../attack.schema.json",
+  "id": "forgotten-lunging-thrust",
+  "notes": "The grey-box Forgotten skeleton's lunging thrust (mw-e04.20): unparryable, blockable, from 1.6-2.8 m so it punishes backing off out of the swings' reach; every 5 s at most. Its own telegraph cue (forgotten-lunge) so it reads differently from the parryable swings.",
+  "kind": "melee",
+  "move": "forgotten-lunging-thrust",
+  "telegraph": "forgotten-lunge",
+  "range": {
+    "min": 1.6,
+    "max": 2.8
+  },
+  "cooldown": 5,
+  "weight": 1
+}

@@ -135,10 +135,24 @@ export const CUE_EVENTS = {
       impactSpeed: 'number',
     },
   },
-  AttackTelegraph: {
+  TelegraphStarted: {
     anchors: ['attacker'],
-    /** `telegraph` is the attack's own telegraph cue id: a rule plays it with `cue: "{telegraph}"`. */
-    facts: { attack: 'string', telegraph: 'string' },
+    /**
+     * A creature move's windup reads (mw-e04.20). `telegraph` is the attack's own telegraph cue id;
+     * `telegraphSound` is the sound it plays: the move's declared telegraph audio cue, else
+     * `sfx-telegraph-{telegraph}` (a rule plays it with `cue: "{telegraphSound}"`); `telegraphVfx`
+     * is the move's declared telegraph VFX cue, absent when it declares none; `unblockable` marks an
+     * unblockable move or a grab, `parryable` a move a parry deflects.
+     */
+    facts: {
+      attack: 'string',
+      move: 'string',
+      telegraph: 'string',
+      telegraphSound: 'string',
+      telegraphVfx: 'string',
+      parryable: 'boolean',
+      unblockable: 'boolean',
+    },
   },
   AttackHit: {
     anchors: ['target', 'attacker', 'source'],

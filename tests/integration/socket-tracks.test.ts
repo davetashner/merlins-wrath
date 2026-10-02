@@ -45,6 +45,10 @@ const tracks = compileSocketTracks(content.all('socket-track'));
 describe('socket tracks (mw-e04.26)', () => {
   it('ships a track for every move that can hit', () => {
     expect(moves.map((m) => m.id)).toEqual([
+      'forgotten-lunging-thrust',
+      'forgotten-overhead-chop',
+      'forgotten-slash-1',
+      'forgotten-slash-2',
       'kick',
       'roll-attack',
       'shield-bash',

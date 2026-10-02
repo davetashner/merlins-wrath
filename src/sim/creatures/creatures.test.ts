@@ -9,7 +9,8 @@ import {
   PoiseComponent,
   ResistancesComponent,
 } from '../combat/damage/components';
-import { HurtboxComponent } from '../combat/hits/components';
+import { HitboxComponent, HurtboxComponent } from '../combat/hits/components';
+import { ACTION_TIMELINE_COMPONENTS, ActionTimelineComponent } from '../combat/timeline/components';
 import { CombatFacingComponent } from '../combat/melee/components';
 import { HitReactionComponent } from '../combat/reactions/components';
 import { World } from '../core/world';
@@ -221,8 +222,14 @@ describe('creature spawner (mw-e12.4)', () => {
     const w = world(7, { attacks: true, lockOn: true });
     const g = spawned(w, { creature: 'guard', at: origin });
     const h = spawned(w, { creature: 'hound', at: origin });
-    expect(w.get(g, AttackerComponent)).toEqual({ current: null, readyAt: {} });
+    expect(w.get(g, AttackerComponent)).toEqual({
+      current: null,
+      readyAt: {},
+      attacks: ['strike'],
+    });
     expect(w.has(h, AttackerComponent)).toBe(false);
+    // Without action timelines and hit volumes it has no move system to swing on.
+    expect(w.isRegistered(ActionTimelineComponent)).toBe(false);
     expect(w.get(h, TargetableComponent)).toEqual({
       points: [
         { x: 0, y: 0.54, z: 0 },
@@ -232,6 +239,17 @@ describe('creature spawner (mw-e12.4)', () => {
       priority: 0,
     });
     expect(creatureLockProfile(1.8).points.map((p) => p.id)).toEqual(['chest', 'head', 'base']);
+  });
+
+  it('mw-e04.20: in a world with action timelines and hit volumes it gets both, to swing on the move system', () => {
+    const w = world(7, { attacks: true });
+    w.register(...ACTION_TIMELINE_COMPONENTS, HitboxComponent);
+    const g = spawned(w, { creature: 'guard', at: origin });
+    const h = spawned(w, { creature: 'hound', at: origin });
+    expect(w.get(g, ActionTimelineComponent)?.current).toBeNull();
+    expect(w.get(g, HitboxComponent)).toEqual({ live: [] });
+    expect(w.has(h, ActionTimelineComponent)).toBe(false);
+    expect(w.has(h, HitboxComponent)).toBe(false);
   });
 
   it('joins its definition faction with its disposition toward the player', () => {

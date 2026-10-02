@@ -1,0 +1,50 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "forgotten-slash-1",
+  "notes": "First cut of the grey-box Forgotten skeleton's two-hit slash (mw-e04.20): an 18-tick windup telegraphed from tick 0 (the creature readability minimum), 4 active, 14 recovery; the attack continues into forgotten-slash-2 through its attack cancel window (ticks 24-35). Parryable and blockable. 12 slash, 10 poise, 12 stamina on a block.",
+  "verb": "attack",
+  "frames": {
+    "startup": 18,
+    "active": 4,
+    "recovery": 14
+  },
+  "cancelWindows": [
+    {
+      "into": "attack",
+      "from": 24,
+      "to": 35
+    }
+  ],
+  "damage": {
+    "amounts": {
+      "slash": 12
+    },
+    "poiseDamage": 10,
+    "staminaDamage": 12
+  },
+  "hitbox": {
+    "track": "forgotten-slash-arc-1",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0.3,
+        "y": 1.15,
+        "z": 0.3
+      },
+      "to": {
+        "x": 0.3,
+        "y": 1.15,
+        "z": 1.35
+      },
+      "radius": 0.1
+    },
+    "reach": "medium",
+    "swing": "horizontal"
+  },
+  "telegraphTick": 0,
+  "chainNext": "forgotten-slash-2",
+  "presentation": {
+    "anim": "anim-forgotten-slash-1",
+    "audioCue": "sfx-knight-sword-swing-light"
+  }
+}

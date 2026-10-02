@@ -1,0 +1,50 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "forgotten-lunging-thrust",
+  "notes": "The grey-box Forgotten skeleton's lunging thrust (mw-e04.20): unparryable but blockable, so it gets the longer 30-tick windup telegraphed from tick 0 with its own telegraph cues (a rattle and a flare the parryable swings never use); 6 active as the point drives 0.8 m forward, 30 recovery. 20 pierce, 30 poise, 35 stamina on a block (it tests a guard); heavy hit-stop.",
+  "verb": "attack",
+  "frames": {
+    "startup": 30,
+    "active": 6,
+    "recovery": 30
+  },
+  "damage": {
+    "amounts": {
+      "pierce": 20
+    },
+    "poiseDamage": 30,
+    "staminaDamage": 35
+  },
+  "hitbox": {
+    "track": "forgotten-thrust-lunge",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0,
+        "y": 1.2,
+        "z": 0.3
+      },
+      "to": {
+        "x": 0,
+        "y": 1.2,
+        "z": 1.9
+      },
+      "radius": 0.1
+    },
+    "reach": "long",
+    "swing": "thrust"
+  },
+  "flags": {
+    "parryable": false
+  },
+  "telegraphTick": 0,
+  "hitStop": "heavy",
+  "presentation": {
+    "anim": "anim-forgotten-lunging-thrust",
+    "audioCue": "sfx-knight-sword-swing-light",
+    "telegraph": {
+      "audioCue": "sfx-telegraph-forgotten-lunge",
+      "vfxCue": "vfx-telegraph-lunge-flare"
+    }
+  }
+}

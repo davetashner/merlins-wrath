@@ -1,0 +1,43 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "forgotten-overhead-chop",
+  "notes": "The grey-box Forgotten skeleton's overhead chop (mw-e04.20; the bestiary skeleton mw-e13.1 adopts it): a 24-tick windup telegraphed from tick 0 (above the 18-tick creature readability minimum, so a parry has room), 4 active, 26 recovery to punish. Parryable and blockable. 22 slash, 25 poise, 25 stamina on a block; heavy hit-stop.",
+  "verb": "attack",
+  "frames": {
+    "startup": 24,
+    "active": 4,
+    "recovery": 26
+  },
+  "damage": {
+    "amounts": {
+      "slash": 22
+    },
+    "poiseDamage": 25,
+    "staminaDamage": 25
+  },
+  "hitbox": {
+    "track": "forgotten-chop-arc",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0,
+        "y": 1.1,
+        "z": 0.3
+      },
+      "to": {
+        "x": 0,
+        "y": 1.1,
+        "z": 1.4
+      },
+      "radius": 0.12
+    },
+    "reach": "medium",
+    "swing": "vertical"
+  },
+  "telegraphTick": 0,
+  "hitStop": "heavy",
+  "presentation": {
+    "anim": "anim-forgotten-overhead-chop",
+    "audioCue": "sfx-knight-sword-swing-heavy"
+  }
+}

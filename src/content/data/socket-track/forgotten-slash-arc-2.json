@@ -1,0 +1,72 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "forgotten-slash-arc-2",
+  "notes": "The second cut of the Forgotten's two-hit slash (move forgotten-slash-2, 4 active ticks, mw-e04.20): the backhand return of the first, a flat 100\u00b0 horizontal arc about the root, yaw \u221250\u00b0 \u2192 +50\u00b0 in equal steps.",
+  "keys": [
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": -0.422618,
+        "z": 0,
+        "w": 0.906308
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": -0.21644,
+        "z": 0,
+        "w": 0.976296
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.0,
+        "z": 0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.21644,
+        "z": 0,
+        "w": 0.976296
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.422618,
+        "z": 0,
+        "w": 0.906308
+      }
+    }
+  ]
+}

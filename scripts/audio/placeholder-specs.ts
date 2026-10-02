@@ -220,6 +220,40 @@ const COMBAT: readonly PlaceholderSpec[] = [
     },
   },
   {
+    // The grey-box Forgotten's parryable windups (mw-e04.20, TelegraphStarted): a dry bone rattle
+    // with a rising scrape, so a swing is heard before it lands.
+    id: 'sfx-telegraph-forgotten-windup',
+    bus: 'combat',
+    spatial: true,
+    variants: 1,
+    recipe: {
+      duration: 0.3,
+      peakDb: -6,
+      layers: [
+        click(0.6),
+        click(0.5, 0.06),
+        click(0.4, 0.12),
+        noise('bandpass', 1400, 0.6, { to: 2600, q: 2, attack: 0.05, hold: 0.15, decay: 0.1 }),
+      ],
+    },
+  },
+  {
+    // Its unparryable lunging thrust (mw-e04.20): a longer, lower grind with a high ring on top, so
+    // it reads as a different threat from the swings.
+    id: 'sfx-telegraph-forgotten-lunge',
+    bus: 'combat',
+    spatial: true,
+    variants: 1,
+    recipe: {
+      duration: 0.45,
+      peakDb: -4,
+      layers: [
+        noise('lowpass', 500, 0.8, { attack: 0.08, hold: 0.25, decay: 0.15 }),
+        tone(1760, 0.35, { to: 2200, attack: 0.1, hold: 0.2, decay: 0.15 }),
+      ],
+    },
+  },
+  {
     id: 'sfx-combat-exhausted',
     bus: 'combat',
     spatial: true,

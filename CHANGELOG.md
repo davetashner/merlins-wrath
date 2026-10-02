@@ -20,6 +20,12 @@ check enforces this).
   shards and dust, and something that catches fire burns with flickering flames until it is put out
   or burns away. Effects use placeholder textures (soft glows, smoke, rings, shards and an animated
   flame) until the final VFX art lands under the same names.
+- Creatures now attack by the knight's own rules: their swings can be parried (leaving them stunned
+  and open to a riposte, just like the training dummy), blocked and staggered, and every attack
+  winds up for at least 0.3 s with a readable telegraph, a sound and a glow on the creature (ember
+  for a parryable swing, pale for one only a shield stops, red for one that cannot be blocked).
+  The grey-box skeleton's three attacks are in: an overhead chop, a two-hit slash and a slower
+  lunging thrust that cannot be parried.
 - Movement feel can be tuned live: the debug console's `ctl.get`, `ctl.set runSpeed 6` and `ctl.dump`
   read and change the player's speeds, jump, gravity, ledge and climbing values from the next tick
   and print the edited controller file, and in `pnpm dev` saving that file retunes the player

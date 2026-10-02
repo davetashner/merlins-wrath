@@ -1,0 +1,42 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "forgotten-slash-2",
+  "notes": "Second cut of the grey-box Forgotten skeleton's two-hit slash (mw-e04.20): a backhand with its own 18-tick windup telegraphed from tick 0, so the second hit is as parryable as the first; 4 active, 24 recovery (the opening after the combo). Parryable and blockable. 14 slash, 12 poise, 14 stamina on a block.",
+  "verb": "attack",
+  "frames": {
+    "startup": 18,
+    "active": 4,
+    "recovery": 24
+  },
+  "damage": {
+    "amounts": {
+      "slash": 14
+    },
+    "poiseDamage": 12,
+    "staminaDamage": 14
+  },
+  "hitbox": {
+    "track": "forgotten-slash-arc-2",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0.3,
+        "y": 1.15,
+        "z": 0.3
+      },
+      "to": {
+        "x": 0.3,
+        "y": 1.15,
+        "z": 1.35
+      },
+      "radius": 0.1
+    },
+    "reach": "medium",
+    "swing": "horizontal"
+  },
+  "telegraphTick": 0,
+  "presentation": {
+    "anim": "anim-forgotten-slash-2",
+    "audioCue": "sfx-knight-sword-swing-light"
+  }
+}

@@ -979,6 +979,24 @@
     "placeholder": true
   },
   {
+    "id": "sfx-telegraph-forgotten-lunge",
+    "variants": [
+      "sfx-telegraph-forgotten-lunge-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
+    "id": "sfx-telegraph-forgotten-windup",
+    "variants": [
+      "sfx-telegraph-forgotten-windup-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
     "id": "sfx-ui-cancel",
     "variants": [
       "sfx-ui-cancel-01"

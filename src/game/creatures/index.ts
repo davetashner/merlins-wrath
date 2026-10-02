@@ -15,6 +15,10 @@
 //
 // `bindCreatures` gives every creature without one a render proxy after each step (scene, console
 // and respawned creatures alike); render sync drops a despawned creature's proxy on the next frame.
+//
+// `CreatureTelegraphs` (mw-e04.20) tells the render which creatures are winding up a telegraphed
+// move, and what kind: from TelegraphStarted until the move turns active, the attack ends or the
+// creature is gone. Event-driven: a frame with no telegraph change costs one empty check.
 
 import {
   compileAttacks,
@@ -40,6 +44,9 @@ import {
   registerCreatureComponents,
   spawnErrorMessage,
   spawnSceneCreatures,
+  ActionPhaseChanged,
+  AttackEnded,
+  TelegraphStarted,
   type CreatureSpawnOptions,
   type EntityId,
   type RapierPhysics,
@@ -209,4 +216,59 @@ export function viewCentrePoint(physics: RapierPhysics, view: ViewPose): Vec3 | 
   if (hit === null) return undefined;
   const t = hit.timeOfImpact;
   return { x: origin.x + dir.x * t, y: origin.y + dir.y * t, z: origin.z + dir.z * t };
+}
+
+/**
+ * How a telegraph reads (mw-e04.20): `parry` for a move a parry deflects, `block` for one a shield
+ * stops but a parry does not, `unblockable` for an unblockable move or a grab — dodge it.
+ */
+export type TelegraphLook = 'parry' | 'block' | 'unblockable';
+
+/** Which creatures are telegraphing, from the sim's events (see the file header). */
+export class CreatureTelegraphs {
+  readonly #showing = new Map<EntityId, { readonly move: string; readonly look: TelegraphLook }>();
+  readonly #changed = new Map<EntityId, TelegraphLook | null>();
+  readonly #offs: (() => void)[];
+
+  constructor(world: World<never>) {
+    const stop = (entity: EntityId) => {
+      if (!this.#showing.delete(entity)) return;
+      this.#changed.set(entity, null);
+    };
+    this.#offs = [
+      world.events.on(TelegraphStarted, (e) => {
+        const look: TelegraphLook = e.unblockable ? 'unblockable' : e.parryable ? 'parry' : 'block';
+        this.#showing.set(e.attacker, { move: e.move, look });
+        this.#changed.set(e.attacker, look);
+      }),
+      world.events.on(ActionPhaseChanged, (e) => {
+        if (e.phase === 'active' && this.#showing.get(e.entity)?.move === e.move) stop(e.entity);
+      }),
+      world.events.on(AttackEnded, (e) => {
+        stop(e.attacker);
+      }),
+    ];
+  }
+
+  /** The look `entity` telegraphs now, or null. */
+  lookOf(entity: EntityId): TelegraphLook | null {
+    return this.#showing.get(entity)?.look ?? null;
+  }
+
+  /**
+   * Telegraphs that changed since the last call (entity → its look, null when it stopped), in the
+   * order they changed; empty (and cheap) when nothing did.
+   */
+  drain(): [EntityId, TelegraphLook | null][] {
+    if (this.#changed.size === 0) return [];
+    const out = [...this.#changed];
+    this.#changed.clear();
+    return out;
+  }
+
+  dispose(): void {
+    for (const off of this.#offs) off();
+    this.#showing.clear();
+    this.#changed.clear();
+  }
 }

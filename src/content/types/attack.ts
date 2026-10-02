@@ -116,7 +116,7 @@ export const attackSchema = z
         'template, parry/block flags, telegraph tick and cues. Must be an "attack" move.',
     ),
     telegraph: contentId.describe(
-      'Telegraph cue id render and audio play when the windup reads (AttackTelegraph event), ' +
+      'Telegraph cue id render and audio play when the windup reads (TelegraphStarted event, mw-e04.20), ' +
         'e.g. "guard-strike-windup"; placeholder cues can be swapped later.',
     ),
     range: rangeSchema,
@@ -183,9 +183,14 @@ export interface RuntimeAttack {
   readonly kind: AttackKind;
   /** The compiled move (frames, hitbox, flags, telegraphTick, presentation). */
   readonly move: RuntimeMove;
+  /**
+   * Every move the attack performs, in order: its move, then that move's `chainNext` and so on (a
+   * two-hit slash is two moves, e04.20); absent = just `move`. `compileAttack` always fills it.
+   */
+  readonly chain?: readonly RuntimeMove[];
   /** The move's hit volume (never null for an attack). */
   readonly hitbox: NonNullable<RuntimeMove['hitbox']>;
-  /** Telegraph cue id (AttackTelegraph). */
+  /** Telegraph cue id (TelegraphStarted). */
   readonly telegraph: string;
   readonly rangeMin: number;
   readonly rangeMax: number;
@@ -218,16 +223,30 @@ export class AttackCompileError extends Error {
 
 /**
  * The runtime form of one loaded attack, given the compiled move table (`compileMoves`). Throws an
- * AttackCompileError when the move is missing, is not a hitting `attack` move, or — for a projectile
- * — its hit volume is not a sphere.
+ * AttackCompileError when the move (or a move its chain continues into) is missing or is not a
+ * hitting `attack` move, when the chain loops, or — for a projectile — its hit volume is not a
+ * sphere.
  */
 export function compileAttack(attack: AttackEntry, moves: MoveTable): RuntimeAttack {
   const fail = (message: string) => new AttackCompileError(`attack "${attack.id}": ${message}`);
-  const move = moves.get(attack.move.id);
-  if (move === undefined) throw fail(`move "${attack.move.id}" is not in the table`);
-  const { damage, hitbox } = move;
-  if (move.verb !== 'attack' || damage === null || hitbox === null) {
-    throw fail(`move "${move.id}" must be an attack move with a hitbox and damage`);
+  const hitting = (id: string) => {
+    const found = moves.get(id);
+    if (found === undefined) throw fail(`move "${id}" is not in the table`);
+    const { damage, hitbox } = found;
+    if (found.verb !== 'attack' || damage === null || hitbox === null) {
+      throw fail(`move "${found.id}" must be an attack move with a hitbox and damage`);
+    }
+    return { move: found, damage, hitbox };
+  };
+  const { move, damage, hitbox } = hitting(attack.move.id);
+  const chain: RuntimeMove[] = [move];
+  for (let last = move; last.chainNext !== null;) {
+    const id = last.chainNext;
+    if (chain.some((m) => m.id === id)) {
+      throw fail(`move "${last.id}" chains back into "${id}": an attack's chain must end`);
+    }
+    last = hitting(id).move;
+    chain.push(last);
   }
   let projectile: RuntimeAttack['projectile'] = null;
   if (attack.projectile !== undefined) {
@@ -246,6 +265,7 @@ export function compileAttack(attack: AttackEntry, moves: MoveTable): RuntimeAtt
     id: attack.id,
     kind: attack.kind,
     move,
+    chain: Object.freeze(chain),
     hitbox,
     telegraph: attack.telegraph,
     rangeMin: attack.range.min,

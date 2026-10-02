@@ -70,7 +70,17 @@ const SAMPLES: Record<CueEventName, unknown> = {
   ActionPhaseChanged: { tick: 1, entity: 4, move: 'sword-light-1', phase: 'active', moveTick: 13 },
   LocomotionEvents: { tick: 1, entity: 4, kind: 'footstep', foot: 'left', gait: 'walk' },
   Died: { tick: 1, target: 1, killer: null, source: 2, tags: ['backstab'] },
-  AttackTelegraph: { tick: 1, attacker: 4, attack: 'guard-strike', cue: 'guard-strike-windup' },
+  TelegraphStarted: {
+    tick: 1,
+    attacker: 4,
+    attack: 'guard-strike',
+    move: 'guard-strike',
+    cue: 'guard-strike-windup',
+    audioCue: null,
+    vfxCue: null,
+    parryable: true,
+    unblockable: false,
+  },
   AttackHit: {
     tick: 1,
     attacker: 4,
@@ -311,9 +321,25 @@ describe('cue event bindings', () => {
   });
 
   it('read attack, stamina and fire payloads', () => {
-    expect(read('AttackTelegraph', SAMPLES.AttackTelegraph).facts).toEqual({
+    expect(read('TelegraphStarted', SAMPLES.TelegraphStarted).facts).toEqual({
       attack: 'guard-strike',
+      move: 'guard-strike',
       telegraph: 'guard-strike-windup',
+      telegraphSound: 'sfx-telegraph-guard-strike-windup',
+      parryable: true,
+      unblockable: false,
+    });
+    // mw-e04.20: a move that declares its own telegraph audio plays it instead.
+    const lunge = {
+      ...(SAMPLES.TelegraphStarted as object),
+      audioCue: 'sfx-telegraph-lunge',
+      vfxCue: 'vfx-telegraph-flare',
+      unblockable: true,
+    };
+    expect(read('TelegraphStarted', lunge).facts).toMatchObject({
+      telegraphSound: 'sfx-telegraph-lunge',
+      telegraphVfx: 'vfx-telegraph-flare',
+      unblockable: true,
     });
     expect(read('AttackHit', SAMPLES.AttackHit).facts).toMatchObject({
       total: 22,

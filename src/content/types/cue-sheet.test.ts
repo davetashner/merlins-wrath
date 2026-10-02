@@ -74,7 +74,7 @@ describe('cue sheet schema', () => {
   });
 
   it('accepts whole-fact and templated cue ids, rejects other shapes', () => {
-    expect(problems(sheet([{ event: 'AttackTelegraph', cue: '{telegraph}' }]))).toEqual([]);
+    expect(problems(sheet([{ event: 'TelegraphStarted', cue: '{telegraphSound}' }]))).toEqual([]);
     expect(problems(sheet([{ event: 'Died', cue: 'boom' }]))).toEqual([
       'rules.0.cue: must be an audio cue id, optionally with {fact} segments, e.g. "sfx-impact-{target}"',
     ]);

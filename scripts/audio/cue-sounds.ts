@@ -1,7 +1,7 @@
 // Every sound id the cue sheets can play (mw-e28.2 AC-1). A rule's cue is either a literal id or a
 // template like `sfx-impact-{target}`; templates are expanded over every value their facts can take,
 // read from content (the material impact classes and footstep surfaces, material ids, attack
-// telegraph cues, move sounds). A template naming a fact with no known value set is reported rather
+// telegraph cues and sounds, move sounds). A template naming a fact with no known value set is reported rather
 // than skipped, so a new templated rule forces the check to learn its values instead of silently
 // passing.
 
@@ -28,7 +28,16 @@ export function factDomains(content: Pick<GameContent, 'all'>): FactDomains {
     domains.set(`${fact}Material`, ids);
   }
   domains.set('material', ids);
-  domains.set('telegraph', [...new Set(content.all('attack').map((a) => a.telegraph))]);
+  const telegraphs = [...new Set(content.all('attack').map((a) => a.telegraph))];
+  domains.set('telegraph', telegraphs);
+  // The sound a creature telegraph plays (TelegraphStarted `telegraphSound`, mw-e04.20): a move's
+  // declared telegraph audio cue, else its attack's sfx-telegraph-<telegraph>.
+  domains.set('telegraphSound', [
+    ...new Set([
+      ...telegraphs.map((t) => `sfx-telegraph-${t}`),
+      ...content.all('move').flatMap((m) => m.presentation.telegraph?.audioCue ?? []),
+    ]),
+  ]);
   // Footstep surfaces the materials declare, plus stone, which unknown surfaces fall back to.
   domains.set('surface', [
     ...new Set(['stone', ...materials.flatMap((m) => m.footstepSurface ?? [])]),

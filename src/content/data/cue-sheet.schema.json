@@ -33,7 +33,7 @@
               "DodgedHit",
               "ActionPhaseChanged",
               "LocomotionEvents",
-              "AttackTelegraph",
+              "TelegraphStarted",
               "AttackHit",
               "AttackProjectileLaunched",
               "AttackEnded",

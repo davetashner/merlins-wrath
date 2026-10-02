@@ -1,7 +1,10 @@
 // Events the creature attack executor emits (mw-e12.5). Render and audio play telegraph cues and
 // debug-draw hit volumes from these, AI (e11) learns when its swing landed or was broken off, and the
-// HUD never polls attack state. Per attack the order is AttackTelegraph, then AttackActive on each
-// active tick (with AttackHit per target struck, after its DamageApplied events), then AttackEnded.
+// HUD never polls attack state. Per move of an attack the order is TelegraphStarted (mw-e04.20), then
+// AttackActive on each active tick (with AttackHit per target struck, after its DamageApplied
+// events); then, once per attack, AttackEnded. An attack on the move system (melee and area attacks of
+// a creature with an action timeline, executor.ts) has no AttackActive: its hit volume is the hit-volume
+// system's, drawn by its own debug overlay.
 
 import type { AttackKind } from '@content/index';
 import type { EntityId } from '../../core/component';
@@ -19,14 +22,27 @@ export interface AttackEventBase {
   readonly attack: string;
 }
 
-/** Payload of AttackTelegraph. */
-export interface AttackTelegraphInfo extends AttackEventBase {
+/** Payload of TelegraphStarted. */
+export interface TelegraphInfo extends AttackEventBase {
+  /** The move whose windup is telegraphed (an attack's chain telegraphs each of its moves). */
+  readonly move: string;
   /** The attack's telegraph cue id (render and audio pick placeholder or final assets by it). */
   readonly cue: string;
+  /** The move's own telegraph audio cue (`presentation.telegraph`), or null when it declares none. */
+  readonly audioCue: string | null;
+  /** The move's own telegraph VFX cue, or null when it declares none. */
+  readonly vfxCue: string | null;
+  /** The move can be parried. */
+  readonly parryable: boolean;
+  /** The move cannot be blocked: an unblockable move, or a grab (the stricter telegraph rule). */
+  readonly unblockable: boolean;
 }
 
-/** The windup is readable: fired once per attack, on the move's telegraphTick. */
-export const AttackTelegraph = defineEvent<AttackTelegraphInfo>('AttackTelegraph');
+/**
+ * The windup is readable (mw-e04.20): fired exactly once per move of an attack, on the move's
+ * telegraphTick, with the cue ids the telegraph plays.
+ */
+export const TelegraphStarted = defineEvent<TelegraphInfo>('TelegraphStarted');
 
 /** Payload of AttackActive. */
 export interface AttackActiveInfo extends AttackEventBase {
@@ -74,8 +90,11 @@ export interface AttackStubInfo extends AttackEventBase {
  */
 export const AttackStub = defineEvent<AttackStubInfo>('AttackStub');
 
-/** Why an attack ended. */
-export type AttackEndReason = 'completed' | 'staggered' | 'died' | 'cancelled';
+/**
+ * Why an attack ended: it ran its course, was broken off by a poise break or a hit reaction
+ * (`staggered`), its swing was parried (`parried`, mw-e04.20), it died, or it was cancelled.
+ */
+export type AttackEndReason = 'completed' | 'staggered' | 'parried' | 'died' | 'cancelled';
 
 /** Payload of AttackEnded. */
 export interface AttackEndInfo extends AttackEventBase {
@@ -84,5 +103,5 @@ export interface AttackEndInfo extends AttackEventBase {
   readonly elapsed: number;
 }
 
-/** An attack finished its recovery, or was broken off (stagger, death, `cancelAttack`). */
+/** An attack finished its recovery, or was broken off (stagger, parry, death, `cancelAttack`). */
 export const AttackEnded = defineEvent<AttackEndInfo>('AttackEnded');

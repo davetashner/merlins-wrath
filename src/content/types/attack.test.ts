@@ -17,6 +17,12 @@ import {
 } from './attack.ts';
 import { compileMoves, type MoveDefInput } from './move.ts';
 
+/** `value`, which the test knows is there. */
+function must<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined) throw new Error('missing test value');
+  return value;
+}
+
 const hitbox = {
   track: 'test-track',
   shape: { kind: 'sphere', center: { x: 0, y: 1.2, z: 0.8 }, radius: 0.25 },
@@ -227,6 +233,30 @@ describe('compileAttack', () => {
       'attack "bolt": a projectile\'s move "swipe" needs a sphere hit volume, not a capsule',
     );
     expect(compile('bolt', new Map())).toThrow('attack "bolt": move "swipe" is not in the table');
+  });
+
+  it('mw-e04.20: an attack performs its move’s whole chain; a chain must end and only hit', () => {
+    const content = load([melee]);
+    const base = compileMoves(content.all('move'));
+    const strike = must(base.get('strike'));
+    const swipe = must(base.get('swipe'));
+    const roll = must(base.get('roll'));
+    const table = (chain: Record<string, string | null>) =>
+      new Map([strike, swipe, roll].map((m) => [m.id, { ...m, chainNext: chain[m.id] ?? null }]));
+    const entry = content.get('attack', 'guard-strike');
+    expect(compileAttack(entry, base).chain?.map((m) => m.id)).toEqual(['strike']);
+    const two = compileAttack(entry, table({ strike: 'swipe' }));
+    expect(two.chain?.map((m) => m.id)).toEqual(['strike', 'swipe']);
+    expect(two.move.id).toBe('strike');
+    expect(() => compileAttack(entry, table({ strike: 'swipe', swipe: 'strike' }))).toThrow(
+      'attack "guard-strike": move "swipe" chains back into "strike": an attack\'s chain must end',
+    );
+    expect(() => compileAttack(entry, table({ strike: 'roll' }))).toThrow(
+      'move "roll" must be an attack move with a hitbox and damage',
+    );
+    expect(() => compileAttack(entry, table({ strike: 'gone' }))).toThrow(
+      'attack "guard-strike": move "gone" is not in the table',
+    );
   });
 
   it('compileAttacks builds the table in id order', () => {
