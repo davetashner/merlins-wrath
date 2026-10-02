@@ -1,5 +1,6 @@
 // The debug console's built-in commands (mw-e33.1): help, spawn, despawn (mw-e12.4), give, god,
-// noclip, kill, tp, timescale, scene, set and seed, and blast (mw-e04.34). Everything that changes the sim goes out as a sim command through
+// noclip, kill, prop (mw-e03.37), tp, timescale, scene, set and seed, and blast (mw-e04.34).
+// Everything that changes the sim goes out as a sim command through
 // `host.submit` (applied next tick, recorded in replays); the host's other members only read the
 // sim or drive the page (time scale, scene reload), never sim state.
 
@@ -14,12 +15,14 @@ import {
   MAX_BLAST_INTENSITY,
   MAX_BLAST_RADIUS,
   MAX_SPAWN_COUNT,
+  propertyCommand,
   spawnCommand,
   teleportCommand,
   type DebugCheat,
   type DifficultyKey,
   type EntityId,
   type Vec3,
+  WORLD_PROPERTY_KEYS,
 } from '@sim/index';
 import { MAX_TIME_SCALE } from '@game/loop/fixed-step';
 import { z } from 'zod';
@@ -86,6 +89,23 @@ const onOff = z.enum(['on', 'off']).optional();
 
 /** A `blast` with no arguments: enough to launch the player standing next to it. */
 export const DEFAULT_BLAST = Object.freeze({ intensity: 1500, radius: 4 });
+
+/**
+ * A typed property value: true/false, a number, a JSON record (`{"intensity":80,"radius":6}`) or
+ * else a bare id or enum value.
+ */
+export function propertyValue(text: string): unknown {
+  if (text === 'true' || text === 'false') return text === 'true';
+  if (text.startsWith('{')) {
+    try {
+      return JSON.parse(text) as unknown;
+    } catch {
+      throw new ConsoleError([`bad value ${text}: expected JSON like {"intensity":80,"radius":6}`]);
+    }
+  }
+  const number = Number(text);
+  return text.trim() !== '' && Number.isFinite(number) ? number : text;
+}
 
 /** `splitOptions` with its errors as console errors. */
 export function parsedOptions(tokens: readonly string[]): ReturnType<typeof splitOptions> {
@@ -223,6 +243,28 @@ export function registerBuiltins(registry: CommandRegistry<ConsoleHost>): void {
       if (!host.isAlive(target)) throw new ConsoleError([`no entity ${String(target)}`]);
       host.submit(killCommand(target));
       return `killing entity ${String(target)}`;
+    },
+  });
+
+  registry.registerCommand({
+    name: 'prop',
+    summary: 'set a world property of an entity (e.g. put a torch out: prop 12 burning false)',
+    usage: '<entityId> <property> <value>',
+    args: z.tuple([z.coerce.number<string>().int().positive(), z.string(), z.string()]),
+    complete: (index) => (index === 1 ? WORLD_PROPERTY_KEYS : []),
+    run: ([target, key, text], host) => {
+      if (!host.isAlive(target)) throw new ConsoleError([`no entity ${String(target)}`]);
+      const value = propertyValue(text);
+      try {
+        host.submit(propertyCommand(target, key, value));
+      } catch (error) {
+        if (!(error instanceof RangeError)) throw error;
+        if (error.message.startsWith('unknown world property')) {
+          throw unknown('world property', key, WORLD_PROPERTY_KEYS);
+        }
+        throw new ConsoleError([error.message]);
+      }
+      return `entity ${String(target)}: ${key} = ${JSON.stringify(value)}`;
     },
   });
 

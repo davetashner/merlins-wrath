@@ -20,6 +20,7 @@ import {
   type PhysicsBudgetExceeded,
   type PropBody,
   type PropBodyLookup,
+  type StaticColliderSink,
   type Vec3,
   type World,
 } from '@sim/index';
@@ -29,6 +30,11 @@ export interface GamePhysicsOptions {
   readonly focus?: () => Vec3 | undefined;
   /** Receives every budget warning, e.g. `console.warn(formatBudgetWarning(w))`. */
   readonly onBudgetExceeded?: (warning: PhysicsBudgetExceeded) => void;
+  /**
+   * The sink scenes are loaded into when it is not the physics port itself: the game light's
+   * ColliderFanOut (mw-e03.37), so a burnt-away piece leaves physics and the light field together.
+   */
+  readonly levelColliders?: StaticColliderSink;
 }
 
 /**
@@ -39,8 +45,11 @@ export interface GamePhysicsOptions {
 export function installGamePhysics<T>(world: World<T>, options: GamePhysicsOptions = {}): World<T> {
   const sim = world as unknown as World<never>; // the physics layer never reads inputs
   installStimuli(registerWorldProperties(sim));
-  const { focus, onBudgetExceeded } = options;
-  installPhysicsObjects(sim, focus === undefined ? {} : { focus: () => focus() });
+  const { focus, onBudgetExceeded, levelColliders } = options;
+  installPhysicsObjects(sim, {
+    ...(focus !== undefined && { focus: () => focus() }),
+    ...(levelColliders !== undefined && { levelColliders }),
+  });
   sim.addSystem(stimulusSystem());
   if (onBudgetExceeded !== undefined) sim.events.on(physicsBudgetExceeded, onBudgetExceeded);
   return world;

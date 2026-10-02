@@ -11,6 +11,10 @@
 //   weight and its material's properties. From then on the sim moves it; the renderer draws it from
 //   its `physics.object` pose.
 //
+// - Other spawns with world properties (mw-e03.37: a torch that burns, a glowing crystal) get those
+//   properties and a placement at the spawn point, so the light field, stimuli and element rules
+//   reach them. A prop spawn's own properties go over its prop's.
+//
 // `addPropPhysics` is the one way a prop becomes a physics object: the debug console's spawners
 // (src/sim/debug) use it too.
 //
@@ -30,6 +34,7 @@ import {
   type MaterialPresets,
 } from '../properties/materials';
 import type { WorldPropertyInit } from '../properties/components';
+import { placeEntity } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import type { Quat, ScenePropertiesSpec } from './layout';
 import type { LoadedScene } from './loader';
@@ -65,6 +70,8 @@ export interface ScenePhysics {
   readonly objects: readonly EntityId[];
   /** Piece entities whose colliders were bound, in scene order. */
   readonly solids: readonly EntityId[];
+  /** Spawn entities without a body that were given properties and a placement, in scene order. */
+  readonly placed: readonly EntityId[];
 }
 
 /**
@@ -103,13 +110,24 @@ export function addScenePhysics<T>(
     solids.push(entity);
   });
   const objects: EntityId[] = [];
+  const placed: EntityId[] = [];
   for (const { entity, spawn } of loaded.spawns) {
+    const own = placementProperties(spawn.properties);
     const body = spawn.prop === undefined ? undefined : options.props(spawn.prop);
-    if (body === undefined) continue;
-    addPropPhysics(sim, entity, body, options.materials, spawn.position, spawn.rotation);
-    objects.push(entity);
+    if (body !== undefined) {
+      addPropPhysics(sim, entity, body, options.materials, spawn.position, spawn.rotation, own);
+      objects.push(entity);
+    } else if (Object.keys(own).length > 0) {
+      addMaterialProperties(sim, entity, options.materials, own);
+      placeEntity(sim, entity, spawn.position);
+      placed.push(entity);
+    }
   }
-  return Object.freeze({ objects: Object.freeze(objects), solids: Object.freeze(solids) });
+  return Object.freeze({
+    objects: Object.freeze(objects),
+    solids: Object.freeze(solids),
+    placed: Object.freeze(placed),
+  });
 }
 
 /**
@@ -131,7 +149,8 @@ export function placementProperties(
 
 /**
  * Makes `entity` a movable prop: gives it `body`'s material properties and makes it a physics object
- * standing on `at` (the middle of the body's base), turned by `rotation`. Works between steps and
+ * standing on `at` (the middle of the body's base), turned by `rotation`, with `extra` properties
+ * over the prop's (a scene spawn's own, mw-e03.37). Works between steps and
  * during one (a debug spawn inside `World.step`): the body is built from the resolved properties, so
  * it has the prop's mass and material at once, while the properties and the `physics.object`
  * component go live with the rest of the tick's structural changes.
@@ -144,11 +163,13 @@ export function addPropPhysics(
   materials: MaterialPresets,
   at: Vec3,
   rotation?: Quat,
+  extra: WorldPropertyInit = {},
 ): void {
   const init: WorldPropertyInit = {
     material: body.material,
     weight: body.weight,
     ...(body.flammable !== undefined && { flammable: body.flammable }),
+    ...extra,
   };
   const { weight, friction, impactAbsorb } = resolveProperties(materials, init);
   addMaterialProperties(world, entity, materials, init);

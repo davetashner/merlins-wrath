@@ -133,6 +133,38 @@ describe('scene schema (mw-e00.21)', () => {
     ).toEqual([expect.stringMatching(/^placements\.0\.ledges\.0\.part: /)]);
   });
 
+  it('mw-e03.37: spawns take world properties; scenes take light data, validated', () => {
+    const parsed = sceneSchema.parse({
+      ...room,
+      spawns: [{ id: 'torch', at: [0, 1.5, 0], properties: { burning: true, fuel: 3600 } }],
+      light: {
+        ambient: 0.05,
+        ambientZones: [{ id: 'alcove', min: [0, 0, 0], max: [1, 2, 1], level: 0 }],
+        directional: [{ id: 'moon', direction: [0, -1, 1], level: 0.3, reach: 30 }],
+      },
+    });
+    expect(parsed.spawns[0]?.properties).toEqual({ burning: true, fuel: 3600 });
+    expect(parsed.light?.directional[0]?.id).toBe('moon');
+    expect(sceneSchema.parse({ ...room, light: {} }).light).toEqual({
+      ambientZones: [],
+      directional: [],
+    });
+    const zone = { id: 'z', min: [0, 0, 0], max: [1, 1, 1], level: 0.5 };
+    const moon = { id: 'moon', direction: [0, -1, 0], level: 0.5, reach: 10 };
+    expect(problems({ ...room, light: { ambient: 1.5 } })).toEqual([
+      expect.stringMatching(/^light\.ambient: /),
+    ]);
+    expect(problems({ ...room, light: { ambientZones: [{ ...zone, max: [1, 0, 1] }] } })).toEqual([
+      'light.ambientZones.0.max: max must be above min on every axis',
+    ]);
+    expect(
+      problems({ ...room, light: { directional: [{ ...moon, direction: [0, 0, 0] }] } }),
+    ).toEqual(['light.directional.0.direction: direction must not be zero']);
+    expect(problems({ ...room, light: { directional: [{ ...moon, reach: 0 }] } })).toEqual([
+      expect.stringMatching(/^light\.directional\.0\.reach: /),
+    ]);
+  });
+
   it('AC-3: a scene using a kit piece or prop that does not exist fails to load, naming it', () => {
     const broken = {
       ...room,
@@ -166,11 +198,11 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene, the kit gallery and the combat sandbox', () => {
+  it('ships the default testbed scene, the kit gallery, the combat sandbox and the lighting room', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
         .map((s) => s.id),
-    ).toEqual(['combat-sandbox', 'kit-gallery', 'testbed']);
+    ).toEqual(['combat-sandbox', 'kit-gallery', 'lighting-room', 'testbed']);
   });
 });

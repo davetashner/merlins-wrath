@@ -1,14 +1,23 @@
 // Greybox rendering (mw-e00.21): turns a scene layout (src/sim/scene) into Three.js objects. Kept
 // cheap on purpose (AC-6: ≤ 8 ms p95 on the reference machine): all static parts of one purpose are
 // merged into a single mesh, so a whole scene is at most one draw call per purpose (five), lit by a
-// hemisphere light and one shadow-casting sun fitted to the scene's bounds. Materials are colour-coded
+// hemisphere light and one shadow-casting sun fitted to the scene's bounds. Both mirror the sim's
+// light environment (mw-e03.37): the fill follows its ambient level, the sun its brightest
+// directional light (off when it has none), through the same mapping as the torch lights. Materials are colour-coded
 // by purpose and carry a 1 m world-space grid so distances read at a glance.
 //
 // Render-only (needs a GPU context), so it is excluded from unit coverage and verified by the
 // Playwright scene smoke (e2e/scenes.spec.ts).
 
 import type { KitPurpose } from '@content/index';
-import type { SceneLayout, ScenePart, SceneSpawnPlacement, Vec3 } from '@sim/index';
+import type {
+  ResolvedLightEnvironment,
+  SceneLayout,
+  ScenePart,
+  SceneSpawnPlacement,
+  Vec3,
+} from '@sim/index';
+import { renderIntensity } from '../light/index.ts';
 import {
   BoxGeometry,
   BufferGeometry,
@@ -40,9 +49,11 @@ export const PURPOSE_COLOURS: Readonly<Record<KitPurpose, number>> = {
 };
 
 const MARKER_COLOUR = 0xe8c547;
+/** A wall bracket holding a light (a torch spawn). */
+const BRACKET_COLOUR = 0x3b3a5a;
 const BACKGROUND = 0x10131c;
-/** Direction the sunlight comes from. */
-const SUN_DIRECTION = new Vector3(0.45, 1, -0.3).normalize();
+/** Direction the sunlight comes from until the scene's light environment says otherwise. */
+const DEFAULT_SUN_DIRECTION = new Vector3(0.45, 1, -0.3).normalize();
 const SHADOW_MAP_SIZE = 2048;
 
 /** A standard material with a 1 m world-space grid drawn over it. */
@@ -123,6 +134,11 @@ export interface GreyboxView {
   spawn(spawn: SceneSpawnPlacement): Object3D;
   /** A movable prop (mw-e03.39): a `size` box centred on the origin, which follows its body. */
   body(spawn: SceneSpawnPlacement, size: Vec3): Object3D;
+  /**
+   * Mirrors the sim's light environment (mw-e03.37): hemisphere fill from its ambient level, the
+   * shadow-casting sun from its brightest directional light (none: the sun is off).
+   */
+  setEnvironment(environment: ResolvedLightEnvironment): void;
   /** Removes the lights. Scene objects are disposed through their render bindings. */
   dispose(): void;
 }
@@ -140,9 +156,13 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
   sun.shadow.bias = -0.0005;
   sun.shadow.normalBias = 0.03;
   scene.add(sky, sun, sun.target);
+  const sunDirection = DEFAULT_SUN_DIRECTION.clone();
+  let fitted: readonly ScenePart[] = [];
 
   /** Points the sun at the layout and fits its shadow camera around it. */
   const fitSun = (parts: readonly ScenePart[]): void => {
+    fitted = parts;
+    if (parts.length === 0) return;
     const min = new Vector3(Infinity, Infinity, Infinity);
     const max = new Vector3(-Infinity, -Infinity, -Infinity);
     for (const part of parts) {
@@ -152,7 +172,7 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
     const centre = min.clone().add(max).multiplyScalar(0.5);
     const radius = Math.max(1, max.distanceTo(min) / 2);
     sun.target.position.copy(centre);
-    sun.position.copy(centre).addScaledVector(SUN_DIRECTION, radius * 2);
+    sun.position.copy(centre).addScaledVector(sunDirection, radius * 2);
     const camera = sun.shadow.camera;
     camera.left = -radius;
     camera.right = radius;
@@ -199,6 +219,13 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
         mesh = new Mesh(mergeGeometries([post, arms]), gridMaterial(PURPOSE_COLOURS.interactive));
         post.dispose();
         arms.dispose();
+      } else if (spawn.prop === undefined && spawn.properties !== undefined) {
+        // A placed light (a torch): a small bracket under where its flame burns. The flame and
+        // its light come from the light rig, which mirrors the sim (src/render/light).
+        mesh = new Mesh(
+          new BoxGeometry(0.1, 0.35, 0.1).translate(0, -0.25, 0),
+          new MeshStandardMaterial({ color: new Color(BRACKET_COLOUR), roughness: 0.8 }),
+        );
       } else if (spawn.prop === undefined) {
         // A marker: a flat cone lying down, pointing the way the spawn faces (+z at yaw 0).
         mesh = new Mesh(
@@ -232,6 +259,26 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
       group.add(mesh);
       scene.add(group);
       return group;
+    },
+
+    setEnvironment(environment) {
+      sky.intensity = renderIntensity(environment.ambient, sky.color);
+      const key = environment.directional.reduce<(typeof environment.directional)[number] | null>(
+        (best, light) => (best === null || light.level > best.level ? light : best),
+        null,
+      );
+      // Floor-referenced: a directional light of level L brightens a floor as much as a torch of
+      // level L right above it, whatever its elevation (the sim's level has no angle term).
+      sun.intensity =
+        key === null
+          ? 0
+          : renderIntensity(key.level, sun.color) / Math.max(0.2, Math.abs(key.direction.y));
+      sun.castShadow = key !== null;
+      if (key !== null) {
+        const { x, y, z } = key.direction;
+        sunDirection.set(-x, -y, -z).normalize();
+      }
+      fitSun(fitted);
     },
 
     dispose() {

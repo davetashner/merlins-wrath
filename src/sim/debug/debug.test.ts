@@ -20,8 +20,14 @@ import {
 import { ReplayRecorder } from '../replay/recorder';
 import { playReplay } from '../replay/player';
 import { hashWorld } from '../snapshot';
+import {
+  addProperties,
+  propertyChanged,
+  readProperty,
+  registerWorldProperties,
+  type PropertyChange,
+} from '../properties/components';
 import { DebugCheatsComponent, godModeModifier, hasCheat, NO_CHEATS } from './cheats';
-import { addProperties, registerWorldProperties } from '../properties/components';
 import { placeEntity } from '../stimulus/placement';
 import { STIMULUS_EDGE_FALLOFF } from '../stimulus/shapes';
 import {
@@ -39,6 +45,7 @@ import {
   isDebugCommand,
   killCommand,
   MAX_SPAWN_COUNT,
+  propertyCommand,
   spawnCommand,
   teleportCommand,
   type DebugCommand,
@@ -107,6 +114,16 @@ describe('debug command builders', () => {
     expect(() => cheatCommand(0, 'god', true)).toThrow(/entity id/);
     expect(() => cheatCommand(1, 'fly' as never, true)).toThrow(/unknown cheat/);
     expect(() => killCommand(1.5)).toThrow(/entity id/);
+    expect(() => propertyCommand(1, 'glowing', true)).toThrow('unknown world property "glowing"');
+    expect(() => propertyCommand(1, 'wetness', 1.4)).toThrow(/wetness/);
+    expect(() => propertyCommand(0, 'burning', true)).toThrow(/entity id/);
+    expect(propertyCommand(2, 'burning', false)).toEqual({
+      kind: DEBUG_COMMAND,
+      op: 'property',
+      target: 2,
+      key: 'burning',
+      value: false,
+    });
   });
 
   it('carry spawn options sorted by name, only when there are some (mw-e04.9)', () => {
@@ -123,6 +140,7 @@ describe('debug command builders', () => {
 
   it('isDebugCommand picks debug commands out of arbitrary inputs', () => {
     expect(isDebugCommand(killCommand(1))).toBe(true);
+    expect(isDebugCommand(propertyCommand(1, 'burning', false))).toBe(true);
     expect(isDebugCommand({ kind: 'sim.fact' })).toBe(false);
     expect(isDebugCommand(null)).toBe(false);
     expect(isDebugCommand('sim.debug')).toBe(false);
@@ -248,6 +266,35 @@ describe('debug command system', () => {
     expect(world.isAlive(hero)).toBe(true);
     world.step([killCommand(foe)]);
     expect(died).toHaveLength(1);
+  });
+
+  it('mw-e03.37: property commands set a world property like a rule would, adding it if missing', () => {
+    const world = debugWorld();
+    const sim = registerWorldProperties(world as unknown as World<never>);
+    const torch = world.spawn();
+    addProperties(sim, torch, { burning: true });
+    const changes: PropertyChange[] = [];
+    world.events.on(propertyChanged, (change) => changes.push(change));
+    world.step([propertyCommand(torch, 'burning', false), propertyCommand(torch, 'wetness', 0.5)]);
+    expect(readProperty(sim, torch, 'burning')).toBe(false);
+    expect(readProperty(sim, torch, 'wetness')).toBe(0.5);
+    expect(changes.map((c) => [c.key, c.new])).toEqual([
+      ['burning', false],
+      ['wetness', 0.5],
+    ]);
+    // A command whose value no longer validates (a replay from another build) is skipped.
+    const stale = { ...propertyCommand(torch, 'wetness', 0.2), value: 7 } as DebugCommand;
+    world.step([stale]);
+    expect(readProperty(sim, torch, 'wetness')).toBe(0.5);
+  });
+
+  it('property commands are skipped in a world without world properties', () => {
+    const world = debugWorld();
+    const other = debugWorld();
+    world.step([propertyCommand(world.spawn(), 'burning', true)]);
+    other.spawn();
+    other.step();
+    expect(hashWorld(world)).toBe(hashWorld(other));
   });
 
   it('kill falls back to removing when the world has no health component', () => {

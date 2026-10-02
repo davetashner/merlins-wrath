@@ -22,6 +22,7 @@ import {
   unloadScene,
   type EntityId,
   type KitLookup,
+  type LightEnvironment,
   type LoadedScene,
   type SceneLayout,
   type SceneSpawnPlacement,
@@ -73,6 +74,11 @@ export interface SceneLoaderOptions<TObject, TCommand> {
    * `installGamePhysics` and `colliders` must be its physics). Absent: every spawn stays put.
    */
   readonly physics?: SceneLoaderPhysics;
+  /**
+   * The light field (mw-e03.37): gets each loaded scene's light data, and an empty environment on
+   * unload. Its static occluders are fed through `colliders` (a ColliderFanOut), not here.
+   */
+  readonly light?: { setEnvironment(environment: LightEnvironment): void };
 }
 
 /** Thrown when asked for a scene the content does not have; lists the ones it does. */
@@ -154,6 +160,7 @@ export class SceneLoader<TObject, TCommand = unknown> {
             ),
       );
     }
+    this.options.light?.setEnvironment(loaded.layout.light);
     this.loaded = loaded;
     return loaded;
   }
@@ -166,5 +173,6 @@ export class SceneLoader<TObject, TCommand = unknown> {
     const { world, sync, colliders } = this.options;
     for (const entity of sceneEntities(loaded)) sync.unbind(entity);
     unloadScene(world, loaded, colliders);
+    this.options.light?.setEnvironment({});
   }
 }

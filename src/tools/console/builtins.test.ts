@@ -11,6 +11,7 @@ import {
   blastCommand,
   killCommand,
   PlayerLook,
+  propertyCommand,
   registerSceneComponents,
   ReplayRecorder,
   SceneSpawnComponent,
@@ -233,6 +234,54 @@ describe('built-in console commands', () => {
     expect(s.queue.drain()).toEqual([killCommand(s.hero)]);
   });
 
+  it('mw-e03.37: prop sets a world property of a live entity, parsing the value', () => {
+    const s = session();
+    const torch = s.world.spawn();
+    expect(s.registry.execute(`prop ${String(torch)} burning false`).lines).toEqual([
+      `entity ${String(torch)}: burning = false`,
+    ]);
+    s.registry.execute(`prop ${String(torch)} wetness 0.5`);
+    s.registry.execute(`prop ${String(torch)} lightEmitter {"intensity":80,"radius":6}`);
+    s.registry.execute(`prop ${String(torch)} material wood`);
+    expect(s.queue.drain()).toEqual([
+      propertyCommand(torch, 'burning', false),
+      propertyCommand(torch, 'wetness', 0.5),
+      propertyCommand(torch, 'lightEmitter', { intensity: 80, radius: 6 }),
+      propertyCommand(torch, 'material', 'wood'),
+    ]);
+    expect(s.registry.execute('prop 999 burning false')).toEqual({
+      ok: false,
+      lines: ['no entity 999'],
+    });
+    expect(s.registry.execute(`prop ${String(torch)} burnin true`).lines[0]).toMatch(
+      /^unknown world property "burnin"; closest: burning/,
+    );
+    expect(s.registry.execute(`prop ${String(torch)} wetness 3`).lines).toEqual([
+      'wetness must be ≤ 1, got 3',
+    ]);
+    expect(s.registry.execute(`prop ${String(torch)} lightEmitter {oops`).lines).toEqual([
+      'bad value {oops: expected JSON like {"intensity":80,"radius":6}',
+    ]);
+    expect(s.queue.drain()).toEqual([]);
+    expect(s.registry.complete(`prop ${String(torch)} burn`).line).toBe(
+      `prop ${String(torch)} burning `,
+    );
+    expect(s.registry.complete('prop 1').options).toEqual([]);
+  });
+
+  it('prop passes unexpected errors on as failures', () => {
+    const s = session();
+    const torch = s.world.spawn();
+    const submit = vi.spyOn(s.host, 'submit').mockImplementation(() => {
+      throw new TypeError('queue closed');
+    });
+    expect(s.registry.execute(`prop ${String(torch)} burning false`)).toEqual({
+      ok: false,
+      lines: ['prop failed: TypeError: queue closed'],
+    });
+    submit.mockRestore();
+  });
+
   it('tp takes x y z or a named place; unknown places list the closest', () => {
     const s = session({ withPlayer: true });
     const player = s.hero;
@@ -352,6 +401,7 @@ describe('built-in console commands', () => {
       'help',
       'kill',
       'noclip',
+      'prop',
       'scene',
       'seed',
       'set',

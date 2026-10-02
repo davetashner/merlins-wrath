@@ -115,8 +115,32 @@ export interface DirectionalLight {
 
 /** The level's static lighting. Later ambient zones take precedence over earlier ones. */
 export interface LightEnvironment {
+  /** Ambient level wherever no ambient zone applies, [0, 1]; defaults to the config's defaultAmbient. */
+  readonly ambient?: number;
   readonly ambientZones?: readonly AmbientZone[];
   readonly directional?: readonly DirectionalLight[];
+}
+
+/** The environment in effect (validated): what the renderer mirrors as ambient fill and key light. */
+export interface ResolvedLightEnvironment {
+  readonly ambient: number;
+  readonly ambientZones: readonly AmbientZone[];
+  /** Directional lights with unit directions. */
+  readonly directional: readonly DirectionalLight[];
+}
+
+/** One point or spot light this tick, as the renderer mirrors it (mw-e03.37). */
+export interface LightEmitterView {
+  readonly source: LightSource;
+  /** The emitting entity, or null for a light stimulus. */
+  readonly entity: EntityId | null;
+  readonly position: Vec3;
+  /** Reach, metres: it lights nothing at or beyond this distance. */
+  readonly radius: number;
+  /** Its level at distance 0 (intensity / fullIntensity; may exceed 1). */
+  readonly level: number;
+  /** Its cone when it is a spotlight: unit axis and cos(half-angle). */
+  readonly cone: { readonly direction: Vec3; readonly cosHalfAngle: number } | null;
 }
 
 /** Where one contribution came from. */
@@ -318,6 +342,8 @@ interface Emitter {
 
 interface Directional {
   readonly source: LightSource;
+  /** The light as validated, with a unit direction (what `environment` reports). */
+  readonly light: DirectionalLight;
   /** Offset from a position back to the light: −direction × reach. */
   readonly bx: number;
   readonly by: number;
@@ -371,6 +397,12 @@ function toDirectional(light: DirectionalLight): Directional {
   const { x, y, z } = unit;
   return {
     source: Object.freeze({ kind: 'directional', id: light.id }),
+    light: Object.freeze({
+      id: light.id,
+      direction: Object.freeze(unit),
+      level: light.level,
+      reach: light.reach,
+    }),
     bx: -x * light.reach,
     by: -y * light.reach,
     bz: -z * light.reach,
@@ -684,6 +716,7 @@ export class LightField {
   readonly statics = new StaticOccluders();
   private zones: readonly AmbientZone[] = [];
   private directional: readonly Directional[] = [];
+  private resolved: ResolvedLightEnvironment;
   private emitters: readonly Emitter[] = [];
   /** This tick's emitters by x/z bucket (see `emitterBuckets`). */
   private buckets = new Map<number, Emitter[]>();
@@ -699,14 +732,56 @@ export class LightField {
   constructor(config: Partial<LightConfig> = {}) {
     this.config = resolveLightConfig(config);
     this.staticVersion = this.statics.version;
+    this.resolved = Object.freeze({
+      ambient: this.config.defaultAmbient,
+      ambientZones: this.zones,
+      directional: Object.freeze([]),
+    });
   }
 
-  /** Replaces the level's ambient zones and directional lights (validated; a RangeError). */
+  /**
+   * Replaces the level's ambient level, ambient zones and directional lights (validated, all or
+   * nothing; a RangeError). An absent `ambient` falls back to the config's defaultAmbient.
+   */
   setEnvironment(environment: LightEnvironment): void {
+    const ambient = environment.ambient ?? this.config.defaultAmbient;
+    check(unitRange(ambient), 'light environment ambient must be in [0, 1]');
     const zones = (environment.ambientZones ?? []).map(checkZone);
     const directional = (environment.directional ?? []).map(toDirectional);
     this.zones = Object.freeze(zones);
     this.directional = Object.freeze(directional);
+    this.resolved = Object.freeze({
+      ambient,
+      ambientZones: this.zones,
+      directional: Object.freeze(directional.map((d) => d.light)),
+    });
+  }
+
+  /** The environment in effect: ambient level, ambient zones and directional lights. */
+  get environment(): ResolvedLightEnvironment {
+    return this.resolved;
+  }
+
+  /**
+   * This tick's point and spot lights (entities by id, then light stimuli), for the renderer to
+   * mirror. Read-only: the sim stays authoritative.
+   */
+  lights(): readonly LightEmitterView[] {
+    return this.emitters.map((e) =>
+      Object.freeze({
+        source: e.source,
+        entity: e.entity,
+        position: Object.freeze({ x: e.x, y: e.y, z: e.z }),
+        radius: e.radius,
+        level: e.scale,
+        cone: e.spot
+          ? Object.freeze({
+              direction: Object.freeze({ x: e.ax, y: e.ay, z: e.az }),
+              cosHalfAngle: e.cos,
+            })
+          : null,
+      }),
+    );
   }
 
   /** Queues a resolved stimulus; `update` turns this tick's light stimuli into emitters. */
@@ -862,7 +937,7 @@ export class LightField {
         zone = candidate;
       }
     }
-    const ambient = zone === undefined ? this.config.defaultAmbient : zone.level;
+    const ambient = zone === undefined ? this.resolved.ambient : zone.level;
     this.ambient = ambient;
     this.zone = zone === undefined ? null : zone.id;
     let total = ambient;

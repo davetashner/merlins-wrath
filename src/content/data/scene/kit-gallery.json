@@ -65,5 +65,9 @@
       "at": [0, 0, -4],
       "tags": ["player-start"]
     }
-  ]
+  ],
+  "light": {
+    "ambient": 0.26,
+    "directional": [{ "id": "sun", "direction": [-0.45, -1, 0.3], "level": 0.5, "reach": 60 }]
+  }
 }

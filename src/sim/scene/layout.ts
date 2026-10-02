@@ -10,6 +10,7 @@
 import type { KitPurpose, KitShape, SceneYaw } from '@content/index';
 import type { RampRise } from '../character/greybox';
 import type { InteractableSpec } from '../interaction/affordance';
+import type { LightEnvironment } from '../light/field';
 import type { StaticColliderDesc } from '../physics/static-colliders';
 import type { WorldPropertyValues } from '../properties/spec';
 import type { Vec3 } from '../stimulus/shapes';
@@ -93,6 +94,31 @@ export interface SceneSpawnSpec {
   readonly faction?: { readonly id: string } | undefined;
   /** The creature's patrol route, grid cells. */
   readonly patrol?: readonly Triple[] | undefined;
+  /** World properties of the spawned entity (mw-e03.37: a torch that burns). */
+  readonly properties?: ScenePropertiesSpec | undefined;
+}
+
+/** A box with its own ambient level, in grid cells (mw-e03.37). */
+export interface SceneAmbientZoneSpec {
+  readonly id: string;
+  readonly min: Triple;
+  readonly max: Triple;
+  readonly level: number;
+}
+
+/** A directional light: direction of travel, level, and reach in metres (mw-e03.37). */
+export interface SceneDirectionalLightSpec {
+  readonly id: string;
+  readonly direction: Triple;
+  readonly level: number;
+  readonly reach: number;
+}
+
+/** A scene's static lighting (mw-e03.37). */
+export interface SceneLightSpec {
+  readonly ambient?: number | undefined;
+  readonly ambientZones?: readonly SceneAmbientZoneSpec[] | undefined;
+  readonly directional?: readonly SceneDirectionalLightSpec[] | undefined;
 }
 
 /** A scene as the layout needs it; `GameEntry<'scene'>` satisfies it. */
@@ -102,6 +128,8 @@ export interface SceneSpec {
   readonly grid: number;
   readonly placements: readonly ScenePlacementSpec[];
   readonly spawns: readonly SceneSpawnSpec[];
+  /** Static lighting for the light field (mw-e03.37); none: dark but for emitters. */
+  readonly light?: SceneLightSpec | undefined;
 }
 
 /** Finds a kit piece by id (undefined when there is none). */
@@ -161,6 +189,8 @@ export interface SceneSpawnPlacement {
   readonly faction?: string;
   /** That creature's patrol route, world metres. */
   readonly patrol?: readonly Vec3[];
+  /** Its world properties, when the spawn sets any (mw-e03.37). */
+  readonly properties?: ScenePropertiesSpec;
 }
 
 export interface SceneLayout {
@@ -168,6 +198,8 @@ export interface SceneLayout {
   readonly pieces: readonly ScenePiecePlacement[];
   readonly parts: readonly ScenePart[];
   readonly spawns: readonly SceneSpawnPlacement[];
+  /** The scene's static lighting in metres, for `LightField.setEnvironment` (mw-e03.37). */
+  readonly light: LightEnvironment;
 }
 
 /** Thrown when a scene names a kit piece the lookup does not have. */
@@ -307,6 +339,7 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       ...(spawn.patrol !== undefined && {
         patrol: Object.freeze(spawn.patrol.map((at) => gridToWorld(at, scene.grid))),
       }),
+      ...(spawn.properties !== undefined && { properties: spawn.properties }),
     }),
   );
   return Object.freeze({
@@ -314,5 +347,32 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
     pieces: Object.freeze(pieces),
     parts: Object.freeze(parts),
     spawns: Object.freeze(spawns),
+    light: sceneLight(scene.light, scene.grid),
+  });
+}
+
+/**
+ * A scene's light data as the light field takes it (mw-e03.37): zone bounds from grid cells to
+ * metres; directions and reach as written. Values are validated by the field.
+ */
+export function sceneLight(light: SceneLightSpec | undefined, grid: number): LightEnvironment {
+  if (light === undefined) return Object.freeze({});
+  return Object.freeze({
+    ...(light.ambient !== undefined && { ambient: light.ambient }),
+    ambientZones: Object.freeze(
+      (light.ambientZones ?? []).map((zone) =>
+        Object.freeze({
+          id: zone.id,
+          min: gridToWorld(zone.min, grid),
+          max: gridToWorld(zone.max, grid),
+          level: zone.level,
+        }),
+      ),
+    ),
+    directional: Object.freeze(
+      (light.directional ?? []).map((d) =>
+        Object.freeze({ id: d.id, direction: vec(...d.direction), level: d.level, reach: d.reach }),
+      ),
+    ),
   });
 }
