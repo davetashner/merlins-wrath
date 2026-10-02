@@ -67,7 +67,12 @@ describe('game creatures (mw-e12.4)', () => {
   it('with no creature in content, starting creatures leaves the world exactly as it was', () => {
     const content = loadGameContent();
     const combat = prepareTestbedCombat(content);
-    const creatures = prepareCreatures(content, combat);
+    // The game's content as it was before the bestiary (E13): no creature at all.
+    const creatures = {
+      ...prepareCreatures(content, combat),
+      table: new Map(),
+      spawners: new Map(),
+    };
     expect(creatures.table.size).toBe(0);
     expect(creatures.spawners.size).toBe(0);
     const world = new World<never>({ seed: 1 });

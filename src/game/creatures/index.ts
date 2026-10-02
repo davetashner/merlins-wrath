@@ -9,9 +9,10 @@
 //    the shared invulnerability rule, mw-e04.28) and spawns the scene's creature spawns. Creatures
 //    have no AI yet (e11): they stand where they spawned and take hits.
 //
-// With no creature in content (the game's own content until the bestiary, E13) there is nothing to
-// install: the world, its entity ids and its state hashes stay exactly as before. Debug builds load
-// the frozen fixture creatures (src/content/dev-content.ts), so the testbed can spawn them.
+// With no creature in content there is nothing to install: the world, its entity ids and its state
+// hashes stay exactly as before. The game's own content has the bestiary's creatures (E13; the first
+// is the Forgotten miner, mw-e13.1), so every scene installs them and the console can spawn them.
+// Debug builds also load the frozen fixture creatures (src/content/dev-content.ts).
 //
 // `bindCreatures` gives every creature without one a render proxy after each step (scene, console
 // and respawned creatures alike); render sync drops a despawned creature's proxy on the next frame.

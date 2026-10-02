@@ -1,0 +1,99 @@
+{
+  "$schema": "../behaviour.schema.json",
+  "id": "forgotten",
+  "notes": "The Forgotten skeleton's fight (mw-e13.1, ADR-0005), the vertical slice's arena encounter: it stands where it was left until it notices someone, turns to a noise and shambles over to look, and fights anyone it sees. In Combat it closes in and picks among the e04 grey-box set: the overhead chop first (the parry-practice swing), the two-hit slash while the chop cools down, and the lunging thrust when the target hangs back at 1.6-2.8 m. A move on cooldown or out of range fails its activity, which then sits out retryAfterS while the others are scored. Its habits (sweeping, hauling, ignoring quiet players) are mw-e13.4; the resting idle and wake are mw-e01.5; crumbling and reassembling is mw-e13.3.",
+  "tuning": {
+    "suspiciousAt": 0.3,
+    "suspiciousTimeoutS": 12,
+    "combatLostS": 6,
+    "chopWithin": 1.3,
+    "thrustWithin": 2.4
+  },
+  "thinkHz": 10,
+  "inertia": 0.1,
+  "initial": "unaware",
+  "states": {
+    "unaware": {
+      "transitions": [
+        {
+          "to": "suspicious",
+          "when": { "input": "awareness", "gte": { "tuning": "suspiciousAt" } }
+        },
+        { "to": "combat", "when": { "event": "damaged-by-unseen" } }
+      ],
+      "activities": ["stand"]
+    },
+    "suspicious": {
+      "timeoutS": { "tuning": "suspiciousTimeoutS" },
+      "onTimeout": "unaware",
+      "transitions": [
+        { "to": "combat", "when": { "input": "targetVisible", "gte": 1 } },
+        { "to": "combat", "when": { "event": "damaged-by-unseen" } },
+        { "to": "unaware", "when": { "done": "seek" } },
+        { "to": "unaware", "when": { "failed": "seek" } }
+      ],
+      "activities": ["seek"]
+    },
+    "combat": {
+      "transitions": [
+        {
+          "to": "suspicious",
+          "when": { "input": "targetLostS", "gte": { "tuning": "combatLostS" } }
+        }
+      ],
+      "activities": ["chop", "slash", "thrust"]
+    }
+  },
+  "activities": {
+    "stand": {
+      "steps": [{ "do": "wait", "seconds": 1 }]
+    },
+    "seek": {
+      "steps": [
+        { "do": "look-at", "target": "stimulus", "seconds": 1 },
+        { "do": "move-to", "target": "stimulus", "within": 1 },
+        { "do": "look-around", "seconds": 3 },
+        { "do": "forget-stimulus" }
+      ]
+    },
+    "chop": {
+      "weight": 2,
+      "interruptible": false,
+      "steps": [
+        {
+          "do": "move-to",
+          "target": "target",
+          "within": { "tuning": "chopWithin" },
+          "gait": "run"
+        },
+        { "do": "attack", "attack": "forgotten-overhead-chop" }
+      ]
+    },
+    "slash": {
+      "weight": 1.9,
+      "interruptible": false,
+      "steps": [
+        {
+          "do": "move-to",
+          "target": "target",
+          "within": { "tuning": "chopWithin" },
+          "gait": "run"
+        },
+        { "do": "attack", "attack": "forgotten-two-hit-slash" }
+      ]
+    },
+    "thrust": {
+      "weight": 1,
+      "interruptible": false,
+      "steps": [
+        {
+          "do": "move-to",
+          "target": "target",
+          "within": { "tuning": "thrustWithin" },
+          "gait": "run"
+        },
+        { "do": "attack", "attack": "forgotten-lunging-thrust" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "forgotten-arena",
+  "description": "The vertical slice's skeleton arena (docs/design/vertical-slice.md B4) in scenario coordinates, for mw-e13.1 AC-4: a 12 × 12 m room with two pillars off the centre line and two wall torches plus a floor brazier for light. The Forgotten miner stands at its post at the origin facing +z; the player stands 10 m in front of it near the doorway, in the torchlight.",
+  "walls": [
+    { "min": [-6.5, 0, -1.5], "max": [6.5, 3, -1] },
+    { "min": [-6.5, 0, 11], "max": [-0.6, 3, 11.5] },
+    { "min": [0.6, 0, 11], "max": [6.5, 3, 11.5] },
+    { "min": [-6.5, 0, -1], "max": [-6, 3, 11] },
+    { "min": [6, 0, -1], "max": [6.5, 3, 11] },
+    { "min": [-3.5, 0, 2.5], "max": [-2.5, 3, 3.5] },
+    { "min": [2.5, 0, 6.5], "max": [3.5, 3, 7.5] }
+  ],
+  "light": {
+    "ambient": 0.15,
+    "lights": [
+      { "id": "torch-west", "at": [-5.75, 2.25, 8], "intensity": 250, "radius": 12 },
+      { "id": "torch-east", "at": [5.75, 2.25, 4], "intensity": 250, "radius": 12 },
+      { "id": "brazier", "at": [-4.5, 0.8, -0.5], "intensity": 150, "radius": 8 }
+    ]
+  },
+  "player": { "at": [0, 0, 10], "yaw": 0 },
+  "fixtures": [{ "id": "skeleton", "creature": "forgotten-miner", "at": [0, 0, 0], "yaw": 0 }]
+}
