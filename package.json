@@ -27,6 +27,8 @@
     "content:docs": "node scripts/content-docs-cli.ts",
     "audio:placeholders": "node scripts/audio/gen-placeholders-cli.ts",
     "audio:placeholder-report": "node scripts/audio/placeholder-report-cli.ts",
+    "vfx:placeholders": "node scripts/vfx/gen-placeholders-cli.ts",
+    "vfx:placeholder-report": "node scripts/vfx/placeholder-report-cli.ts",
     "secrets:lint": "node scripts/check-gitleaks-config-cli.ts",
     "hooks:install": "git config core.hooksPath .beads/hooks",
     "deps:audit": "pnpm audit --json > audit.json; node scripts/dependency-audit-cli.ts --audit audit.json",

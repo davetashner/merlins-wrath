@@ -41,6 +41,7 @@ import { checkSocketTracks, socketTrackSchema } from './types/socket-track.ts';
 import { spellSchema } from './types/spell.ts';
 import { targetableSchema } from './types/targetable.ts';
 import { testPropSchema } from './types/testprop.ts';
+import { vfxCueSheetSchema } from './types/vfx-cue-sheet.ts';
 import { vfxEffectSchema } from './types/vfx-effect.ts';
 
 /** Content type name → schema of one entry. */
@@ -77,6 +78,7 @@ export const contentTypes = {
   spell: spellSchema,
   targetable: targetableSchema,
   testprop: testPropSchema,
+  'vfx-cue-sheet': vfxCueSheetSchema,
   'vfx-effect': vfxEffectSchema,
 };
 

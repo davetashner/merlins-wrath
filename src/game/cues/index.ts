@@ -37,3 +37,12 @@ export {
   type CueFactValue,
   type MatchableRule,
 } from './matcher.ts';
+export {
+  upTo,
+  VfxCueBridge,
+  type VfxCueBridgeOptions,
+  type VfxCueRule,
+  type VfxCueSpawn,
+  type VfxSpawner,
+} from './vfx-bridge.ts';
+export { attachGameVfx, type GameVfxOptions } from './game-vfx.ts';

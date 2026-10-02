@@ -5,8 +5,10 @@
 // per frame once a batch's mesh exists. Dev-build markers for unknown effects are drawn as small
 // magenta diamonds.
 //
-// Textures are placeholders (a soft dot per flipbook cell) until procedural placeholders keyed by the
-// final asset ids (mw-e29.2) and the approved VFX textures land.
+// Textures load by asset id from the URL the caller resolves (the texture manifest, mw-e29.2: the
+// generated placeholders until approved art lands), once per texture and only when a batch first
+// draws. Until a file has loaded, or for an id the manifest lacks, the batch samples a procedural
+// soft dot per flipbook cell, so nothing is requested that is not there.
 //
 // Render-only (needs a GPU context), so it is excluded from unit coverage and verified by the
 // Playwright VFX smoke (e2e/vfx.spec.ts) and the opt-in perf run (e2e/vfx-perf.spec.ts).
@@ -17,6 +19,7 @@ import {
   Color,
   DataTexture,
   DynamicDrawUsage,
+  TextureLoader,
   InstancedBufferGeometry,
   InstancedInterleavedBuffer,
   InstancedMesh,
@@ -31,11 +34,14 @@ import {
   ShaderMaterial,
   UnsignedByteType,
   type Scene,
+  type Texture,
 } from 'three';
 
 /** One draw batch, as src/game/vfx's VfxBatch provides it. */
 export interface VfxDrawBatch {
   readonly key: string;
+  /** Texture asset id. */
+  readonly texture: string;
   readonly blend: 'additive' | 'alpha';
   readonly cols: number;
   readonly rows: number;
@@ -131,14 +137,36 @@ function placeholderTexture(cols: number, rows: number): DataTexture {
   return texture;
 }
 
+/** A texture file loading (or loaded) for the batches that use it. */
+interface TextureFile {
+  texture?: Texture;
+  ready: boolean;
+  /** Materials still sampling the stand-in. */
+  readonly waiting: ShaderMaterial[];
+}
+
+/** Points a batch material at a loaded texture. */
+function setMap(material: ShaderMaterial, texture: Texture | undefined): void {
+  const uniform = material.uniforms['map'];
+  if (uniform !== undefined && texture !== undefined) uniform.value = texture;
+}
+
 interface BatchMesh {
   readonly mesh: Mesh<InstancedBufferGeometry, ShaderMaterial>;
   readonly buffer: InstancedInterleavedBuffer;
 }
 
-export function createVfxRenderer(scene: Scene): VfxRenderer {
+export interface VfxRendererOptions {
+  /** URL of a texture asset id, or undefined to keep the procedural stand-in. */
+  readonly textureUrl?: (textureId: string) => string | undefined;
+}
+
+export function createVfxRenderer(scene: Scene, options: VfxRendererOptions = {}): VfxRenderer {
   const meshes = new Map<string, BatchMesh>();
   const textures = new Map<string, DataTexture>();
+  const files = new Map<string, TextureFile>();
+  const loader = new TextureLoader();
+  let disposed = false;
   let markerMesh: InstancedMesh | undefined;
   const matrix = new Matrix4();
 
@@ -150,6 +178,32 @@ export function createVfxRenderer(scene: Scene): VfxRenderer {
       textures.set(key, texture);
     }
     return texture;
+  };
+
+  /** Starts loading a batch's texture file (once per URL); each material gets it once it arrives. */
+  const loadTexture = (batch: VfxDrawBatch, material: ShaderMaterial): void => {
+    const url = options.textureUrl?.(batch.texture);
+    if (url === undefined) return;
+    let file = files.get(url);
+    if (file === undefined) {
+      const entry: TextureFile = { ready: false, waiting: [] };
+      file = entry;
+      files.set(url, entry);
+      entry.texture = loader.load(
+        url,
+        () => {
+          entry.ready = true;
+          if (disposed) return;
+          for (const m of entry.waiting) setMap(m, entry.texture);
+          entry.waiting.length = 0;
+        },
+        undefined,
+        () => undefined, // a missing file keeps the stand-in
+      );
+      entry.texture.magFilter = LinearFilter;
+    }
+    if (file.ready) setMap(material, file.texture);
+    else file.waiting.push(material);
   };
 
   const meshFor = (batch: VfxDrawBatch): BatchMesh => {
@@ -185,6 +239,7 @@ export function createVfxRenderer(scene: Scene): VfxRenderer {
       depthWrite: false,
       blending: additive ? AdditiveBlending : NormalBlending,
     });
+    loadTexture(batch, material);
     const mesh = new Mesh(geometry, material);
     mesh.frustumCulled = false; // particles spread anywhere; the budget already culls by distance
     mesh.renderOrder = additive ? 11 : 10; // smoke first, glow over it
@@ -236,6 +291,9 @@ export function createVfxRenderer(scene: Scene): VfxRenderer {
       drawMarkers(markers);
     },
     dispose() {
+      disposed = true;
+      for (const file of files.values()) file.texture?.dispose();
+      files.clear();
       for (const { mesh } of meshes.values()) {
         scene.remove(mesh);
         mesh.geometry.dispose();

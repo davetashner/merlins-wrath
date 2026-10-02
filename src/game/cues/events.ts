@@ -4,7 +4,7 @@
 // here fails typecheck; events.test.ts checks every reader only produces declared facts of the
 // declared kind. Readers only read: payloads and, through `CueLookups`, an entity's material.
 
-import type { CueEventName } from '@content/index';
+import type { CueDirection, CueEventName } from '@content/index';
 import {
   ActionPhaseChanged,
   ActionRejected,
@@ -51,10 +51,15 @@ export interface CueAnchor {
   readonly position?: Vec3;
 }
 
+/** Directions of one event occurrence; an unknown one is undefined or missing. */
+export type CueDirections = Readonly<Partial<Record<CueDirection, Vec3 | undefined>>>;
+
 /** What a binding reads from one event occurrence. */
 export interface CueReading {
   readonly anchors: Readonly<Record<string, CueAnchor | undefined>>;
   readonly facts: CueFacts;
+  /** Unit directions VFX rules may orient to (only those the event's spec declares). */
+  readonly directions?: CueDirections;
 }
 
 /** World lookups a reader may use (read-only). */
@@ -73,6 +78,8 @@ export interface CueLookups {
   readonly armorOf?: (entity: EntityId) => string | undefined;
   /** An arrow's own presentation cues (its content `cues`: trail, flight and impact). */
   readonly arrowCuesOf?: (arrow: string) => ArrowCues | undefined;
+  /** The horizontal way an entity faces (its combat facing), for directions a payload lacks. */
+  readonly facingOf?: (entity: EntityId) => Vec3 | undefined;
 }
 
 /** An arrow's own cue ids (the arrow content's `cues`). */
@@ -168,6 +175,26 @@ function contactOf(e: DamageResult): string {
 const landingWeight = (impactSpeed: number): string =>
   impactSpeed >= DEFAULT_GAIT_TUNING.hardLanding ? 'heavy' : 'light';
 
+/** `v` scaled to unit length, or undefined for a zero vector. */
+function unit(v: Vec3 | undefined): Vec3 | undefined {
+  if (v === undefined) return undefined;
+  const length = Math.hypot(v.x, v.y, v.z);
+  return length === 0 ? undefined : { x: v.x / length, y: v.y / length, z: v.z / length };
+}
+
+const negate = (v: Vec3 | undefined): Vec3 | undefined =>
+  v === undefined ? undefined : { x: 0 - v.x, y: 0 - v.y, z: 0 - v.z }; // 0 - 0 is +0, not -0
+
+/** A blow travelling along `forward`: the hit normal points back against it. */
+function blowDirections(forward: Vec3 | undefined): CueDirections {
+  const along = unit(forward);
+  return along === undefined ? {} : { attackerForward: along, hitNormal: negate(along) };
+}
+
+/** An entity's facing through the lookups, if both exist. */
+const facing = (look: CueLookups, entity: EntityId | null): Vec3 | undefined =>
+  entity === null ? undefined : look.facingOf?.(entity);
+
 const entityOnly = (payload: { entity: EntityId }): CueReading => ({
   anchors: { entity: { entity: payload.entity } },
   facts: {},
@@ -197,6 +224,7 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
         total: e.total,
         poiseDamage: e.poiseDamage,
       },
+      directions: blowDirections(e.packet.direction ?? facing(look, e.packet.instigator)),
     };
   }),
   PoiseBroken: bind(PoiseBroken, (e, look) => ({
@@ -210,6 +238,7 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
   HitParried: bind(HitParried, (e, look) => ({
     anchors: { entity: { entity: e.entity }, attacker: at(e.attacker), source: at(e.source) },
     facts: { shield: look.shieldOf?.(e.entity) },
+    directions: blowDirections(facing(look, e.attacker)),
   })),
   GuardBroken: bind(GuardBroken, (e, look) => ({
     anchors: { entity: { entity: e.entity }, instigator: at(e.instigator), source: at(e.source) },
@@ -255,6 +284,7 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
       attack: e.attack,
       total: e.results.reduce((sum, r) => sum + r.total, 0),
     },
+    directions: blowDirections(facing(look, e.attacker)),
   })),
   AttackProjectileLaunched: bind(AttackProjectileLaunched, (e) => ({
     anchors: {
@@ -339,6 +369,8 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
       impulse: e.impulse,
       speed: e.speed,
     },
+    // The payload's normal points from the object towards what it hit; the surface faces back.
+    directions: { hitNormal: negate(unit(e.normal)) },
   })),
   ArrowFired: bind(ArrowFired, (e, look) => {
     const cues = look.arrowCuesOf?.(e.arrow);
@@ -354,6 +386,7 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
         flight: cues?.flightSfx,
         speed: Math.hypot(e.velocity.x, e.velocity.y, e.velocity.z),
       },
+      directions: { attackerForward: unit(e.velocity) },
     };
   }),
   // Like physicsImpact, the payload names the struck material (unbound geometry reads the default).
@@ -378,6 +411,7 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
         speed: e.speed,
         impulse: e.impulse,
       },
+      directions: { hitNormal: unit(e.normal) },
     };
   }),
   breakableBroken: bind(breakableBroken, (e, look) => ({

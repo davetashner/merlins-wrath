@@ -16,13 +16,25 @@ import { z } from 'zod';
 export const CUE_FACT_KINDS = ['string', 'list', 'boolean', 'number'] as const;
 export type CueFactKind = (typeof CUE_FACT_KINDS)[number];
 
+/**
+ * Directions an event reading may carry, for VFX rules to orient an effect along (`orientTo`, e29.3):
+ * `hitNormal` points out of the struck surface (back towards whatever hit it), `attackerForward` is
+ * the way the blow, the attacker or the projectile was travelling.
+ */
+export const CUE_DIRECTIONS = ['hitNormal', 'attackerForward'] as const;
+export type CueDirection = (typeof CUE_DIRECTIONS)[number];
+
 /** What one event offers cue rules. */
 export interface CueEventSpec {
   /** Anchor names (at least one); the first is the default. */
   readonly anchors: readonly [string, ...string[]];
   /** Fact name → kind. A fact may be absent from a given event (then a rule needing it skips). */
   readonly facts: Readonly<Record<string, CueFactKind>>;
+  /** Directions its readings may carry (none when absent). */
+  readonly directions?: readonly CueDirection[];
 }
+
+const BOTH_DIRECTIONS = ['hitNormal', 'attackerForward'] as const;
 
 /** Facts derived from the struck entity (`target`) and the hitting one (`weapon`). */
 const HIT_FACTS = {
@@ -44,6 +56,8 @@ const VALUE_FACTS = { key: 'string', on: 'boolean', to: 'string', value: 'number
 export const CUE_EVENTS = {
   DamageApplied: {
     anchors: ['target', 'instigator', 'source'],
+    /** From the hit's travel direction (or the instigator's facing when the packet has none). */
+    directions: BOTH_DIRECTIONS,
     facts: {
       ...HIT_FACTS,
       /** The damage type that dealt the most, e.g. "slash" (the attacker side of the impact matrix). */
@@ -77,6 +91,8 @@ export const CUE_EVENTS = {
   HitParried: {
     /** `entity` is the parrier (mw-e04.12), `attacker` whose swing it deflected. */
     anchors: ['entity', 'attacker', 'source'],
+    /** From the attacker's facing: the flash faces back along the deflected swing. */
+    directions: BOTH_DIRECTIONS,
     facts: { shield: 'string' },
   },
   GuardBroken: {
@@ -126,6 +142,8 @@ export const CUE_EVENTS = {
   },
   AttackHit: {
     anchors: ['target', 'attacker', 'source'],
+    /** From the attacker's facing. */
+    directions: BOTH_DIRECTIONS,
     facts: { ...HIT_FACTS, attack: 'string', total: 'number' },
   },
   AttackProjectileLaunched: {
@@ -167,6 +185,8 @@ export const CUE_EVENTS = {
   physicsImpact: {
     /** `entity` is the physics object, `other` what it hit (none for unbound geometry), `at` where. */
     anchors: ['entity', 'other', 'at'],
+    /** Out of what it hit, back towards the object. */
+    directions: ['hitNormal'],
     facts: {
       /** Impact class of the physics object's material (its `impactSound` without `sfx-impact-`). */
       entity: 'string',
@@ -184,6 +204,8 @@ export const CUE_EVENTS = {
   ArrowFired: {
     /** `arrow` is the loosed arrow (following it; its launch point as the fallback). */
     anchors: ['arrow', 'shooter', 'origin'],
+    /** `attackerForward` is the launch direction. */
+    directions: ['attackerForward'],
     facts: {
       /** Arrow content id, e.g. "standard". */
       arrow: 'string',
@@ -198,6 +220,8 @@ export const CUE_EVENTS = {
   arrowImpact: {
     /** `entity` is the arrow, `other` what it hit (none for unbound geometry), `at` the contact. */
     anchors: ['entity', 'other', 'at'],
+    /** The surface normal at the contact. */
+    directions: ['hitNormal'],
     facts: {
       arrow: 'string',
       /** What the impact did to the arrow: stick, ricochet, drop or shatter. */
@@ -258,7 +282,12 @@ export function cueEventSpec(name: CueEventName): CueEventSpec {
   return CUE_EVENTS[name];
 }
 
-/** Rule-level fields every cue sheet shares (audio now, VFX in e29). */
+/** Directions an event's readings may carry. */
+export function cueDirections(name: CueEventName): readonly CueDirection[] {
+  return cueEventSpec(name).directions ?? [];
+}
+
+/** Rule-level fields every cue sheet shares (audio and VFX). */
 export const cueRuleBaseFields = {
   event: z
     .enum(CUE_EVENT_NAMES, {

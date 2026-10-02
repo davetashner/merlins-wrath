@@ -1,0 +1,30 @@
+{
+  "id": "vfx-fire-burn-loop",
+  "notes": "Starter burning loop (mw-e29.3): flames licking off something that caught fire (style bible §2.3 Fire), attached to the burning entity from fireIgnited until fireExtinguished or fireBurntOut stops it; if the entity is destroyed first, emission stops and the last flames finish. Kept small: the fire VFX proper comes with the elemental effects.",
+  "priority": 35,
+  "duration": 1,
+  "loop": true,
+  "emitters": [
+    {
+      "id": "flames",
+      "texture": "vfx-base-flame-8x8-01",
+      "flipbook": { "cols": 8, "rows": 8, "fps": 24 },
+      "blend": "additive",
+      "rate": 14,
+      "lifetime": { "min": 0.5, "max": 0.8 },
+      "speed": { "min": 0.6, "max": 1.1 },
+      "coneDeg": 10,
+      "spawnRadius": 0.2,
+      "gravity": -1,
+      "size": [
+        { "t": 0, "v": 0.4 },
+        { "t": 1, "v": 0.15 }
+      ],
+      "color": [
+        { "t": 0, "color": "#FFD36B" },
+        { "t": 0.6, "color": "#FF7A1A" },
+        { "t": 1, "color": "#C8331A" }
+      ]
+    }
+  ]
+}

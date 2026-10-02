@@ -1,0 +1,49 @@
+{
+  "id": "vfx-break-debris",
+  "notes": "Starter break burst (mw-e29.3): shards and a dust cloud where a breakable shatters or a weakened wall collapses (mw-e03.11), scaled by how loud its profile breaks. Alpha-blended in the environment palette; material-specific debris comes with mw-e29.4.",
+  "priority": 45,
+  "duration": 0.8,
+  "emitters": [
+    {
+      "id": "shards",
+      "texture": "vfx-base-shard-01",
+      "blend": "alpha",
+      "bursts": [{ "at": 0, "count": 12 }],
+      "lifetime": { "min": 0.5, "max": 0.8 },
+      "speed": { "min": 2, "max": 4 },
+      "coneDeg": 80,
+      "spawnRadius": 0.2,
+      "gravity": 9.8,
+      "drag": 0.5,
+      "size": 0.12,
+      "color": "#6E6458",
+      "alpha": [
+        { "t": 0, "v": 1 },
+        { "t": 0.8, "v": 1 },
+        { "t": 1, "v": 0 }
+      ]
+    },
+    {
+      "id": "dust",
+      "texture": "vfx-base-smoke-noise-01",
+      "blend": "alpha",
+      "bursts": [{ "at": 0, "count": 6 }],
+      "lifetime": { "min": 0.6, "max": 0.8 },
+      "speed": { "min": 0.4, "max": 1 },
+      "coneDeg": 90,
+      "spawnRadius": 0.25,
+      "gravity": -0.2,
+      "drag": 2,
+      "size": [
+        { "t": 0, "v": 0.3 },
+        { "t": 1, "v": 0.7 }
+      ],
+      "color": "#8A7F70",
+      "alpha": [
+        { "t": 0, "v": 0.5 },
+        { "t": 1, "v": 0 }
+      ],
+      "minTier": "high"
+    }
+  ]
+}

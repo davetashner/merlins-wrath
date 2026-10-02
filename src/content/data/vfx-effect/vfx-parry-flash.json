@@ -1,0 +1,40 @@
+{
+  "id": "vfx-parry-flash",
+  "notes": "Starter parry flash (mw-e29.3): a bright ring and a spray of sparks where a parry deflects a swing, facing back along the attacker's blow, so the parry reads as clearly as its ringing cue (mw-e28.16). High priority so a full budget never culls it; well under the photosensitivity limits (one small flash, style bible §8).",
+  "priority": 85,
+  "duration": 0.35,
+  "emitters": [
+    {
+      "id": "ring",
+      "texture": "vfx-base-ring-01",
+      "blend": "additive",
+      "bursts": [{ "at": 0, "count": 1 }],
+      "lifetime": { "min": 0.22 },
+      "size": [
+        { "t": 0, "v": 0.2 },
+        { "t": 1, "v": 0.9 }
+      ],
+      "color": "#FFF1C9",
+      "alpha": [
+        { "t": 0, "v": 0.9 },
+        { "t": 1, "v": 0 }
+      ]
+    },
+    {
+      "id": "sparks",
+      "texture": "vfx-base-soft-circle-01",
+      "blend": "additive",
+      "bursts": [{ "at": 0, "count": 12 }],
+      "lifetime": { "min": 0.15, "max": 0.3 },
+      "speed": { "min": 2.5, "max": 5 },
+      "coneDeg": 70,
+      "gravity": 6,
+      "drag": 2,
+      "size": 0.05,
+      "color": [
+        { "t": 0, "color": "#FFFFFF" },
+        { "t": 1, "color": "#FFB347" }
+      ]
+    }
+  ]
+}

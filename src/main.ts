@@ -39,7 +39,7 @@ import {
 } from '@game/creatures/index';
 import { bindBreakLeftovers, BreakWatch, hasBreakables } from '@game/breakables/index';
 import { createCapabilityRegistry } from '@game/capabilities';
-import { attachGameAudio, soundPositions } from '@game/cues/index';
+import { attachGameAudio, attachGameVfx, soundPositions } from '@game/cues/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
 import { debugConsoleEnabled } from '@game/debug-console-gate';
@@ -93,7 +93,7 @@ import {
 import { createGameSaveRegistry } from '@game/save/sections';
 import { openSaveStore, type OpenedSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
-import { VfxSystem } from '@game/vfx/index';
+import { vfxTextureManifest, vfxTextureUrls, VfxSystem } from '@game/vfx/index';
 import { createRenderBootstrap } from '@render/bootstrap/index';
 import { createLeftover, disposeLeftover } from '@render/breakables/index';
 import {
@@ -450,12 +450,28 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
     // moved, drawn by src/render/vfx. Presentation only: the system reads entity transforms and never
     // writes to the sim. Sockets need skeletons, so entity effects emit from the entity's origin for
     // now. `?vfx` shows the stats overlay; `?vfx=demo` / `?vfx=stress` spawn the test effects.
-    const vfx = new VfxSystem({
-      effects: content.all('vfx-effect'),
-      anchors: (entity) =>
-        readPhysicsObjectTransform(world, entity) ?? readSceneTransform(world, entity),
+    const vfxAnchor = (entity: EntityId) =>
+      readPhysicsObjectTransform(world, entity) ??
+      readDummyTransform(world, entity) ?? // any placed entity: the dummies and the player
+      readSceneTransform(world, entity);
+    const vfx = new VfxSystem({ effects: content.all('vfx-effect'), anchors: vfxAnchor });
+    // VFX cue sheets (mw-e29.3): the same sim events as the audio cue sheets spawn effects — hit
+    // dust and sparks, the parry flash, impact puffs, break debris, burning loops. Event-driven, so
+    // nothing runs per frame while no effect is live.
+    attachGameVfx({
+      world,
+      vfx,
+      sheets: content.all('vfx-cue-sheet'),
+      materials: content.all('material'),
+      arrows: content.all('arrow'),
+      locate: vfxAnchor,
+      now: () => performance.now(),
     });
-    const vfxView = createVfxRenderer(view.scene);
+    // Textures load by asset id from the texture manifest: generated placeholders (mw-e29.2) until
+    // approved art replaces them under the same ids.
+    const vfxView = createVfxRenderer(view.scene, {
+      textureUrl: vfxTextureUrls(vfxTextureManifest()),
+    });
 
     // Audio (mw-e28.2): the cue sheets turn sim events (hits, stagger, deaths, physics impacts) into
     // sounds from the sound manifest — the synthesised placeholder pack until final SFX land. The

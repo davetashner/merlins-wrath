@@ -199,14 +199,17 @@ export {
   type HazardProperty,
 } from './types/environment-damage.ts';
 export {
+  CUE_DIRECTIONS,
   CUE_EVENTS,
   CUE_EVENT_NAMES,
   CUE_FACT_KINDS,
   CUE_PLACEHOLDER,
   checkCueRule,
+  cueDirections,
   cueEventSpec,
   cuePlaceholders,
   cueRuleBaseFields,
+  type CueDirection,
   type CueEventName,
   type CueEventSpec,
   type CueFactKind,
@@ -221,6 +224,15 @@ export {
   type CueSheetDef,
   type CueSheetDefInput,
 } from './types/cue-sheet.ts';
+export {
+  VFX_EFFECT_TEMPLATE_PATTERN,
+  vfxCueRuleSchema,
+  vfxCueSheetSchema,
+  vfxCueSheetWarnings,
+  type VfxCueRuleDef,
+  type VfxCueSheetDef,
+  type VfxCueSheetDefInput,
+} from './types/vfx-cue-sheet.ts';
 export {
   FACT_KEY_PATTERN,
   FACT_PERSISTENCE,

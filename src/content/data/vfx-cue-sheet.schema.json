@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Sheet id, e.g. \"combat\"."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What the sheet covers and why, for owner review."
+    },
+    "rules": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string",
+            "enum": [
+              "DamageApplied",
+              "PoiseBroken",
+              "Died",
+              "HitParried",
+              "GuardBroken",
+              "DodgedHit",
+              "ActionPhaseChanged",
+              "LocomotionEvents",
+              "AttackTelegraph",
+              "AttackHit",
+              "AttackProjectileLaunched",
+              "AttackEnded",
+              "ActionRejected",
+              "StaminaExhausted",
+              "StaminaRecovered",
+              "fireIgnited",
+              "fireExtinguished",
+              "fireBurntOut",
+              "stimulusResolved",
+              "propertyChanged",
+              "factChanged",
+              "signalReceived",
+              "volumeEntered",
+              "volumeExited",
+              "physicsImpact",
+              "ArrowFired",
+              "arrowImpact",
+              "breakableBroken"
+            ],
+            "description": "The sim event that triggers the rule (see src/content/cue-events.ts for its facts)."
+          },
+          "match": {
+            "default": {},
+            "description": "Facts the event must have: a string fact equals the value, a list fact contains it, a boolean fact equals it. The most specific matching rule (most keys) wins.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": [
+                "string",
+                "boolean"
+              ]
+            }
+          },
+          "layer": {
+            "default": "main",
+            "description": "Rules compete per layer: one event plays at most one rule per layer (e.g. \"impact\" and \"accent\").",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "effect": {
+            "type": "string",
+            "pattern": "^(?:\\{[a-zA-Z]+\\}|vfx(?:-(?:[a-z0-9]+|\\{[a-zA-Z]+\\}))+)$",
+            "description": "vfx-effect id to spawn; `{fact}` segments are filled from string facts (a missing fact spawns nothing)."
+          },
+          "at": {
+            "description": "Event anchor to spawn at; default: the event’s first anchor.",
+            "type": "string"
+          },
+          "socket": {
+            "description": "Socket on the anchor entity (e.g. \"hand-r\"); default: the effect’s own socket.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "attach": {
+            "default": true,
+            "description": "Follow the anchor entity while it exists (when it is destroyed the effect stops emitting and its particles finish); false spawns at where it is now.",
+            "type": "boolean"
+          },
+          "orientTo": {
+            "description": "Point the effect’s up axis (its launch cone) along a direction of the event: \"hitNormal\" out of the struck surface, \"attackerForward\" along the blow.",
+            "type": "string",
+            "enum": [
+              "hitNormal",
+              "attackerForward"
+            ]
+          },
+          "scaleBy": {
+            "description": "Scale emission by a number fact (intensity: damage dealt, impact energy…).",
+            "type": "object",
+            "properties": {
+              "fact": {
+                "type": "string",
+                "minLength": 1,
+                "description": "A number fact of the event, e.g. \"total\" or \"energy\"."
+              },
+              "min": {
+                "type": "number",
+                "description": "Fact value at (or below) which the effect emits at `floor`."
+              },
+              "max": {
+                "type": "number",
+                "description": "Fact value at (or above) which the effect emits fully."
+              },
+              "floor": {
+                "default": 0.25,
+                "description": "Emission at `min`, 0–1; linear up to 1 at `max`.",
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "fact",
+              "min",
+              "max"
+            ],
+            "additionalProperties": false
+          },
+          "stopOn": {
+            "default": [],
+            "description": "Events that stop a looping effect this rule started on the same entity (their default anchor), e.g. a fire loop stopped by fireExtinguished.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "DamageApplied",
+                "PoiseBroken",
+                "Died",
+                "HitParried",
+                "GuardBroken",
+                "DodgedHit",
+                "ActionPhaseChanged",
+                "LocomotionEvents",
+                "AttackTelegraph",
+                "AttackHit",
+                "AttackProjectileLaunched",
+                "AttackEnded",
+                "ActionRejected",
+                "StaminaExhausted",
+                "StaminaRecovered",
+                "fireIgnited",
+                "fireExtinguished",
+                "fireBurntOut",
+                "stimulusResolved",
+                "propertyChanged",
+                "factChanged",
+                "signalReceived",
+                "volumeEntered",
+                "volumeExited",
+                "physicsImpact",
+                "ArrowFired",
+                "arrowImpact",
+                "breakableBroken"
+              ]
+            }
+          },
+          "cooldownMs": {
+            "default": 0,
+            "description": "Minimum ms between two spawns of this rule on the same anchor.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "event",
+          "effect"
+        ],
+        "additionalProperties": false
+      },
+      "description": "The rules, most specific wins per event and layer."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "rules"
+  ],
+  "additionalProperties": false
+}

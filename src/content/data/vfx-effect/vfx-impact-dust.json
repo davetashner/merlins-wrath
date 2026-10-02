@@ -1,0 +1,29 @@
+{
+  "id": "vfx-impact-dust",
+  "notes": "Starter impact (mw-e29.3): the generic puff of dust and grit when a blow or a knocked object strikes something without a more specific effect (style bible §8: alpha-blended, environment palette). Spawned by the VFX cue sheets' generic DamageApplied, physicsImpact and arrowImpact rules, oriented to the hit normal; material-specific impacts (splinters, bone dust) come with mw-e29.4.",
+  "priority": 30,
+  "duration": 0.5,
+  "emitters": [
+    {
+      "id": "puff",
+      "texture": "vfx-base-smoke-noise-01",
+      "blend": "alpha",
+      "bursts": [{ "at": 0, "count": 8 }],
+      "lifetime": { "min": 0.4, "max": 0.7 },
+      "speed": { "min": 0.6, "max": 1.4 },
+      "coneDeg": 50,
+      "spawnRadius": 0.05,
+      "gravity": 0.5,
+      "drag": 3,
+      "size": [
+        { "t": 0, "v": 0.12 },
+        { "t": 1, "v": 0.35 }
+      ],
+      "color": "#8A7F70",
+      "alpha": [
+        { "t": 0, "v": 0.6 },
+        { "t": 1, "v": 0 }
+      ]
+    }
+  ]
+}

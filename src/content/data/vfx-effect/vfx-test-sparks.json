@@ -6,7 +6,7 @@
   "emitters": [
     {
       "id": "sparks",
-      "texture": "vfx-spark-01",
+      "texture": "vfx-base-soft-circle-01",
       "blend": "additive",
       "bursts": [{ "at": 0, "count": 32 }],
       "lifetime": { "min": 0.3, "max": 0.6 },

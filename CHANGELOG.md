@@ -13,6 +13,13 @@ check enforces this).
 
 ### Added
 
+- Hits, parries, impacts, breaks and fires now show visual effects, driven by the same events as
+  their sounds: a clean hit puffs dust and metal on metal or stone throws sparks (both spraying back
+  out of the struck surface, bigger for harder hits), a blocked blow sparks, a parry flashes a bright
+  ring, a knocked prop or an arrow striking a wall kicks up dust, a breaking crate or wall throws
+  shards and dust, and something that catches fire burns with flickering flames until it is put out
+  or burns away. Effects use placeholder textures (soft glows, smoke, rings, shards and an animated
+  flame) until the final VFX art lands under the same names.
 - Movement feel can be tuned live: the debug console's `ctl.get`, `ctl.set runSpeed 6` and `ctl.dump`
   read and change the player's speeds, jump, gravity, ledge and climbing values from the next tick
   and print the edited controller file, and in `pnpm dev` saving that file retunes the player

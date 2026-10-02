@@ -1,0 +1,28 @@
+{
+  "id": "vfx-impact-sparks",
+  "notes": "Starter impact (mw-e29.3): hot sparks thrown off when metal meets metal or stone, or a blade glances off a raised shield. Spawned by the combat VFX cue sheet, oriented to the hit normal and scaled by the damage dealt; the full material matrix comes with mw-e29.4.",
+  "priority": 55,
+  "duration": 0.4,
+  "emitters": [
+    {
+      "id": "sparks",
+      "texture": "vfx-base-soft-circle-01",
+      "blend": "additive",
+      "bursts": [{ "at": 0, "count": 18 }],
+      "lifetime": { "min": 0.2, "max": 0.4 },
+      "speed": { "min": 3, "max": 6 },
+      "coneDeg": 55,
+      "gravity": 9.8,
+      "drag": 2,
+      "size": [
+        { "t": 0, "v": 0.06 },
+        { "t": 1, "v": 0.02 }
+      ],
+      "color": [
+        { "t": 0, "color": "#FFE7A8" },
+        { "t": 0.5, "color": "#FF9A3C" },
+        { "t": 1, "color": "#C8331A" }
+      ]
+    }
+  ]
+}

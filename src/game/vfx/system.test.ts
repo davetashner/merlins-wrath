@@ -408,6 +408,26 @@ describe('VfxSystem emission and particles', () => {
     }
   });
 
+  it('a world rotation ignores the anchor entity’s own rotation (e.g. turned to a hit normal)', () => {
+    const effect = def(
+      'jet',
+      { duration: 0.1 },
+      { bursts: [{ at: 0, count: 4 }], lifetime: { min: 5 }, speed: { min: 1 } },
+    );
+    // The entity is turned 180° about y; the effect is turned 90° about z (up becomes -x).
+    const anchors = (): VfxAnchor => ({ position: ORIGIN, rotation: { x: 0, y: 1, z: 0, w: 0 } });
+    const turn = { x: 0, y: 0, z: Math.SQRT1_2, w: Math.SQRT1_2 };
+    const directions = (worldRotation: boolean) => {
+      const { vfx } = system([effect], { anchors });
+      vfx.spawn('jet', { entity: 3, rotation: turn, worldRotation });
+      run(vfx, 0.5);
+      const { x, y } = particle(batch(vfx), 0) as { x: number; y: number };
+      return { x: Math.sign(Math.round(x * 100)) + 0, y: Math.sign(Math.round(y * 100)) + 0 };
+    };
+    expect(directions(true)).toEqual({ x: -1, y: 0 });
+    expect(directions(false)).toEqual({ x: 1, y: 0 });
+  });
+
   it('spawns within the spawn radius and in every direction for a 180° cone', () => {
     const effect = def(
       'cloud',
@@ -537,7 +557,8 @@ describe('vfx-effect content', () => {
       markExercised(task, 'vfx-effect', effect.id);
       const handle = vfx.spawn(effect.id, { position: ORIGIN });
       expect(handle, effect.id).not.toBeNull();
-      run(vfx, 0.5);
+      // Until the first particles show (short-lived impact sparks are gone within half a second).
+      for (let t = 0; t < 0.5 && vfx.stats().particles === 0; t += DT) vfx.update(DT, ORIGIN);
       expect(vfx.stats().particles, effect.id).toBeGreaterThan(0);
       expect(vfx.stats().particles).toBeLessThanOrEqual(vfx.stats().reserved);
       vfx.stop(known(handle));

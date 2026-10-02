@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CUE_EVENT_NAMES, cueEventSpec, type CueEventName } from '@content/index';
+import { CUE_EVENT_NAMES, cueDirections, cueEventSpec, type CueEventName } from '@content/index';
 import { CUE_EVENT_BINDINGS, type CueLookups, type CueReading } from './events.ts';
 
 const MATERIALS: Record<number, string> = { 1: 'bone', 2: 'iron', 3: 'dry-wood' };
@@ -198,6 +198,49 @@ describe('cue event bindings', () => {
     expect(mismatches).toEqual([]);
   });
 
+  it('mw-e29.3: carry only declared directions, each of unit length', () => {
+    const facingLookups: CueLookups = { ...lookups, facingOf: () => ({ x: 3, y: 0, z: 4 }) };
+    const problems: string[] = [];
+    for (const name of CUE_EVENT_NAMES) {
+      const declared = cueDirections(name);
+      const { directions = {} } = read(name, SAMPLES[name], facingLookups);
+      for (const [key, value] of Object.entries(directions)) {
+        if (!declared.includes(key as never)) problems.push(`${name}~${key}`);
+        if (value !== undefined && Math.abs(Math.hypot(value.x, value.y, value.z) - 1) > 1e-9) {
+          problems.push(`${name}~${key} is not unit`);
+        }
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it('mw-e29.3: a blow travels along its packet direction, else its instigator’s facing; the hit normal faces back', () => {
+    const along = { x: 0, y: 0, z: 1 };
+    const back = { x: 0, y: 0, z: -1 };
+    const facingLookups: CueLookups = {
+      ...lookups,
+      facingOf: (e) => (e === 4 ? along : undefined),
+    };
+    const damage = (extra: object, look = facingLookups) =>
+      read('DamageApplied', { ...(SAMPLES.DamageApplied as object), ...extra }, look).directions;
+    expect(damage({ packet: { ...packet, direction: { x: 2, y: 0, z: 0 } } })).toEqual({
+      attackerForward: { x: 1, y: 0, z: 0 },
+      hitNormal: { x: -1, y: 0, z: 0 },
+    });
+    expect(damage({})).toEqual({ attackerForward: along, hitNormal: back });
+    expect(damage({ packet: { ...packet, instigator: null } })).toEqual({});
+    expect(damage({}, lookups)).toEqual({});
+    expect(damage({ packet: { ...packet, direction: { x: 0, y: 0, z: 0 } } })).toEqual({});
+    expect(read('HitParried', SAMPLES.HitParried, facingLookups).directions).toEqual({
+      attackerForward: along,
+      hitNormal: back,
+    });
+    expect(read('AttackHit', SAMPLES.AttackHit, facingLookups).directions).toEqual({
+      attackerForward: along,
+      hitNormal: back,
+    });
+  });
+
   it('derive hit facts from materials: impact class and material id of target and weapon', () => {
     expect(read('DamageApplied', SAMPLES.DamageApplied)).toEqual({
       anchors: { target: { entity: 1 }, instigator: { entity: 4 }, source: { entity: 2 } },
@@ -216,6 +259,7 @@ describe('cue event bindings', () => {
         total: 22,
         poiseDamage: 15,
       },
+      directions: {},
     });
     // No source: the instigator is the weapon; a material without an impact class is its own class.
     const unarmed = read('DamageApplied', {
@@ -362,6 +406,8 @@ describe('cue event bindings', () => {
         impulse: 18,
         speed: 6,
       },
+      // The payload normal points from the object into what it hit; the surface faces back up.
+      directions: { hitNormal: { x: 0, y: 1, z: 0 } },
     });
     // Unbound level geometry: no `other` anchor, but the payload still names its material.
     const unbound = read('physicsImpact', {
@@ -371,6 +417,9 @@ describe('cue event bindings', () => {
     });
     expect(unbound.anchors['other']).toBeUndefined();
     expect(unbound.facts).toMatchObject({ entity: 'bone', other: 'generic' });
+    // A degenerate contact normal gives no direction.
+    const flat = { ...(SAMPLES.physicsImpact as object), normal: { x: 0, y: 0, z: 0 } };
+    expect(read('physicsImpact', flat).directions).toEqual({ hitNormal: undefined });
   });
 
   it('mw-e28.4: tell a clean hit from a blocked one (with the blocker’s shield) and an immune one', () => {
@@ -394,11 +443,13 @@ describe('cue event bindings', () => {
     expect(read('HitParried', SAMPLES.HitParried)).toEqual({
       anchors: { entity: { entity: 1 }, attacker: { entity: 4 }, source: undefined },
       facts: { shield: 'wood-shield' },
+      directions: {},
     });
     expect(read('HitParried', { ...(SAMPLES.HitParried as object), attacker: null }, bare)).toEqual(
       {
         anchors: { entity: { entity: 1 }, attacker: undefined, source: undefined },
         facts: { shield: undefined },
+        directions: {},
       },
     );
   });
@@ -481,6 +532,7 @@ describe('cue event bindings', () => {
         speed: 58,
         impulse: 1.45,
       },
+      directions: { hitNormal: { x: 0, y: 0, z: -1 } },
     });
     // Unbound geometry has no `other` anchor.
     expect(
@@ -512,6 +564,7 @@ describe('cue event bindings', () => {
         flight: 'sfx-arrow-flyby',
         speed: 60,
       },
+      directions: { attackerForward: { x: 0, y: 0.6, z: 0.8 } },
     });
     const trap = read('ArrowFired', { ...(SAMPLES.ArrowFired as object), shooter: null }, bare);
     expect(trap.anchors['shooter']).toBeUndefined();
