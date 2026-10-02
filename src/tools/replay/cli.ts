@@ -4,7 +4,9 @@
 // rebless: after an intended sim or content change, re-records every golden's exact commands on the
 // current build and rewrites files whose hashes changed, printing the first changed checkpoint so
 // the reviewer knows where outcomes moved. The rewritten JSON diff is part of the PR under review.
-// Files whose hashes still match are left untouched (no buildSha churn).
+// Files whose checkpoint hashes still match are left untouched, even when the content hash moved
+// (mw-e00.31): a golden's contentHash and buildSha say what its outcomes were last blessed against,
+// so a content PR that changes no outcome never touches a golden and parallel PRs never conflict.
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
@@ -128,7 +130,7 @@ function record(args: readonly string[], io: CliIo): number {
 /** A snapshot value as the rebless report prints it. */
 const show = (value: unknown): string => (value === undefined ? '(absent)' : JSON.stringify(value));
 
-/** What re-blessing changed, or undefined when every hash still matches. */
+/** What re-blessing changed, or undefined when every checkpoint hash still matches. */
 function changes(before: Replay, after: Replay): string | undefined {
   const at = after.checkpoints.findIndex(
     (checkpoint, i) => checkpoint.hash !== before.checkpoints[i]?.hash,
@@ -142,7 +144,6 @@ function changes(before: Replay, after: Replay): string | undefined {
       : '';
     return `outcomes changed from checkpoint tick ${String(moved.tick)}${field} (final hash ${before.finalHash} → ${after.finalHash})`;
   }
-  if (after.contentHash !== before.contentHash) return 'content hash updated; outcomes unchanged';
   return undefined;
 }
 

@@ -201,19 +201,34 @@ describe('pnpm replay:rebless', () => {
     );
   });
 
-  it('refreshes only the content hash when outcomes are unchanged', () => {
+  it('mw-e00.31 AC-1: leaves a golden byte-for-byte untouched when only the content hash moved', () => {
     const scenarios = { core: { ...coreScenario, usesContent: true } };
     expect(main(['record', 'core', '--ticks', '60'], io(scenarios))).toBe(0);
+    const path = join(dir, 'tests/replays/core.json');
+    const recorded = readFileSync(path, 'utf8');
     lines = [];
     expect(
       main(['rebless', 'tests/replays/core.json'], {
         ...io(scenarios),
+        buildSha: () => 'other-build',
         contentHash: () => 'content-2',
       }),
     ).toBe(0);
-    expect(lines).toEqual([
-      'reblessed tests/replays/core.json: content hash updated; outcomes unchanged',
-    ]);
+    expect(lines).toEqual(['unchanged tests/replays/core.json']);
+    expect(readFileSync(path, 'utf8')).toBe(recorded);
+  });
+
+  it('mw-e00.31 AC-2: records the new content hash when the outcomes did move', () => {
+    const scenarios = { core: { ...coreScenario, usesContent: true } };
+    expect(main(['record', 'core', '--ticks', '120'], io(scenarios))).toBe(0);
+    lines = [];
+    expect(
+      main(['rebless', 'tests/replays/core.json'], {
+        ...io({ core: { ...changedAt(30), usesContent: true } }),
+        contentHash: () => 'content-2',
+      }),
+    ).toBe(0);
+    expect(lines[0]).toMatch(/^reblessed tests\/replays\/core\.json: outcomes changed/);
     expect(readReplay(join(dir, 'tests/replays/core.json')).contentHash).toBe('content-2');
   });
 

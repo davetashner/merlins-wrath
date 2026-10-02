@@ -4,7 +4,8 @@
 // final state hashes, which cover the Rapier state too, and live input sampled on a 144 Hz and a
 // 60 Hz display lands on the same hash.
 //
-// Re-record after an intended change to the wiring, the testbed, the controller, the input script
+// Re-record after an intended change to the outcome (not after content edits that move nothing; see
+// mw-e00.31 in the README's replay section) — the wiring, the testbed, the controller, the input script
 // (src/tools/replay/testbed-player-scenario.ts) or Rapier:
 //   TESTBED_PLAYER_RECORD=1 pnpm vitest run tests/integration/testbed-player.test.ts
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
@@ -139,13 +140,24 @@ describe('testbed player (mw-e02.23)', () => {
     expect(replay.ticks).toBe(TESTBED_TICKS);
     const first = playReplay(replay, scenario, { contentHash });
     const second = playReplay(replay, scenario, { contentHash });
-    expect(first).toEqual({
+    expect(first).toMatchObject({
       status: 'passed',
       finalHash: replay.finalHash,
       checkpoints: replay.checkpoints.length,
-      contentChanged: false,
     });
     expect(second).toEqual(first);
+  });
+
+  it('mw-e00.31 AC-1: an unrelated content change needs no re-recorded fixture', ({ task }) => {
+    // The fixture's contentHash is what its outcomes were last recorded against; only outcomes are
+    // checked, so content PRs that move no outcome never touch (or conflict on) the fixture.
+    markExercised(task, 'controller', PLAYER_CONTROLLER_ID);
+    const replay = readReplay(FIXTURE);
+    expect(playReplay(replay, scenario, { contentHash: 'f00dfacef00dface' })).toMatchObject({
+      status: 'passed',
+      finalHash: replay.finalHash,
+      contentChanged: true,
+    });
   });
 
   it('AC-4: live input through the frame loop at 144 Hz and 60 Hz ends on the recorded hash', ({
