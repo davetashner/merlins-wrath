@@ -66,23 +66,40 @@ async function play(page: Page): Promise<void> {
   await expect.poll(() => page.evaluate(() => document.pointerLockElement !== null)).toBe(true);
 }
 
-/** Turns the player with small mouse moves until the prompt offers to take the draught. */
+/**
+ * Turns the player left (to face +x, where the draught lies) with mouse moves sent from the page,
+ * one per drawn frame, so a slow CI renderer costs frames rather than test round trips. The yaw comes
+ * from #app[data-player]; facing +x is −sin(yaw) = 1.
+ */
 async function turnToDraught(page: Page): Promise<void> {
-  const prompt = page.getByTestId('interact-prompt');
-  for (let i = 0; i < 200; i++) {
-    if (
-      (await prompt.isVisible()) &&
-      (await prompt.textContent())?.includes('Take Healing draught')
-    ) {
-      return;
-    }
-    await page.evaluate(() => {
-      window.dispatchEvent(new MouseEvent('mousemove', { movementX: -25, movementY: 0 }));
-    });
-    await page.waitForTimeout(30);
-  }
-  throw new Error('never faced the draught');
+  const turned = await page.evaluate(
+    () =>
+      new Promise<boolean>((resolve) => {
+        const app = document.querySelector('#app');
+        const started = performance.now();
+        const step = () => {
+          const json = app?.getAttribute('data-player');
+          const yaw =
+            json === null || json === undefined ? 0 : (JSON.parse(json) as { yaw: number }).yaw;
+          if (-Math.sin(yaw) > 0.97) {
+            resolve(true);
+            return;
+          }
+          if (performance.now() - started > 20_000) {
+            resolve(false);
+            return;
+          }
+          window.dispatchEvent(new MouseEvent('mousemove', { movementX: -15, movementY: 0 }));
+          requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }),
+  );
+  expect(turned).toBe(true);
+  await expect(page.getByTestId('interact-prompt')).toContainText('Take Healing draught');
 }
+
+test.setTimeout(60_000);
 
 test('mw-e17.7 AC-5: take, drop and take the draught again: one in the pack, none left lying', async ({
   page,
