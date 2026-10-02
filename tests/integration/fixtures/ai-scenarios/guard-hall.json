@@ -1,0 +1,23 @@
+{
+  "id": "guard-hall",
+  "description": "A lit hall (mw-e11.3's example scenario): the fixture guard stands at its post at the origin, facing +z. Two walls (z 3–4, from x = ±5 outward) hide both ends of the crossing at z = 6 from it (x beyond ±7.5); a torch lights the crossing in front of it.",
+  "walls": [
+    { "min": [-12, 0, 3], "max": [-5, 3, 4] },
+    { "min": [5, 0, 3], "max": [12, 3, 4] },
+    { "min": [-12, 0, 12], "max": [12, 3, 12.5] }
+  ],
+  "light": {
+    "ambient": 0.2,
+    "lights": [{ "id": "torch", "at": [0, 2.5, 6], "intensity": 250, "radius": 12 }]
+  },
+  "player": { "at": [-11, 0, 6], "yaw": 90 },
+  "fixtures": [
+    {
+      "id": "guard1",
+      "creature": "fixture-guard",
+      "at": [0, 0, 0],
+      "yaw": 0,
+      "patrol": [[0, 0, 0]]
+    }
+  ]
+}

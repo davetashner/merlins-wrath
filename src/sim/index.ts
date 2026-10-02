@@ -69,6 +69,7 @@ export * from './scene';
 export * from './sight';
 export * from './stimulus';
 export * from './targeting';
+export * from './testing';
 export * from './signals';
 export { EmptyChoiceError, Rng, type RngState, type Weighted } from './rng';
 export {
