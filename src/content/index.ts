@@ -272,6 +272,20 @@ export {
   type CapabilityGroupInput,
 } from './types/capability.ts';
 export {
+  CLASS_CHANNELS,
+  CLASS_ICON_PATTERN,
+  CLASS_PORTRAIT_PATTERN,
+  MAX_ARMOR_CAPACITY_KG,
+  STAT_CAP,
+  checkClasses,
+  classKeys,
+  classSchema,
+  type ClassChannel,
+  type ClassDef,
+  type ClassDefInput,
+  type ClassEntry,
+} from './types/class.ts';
+export {
   checkUnlocks,
   UNLOCK_CHANNELS,
   unlockCycles,

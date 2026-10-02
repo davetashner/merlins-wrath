@@ -1,0 +1,16 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "rope-arrow",
+  "category": "ammo",
+  "notes": "An arrow that anchors a climbable rope (the rope arrow profile, mw-e05.10); firing one needs the archer's arrow.rope. Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
+  "icon": "icon-item-rope-arrow-01",
+  "value": 6,
+  "stackable": true,
+  "maxStack": 20,
+  "worldProperties": {
+    "material": "wood"
+  },
+  "ammo": {
+    "arrow": "rope"
+  }
+}

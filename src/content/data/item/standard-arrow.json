@@ -1,0 +1,16 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "standard-arrow",
+  "category": "ammo",
+  "notes": "A plain arrow (the standard arrow profile, mw-e05). Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
+  "icon": "icon-item-standard-arrow-01",
+  "value": 1,
+  "stackable": true,
+  "maxStack": 99,
+  "worldProperties": {
+    "material": "wood"
+  },
+  "ammo": {
+    "arrow": "standard"
+  }
+}

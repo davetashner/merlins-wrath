@@ -1,0 +1,19 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "mail-hauberk",
+  "category": "armor",
+  "notes": "A mail body piece at ADR-0003's reference weight (8 kg): with the wooden shield, 11 kg is a light load for a knight (37% of 30 kg). Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
+  "icon": "icon-item-mail-hauberk-01",
+  "value": 120,
+  "weightClass": "heavy",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "body",
+    "proficiencies": ["medium-armor"]
+  },
+  "armor": {
+    "weightKg": 8
+  }
+}

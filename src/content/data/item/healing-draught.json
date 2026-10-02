@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "healing-draught",
+  "category": "consumable",
+  "notes": "A small red draught that restores 30 health. Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
+  "icon": "icon-item-healing-draught-01",
+  "value": 15,
+  "stackable": true,
+  "maxStack": 10,
+  "worldProperties": {
+    "material": "glass"
+  },
+  "use": [
+    {
+      "op": "restore",
+      "pool": "health",
+      "amount": 30
+    }
+  ]
+}

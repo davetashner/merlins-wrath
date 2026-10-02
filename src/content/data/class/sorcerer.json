@@ -1,0 +1,36 @@
+{
+  "$schema": "../class.schema.json",
+  "id": "sorcerer",
+  "name": "Sorcerer",
+  "notes": "Discovers magic through spellbooks and experiment (CONSTITUTION §4): Ember and Mage Hand at the start, every later spell from a book, a forbidden teacher or a deed (ADR-0004). The fire chain past Ember is the sorcerer's own. Grey-box kit: staff, robe and two mana draughts.",
+  "dialogueTag": "sorcerer",
+  "iconId": "ui-emblem-class-sorcerer-01",
+  "portraitId": "keyart-class-card-sorcerer-01",
+  "startingCapabilities": ["verb.climb.ledge", "spell.ember", "spell.mage-hand"],
+  "signature": ["spell.firebolt", "spell.flame-jet", "spell.fire-wall"],
+  "startingKit": {
+    "gold": 30,
+    "items": [
+      {
+        "item": "ash-staff",
+        "equip": true
+      },
+      {
+        "item": "travelling-robe",
+        "equip": true
+      },
+      {
+        "item": "mana-draught",
+        "count": 2
+      }
+    ]
+  },
+  "proficiencies": ["staves", "daggers", "light-armor"],
+  "armorCapacityKg": 23,
+  "stats": {
+    "health": 80,
+    "stamina": 80,
+    "mana": 100
+  },
+  "unlockChannels": ["book", "trainer", "deed"]
+}

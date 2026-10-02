@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "wooden-shield",
+  "category": "shield",
+  "notes": "The knight's wooden shield at ADR-0003's reference weight (3 kg); blocks as the wood-shield profile (mw-e04.6). Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
+  "icon": "icon-item-wooden-shield-01",
+  "value": 25,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "wood"
+  },
+  "equip": {
+    "slot": "off-hand",
+    "proficiencies": ["shields"]
+  },
+  "shield": {
+    "weightKg": 3,
+    "profile": "wood-shield"
+  }
+}

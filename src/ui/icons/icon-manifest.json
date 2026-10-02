@@ -1,5 +1,13 @@
 [
   {
+    "id": "icon-item-arming-sword-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-ash-staff-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-fixture-arrow-01",
     "placeholder": true
   },
@@ -45,6 +53,50 @@
   },
   {
     "id": "icon-item-fixture-wooden-shield-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-healing-draught-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-hunting-knife-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-leather-jerkin-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-lockpick-iron-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-mail-hauberk-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-mana-draught-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-rope-arrow-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-shortbow-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-standard-arrow-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-travelling-robe-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-wooden-shield-01",
     "placeholder": true
   }
 ]

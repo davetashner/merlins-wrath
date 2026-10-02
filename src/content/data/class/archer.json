@@ -1,0 +1,46 @@
+{
+  "$schema": "../class.schema.json",
+  "id": "archer",
+  "name": "Archer",
+  "notes": "Controls space through precision, mobility, trick shots and specialized arrows (CONSTITUTION). Grows through fletching schematics, trick-shot trainers and deeds (ADR-0004). Starts with tracking, which the Sleepers' Path (E25) reads to show sleepwalker trails by day. Grey-box kit: shortbow, plain and rope arrows, leather.",
+  "dialogueTag": "archer",
+  "iconId": "ui-emblem-class-archer-01",
+  "portraitId": "keyart-class-card-archer-01",
+  "startingCapabilities": ["verb.climb.ledge", "arrow.rope", "sense.tracking"],
+  "signature": ["arrow.rope"],
+  "startingKit": {
+    "gold": 20,
+    "items": [
+      {
+        "item": "shortbow",
+        "equip": true
+      },
+      {
+        "item": "standard-arrow",
+        "count": 20
+      },
+      {
+        "item": "rope-arrow",
+        "count": 3
+      },
+      {
+        "item": "leather-jerkin",
+        "equip": true
+      },
+      {
+        "item": "hunting-knife"
+      },
+      {
+        "item": "healing-draught"
+      }
+    ]
+  },
+  "proficiencies": ["bows", "blades", "daggers", "light-armor", "medium-armor"],
+  "armorCapacityKg": 23,
+  "stats": {
+    "health": 100,
+    "stamina": 100,
+    "mana": 30
+  },
+  "unlockChannels": ["schematic", "trainer", "deed"]
+}
