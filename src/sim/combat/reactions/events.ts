@@ -8,7 +8,7 @@ import type { HitDirection, HitReactionKind } from './components';
 
 /** Why a hit that could have caused a reaction caused none. */
 export type ReactionSuppression =
-  'hyperarmor' | 'invulnerable' | 'weaker' | 'replaced' | 'blocked' | null;
+  'hyperarmor' | 'invulnerable' | 'weaker' | 'replaced' | 'blocked' | 'parried' | null;
 
 /** Payload of HitReaction. */
 export interface HitReactionInfo {

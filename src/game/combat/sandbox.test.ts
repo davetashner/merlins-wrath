@@ -214,6 +214,25 @@ describe('combat sandbox frame data (mw-e04.9)', () => {
     expect(sandboxFrameData(w(world), { moves: combat.moves }).fighters[0]?.hitStop).toBeNull();
   });
 
+  it('shows a parry’s phase, a Parried stun and a ready riposte (mw-e04.12)', () => {
+    const { world, attacker } = sandbox();
+    world.step([]);
+    world.set(attacker, ActionTimelineComponent, {
+      ...(world.get(attacker, ActionTimelineComponent) ?? expect.fail('no timeline')),
+      current: { move: 'shield-parry', tick: 5, startedAt: 0 },
+    });
+    const data = sandboxFrameData(w(world), { moves: combat.moves });
+    expect(data.fighters[0]).toMatchObject({ parry: 'window', parried: null, riposte: false });
+    expect(frameDataView(data).rows[0]?.parry).toBe('window');
+    const fighter = data.fighters[0] ?? expect.fail('no fighter');
+    const view = (patch: Partial<typeof fighter>) =>
+      frameDataView({ ...data, fighters: [{ ...fighter, ...patch }] }).rows[0]?.parry;
+    expect(view({ parried: 64 })).toBe('parried 64');
+    expect(view({ parry: 'counter' })).toBe('counter');
+    expect(view({ parry: null, riposte: true })).toBe('riposte ready');
+    expect(view({ parry: null })).toBe('');
+  });
+
   it('skips a player that is gone, and reads a world without timelines or sandbox dummies', () => {
     const world = new World<unknown>({ seed: 1 }).register(...DAMAGE_COMPONENTS);
     const gone = world.spawn();

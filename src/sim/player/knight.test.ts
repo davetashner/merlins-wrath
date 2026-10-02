@@ -41,9 +41,13 @@ import { SceneTransformComponent } from '../scene/loader';
 import { PlacementComponent, placeEntity } from '../stimulus/placement';
 import { LockOnComponent } from '../targeting/components';
 import { lockedTarget, placedTargetPosition } from '../targeting/lock-on';
+import { ParryComponent, updateParry } from '../combat/parry/components';
 import {
+  DEFAULT_PARRY_BUTTON,
   installPlayer,
   KNIGHT_LIGHT_ATTACK,
+  KNIGHT_PARRY,
+  KNIGHT_RIPOSTE,
   PlayerLook,
   restrainMovement,
   type PlayerMeleeOptions,
@@ -142,6 +146,12 @@ const MOVES: MoveTable = new Map(
     light('sword-light-2', [10, 4, 20], 14, 22, 'sword-light-3'),
     light('sword-light-3', [16, 5, 26], 18, 30, null),
     light('poke', [2, 2, 2], 0, 1, null),
+    {
+      ...light('guard-parry', [4, 10, 16], 10, 0, null),
+      verb: 'parry' as const,
+      hitbox: null,
+      damage: null,
+    },
   ].map((m) => [m.id, m]),
 );
 const TRACKS = new Map<string, SocketTrack>([['still', { id: 'still', keys: [IDENTITY_POSE] }]]);
@@ -241,6 +251,33 @@ describe('the knight player (mw-e04.6)', () => {
     k.run(1, frame(['primaryAttack']));
     k.run(60);
     expect(healthOf(k.world, k.dummy)?.current).toBe(200 - 72);
+  });
+
+  it('mw-e04.12: with a parry, ability 3 (or its own button) parries; without one, nothing', () => {
+    const k = knight({ parry: 'guard-parry' });
+    k.run(1, frame(['ability3']));
+    expect(k.started.map((e) => e.move)).toEqual(['guard-parry']);
+    expect(DEFAULT_PARRY_BUTTON).toBe('ability3');
+    expect([KNIGHT_PARRY, KNIGHT_RIPOSTE]).toEqual(['shield-parry', 'sword-riposte']);
+    const custom = knight({ parry: 'guard-parry', parryButton: 'ability1' });
+    custom.run(1, frame(['ability3']));
+    custom.run(1, frame(['ability1']));
+    expect(custom.started.map((e) => [e.tick, e.move])).toEqual([[2, 'guard-parry']]);
+    const none = knight();
+    none.run(1, frame(['ability3']));
+    expect(none.started).toEqual([]);
+  });
+
+  it('mw-e04.12: with a riposte, the attack button ripostes a Parried foe in reach', () => {
+    const k = knight({ riposte: 'poke' });
+    k.world.register(ParryComponent);
+    updateParry(k.world, k.dummy, { parried: { by: k.player, startedAt: 0, endsAt: 500 } });
+    k.run(1);
+    k.run(1, frame(['primaryAttack']));
+    expect(k.started.map((e) => e.move)).toEqual(['poke']);
+    const plain = knight({ riposte: 'poke' });
+    plain.run(1, frame(['primaryAttack']));
+    expect(plain.started.map((e) => e.move)).toEqual(['sword-light-1']);
   });
 
   it('a custom light attack binds instead', () => {

@@ -53,6 +53,7 @@ describe('socket tracks (mw-e04.26)', () => {
       'sword-light-1',
       'sword-light-2',
       'sword-light-3',
+      'sword-riposte',
       'training-dummy-swing',
     ]);
   });

@@ -12,7 +12,8 @@
 // 2. `startTestbedCombat` (after the player): the hit-volume system — after the player's action
 //    timeline, so a swing sweeps on the tick its active phase starts, and honouring dodge and
 //    wake-up i-frames (invulnerabilityRule, mw-e04.28) — the melee strikes, hit-stop (mw-e04.11: the
-//    hit-stop table's freeze of attacker and victim on every hit), hit reactions (mw-e04.7: stagger, knockback, the guard
+//    hit-stop table's freeze of attacker and victim on every hit), parry and riposte (mw-e04.12: the
+//    knight's parry button, Parried stuns, counter-hits, the riposte's critical), hit reactions (mw-e04.7: stagger, knockback, the guard
 //    break's stagger, mw-e04.31) with pushes through the controller and physics, the player as a
 //    combatant that can be struck and react, a training dummy at every spawn tagged
 //    `training-dummy`, and the combat sandbox's dummies at spawns tagged `sandbox-dummy` /
@@ -68,6 +69,9 @@ import {
   installHitReactions,
   installHitStop,
   installMeleeStrikes,
+  installParry,
+  KNIGHT_PARRY,
+  KNIGHT_RIPOSTE,
   makePushable,
   MELEE_COMPONENTS,
   noAllies,
@@ -131,7 +135,11 @@ export function prepareTestbedCombat(content: GameContent): TestbedCombat {
   return {
     moves,
     tracks: compileSocketTracks(content.all('socket-track')),
-    melee: { shield: compileShield(content.get('shield', KNIGHT_SHIELD_ID)) },
+    melee: {
+      shield: compileShield(content.get('shield', KNIGHT_SHIELD_ID)),
+      parry: KNIGHT_PARRY,
+      riposte: KNIGHT_RIPOSTE,
+    },
     damage,
     hitStop: compileHitStop(content.get('hit-stop', HIT_STOP_ID)),
     sandbox,
@@ -241,6 +249,12 @@ export function startTestbedCombat<TInput>(
   );
   installMeleeStrikes(world, combat);
   installHitStop(world, { moves: combat.moves, table: combat.hitStop });
+  installParry(world, {
+    moves: combat.moves,
+    damage: combat.damage,
+    hitStop: combat.hitStop,
+    riposte: KNIGHT_RIPOSTE,
+  });
   const pushers: Pusher[] = [];
   if (world.isRegistered(CharacterController)) pushers.push(pushCharacter);
   if (world.isRegistered(PhysicsObjectComponent)) pushers.push(pushPhysicsObject);

@@ -26,11 +26,13 @@ const REQUIRED_MOVES = [
   'kick',
   'roll-attack',
   'shield-bash',
+  'shield-parry',
   'sword-heavy',
   'sword-heavy-charged',
   'sword-light-1',
   'sword-light-2',
   'sword-light-3',
+  'sword-riposte',
   'training-dummy-swing',
 ];
 
@@ -116,6 +118,26 @@ describe('move schema', () => {
       amounts: { slash: 20 },
       poiseDamage: 15,
     });
+  });
+
+  it('mw-e04.12: the shipped parry is the bead’s 30-tick, 10-stamina move with window 4–13; the riposte is a critical with i-frames throughout', () => {
+    const table = compileMoves(loadGameContent().all('move'));
+    expect(table.get('shield-parry')).toMatchObject({
+      verb: 'parry',
+      totalTicks: 30,
+      activeFrom: 4,
+      recoveryFrom: 14,
+      staminaCost: 10,
+      hitbox: null,
+      damage: null,
+    });
+    const riposte = table.get('sword-riposte');
+    expect(riposte?.damage).toMatchObject({
+      amounts: { slash: 20 },
+      tags: ['critical', 'riposte'],
+    });
+    expect(riposte?.iframes).toEqual({ from: 0, to: (riposte?.totalTicks ?? 0) - 1 });
+    expect(riposte?.hitStop).toBe('critical');
   });
 
   it('mw-e04.8: the shipped roll and backstep carry the bead’s timing, i-frames, motion and roll attack', () => {

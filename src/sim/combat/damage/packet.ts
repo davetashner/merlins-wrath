@@ -38,6 +38,10 @@ export const DAMAGE_TAGS = Object.freeze({
   riposte: 'riposte',
   /** A counter-hit into a failed parry's recovery (e04.12). */
   counter: 'counter',
+  /** A parry in its window may deflect it: added by sources of parryable melee hits (e04.12). */
+  parryable: 'parryable',
+  /** Deflected by a parry: no damage, poise or stamina; added by the guard stage (e04.12). */
+  parried: 'parried',
   /** Falls, crushes and hazards (e04.19). */
   environment: 'environment',
   /** Passes through shields: the move is unblockable (grabs, some slams). */

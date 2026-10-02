@@ -12,7 +12,8 @@
 //   paid     = the stamina actually drained (all of `need`, unless the pool runs dry)
 //   absorbed = absorption% of each damage type × paid / need   (all of it when need is 0)
 //
-// so a 30-slash hit on the wood shield deals 30 × 15% = 4.5 and drains 8. Blocked hits deal no poise
+// so a 30-slash hit on the wood shield deals 30 × 15% = 4.5 and drains 8 (a hit a parry already
+// deflected, tagged `parried`, never reaches the shield). Blocked hits deal no poise
 // damage and are tagged `blocked`. If the block leaves the pool at 0 it is a **guard break**: the
 // shield drops, the fighter's action timeline is interrupted and locked for GUARD_BREAK_STAGGER_TICKS
 // (60), GuardBroken is emitted, the hit is also tagged `guard-break`, and its unabsorbed remainder
@@ -109,7 +110,9 @@ export function shieldGuard(): DamageModifier {
       const guard = world.get(target, GuardComponent);
       const { direction } = packet;
       if (guard === undefined || direction === undefined || !isBlocking(guard, tick)) return;
-      if (packet.tags.includes(DAMAGE_TAGS.unblockable)) return;
+      if (packet.tags.includes(DAMAGE_TAGS.unblockable) || hit.tags.includes(DAMAGE_TAGS.parried)) {
+        return;
+      }
       if (!inGuardArc(guard, facingOf(world, target), direction)) return;
       const { shield } = guard;
       const needUnits = scaleUnits(toUnits(hit.staminaDamage), 1 - shield.stability / 100);

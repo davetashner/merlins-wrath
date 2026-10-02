@@ -30,6 +30,11 @@
 // root starts again. An interrupt or any other move forgets the chain. Any other move — a heavy after
 // a light, a light after a roll — starts fresh.
 //
+// Redirects. A timeline may be given a MoveRedirect, asked once as a legal request starts: it may
+// start another move in its place (the knight's riposte replaces the light attack while a Parried
+// target stands in reach, e04.12). A redirected move neither continues a chain nor takes a cancel
+// window's `move`, and pays its own stamina.
+//
 // Input. Entities with an ActionInput are driven by the tick's ActionFrame: a press (not a hold) of a
 // bound button requests its move, in BUTTON_ACTIONS order, so of two presses on one tick the later
 // in that order wins. Anything else (AI, scripts, tests) calls `requestMove`.
@@ -249,21 +254,45 @@ function pay(world: World<never>, entity: EntityId, move: RuntimeMove): boolean 
 
 type Attempt = RunningAction | 'refused' | 'wait';
 
+/**
+ * Asked as a legal request for `requested` (resolved through its chain to `resolved`) starts for
+ * `entity`: the id of the move to start in its place, or undefined to start it as resolved.
+ */
+export type MoveRedirect = (
+  world: World<never>,
+  entity: EntityId,
+  requested: string,
+  resolved: RuntimeMove,
+) => string | undefined;
+
+interface StepRules {
+  readonly moves: MoveTable;
+  readonly chainResetTicks: number;
+  readonly redirect: MoveRedirect | undefined;
+}
+
 function tryStart(
   world: World<never>,
-  moves: MoveTable,
+  rules: StepRules,
   entity: EntityId,
   step: { current: RunningAction | null; locked: boolean; previous: RuntimeMove | null },
   requested: string,
 ): Attempt {
+  const { moves } = rules;
   const { current, locked, previous } = step;
   const running = current === null ? null : { at: current.tick, move: lookup(moves, current.move) };
   const resolved = resolve(moves, requested, running?.move ?? previous);
   const window = running && windowAt(running.move, running.at, resolved.verb);
   const legal = running === null ? !locked : window !== undefined;
   if (!legal) return 'wait';
+  const redirected = rules.redirect?.(world, entity, requested, resolved);
   // A window may name the move its kind of request starts instead (a roll's attack: the roll attack).
-  const move = window?.move == null ? resolved : lookup(moves, window.move);
+  const move =
+    redirected !== undefined
+      ? lookup(moves, redirected)
+      : window?.move == null
+        ? resolved
+        : lookup(moves, window.move);
   if (!pay(world, entity, move)) return 'refused';
   if (current !== null) emitEnded(world, entity, current, current.tick, 'cancelled');
   const tick = world.tick;
@@ -287,11 +316,11 @@ function tryStart(
 /** One local tick of `timeline` (see the file header). */
 function localStep(
   world: World<never>,
-  moves: MoveTable,
+  rules: StepRules,
   entity: EntityId,
   timeline: ActionTimeline,
-  chainResetTicks: number,
 ): ActionTimeline {
+  const { moves, chainResetTicks } = rules;
   let { current, lockTicks, buffer } = timeline;
   // Saves and snapshots from before chain memory existed have no `chain`.
   let chain = timeline.chain ?? null;
@@ -325,7 +354,7 @@ function localStep(
   if (locked) lockTicks--;
   if (buffer !== null) {
     const previous = chain === null ? null : lookup(moves, chain.move);
-    const attempt = tryStart(world, moves, entity, { current, locked, previous }, buffer.move);
+    const attempt = tryStart(world, rules, entity, { current, locked, previous }, buffer.move);
     if (typeof attempt === 'object') {
       current = attempt;
       buffer = null;
@@ -352,6 +381,8 @@ export interface ActionTimelineOptions {
   readonly moves: MoveTable;
   /** Idle local ticks before a chain resets to its root; defaults to CHAIN_RESET_TICKS (30). */
   readonly chainResetTicks?: number;
+  /** Replaces moves as they start (the knight's riposte, e04.12); none by default. */
+  readonly redirect?: MoveRedirect;
 }
 
 /**
@@ -360,12 +391,13 @@ export interface ActionTimelineOptions {
  * (and StaminaComponent, if entities pay for moves) first.
  */
 export function actionTimelineSystem<TInput>(options: ActionTimelineOptions): System<TInput> {
-  const { moves, chainResetTicks = CHAIN_RESET_TICKS } = options;
+  const { moves, chainResetTicks = CHAIN_RESET_TICKS, redirect } = options;
   if (!(Number.isSafeInteger(chainResetTicks) && chainResetTicks >= 0)) {
     throw new RangeError(
       `chain reset must be a whole number of ticks ≥ 0, got ${String(chainResetTicks)}`,
     );
   }
+  const rules: StepRules = { moves, chainResetTicks, redirect };
   return {
     name: 'action-timeline',
     run: ({ world, inputs }) => {
@@ -390,7 +422,7 @@ export function actionTimelineSystem<TInput>(options: ActionTimelineOptions): Sy
               : { ...timeline, timeScale: 1, scaleTicks: null };
         }
         for (let i = 0; i < steps; i++) {
-          timeline = localStep(w, moves, entity, timeline, chainResetTicks);
+          timeline = localStep(w, rules, entity, timeline);
         }
         store(w, entity, timeline);
       });

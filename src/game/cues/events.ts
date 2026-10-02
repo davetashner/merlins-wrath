@@ -22,6 +22,7 @@ import {
   fireExtinguished,
   fireIgnited,
   GuardBroken,
+  HitParried,
   LocomotionEvents,
   physicsImpact,
   PoiseBroken,
@@ -143,9 +144,10 @@ function shapeAnchor(shape: StimulusShape): CueAnchor {
   }
 }
 
-/** How a hit met its target: a raised shield, only ignored damage types, or cleanly. */
+/** How a hit met its target: a raised shield, a parry, only ignored damage types, or cleanly. */
 function contactOf(e: DamageResult): string {
   if (e.tags.includes(DAMAGE_TAGS.blocked)) return 'blocked';
+  if (e.tags.includes(DAMAGE_TAGS.parried)) return 'parried';
   return e.immune ? 'immune' : 'hit';
 }
 
@@ -191,6 +193,10 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
   Died: bind(Died, (e, look) => ({
     anchors: { target: { entity: e.target }, killer: at(e.killer), source: at(e.source) },
     facts: { ...materialFacts('target', e.target, look), tags: e.tags },
+  })),
+  HitParried: bind(HitParried, (e, look) => ({
+    anchors: { entity: { entity: e.entity }, attacker: at(e.attacker), source: at(e.source) },
+    facts: { shield: look.shieldOf?.(e.entity) },
   })),
   GuardBroken: bind(GuardBroken, (e, look) => ({
     anchors: { entity: { entity: e.entity }, instigator: at(e.instigator), source: at(e.source) },

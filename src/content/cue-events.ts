@@ -49,9 +49,9 @@ export const CUE_EVENTS = {
       /** The damage type that dealt the most, e.g. "slash" (the attacker side of the impact matrix). */
       damageType: 'string',
       /**
-       * How the hit met the target (mw-e28.4): "blocked" (a raised shield took it), "immune" (only
-       * damage types the target ignores) or "hit" (a clean hit), so block, glance and impact rules
-       * never compete on specificity.
+       * How the hit met the target (mw-e28.4): "blocked" (a raised shield took it), "parried" (a
+       * parry deflected it, mw-e04.12), "immune" (only damage types the target ignores) or "hit" (a
+       * clean hit), so block, parry, glance and impact rules never compete on specificity.
        */
       contact: 'string',
       /** Shield id of a blocked hit's blocker, e.g. "wood-shield". */
@@ -73,6 +73,11 @@ export const CUE_EVENTS = {
   Died: {
     anchors: ['target', 'killer', 'source'],
     facts: { target: 'string', targetMaterial: 'string', tags: 'list' },
+  },
+  HitParried: {
+    /** `entity` is the parrier (mw-e04.12), `attacker` whose swing it deflected. */
+    anchors: ['entity', 'attacker', 'source'],
+    facts: { shield: 'string' },
   },
   GuardBroken: {
     /** `entity` is the blocker whose guard broke. */

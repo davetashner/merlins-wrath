@@ -9,8 +9,9 @@
 // - when a move ends early (cancelled or interrupted), its hitbox closes;
 // - each HitboxHit of such a hitbox becomes one damage packet from the move's damage template
 //   (`hitPacket`: direction, region and region multiplier from the hit; the template's impulse turned
-//   from the attacker's frame into the world), tagged `unblockable` for an unblockable move, and is
-//   applied through the damage model — where the shield rule (guard.ts) meets it.
+//   from the attacker's frame into the world), tagged `unblockable` for an unblockable move and
+//   `parryable` for a parryable one, and is applied through the damage model — where the shield rule
+//   (guard.ts) and the parry rule (combat/parry) meet it.
 //
 // Hitbox ids are move ids, so the knight's `sword-light-2` is also the hitbox that struck.
 
@@ -62,7 +63,11 @@ export function installMeleeStrikes<TInput>(
       const move = moves.get(hit.hitbox);
       const template = move?.damage;
       if (move === undefined || template == null) return;
-      const tags = move.unblockable ? [...template.tags, DAMAGE_TAGS.unblockable] : template.tags;
+      const tags = [
+        ...template.tags,
+        ...(move.unblockable ? [DAMAGE_TAGS.unblockable] : []),
+        ...(move.parryable ? [DAMAGE_TAGS.parryable] : []),
+      ];
       const impulse = rotateToWorld(template.impulse, hit.direction);
       damage.apply(w, hit.target, hitPacket(hit, { ...template, impulse, tags }));
     }),

@@ -28,6 +28,7 @@
               "DamageApplied",
               "PoiseBroken",
               "Died",
+              "HitParried",
               "GuardBroken",
               "DodgedHit",
               "ActionPhaseChanged",
