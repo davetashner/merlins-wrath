@@ -24,10 +24,10 @@
 //
 // With `climb` (mw-e02.13) it also runs the climbing hook (src/sim/climb/climb.ts), after the ledge
 // hook: the player climbs ladders, ropes and ivy, and with the climbing capability rough walls, and
-// pulls up onto the ledge at the top. With combat, climbing drains the stamina pool (the climb tuning's
-// staminaPerSecond, after the controller), and at 0 the player falls. While any traversal mode has the
-// player (mantle, hang, climb), no dodge, attack or block starts: the action timeline's one gate,
-// `handsBusy` (mw-e02.33).
+// pulls up onto the ledge at the top. With combat, climbing drains the stamina pool (the climb
+// tuning's staminaPerSecond, after the controller), and at 0 the player falls. While any traversal
+// mode has the player (mantle, hang, climb), no dodge, attack, block or bow draw starts: the action
+// timeline's one gate, `handsBusy` (mw-e02.33).
 //
 // After the controller, the locomotion system (mw-e02.6) publishes what the player is doing — idle,
 // walk, run, airborne, landing… — with its speeds and turn rate, and emits jump, land and footstep
