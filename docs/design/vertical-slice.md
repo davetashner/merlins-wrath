@@ -99,7 +99,7 @@ still run. This gating did not exist in the backlog; it is new bead `e01-playabl
 | System                                   | Bead                                     | Status |
 | ---------------------------------------- | ---------------------------------------- | ------ |
 | Class select screen, apply-class          | `e19-class-selection` (mw-e19.5)        | open   |
-| Class data: knight kit and capabilities   | `e19-class-definitions` (mw-e19.4)      | open   |
+| Class data: knight kit (sword, wooden shield, mail) and capabilities (Parry) | `e19-class-definitions` (mw-e19.4), ADR-0004 | open |
 | Capability registry                       | `e19-capability-registry` (mw-e19.2)    | open   |
 | Equip the kit (sword, wooden shield)      | `e17-equipment-slots` (mw-e17.4)        | open   |
 | Locked cards, `game.playableClasses`      | `e01-playable-classes` (mw-e01.15)      | open (new) |
@@ -132,6 +132,9 @@ A straight 2 m-wide corridor runs 20 m north, deliberately dim (an ambient zone 
 wall torch near the far end, so the arena's torchlight reads as a destination. Halfway along, an east
 side alcove (3 × 4 m) has a 2 m-high ledge whose face is ivy; a torch burns on top. Walking into the
 ivy starts a climb and the knight pulls up onto the ledge; dropping back down is 2 m, so it is safe.
+The slice's knight wears mail, a Medium load under ADR-0003 (`docs/adr/0003-encumbrance-model.md`), so
+the ivy climbs at ×0.85 speed. A knight in plate (Heavy) is refused with "Too heavy to climb", which is
+one more reason no required route uses ivy.
 It is optional and gives nothing but the view and the "wait, I can climb that?" moment; it also
 matters in the fight (F5: an out-of-reach perch the skeleton cannot follow onto). **CP-2**, at the
 corridor's end, requests the second autosave while the knight is still outside the arena, before the
@@ -142,6 +145,7 @@ skeleton's awareness can build to Combat.
 | Ambient zones and sim light field         | `e03-light-field` (mw-e03.15), mw-e03.37                  | done   |
 | Climb ivy, pull up onto the ledge         | `e02-climb-surfaces` (mw-e02.13), `e03-climbable-surfaces` (mw-e03.22) | done |
 | Climbing drains stamina (5/s)             | `e04-stamina` (mw-e04.5)                                  | done   |
+| Load class from armour (climb, jump, noise) | `e04-armor-weight` (mw-e04.16), ADR-0003               | open   |
 | Safe 2 m drop (falls hurt above 4 m)      | `e04-environmental-damage` (mw-e04.19), `e02-external-impulses` (mw-e02.15) | done |
 | CP-2 autosave, combat veto                | `e30-autosave` (mw-e30.5), `e01-slice-save-points` (mw-e01.7) | done / open |
 
@@ -156,8 +160,10 @@ Combat (mw-e01.5 AC-1: Combat within 2 s of the player entering in view).
 Its three moves are the e04 grey-box set: overhead chop (parryable), two-hit slash (parryable) and
 lunging thrust (unparryable, blockable, longer telegraph). The knight's tools are everything the
 combat epic has shipped: lock-on and target cycling, the light chain, shield block with guard break,
-the parry (10-tick window) and riposte, dodge roll and backstep with i-frames, hit reactions,
-hit-stop, stamina. Heavy/charged attacks, shield bash and kick join if they land before m1 but are not
+the parry (10-tick window), dodge roll and backstep with i-frames, hit reactions, hit-stop, stamina.
+The riposte is used only if the knight's starting capabilities grant it: ADR-0004
+(`docs/adr/0004-progression-model.md`) makes Riposte the second step of the Parry chain, learned from
+trainers, so the slice does not depend on it. Heavy/charged attacks, shield bash and kick join if they land before m1 but are not
 needed. The brazier deals fire damage to anything within 0.75 m (8 per second), the skeleton included,
 so luring it into the fire is a systemic option, not a scripted one.
 
@@ -201,7 +207,7 @@ quest item, so it cannot be dropped (mw-e17.7 AC-4) and can never be lost in the
 ### B6 — Loot alcove (optional)
 
 Off the arena's east side, a 3 × 4 m alcove sits 1.4 m above the arena floor. Two ways up: jump at the
-sill and mantle (jump-mantle reaches 1.6 m), or step onto the loose crate beside it (1 m, an automatic
+sill and mantle (jump-mantle reaches 1.6 m, a little less in mail: ADR-0003 jump ×0.95), or step onto the loose crate beside it (1 m, an automatic
 mantle) and then up the remaining 0.4 m. The crate is a physics object, so it may get knocked about in
 the fight. Inside is a chest with the slice loot table: a healing draught, a few coins and one oddity
 whose text follows the bible's item voice (story bible §7.4). Looted once, it stays empty across saves
@@ -394,8 +400,8 @@ The recorded input log drives the full loop, including one deliberate death:
 1. New Game → Knight → Confirm.
 2. Walk to the door, open it, pass CP-1 (autosave).
 3. Walk the corridor, pass CP-2 (autosave).
-4. Enter the arena, lock on, fight. The log uses parries and ripostes so the fastest kill also
-   exercises them.
+4. Enter the arena, lock on, fight. The log uses blocks and parries (and ripostes only if the knight's
+   class data grants them), so the fight exercises the timing verbs and not just the light chain.
 5. Take the key. Mantle into the alcove; loot the chest.
 6. Pause → Save (manual, allowed because the skeleton is dead).
 7. Walk into the brazier and stand there until dead (100 health at 8 per second is about 12.5 s).
