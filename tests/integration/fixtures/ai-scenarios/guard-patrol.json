@@ -1,0 +1,20 @@
+{
+  "id": "guard-patrol",
+  "description": "The ADR-0005 scenario (mw-e11.2's runtime test): the fixture guard walks its 8 m square from the origin; a fixture hound (no behaviour yet, so no brain) waits off the square. The player stands far out of sight and hearing range.",
+  "light": { "ambient": 0.5 },
+  "player": { "at": [60, 0, -60] },
+  "fixtures": [
+    {
+      "id": "guard",
+      "creature": "fixture-guard",
+      "at": [0, 0, 0],
+      "patrol": [
+        [0, 0, 0],
+        [8, 0, 0],
+        [8, 0, 8],
+        [0, 0, 8]
+      ]
+    },
+    { "id": "hound", "creature": "fixture-hound", "at": [20, 0, 20] }
+  ]
+}
