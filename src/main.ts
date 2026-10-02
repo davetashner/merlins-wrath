@@ -82,7 +82,14 @@ import {
   resolveSceneRequest,
   SceneLoader,
 } from '@game/scene/index';
-import { openSaveStore } from '@game/save/storage/index';
+import {
+  DeathReload,
+  takePendingLoad,
+  type PendingLoad,
+  type PendingLoadStorage,
+} from '@game/save/death/index';
+import { createGameSaveRegistry } from '@game/save/sections';
+import { openSaveStore, type OpenedSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { VfxSystem } from '@game/vfx/index';
 import { createRenderBootstrap } from '@render/bootstrap/index';
@@ -104,6 +111,7 @@ import {
   checkSandboxCommand,
   checkSandboxSpawn,
   DAMAGE_COMPONENTS,
+  Died,
   HIT_VOLUME_COMPONENTS,
   installDebugCommands,
   LineOfSight,
@@ -157,6 +165,12 @@ import {
 /** The player's placeholder rig: the grey-box humanoid's animation graph (mw-e02.6). */
 const PLAYER_RIG_ID = 'greybox-humanoid';
 
+/** Release saves record until playtest builds are versioned (CHANGELOG: Unreleased). */
+const GAME_VERSION = '0.0.0';
+
+/** Where each death → reload readout is published on #app (the e2e reads them). */
+const READOUT_ATTRIBUTE = { death: 'death', saved: 'savedGame', loaded: 'loadedSave' } as const;
+
 /** Placeholder world seed until new-game/save flows choose one. */
 const BOOT_SEED = 1;
 
@@ -166,13 +180,12 @@ type GameCommand = ActionFrame | DebugCommand | DifficultyCommand | SandboxComma
 const app = document.querySelector<HTMLElement>('#app');
 if (app) {
   app.dataset['layers'] = [...layers, tools].join(' ');
-  void startSaves(app);
-  startRenderer(app);
+  startRenderer(app, startSaves(app));
 }
 
 // Opens save storage (mw-e30.2). If the browser blocks IndexedDB the game runs on in-memory saves,
 // and the player must be told for as long as that lasts.
-async function startSaves(root: HTMLElement): Promise<void> {
+async function startSaves(root: HTMLElement): Promise<OpenedSaveStore> {
   const saves = await openSaveStore({
     indexedDB: globalThis.indexedDB,
     storage: globalThis.navigator.storage,
@@ -186,11 +199,12 @@ async function startSaves(root: HTMLElement): Promise<void> {
     root.prepend(banner);
     console.warn(saves.reason);
   }
+  return saves;
 }
 
 // Renderer and physics bootstrap (mw-e00.19). Checks the minimum features first so a browser
 // without WebGL 2 or WebAssembly gets a readable screen instead of a blank page or uncaught error.
-function startRenderer(root: HTMLElement): void {
+function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void {
   const missing = missingFeatures(globalThis);
   if (missing.length > 0) {
     showUnsupported(root, missing);
@@ -867,6 +881,42 @@ function startRenderer(root: HTMLElement): void {
       label.textContent = `No scene · build ${__BUILD_SHA__}`;
       showSceneError(root, request.requested, request.available);
     }
+    // Death → reload (mw-e30.7): the player's Died opens the death screen; loading a save or
+    // restarting the area reloads the page, which tears the whole world down and builds it again.
+    const areaId = request.kind === 'scene' ? request.id : undefined;
+    const session = sessionStore();
+    const deathReload = saves.then(
+      ({ store }) =>
+        new DeathReload({
+          ui,
+          world,
+          store,
+          registry: createGameSaveRegistry(),
+          build: { gameVersion: GAME_VERSION, buildSha: __BUILD_SHA__, contentHash: 'unversioned' },
+          now: () => Date.now(),
+          session,
+          areaId,
+          navigate: (area) => {
+            const params = new URLSearchParams(location.search);
+            if (area !== undefined) params.set('scene', area);
+            location.search = params.toString();
+          },
+          // Class selection (mw-e19) names the character and class; the knight until then.
+          describe: () => ({ characterName: 'Knight', classId: 'knight', areaId: areaId ?? '' }),
+          publish: (readout) => {
+            root.dataset[READOUT_ATTRIBUTE[readout.kind]] = JSON.stringify(readout);
+          },
+          warn: (message) => {
+            console.warn(message);
+          },
+        }),
+    );
+    world.events.on(Died, ({ target }) => {
+      if (player?.entity === target) {
+        void deathReload.then((reload) => reload.playerDied());
+      }
+    });
+    const pending: PendingLoad | undefined = takePendingLoad(session);
     // The debug console (mw-e33.1): its own chunk, loaded only in dev builds or with ?debug=1.
     const consoleGate = {
       built: __DEBUG_CONSOLE__,
@@ -907,6 +957,14 @@ function startRenderer(root: HTMLElement): void {
             location.search = params.toString();
           },
           loop,
+          // `save [slot]` (mw-e30.7): writes the world into a slot and publishes its state hash.
+          save: (slot) => {
+            void deathReload
+              .then((reload) => reload.debugSave(slot))
+              .catch((error: unknown) => {
+                console.error(error);
+              });
+          },
           // A UI screen (mw-e00.23): while open it captures input, so the player gets no action
           // frames and pointer lock is released; the sim keeps running.
           dom: { document, keys: globalThis.window, screens: ui },
@@ -939,7 +997,15 @@ function startRenderer(root: HTMLElement): void {
     // Debug attribute (mw-e03.39): the physics objects the scene spawned.
     root.dataset['physicsObjects'] = String(world.query(PhysicsObjectComponent).ids().length);
     writeCameraData();
-    loop.start();
+    // A save chosen on the death screen (mw-e30.7) reloaded the page into its area; it loads into the
+    // freshly built world before the first sim step.
+    if (pending === undefined) loop.start();
+    else
+      void deathReload
+        .then((reload) => reload.resume(pending))
+        .finally(() => {
+          loop.start();
+        });
   };
 
   const status = document.createElement('p');
@@ -972,6 +1038,27 @@ function startRenderer(root: HTMLElement): void {
       startWorld(boot.physics, loaded);
     });
   });
+}
+
+// Session storage for the death → reload hand-off (mw-e30.7); a browser that blocks it gets a
+// stand-in for this page only, so the death screen still works (a load then starts the area afresh).
+function sessionStore(): PendingLoadStorage {
+  try {
+    const storage = globalThis.sessionStorage;
+    storage.getItem('');
+    return storage;
+  } catch {
+    const items = new Map<string, string>();
+    return {
+      getItem: (key) => items.get(key) ?? null,
+      setItem: (key, value) => {
+        items.set(key, value);
+      },
+      removeItem: (key) => {
+        items.delete(key);
+      },
+    };
+  }
 }
 
 // ?scene= named a scene that does not exist (mw-e00.21 AC-4): say so and link the real ones. The

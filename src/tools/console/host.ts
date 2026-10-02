@@ -17,6 +17,7 @@ import {
   type Vec3,
   type World,
 } from '@sim/index';
+import type { SlotId } from '@game/save/slots/ids';
 import type { ConsoleHost } from './builtins';
 
 /** How far in front of the player `spawn` puts things, metres. */
@@ -39,6 +40,8 @@ export interface GameHostOptions {
   readonly cursorPoint?: () => Vec3 | undefined;
   readonly scenes: readonly string[];
   readonly loadScene: (id: string) => void;
+  /** Saves the game into a slot (ConsoleHost.save); without it `save` is unavailable. */
+  readonly save?: (slot: SlotId) => void;
   /** The frame loop (its time scale). */
   readonly loop: { timeScale: number };
 }
@@ -78,6 +81,7 @@ export function createGameHost(options: GameHostOptions): ConsoleHost {
     bookmarks: options.bookmarks,
     scenes: options.scenes,
     loadScene: options.loadScene,
+    ...(options.save !== undefined && { save: options.save }),
     get timeScale() {
       return loop.timeScale;
     },

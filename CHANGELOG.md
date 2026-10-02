@@ -18,6 +18,11 @@ check enforces this).
   and print the edited controller file, and in `pnpm dev` saving that file retunes the player
   without a page reload. Controller data now holds per-class differences too: the thief crouches
   faster (2.6 m/s) once classes can be chosen.
+- Dying now opens a death screen. "Load last save" (focused) takes you back to your most recent
+  save of any kind, manual, autosave or quicksave, and "Load…" lets you pick an older one. Either
+  rebuilds the area and puts you back in play within a few seconds. With no save yet, "Restart area"
+  starts the area again from the beginning. A damaged save loads its backup and tells you so. In
+  debug builds the console's `save [slot]` command saves the game (`manual-1` by default).
 - The knight can shoot a bow in the testbed: press 4 to take the shortbow out, hold the left mouse
   button (RT) to draw and let go to loose an arrow, which flies, drops and sticks in what it hits
   (or glances off stone). The view narrows while you aim. Press 2 (RB) to switch between plain,

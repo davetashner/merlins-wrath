@@ -22,6 +22,17 @@
           "fingerprint": "sha256:668323f346cceecb2e782366795b2e18ea6e4e5d3e403f43a47fbee7171b9396"
         }
       }
+    },
+    {
+      "revision": 3,
+      "formatVersion": 1,
+      "saveSchemaVersion": 1,
+      "sections": {
+        "world": {
+          "version": 3,
+          "fingerprint": "sha256:189da40834cb8897c29d12322457a629388f1363536b78601fe6a6f88ca4f1dc"
+        }
+      }
     }
   ]
 }

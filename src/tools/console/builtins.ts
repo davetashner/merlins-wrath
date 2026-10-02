@@ -1,5 +1,6 @@
 // The debug console's built-in commands (mw-e33.1): help, spawn, despawn (mw-e12.4), give, god,
-// noclip, kill, prop (mw-e03.37), tp, timescale, scene, set and seed, and blast (mw-e04.34).
+// noclip, kill, prop (mw-e03.37), tp, timescale, scene, set and seed, blast (mw-e04.34) and save
+// (mw-e30.7).
 // Everything that changes the sim goes out as a sim command through
 // `host.submit` (applied next tick, recorded in replays); the host's other members only read the
 // sim or drive the page (time scale, scene reload), never sim state.
@@ -25,6 +26,7 @@ import {
   WORLD_PROPERTY_KEYS,
 } from '@sim/index';
 import { MAX_TIME_SCALE } from '@game/loop/fixed-step';
+import { ALL_SLOTS, isSlotId, type SlotId } from '@game/save/slots/ids';
 import { z } from 'zod';
 import { ConsoleError, type CommandRegistry, type CommandSpec } from './registry';
 import { closest, splitOptions } from './text';
@@ -60,6 +62,8 @@ export interface ConsoleHost {
   readonly scenes: readonly string[];
   /** Switches to scene `id` (reloads the page). */
   loadScene(id: string): void;
+  /** Saves the game into `slot`, overwriting it. Absent: `save` is unavailable. */
+  save?(slot: SlotId): void;
   /** Sim speed: 1 is real time. */
   timeScale: number;
 }
@@ -327,6 +331,20 @@ export function registerBuiltins(registry: CommandRegistry<ConsoleHost>): void {
       if (!host.scenes.includes(id)) throw unknown('scene', id, host.scenes);
       host.loadScene(id);
       return `loading scene ${id}`;
+    },
+  });
+
+  registry.registerCommand({
+    name: 'save',
+    summary: 'save the game into a slot, overwriting it (manual-1 by default)',
+    usage: '[slot]',
+    args: z.tuple([z.string().optional()]),
+    complete: (index) => (index === 0 ? ALL_SLOTS : []),
+    run: ([slot = 'manual-1'], host) => {
+      if (host.save === undefined) throw new ConsoleError(['saving is unavailable here']);
+      if (!isSlotId(slot)) throw unknown('slot', slot, ALL_SLOTS);
+      host.save(slot);
+      return `saving to ${slot}`;
     },
   });
 
