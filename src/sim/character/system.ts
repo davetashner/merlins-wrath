@@ -2,6 +2,11 @@
 // controller state (so it is snapshotted, hashed and replayed) and a system that steps every
 // character once per tick with that tick's input, emitting CharacterImpacted for every hard landing
 // and (while launched) wall strike, for fall damage (mw-e04.19), audio and VFX.
+//
+// A character may carry its own tuning in CharacterTuning (mw-e02.3): the player gets its profile
+// at spawn, and the debug console's `ctl.set` replaces it through a recorded debug command, so a
+// live edit is world state (snapshotted, hashed, replayed) and the very next tick moves with it.
+// Characters without one move with the system's tuning.
 
 import type { ControllerTuning, Frozen } from '@content/index';
 import { defineComponent, type EntityId } from '../core/component';
@@ -23,6 +28,21 @@ import type { TraversalHook } from './traversal';
 
 /** A character moved by the kinematic controller. */
 export const CharacterController = defineComponent<CharacterState>('character.controller');
+
+/** A character's own controller tuning, replacing the systems' (see the file header). */
+export const CharacterTuning = defineComponent<Frozen<ControllerTuning>>('character.tuning');
+
+/** The tuning `entity` moves with: its CharacterTuning, else `fallback`. */
+export function characterTuning<TInput>(
+  world: World<TInput>,
+  entity: EntityId,
+  fallback: Frozen<ControllerTuning>,
+): Frozen<ControllerTuning> {
+  return (
+    (world.isRegistered(CharacterTuning) ? world.get(entity, CharacterTuning) : undefined) ??
+    fallback
+  );
+}
 
 /** Payload of CharacterImpacted. */
 export interface CharacterImpactInfo extends CharacterImpact {
@@ -61,13 +81,15 @@ export function characterControllerSystem<TInput>(
   return {
     name: 'character-controller',
     run({ world, inputs, clock, tick }) {
-      const params = controllerParams(tuning, clock);
+      const shared = controllerParams(tuning, clock);
       world.query(CharacterController).forEach((entity, state) => {
-        const context = { world: collision, tuning, params, hooks, entity };
+        const own = characterTuning(world, entity, tuning);
+        const params = own === tuning ? shared : controllerParams(own, clock);
+        const context = { world: collision, tuning: own, params, hooks, entity };
         const input = options.input(inputs, entity) ?? IDLE_INPUT;
         const step =
           options.noclip?.(entity) === true
-            ? { state: stepNoclip(state, input, tuning, params), impacts: [] }
+            ? { state: stepNoclip(state, input, own, params), impacts: [] }
             : stepCharacterWithImpacts(state, input, context);
         world.set(entity, CharacterController, step.state);
         const { position } = step.state;

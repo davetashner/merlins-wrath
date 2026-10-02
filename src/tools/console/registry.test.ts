@@ -81,6 +81,14 @@ describe('CommandRegistry', () => {
     expect(() => {
       r.registerCommand({ ...spec, name: 'say' });
     }).toThrow(/already exists/);
+    // A dot groups related commands (mw-e02.3: ctl.get, ctl.set); empty or dangling groups do not.
+    r.registerCommand({ ...spec, name: 'ctl.get' });
+    expect(r.get('ctl.get')).toBeDefined();
+    for (const name of ['ctl.', '.get', 'ctl..get', 'ctl.Get']) {
+      expect(() => {
+        r.registerCommand({ ...spec, name });
+      }).toThrow(/lower-case/);
+    }
   });
 
   it('completes command names, and leaves lines alone when nothing matches', () => {

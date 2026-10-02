@@ -2,8 +2,10 @@
 // (read-only); every change to the sim goes into the command queue, which the frame loop feeds to
 // the next `World.step`, so it is deterministic and recorded like player input.
 
+import type { ControllerTuning, Frozen } from '@content/index';
 import {
   CharacterController,
+  CharacterTuning,
   DEBUG_SPAWN_TAG,
   hasCheat,
   PlayerLook,
@@ -83,6 +85,14 @@ export function createGameHost(options: GameHostOptions): ConsoleHost {
       loop.timeScale = value;
     },
   };
+}
+
+/** `entity`'s own controller tuning (CharacterTuning), or undefined when it has none. */
+export function characterTuningOf(
+  world: World<never>,
+  entity: EntityId,
+): Frozen<ControllerTuning> | undefined {
+  return world.isRegistered(CharacterTuning) ? world.get(entity, CharacterTuning) : undefined;
 }
 
 /**

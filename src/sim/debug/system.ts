@@ -1,5 +1,6 @@
 // Applies debug commands inside the tick (mw-e33.1; blasts, mw-e04.34, go through the stimulus API and
-// resolve where the world's stimulus system runs). `installDebugCommands` registers the cheat
+// resolve where the world's stimulus system runs; controller tuning, mw-e02.3, replaces the
+// character's CharacterTuning). `installDebugCommands` registers the cheat
 // component and adds the system; install it right after creating the world, before other systems,
 // so a teleport or a cheat toggle is what every later system of that tick sees. Structural changes
 // follow the world's usual rule: entities a spawn command creates, and a first cheat component, go
@@ -10,7 +11,7 @@
 // console checks the same things up front and tells the developer instead.
 
 import { initialCharacterState } from '../character/controller';
-import { CharacterController } from '../character/system';
+import { CharacterController, CharacterTuning } from '../character/system';
 import { HealthComponent } from '../combat/damage/components';
 import { Died } from '../combat/damage/events';
 import type { DamageModel } from '../combat/damage/model';
@@ -33,6 +34,7 @@ import {
   type DebugCommand,
   type PropertyCommand,
   type SpawnParams,
+  type TuneCommand,
 } from './commands';
 
 /** Distance between the entities one spawn command creates, metres along +x. */
@@ -153,6 +155,15 @@ function setDebugProperty<TInput>(world: World<TInput>, command: PropertyCommand
   assignProperty(sim, target, key, value as WorldPropertyValues[typeof key]);
 }
 
+/**
+ * Replaces a character's own tuning at once (a plain set, so this tick's controller already moves
+ * with it); skipped for an entity without CharacterTuning (only installPlayer gives one).
+ */
+function tune<TInput>(world: World<TInput>, { target, tuning }: TuneCommand): void {
+  if (read(world, target, CharacterTuning) === undefined) return;
+  world.set(target, CharacterTuning, tuning);
+}
+
 /** The system applying this tick's debug commands in input order (see the file header). */
 export function debugCommandSystem<TInput>(options: DebugCommandOptions): System<TInput> {
   const { spawners } = options;
@@ -202,6 +213,7 @@ export function debugCommandSystem<TInput>(options: DebugCommandOptions): System
         if (command.op === 'cheat') toggle(command);
         else if (command.op === 'teleport') teleport(world, command.target, command.to);
         else if (command.op === 'property') setDebugProperty(world, command);
+        else if (command.op === 'tune') tune(world, command);
         else kill(world, command.target, tick);
       }
       for (const [target, value] of cheats) {

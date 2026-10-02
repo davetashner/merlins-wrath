@@ -14,6 +14,7 @@
 
 import { loadGameContent } from '@content/game-content';
 import {
+  controllerTuningFor,
   PLAYER_CAMERA_ID,
   PLAYER_CONTROLLER_ID,
   PLAYER_LOCK_ON_ID,
@@ -217,7 +218,7 @@ export function createGameWorld<TInput>(
     world,
     scene,
     sync,
-    tuning: content.get('controller', PLAYER_CONTROLLER_ID),
+    tuning: controllerTuningFor(content.get('controller', PLAYER_CONTROLLER_ID)),
     cameraTuning: content.get('camera', PLAYER_CAMERA_ID),
     collision,
     object: {},

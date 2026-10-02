@@ -29,7 +29,7 @@ import { defineComponent, type EntityId } from '../core/component';
 import { defineEvent } from '../core/events';
 import type { System, World } from '../core/world';
 import type { CharacterState } from './controller';
-import { CharacterController } from './system';
+import { CharacterController, characterTuning } from './system';
 import type { TraversalMode } from './traversal';
 
 /** Every locomotion state, in the order the file header lists them. */
@@ -326,12 +326,16 @@ export interface LocomotionSystemOptions<TInput> {
  */
 export function locomotionSystem<TInput>(options: LocomotionSystemOptions<TInput>): System<TInput> {
   const { tuning } = options;
-  const gait = tuning.gait ?? DEFAULT_GAIT_TUNING;
   return {
     name: 'character-locomotion',
     run({ world, inputs, clock }) {
-      const context: LocomotionContext = { tuning, gait, clock };
       world.query(CharacterController, CharacterLocomotion).forEach((entity, character, last) => {
+        const own = characterTuning(world, entity, tuning);
+        const context: LocomotionContext = {
+          tuning: own,
+          gait: own.gait ?? DEFAULT_GAIT_TUNING,
+          clock,
+        };
         const next = stepLocomotion(
           last,
           {

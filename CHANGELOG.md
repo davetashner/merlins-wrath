@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Movement feel can be tuned live: the debug console's `ctl.get`, `ctl.set runSpeed 6` and `ctl.dump`
+  read and change the player's speeds, jump, gravity, ledge and climbing values from the next tick
+  and print the edited controller file, and in `pnpm dev` saving that file retunes the player
+  without a page reload. Controller data now holds per-class differences too: the thief crouches
+  faster (2.6 m/s) once classes can be chosen.
 - The knight can shoot a bow in the testbed: press 4 to take the shortbow out, hold the left mouse
   button (RT) to draw and let go to loose an arrow, which flies, drops and sticks in what it hits
   (or glances off stone). The view narrows while you aim. Press 2 (RB) to switch between plain,

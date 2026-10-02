@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { relative } from 'node:path';
 import wasm from 'vite-plugin-wasm';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
@@ -20,13 +21,36 @@ function buildSha(): string {
   }
 }
 
+/**
+ * Dev hot reload of controller data (mw-e02.3): a saved src/content/data/controller/*.json is sent
+ * to the page on the `vesper:controller` event (CONTROLLER_HOT_EVENT in src/game/player), which
+ * validates it and retunes the player, instead of reloading the page.
+ */
+function controllerHotReload(): Plugin {
+  return {
+    name: 'vesper:controller-hot-reload',
+    apply: 'serve',
+    async hotUpdate({ file, read }) {
+      const path = relative(import.meta.dirname, file).replaceAll('\\', '/');
+      if (this.environment.name !== 'client') return;
+      if (!/^src\/content\/data\/controller\/[^/]+\.json$/.test(path)) return;
+      this.environment.hot.send({
+        type: 'custom',
+        event: 'vesper:controller',
+        data: { file: path, text: await read() },
+      });
+      return [];
+    },
+  };
+}
+
 // One config for dev, build and tests: path aliases come from tsconfig.json `paths`,
 // so @sim/*, @content/*, @game/* … resolve identically in Vite, Vitest and tsc.
 export default defineConfig({
   // Rapier's deterministic build (ADR-0001) imports its .wasm as an ES module; the plugin emits it
   // as a separate asset fetched by the lazily imported physics chunk (mw-e00.19).
   // Its typings declare `any`, hence the cast.
-  plugins: [wasm() as Plugin],
+  plugins: [wasm() as Plugin, controllerHotReload()],
   define: {
     __BUILD_SHA__: JSON.stringify(buildSha()),
     // The debug console (mw-e33.1) is built in unless VESPER_DEBUG_CONSOLE=off (a release build);

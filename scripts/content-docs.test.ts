@@ -127,6 +127,7 @@ describe('typeOf', () => {
     expect(t(z.number())).toBe('number');
     expect(t(z.number().positive().max(5))).toBe('number > 0 ≤ 5');
     expect(t(z.number().max(5))).toBe('number ≤ 5');
+    expect(t(z.number().gt(0).lt(90))).toBe('number > 0 < 90');
     expect(t(z.int().min(1).max(3))).toBe('integer 1–3');
     expect(t(contentId)).toBe('id');
     expect(t(z.string().regex(/x/))).toBe('string');

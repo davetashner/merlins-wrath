@@ -474,7 +474,7 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000,
-          "description": "Stamina drained per second while climbing (characters with a stamina pool); at 0 stamina the climber falls. Progression may change it (mw-e10.9)."
+          "description": "Stamina drained while climbing (characters with a stamina pool), stamina/s; at 0 stamina the climber falls. Progression may change it (mw-e10.9)."
         },
         "jumpOff": {
           "type": "object",
@@ -511,6 +511,436 @@
         "jumpOff"
       ],
       "additionalProperties": false
+    },
+    "classes": {
+      "description": "Per-class overrides (mw-e02.3): class → only the values it changes; the rest come from this profile. Armor load effects are not overrides (mw-e17.13).",
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "enum": [
+          "knight",
+          "archer",
+          "sorcerer",
+          "thief"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "capsule": {
+            "type": "object",
+            "properties": {
+              "radius": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1,
+                "description": "Capsule radius, m."
+              },
+              "height": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 4,
+                "description": "Standing capsule height, feet to crown, m; at least 2 × radius."
+              },
+              "crouchHeight": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 4,
+                "description": "Crouched capsule height, m; at least 2 × radius and at most height. The feet stay put, the top lowers."
+              }
+            },
+            "additionalProperties": false
+          },
+          "speeds": {
+            "type": "object",
+            "properties": {
+              "run": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 50,
+                "description": "Top speed with the move input fully deflected, m/s. Partial input walks."
+              },
+              "sprint": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 50,
+                "description": "Top speed while sprint is held, m/s; at least run."
+              },
+              "crouch": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 50,
+                "description": "Top speed while crouched, m/s; at most run."
+              }
+            },
+            "additionalProperties": false
+          },
+          "accelTime": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 2,
+            "description": "Time to reach run speed from rest on the ground, s."
+          },
+          "decelTime": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 2,
+            "description": "Time to stop from run speed on the ground once input is released, s."
+          },
+          "airControl": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Share of ground acceleration available in the air, 0–1; with no input the player keeps momentum."
+          },
+          "gravity": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "description": "Downward acceleration, m/s²."
+          },
+          "maxFallSpeed": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 50,
+            "description": "Terminal falling speed, m/s."
+          },
+          "jumpApex": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 5,
+            "description": "Jump height from standing, feet to feet, m."
+          },
+          "coyoteMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 120,
+            "description": "After walking off a ledge a jump still works for this long, whole ms (≤ 120)."
+          },
+          "jumpBufferMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 150,
+            "description": "A jump pressed this long before landing fires on landing, whole ms (≤ 150)."
+          },
+          "stepHeight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Tallest step walked up without jumping, m; also how far the player snaps down to stay on stairs and ramps. Below crouchHeight."
+          },
+          "slopeLimit": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "exclusiveMaximum": 90,
+            "description": "Steepest walkable slope, degrees; steeper ground is a wall the player slides off."
+          },
+          "gait": {
+            "type": "object",
+            "properties": {
+              "walkFrom": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 10,
+                "description": "Horizontal speed from which a character with move input walks (below: idle), m/s."
+              },
+              "runFrom": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 20,
+                "description": "Horizontal speed from which it runs (below: walk), m/s; above walkFrom."
+              },
+              "landingMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000,
+                "description": "How long the landing state lasts after a hard landing, whole ms."
+              },
+              "hardLanding": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 50,
+                "description": "Impact speed from which a landing counts as hard (shows the landing state), m/s."
+              },
+              "footstep": {
+                "type": "object",
+                "properties": {
+                  "walk": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 5,
+                    "description": "Walking, m."
+                  },
+                  "run": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 5,
+                    "description": "Running, m."
+                  },
+                  "sprint": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 5,
+                    "description": "Sprinting, m."
+                  },
+                  "crouch": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 5,
+                    "description": "Crouching, m."
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "launch": {
+            "type": "object",
+            "properties": {
+              "airControl": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Share of ground acceleration available while flying from an impulse the player chose (a self-cast Gust), 0–1; a staggering launch (a blast, a troll’s blow) has none."
+              },
+              "recoveryMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000,
+                "description": "After a staggering launch lands, movement and jump input are ignored this long, whole ms (≤ 1000)."
+              },
+              "mass": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1000,
+                "description": "The character’s mass for force stimuli (its `weight` world property), kg: a blast’s impulse in N·s over this is the velocity change it gets."
+              }
+            },
+            "additionalProperties": false
+          },
+          "ledge": {
+            "type": "object",
+            "properties": {
+              "autoMantleHeight": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 5,
+                "description": "Ledges up to this high above the feet are mantled by walking into them, no jump needed, m."
+              },
+              "mantleHeight": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 5,
+                "description": "Ledges up to this high are mantled by pressing jump at them (every class), m; at least autoMantleHeight."
+              },
+              "hangReach": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 5,
+                "description": "Highest ledge above the feet a grab reaches (ledge hang, capability-gated), m; at least mantleHeight."
+              },
+              "hangDepth": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 5,
+                "description": "How far below the ledge top the feet hang, m; at most hangReach. Grabs lower than this pull straight up."
+              },
+              "reach": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 3,
+                "description": "How far ahead of the capsule a jump press finds a ledge to mantle or grab from the ground, m."
+              },
+              "grabReach": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1,
+                "description": "How far ahead of the capsule hands catch a ledge in the air, or walking into one (auto-mantle), m."
+              },
+              "maxTopSlope": {
+                "type": "number",
+                "minimum": 0,
+                "exclusiveMaximum": 90,
+                "description": "Steepest ledge top a mantle stands on, degrees."
+              },
+              "autoMantleMs": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3000,
+                "description": "Duration of a mantle onto a ledge up to autoMantleHeight, whole ms."
+              },
+              "mantleMs": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3000,
+                "description": "Duration of a mantle onto a higher ledge, whole ms."
+              },
+              "pullUpMs": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3000,
+                "description": "Duration of a pull-up from a hang (or a catch low on a ledge), whole ms."
+              },
+              "grabMs": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3000,
+                "description": "Duration of catching a ledge into a hang, whole ms."
+              },
+              "lowerMs": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 3000,
+                "description": "Duration of lowering over an edge into a hang, whole ms."
+              },
+              "shimmySpeed": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 10,
+                "description": "Sideways speed while hanging, at full stick deflection, m/s."
+              },
+              "shimmyGap": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 2,
+                "description": "Widest gap between ledges a shimmy crosses, m; wider gaps stop it."
+              },
+              "slipGraceMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000,
+                "description": "How long hands hold a ledge that became impossible to hold (frozen, burning) before the character drops, whole ms."
+              },
+              "jumpBack": {
+                "type": "object",
+                "properties": {
+                  "away": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 20,
+                    "description": "Speed away from the wall, m/s."
+                  },
+                  "up": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 20,
+                    "description": "Upward speed, m/s."
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "climb": {
+            "type": "object",
+            "properties": {
+              "speeds": {
+                "type": "object",
+                "properties": {
+                  "ladder": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 10,
+                    "description": "Climbing speed on a ladder, m/s."
+                  },
+                  "rope": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 10,
+                    "description": "Climbing speed on a rope, m/s."
+                  },
+                  "ivy": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 10,
+                    "description": "Climbing speed on ivy, m/s."
+                  },
+                  "rough": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 10,
+                    "description": "Climbing speed on rough stone or timber, m/s."
+                  },
+                  "sheer": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 10,
+                    "description": "Climbing speed on a sheer face (with a tool), m/s."
+                  }
+                },
+                "additionalProperties": false
+              },
+              "walkOn": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "ladder",
+                    "rope",
+                    "ivy",
+                    "rough",
+                    "sheer"
+                  ]
+                },
+                "description": "Grades a character attaches to by walking into them; every other grade needs a jump at it (or a catch in the air), so bumping a stone wall never starts a climb."
+              },
+              "reach": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1,
+                "description": "How far ahead of the capsule a surface or rope can be caught, m."
+              },
+              "handHeight": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 5,
+                "description": "Hands above the feet while climbing, m: the surface must reach this high, and a ledge this high above the feet is pulled up onto."
+              },
+              "maxCornerAngle": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 90,
+                "description": "Sharpest turn between two faces a climber follows round a corner, degrees."
+              },
+              "slipGraceMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000,
+                "description": "How long a climber holds a surface that became impossible to hold (frozen, burning) before falling, whole ms."
+              },
+              "staminaPerSecond": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1000,
+                "description": "Stamina drained while climbing (characters with a stamina pool), stamina/s; at 0 stamina the climber falls. Progression may change it (mw-e10.9)."
+              },
+              "jumpOff": {
+                "type": "object",
+                "properties": {
+                  "away": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 20,
+                    "description": "Speed away from the surface, m/s."
+                  },
+                  "up": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 20,
+                    "description": "Upward speed, m/s."
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false,
+        "description": "Values one class changes; every value it leaves out comes from the base profile (mw-e02.3)."
+      }
     }
   },
   "required": [

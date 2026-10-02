@@ -5,6 +5,7 @@ import {
   listenerPose,
 } from '@audio/index';
 import {
+  controllerTuningFor,
   loadGameContent,
   materialPresets,
   PLAYER_CAMERA_ID,
@@ -67,9 +68,12 @@ import {
 } from '@game/light/index';
 import {
   attachPlayerInput,
+  CONTROLLER_HOT_EVENT,
   interactPromptModel,
   lockMarkerModel,
+  readControllerFile,
   setupTestbedPlayer,
+  type ControllerHotUpdate,
   type TestbedPlayer,
 } from '@game/player/index';
 import {
@@ -112,6 +116,7 @@ import {
   registerSceneComponents,
   SceneSpawnComponent,
   testPropSpawners,
+  tuneCommand,
   World,
   zeroHealth,
   type ActionFrame,
@@ -658,7 +663,8 @@ function startRenderer(root: HTMLElement): void {
       // The controller, the camera and arrows (mw-e05.21) all collide with the sim's Rapier world.
       const collision = new RapierCollisionWorld(physics);
       if (playerStart(loaded.layout.spawns) !== undefined) {
-        const tuning = content.get('controller', PLAYER_CONTROLLER_ID);
+        // No class is chosen yet (mw-e19.5), so the player moves on the base profile.
+        const tuning = controllerTuningFor(content.get('controller', PLAYER_CONTROLLER_ID));
         const cameraTuning = content.get('camera', PLAYER_CAMERA_ID);
         camera.fov = cameraTuning.fov;
         camera.near = cameraTuning.near;
@@ -742,6 +748,18 @@ function startRenderer(root: HTMLElement): void {
           },
         });
         focus.entity = player.entity; // bodies near the player never get forced to sleep
+        // Dev hot reload (mw-e02.3): a saved player controller file retunes the player from the
+        // next tick, through the same recorded command as the console's ctl.set; no page reload.
+        const tuned = player.entity;
+        import.meta.hot?.on(CONTROLLER_HOT_EVENT, (update: ControllerHotUpdate) => {
+          const reload = readControllerFile(update);
+          if (!reload.ok) {
+            for (const problem of reload.problems) console.warn(problem);
+          } else if (reload.id === PLAYER_CONTROLLER_ID) {
+            commands.push(tuneCommand(tuned, reload.tuning));
+            console.info(`${update.file}: applied to the player`);
+          }
+        });
         // The mouse wheel zooms the orbit camera while the player has control (2–6 m).
         view.canvas.addEventListener(
           'wheel',
@@ -867,6 +885,8 @@ function startRenderer(root: HTMLElement): void {
             commands.push(command as GameCommand);
           },
           player: (): EntityId | undefined => player?.entity,
+          // ctl.get / ctl.set / ctl.dump (mw-e02.3) over the player's live controller tuning.
+          controller: content.get('controller', PLAYER_CONTROLLER_ID),
           spawnables: [...spawners.keys()].sort(),
           // Sandbox dummies take options (mw-e04.9: `spawn dummy --poise 60`); props take none.
           checkSpawn: (content, options) =>
