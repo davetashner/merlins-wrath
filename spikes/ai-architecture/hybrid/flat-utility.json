@@ -1,0 +1,73 @@
+{
+  "id": "fixture-guard-flat",
+  "thinkHz": 10,
+  "inertia": 0.1,
+  "initial": "unaware",
+  "states": {
+    "unaware": {
+      "activities": ["patrol", "return-to-route", "nap", "look-toward-noise", "investigate"]
+    }
+  },
+  "activities": {
+    "patrol": {
+      "considerations": [
+        { "input": "awareness", "curve": { "kind": "step", "at": 0.3, "below": 1, "above": 0 } },
+        { "input": "offRoute", "curve": { "kind": "step", "at": 1.5, "below": 1, "above": 0 } },
+        {
+          "input": "trait.diligence",
+          "curve": { "kind": "linear", "slope": 0.5, "intercept": 0.5 }
+        }
+      ],
+      "steps": [{ "do": "set-alert", "state": "unaware" }, { "do": "follow-route" }]
+    },
+    "return-to-route": {
+      "considerations": [
+        { "input": "awareness", "curve": { "kind": "step", "at": 0.3, "below": 1, "above": 0 } },
+        { "input": "offRoute", "curve": { "kind": "step", "at": 1.5, "below": 0, "above": 1 } }
+      ],
+      "steps": [
+        { "do": "set-alert", "state": "unaware" },
+        { "do": "move-to", "target": "nearest-waypoint" }
+      ]
+    },
+    "nap": {
+      "weight": 1.5,
+      "considerations": [
+        { "input": "awareness", "curve": { "kind": "step", "at": 0.3, "below": 1, "above": 0 } },
+        { "input": "need.sleep", "curve": { "kind": "power", "exponent": 2 } },
+        { "input": "trait.diligence", "curve": { "kind": "linear", "slope": -1, "intercept": 1.2 } }
+      ],
+      "steps": [{ "do": "rest", "seconds": 8 }]
+    },
+    "look-toward-noise": {
+      "weight": 0.9,
+      "considerations": [
+        { "input": "awareness", "curve": { "kind": "step", "at": 0.3, "below": 0, "above": 1 } },
+        { "input": "hasStimulus", "curve": { "kind": "step", "at": 1, "below": 0, "above": 1 } },
+        { "input": "trait.curiosity", "curve": { "kind": "linear", "slope": -1, "intercept": 1 } }
+      ],
+      "steps": [
+        { "do": "set-alert", "state": "suspicious" },
+        { "do": "look-toward", "target": "stimulus", "seconds": 1 }
+      ]
+    },
+    "investigate": {
+      "interruptible": false,
+      "considerations": [
+        { "input": "awareness", "curve": { "kind": "step", "at": 0.6, "below": 0, "above": 1 } },
+        { "input": "hasStimulus", "curve": { "kind": "step", "at": 1, "below": 0, "above": 1 } },
+        {
+          "input": "trait.curiosity",
+          "curve": { "kind": "linear", "slope": 0.5, "intercept": 0.5 }
+        }
+      ],
+      "steps": [
+        { "do": "set-alert", "state": "investigating" },
+        { "do": "move-to", "target": "stimulus" },
+        { "do": "look-around", "seconds": 3 },
+        { "do": "clear-stimulus" },
+        { "do": "set-alert", "state": "unaware" }
+      ]
+    }
+  }
+}

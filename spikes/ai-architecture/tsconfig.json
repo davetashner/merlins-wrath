@@ -1,0 +1,6 @@
+{
+  // Typechecks this spike against the game's strict settings and @sim/* aliases, separately from the
+  // root `pnpm typecheck` (which skips spikes/): `pnpm exec tsc -p spikes/ai-architecture`.
+  "extends": "../../tsconfig.json",
+  "include": ["."]
+}

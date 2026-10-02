@@ -1,4 +1,4 @@
-# ADR-0003: Encumbrance model — weightless inventory, weighted armor, physical carrying
+# ADR-0005: Encumbrance model — weightless inventory, weighted armor, physical carrying
 
 - **Status:** Accepted
 - **Date:** 2026-10-02
