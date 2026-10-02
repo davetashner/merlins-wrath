@@ -235,7 +235,7 @@ describe('ground movement', () => {
     expect(hspeed(rig.state)).toBeCloseTo(5, 9);
   });
 
-  it('sprints at 7.5 m/s; crouching caps speed at 2.2 m/s and cancels sprint', () => {
+  it('sprints at 7.5 m/s; crouching caps speed at 2.2 m/s; sprinting stands a held crouch up', () => {
     const rig = onFloor();
     rig.step(input({ move: [0, 1], sprint: true }), 40);
     expect(hspeed(rig.state)).toBeCloseTo(7.5, 9);
@@ -245,10 +245,15 @@ describe('ground movement', () => {
       crouched: false,
       sprinting: true,
     });
-    rig.step(input({ move: [0, 1], sprint: true, crouch: true }), 40);
+    rig.step(input({ move: [0, 1], crouch: true }), 40);
     expect(hspeed(rig.state)).toBeCloseTo(2.2, 9);
     expect(movementState(rig.state)).toMatchObject({ crouched: true, sprinting: false });
-    expect(rig.step(input({ sprint: true })).sprinting).toBe(false); // not moving
+    // Sprint overrides the held crouch (mw-e02.10 AC-2), but only while moving.
+    rig.step(input({ move: [0, 1], sprint: true, crouch: true }), 40);
+    expect(hspeed(rig.state)).toBeCloseTo(7.5, 9);
+    expect(movementState(rig.state)).toMatchObject({ crouched: false, sprinting: true });
+    const still = rig.step(input({ sprint: true, crouch: true }));
+    expect(still).toMatchObject({ sprinting: false, crouched: true }); // not moving
   });
 
   it('moves relative to the camera yaw', () => {

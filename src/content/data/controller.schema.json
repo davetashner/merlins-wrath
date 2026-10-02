@@ -512,6 +512,309 @@
       ],
       "additionalProperties": false
     },
+    "stealth": {
+      "description": "MovementStance and gait movement profiles; absent = the sim’s defaults (DEFAULT_STEALTH_TUNING).",
+      "type": "object",
+      "properties": {
+        "slowWalk": {
+          "type": "object",
+          "properties": {
+            "speed": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 50,
+              "description": "Top speed while the slow-walk modifier is held, m/s; at most speeds.crouch."
+            },
+            "deflection": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "exclusiveMaximum": 1,
+              "description": "Move-stick deflection at or below which moving counts as a slow walk (a light stick), 0–1."
+            }
+          },
+          "required": [
+            "speed",
+            "deflection"
+          ],
+          "additionalProperties": false,
+          "description": "The slow walk: the quietest gait, from the modifier or a light stick."
+        },
+        "profiles": {
+          "type": "object",
+          "properties": {
+            "standing": {
+              "type": "object",
+              "properties": {
+                "still": {
+                  "type": "object",
+                  "properties": {
+                    "noise": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                    },
+                    "visibility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                    }
+                  },
+                  "required": [
+                    "noise",
+                    "visibility"
+                  ],
+                  "additionalProperties": false,
+                  "description": "At the still gait."
+                },
+                "slowWalk": {
+                  "type": "object",
+                  "properties": {
+                    "noise": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                    },
+                    "visibility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                    }
+                  },
+                  "required": [
+                    "noise",
+                    "visibility"
+                  ],
+                  "additionalProperties": false,
+                  "description": "At the slowWalk gait."
+                },
+                "walk": {
+                  "type": "object",
+                  "properties": {
+                    "noise": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                    },
+                    "visibility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                    }
+                  },
+                  "required": [
+                    "noise",
+                    "visibility"
+                  ],
+                  "additionalProperties": false,
+                  "description": "At the walk gait."
+                },
+                "run": {
+                  "type": "object",
+                  "properties": {
+                    "noise": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                    },
+                    "visibility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                    }
+                  },
+                  "required": [
+                    "noise",
+                    "visibility"
+                  ],
+                  "additionalProperties": false,
+                  "description": "At the run gait."
+                },
+                "sprint": {
+                  "type": "object",
+                  "properties": {
+                    "noise": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                    },
+                    "visibility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                    }
+                  },
+                  "required": [
+                    "noise",
+                    "visibility"
+                  ],
+                  "additionalProperties": false,
+                  "description": "At the sprint gait."
+                }
+              },
+              "required": [
+                "still",
+                "slowWalk",
+                "walk",
+                "run",
+                "sprint"
+              ],
+              "additionalProperties": false,
+              "description": "Every gait standing."
+            },
+            "crouched": {
+              "type": "object",
+              "properties": {
+                "still": {
+                  "type": "object",
+                  "properties": {
+                    "noise": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                    },
+                    "visibility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                    }
+                  },
+                  "required": [
+                    "noise",
+                    "visibility"
+                  ],
+                  "additionalProperties": false,
+                  "description": "At the still gait."
+                },
+                "slowWalk": {
+                  "type": "object",
+                  "properties": {
+                    "noise": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                    },
+                    "visibility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                    }
+                  },
+                  "required": [
+                    "noise",
+                    "visibility"
+                  ],
+                  "additionalProperties": false,
+                  "description": "At the slowWalk gait."
+                },
+                "walk": {
+                  "type": "object",
+                  "properties": {
+                    "noise": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                    },
+                    "visibility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                    }
+                  },
+                  "required": [
+                    "noise",
+                    "visibility"
+                  ],
+                  "additionalProperties": false,
+                  "description": "At the walk gait."
+                },
+                "run": {
+                  "type": "object",
+                  "properties": {
+                    "noise": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                    },
+                    "visibility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                    }
+                  },
+                  "required": [
+                    "noise",
+                    "visibility"
+                  ],
+                  "additionalProperties": false,
+                  "description": "At the run gait."
+                },
+                "sprint": {
+                  "type": "object",
+                  "properties": {
+                    "noise": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                    },
+                    "visibility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1,
+                      "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                    }
+                  },
+                  "required": [
+                    "noise",
+                    "visibility"
+                  ],
+                  "additionalProperties": false,
+                  "description": "At the sprint gait."
+                }
+              },
+              "required": [
+                "still",
+                "slowWalk",
+                "walk",
+                "run",
+                "sprint"
+              ],
+              "additionalProperties": false,
+              "description": "Every gait crouched."
+            }
+          },
+          "required": [
+            "standing",
+            "crouched"
+          ],
+          "additionalProperties": false,
+          "description": "Noise and visibility for every stance × gait (every combination must be defined)."
+        }
+      },
+      "required": [
+        "slowWalk",
+        "profiles"
+      ],
+      "additionalProperties": false
+    },
     "classes": {
       "description": "Per-class overrides (mw-e02.3): class → only the values it changes; the rest come from this profile. Armor load effects are not overrides (mw-e17.13).",
       "type": "object",
@@ -930,6 +1233,228 @@
                     "minimum": 0,
                     "maximum": 20,
                     "description": "Upward speed, m/s."
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "stealth": {
+            "type": "object",
+            "properties": {
+              "slowWalk": {
+                "type": "object",
+                "properties": {
+                  "speed": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 50,
+                    "description": "Top speed while the slow-walk modifier is held, m/s; at most speeds.crouch."
+                  },
+                  "deflection": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "exclusiveMaximum": 1,
+                    "description": "Move-stick deflection at or below which moving counts as a slow walk (a light stick), 0–1."
+                  }
+                },
+                "additionalProperties": false
+              },
+              "profiles": {
+                "type": "object",
+                "properties": {
+                  "standing": {
+                    "type": "object",
+                    "properties": {
+                      "still": {
+                        "type": "object",
+                        "properties": {
+                          "noise": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                          },
+                          "visibility": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "slowWalk": {
+                        "type": "object",
+                        "properties": {
+                          "noise": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                          },
+                          "visibility": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "walk": {
+                        "type": "object",
+                        "properties": {
+                          "noise": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                          },
+                          "visibility": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "run": {
+                        "type": "object",
+                        "properties": {
+                          "noise": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                          },
+                          "visibility": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "sprint": {
+                        "type": "object",
+                        "properties": {
+                          "noise": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                          },
+                          "visibility": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "crouched": {
+                    "type": "object",
+                    "properties": {
+                      "still": {
+                        "type": "object",
+                        "properties": {
+                          "noise": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                          },
+                          "visibility": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "slowWalk": {
+                        "type": "object",
+                        "properties": {
+                          "noise": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                          },
+                          "visibility": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "walk": {
+                        "type": "object",
+                        "properties": {
+                          "noise": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                          },
+                          "visibility": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "run": {
+                        "type": "object",
+                        "properties": {
+                          "noise": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                          },
+                          "visibility": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "sprint": {
+                        "type": "object",
+                        "properties": {
+                          "noise": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by."
+                          },
+                          "visibility": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "description": "Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by."
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 },
                 "additionalProperties": false

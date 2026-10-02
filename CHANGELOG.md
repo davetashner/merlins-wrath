@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- A slow walk for sneaking: hold X to creep at 1.2 m/s, or push the left stick only lightly. It is
+  the quietest way to move, standing or crouched. Sprinting while crouched now stands you up and
+  sprints, unless a low ceiling keeps you down.
 - The first creature: the Forgotten miner, a shambling skeleton with an overhead chop and a two-hit
   slash you can parry and riposte, and a lunging thrust you can only block. Clubs and maces hurt it
   more, arrows and thrusts less, and poison does nothing. It stands in as a grey-box capsule with

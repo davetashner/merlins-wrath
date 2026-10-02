@@ -31,6 +31,10 @@ describe('action timeline scenario (mw-e04.4)', () => {
     expect(log.filter((f) => f.dodge.pressed && f.move.y === 1)).toHaveLength(1);
     const press = pressFrame('dodge');
     expect(actionFrameCommand.parse(JSON.parse(JSON.stringify(press)))).toEqual(press);
+    // A frame recorded before slow walk existed (mw-e02.10) reads it as up.
+    const older: Record<string, unknown> = { ...press };
+    delete older['slowWalk'];
+    expect(actionFrameCommand.parse(JSON.parse(JSON.stringify(older)))).toEqual(press);
     expect(pressFrame('primaryAttack').move).toEqual({ x: 0, y: 0 });
     expect(log[0]).toBe(IDLE_ACTION_FRAME);
   });

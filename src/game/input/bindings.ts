@@ -48,6 +48,7 @@ export const DEFAULT_BINDINGS: Bindings = freezeBindings({
   jump: ['Space'],
   sprint: ['ShiftLeft'],
   crouch: ['KeyC'],
+  slowWalk: ['KeyX'],
   dodge: ['KeyR'],
   interact: ['KeyE'],
   lockOn: ['KeyQ', mouseCode(1)],
@@ -67,7 +68,8 @@ export const DEFAULT_BINDINGS: Bindings = freezeBindings({
  * left stick moves and the right stick looks; neither is a binding. B dodges (the souls-like roll
  * button, mw-e04.8), so crouch sits on D-pad Down. D-pad Up/Right/Left are abilities 1, 2 and 4,
  * doubling Y and RB for 1–2 so a thumb on the face buttons or on the d-pad reaches them; ability 3
- * is LB. See docs/design/controls.md for the table.
+ * is LB. Slow walk has no button: a light push of the left stick is the pad's slow walk (mw-e02.10).
+ * See docs/design/controls.md for the table.
  */
 export const DEFAULT_PAD_BINDINGS: Bindings = freezeBindings({
   moveForward: [],
@@ -77,6 +79,7 @@ export const DEFAULT_PAD_BINDINGS: Bindings = freezeBindings({
   jump: ['PadA'],
   sprint: ['PadLS'],
   crouch: ['PadDown'],
+  slowWalk: [],
   dodge: ['PadB'],
   interact: ['PadX'],
   lockOn: ['PadRS'],

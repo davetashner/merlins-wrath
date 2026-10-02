@@ -8,6 +8,8 @@
 // other value comes from the base. Each merged class profile is validated like the base, so a bad
 // override fails the load with its path (`classes.thief.speeds.crouch`). Armor load effects are not
 // overrides: they are modifiers on top of whichever profile applies (ADR-0003, mw-e17.13).
+// The `stealth` block (mw-e02.10) holds the slow walk and the normalised noise and visibility of every
+// stance × gait; the sim publishes them as each character's MovementProfile for stealth (mw-e09).
 // The debug console's ctl.get / ctl.set / ctl.dump (src/tools/console/controller.ts) edit the live
 // values, and in dev a saved controller file is applied without a page reload.
 //
@@ -273,6 +275,70 @@ export const climbTuningSchema = z
 /** Climbing tuning (see climbTuningSchema). */
 export type ClimbTuning = z.output<typeof climbTuningSchema>;
 
+/** The stances a movement profile names (mw-e02.10). */
+export const MOVEMENT_STANCES = ['standing', 'crouched'] as const;
+
+/** A stance. */
+export type MovementStance = (typeof MOVEMENT_STANCES)[number];
+
+/** The gaits a movement profile names (mw-e02.10), quietest moving gait first after `still`. */
+export const STEALTH_GAITS = ['still', 'slowWalk', 'walk', 'run', 'sprint'] as const;
+
+/** A gait of the movement profile. */
+export type StealthGait = (typeof STEALTH_GAITS)[number];
+
+const multiplier = z.number().min(0).max(1);
+
+const stanceGaitSchema = z
+  .strictObject({
+    noise: multiplier.describe(
+      'Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by.',
+    ),
+    visibility: multiplier.describe(
+      'Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by.',
+    ),
+  })
+  .describe('Normalised noise and visibility of one stance at one gait.');
+
+const stanceRowShape = Object.fromEntries(
+  STEALTH_GAITS.map((gait) => [gait, stanceGaitSchema.describe(`At the ${gait} gait.`)]),
+) as Record<StealthGait, typeof stanceGaitSchema>;
+
+const stanceRowSchema = z.strictObject(stanceRowShape);
+
+const stanceTableSchema = z
+  .strictObject(
+    Object.fromEntries(
+      MOVEMENT_STANCES.map((stance) => [stance, stanceRowSchema.describe(`Every gait ${stance}.`)]),
+    ) as Record<MovementStance, typeof stanceRowSchema>,
+  )
+  .describe('Noise and visibility for every stance × gait (every combination must be defined).');
+
+export const stealthTuningSchema = z
+  .strictObject({
+    slowWalk: z
+      .strictObject({
+        speed: speed.describe(
+          'Top speed while the slow-walk modifier is held, m/s; at most speeds.crouch.',
+        ),
+        deflection: z
+          .number()
+          .gt(0)
+          .lt(1)
+          .describe(
+            'Move-stick deflection at or below which moving counts as a slow walk (a light stick), 0–1.',
+          ),
+      })
+      .describe('The slow walk: the quietest gait, from the modifier or a light stick.'),
+    profiles: stanceTableSchema,
+  })
+  .describe(
+    'Movement profiles for stealth (mw-e02.10): the slow walk and the noise and visibility of every stance × gait.',
+  );
+
+/** Stealth movement tuning (see stealthTuningSchema). */
+export type StealthTuning = z.output<typeof stealthTuningSchema>;
+
 /** Every tuning value the controller reads (a profile without its id, name and notes). */
 const tuningShape = {
   capsule: capsuleSchema,
@@ -329,6 +395,11 @@ const tuningShape = {
   climb: climbTuningSchema
     .optional()
     .describe('Climbing surfaces and ropes; absent = the sim’s defaults (DEFAULT_CLIMB_TUNING).'),
+  stealth: stealthTuningSchema
+    .optional()
+    .describe(
+      'MovementStance and gait movement profiles; absent = the sim’s defaults (DEFAULT_STEALTH_TUNING).',
+    ),
 };
 
 /**
@@ -367,6 +438,12 @@ function checkTuning(t: TuningFields, ctx: z.RefinementCtx): void {
   }
   if (t.stepHeight >= crouchHeight) {
     issue(['stepHeight'], 'stepHeight must be lower than capsule.crouchHeight');
+  }
+  if (t.stealth !== undefined && t.stealth.slowWalk.speed > t.speeds.crouch) {
+    issue(
+      ['stealth', 'slowWalk', 'speed'],
+      'stealth.slowWalk.speed must not be higher than speeds.crouch',
+    );
   }
   if (t.gait !== undefined && t.gait.runFrom <= t.gait.walkFrom) {
     issue(['gait', 'runFrom'], 'gait.runFrom must be higher than gait.walkFrom');
@@ -429,6 +506,30 @@ export const controllerOverrideSchema = z
       .extend({
         speeds: climbTuningSchema.shape.speeds.partial().optional(),
         jumpOff: climbTuningSchema.shape.jumpOff.partial().optional(),
+      })
+      .optional(),
+    stealth: stealthTuningSchema
+      .partial()
+      .extend({
+        slowWalk: stealthTuningSchema.shape.slowWalk.partial().optional(),
+        profiles: z
+          .strictObject(
+            Object.fromEntries(
+              MOVEMENT_STANCES.map((stance) => [
+                stance,
+                z
+                  .strictObject(
+                    Object.fromEntries(
+                      STEALTH_GAITS.map((gait) => [gait, stanceGaitSchema.partial().optional()]),
+                    ),
+                  )
+                  .partial()
+                  .optional(),
+              ]),
+            ),
+          )
+          .partial()
+          .optional(),
       })
       .optional(),
   })

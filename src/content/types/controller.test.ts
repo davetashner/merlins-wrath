@@ -8,7 +8,9 @@ import { describeContent } from '../testing.ts';
 import {
   MAX_COYOTE_MS,
   MAX_JUMP_BUFFER_MS,
+  MOVEMENT_STANCES,
   PLAYER_CLASSES,
+  STEALTH_GAITS,
   PLAYER_CONTROLLER_ID,
   controllerOverrideSchema,
   controllerSchema,
@@ -105,6 +107,84 @@ describe('controller schema', () => {
     expect(problems({ ...valid, gait: { ...gait, landingMs: 1.5 } })).toEqual([
       'gait.landingMs: Invalid input: expected int, received number',
     ]);
+  });
+
+  it('AC-4: the shipped stance profile table defines every stance × gait, normalised to 0–1', () => {
+    const { stealth } = controllerTuningFor(
+      loadGameContent().get('controller', PLAYER_CONTROLLER_ID),
+    );
+    if (stealth === undefined) throw new Error('the player profile states its stealth block');
+    const cells = MOVEMENT_STANCES.flatMap((stance) =>
+      STEALTH_GAITS.map((gait) => ({ stance, gait, ...stealth.profiles[stance][gait] })),
+    );
+    expect(cells).toHaveLength(MOVEMENT_STANCES.length * STEALTH_GAITS.length);
+    for (const { noise, visibility } of cells) {
+      expect(noise).toBeGreaterThanOrEqual(0);
+      expect(noise).toBeLessThanOrEqual(1);
+      expect(visibility).toBeGreaterThanOrEqual(0);
+      expect(visibility).toBeLessThanOrEqual(1);
+    }
+    // The bead's default noise multipliers.
+    const noise = (stance: 'standing' | 'crouched', gait: (typeof STEALTH_GAITS)[number]) =>
+      stealth.profiles[stance][gait].noise;
+    expect([
+      noise('standing', 'sprint'),
+      noise('standing', 'run'),
+      noise('standing', 'walk'),
+    ]).toEqual([1, 0.6, 0.3]);
+    expect([noise('crouched', 'walk'), noise('standing', 'slowWalk')]).toEqual([0.15, 0.08]);
+    expect([noise('standing', 'still'), noise('crouched', 'still')]).toEqual([0, 0]);
+  });
+
+  it('AC-4: a stance profile table missing a stance × gait combination fails validation', () => {
+    const row = {
+      still: { noise: 0, visibility: 0.8 },
+      slowWalk: { noise: 0.08, visibility: 0.85 },
+      walk: { noise: 0.3, visibility: 0.9 },
+      run: { noise: 0.6, visibility: 1 },
+      sprint: { noise: 1, visibility: 1 },
+    };
+    const stealth = {
+      slowWalk: { speed: 1.2, deflection: 0.3 },
+      profiles: { standing: row, crouched: row },
+    };
+    expect(controllerSchema.parse({ ...valid, stealth }).stealth).toEqual(stealth);
+    const noRun: Partial<typeof row> = { ...row };
+    delete noRun.run;
+    expect(
+      problems({ ...valid, stealth: { ...stealth, profiles: { standing: row, crouched: noRun } } }),
+    ).toEqual([
+      'stealth.profiles.crouched.run: Invalid input: expected object, received undefined',
+    ]);
+    expect(problems({ ...valid, stealth: { ...stealth, profiles: { standing: row } } })).toEqual([
+      'stealth.profiles.crouched: Invalid input: expected object, received undefined',
+    ]);
+    expect(
+      problems({
+        ...valid,
+        stealth: {
+          ...stealth,
+          profiles: { standing: { ...row, run: { noise: 1.2 } }, crouched: row },
+        },
+      }),
+    ).toEqual([
+      'stealth.profiles.standing.run.noise: Too big: expected number to be <=1',
+      'stealth.profiles.standing.run.visibility: Invalid input: expected number, received undefined',
+    ]);
+    expect(
+      problems({ ...valid, stealth: { ...stealth, slowWalk: { speed: 2.5, deflection: 0.3 } } }),
+    ).toEqual([
+      'stealth.slowWalk.speed: stealth.slowWalk.speed must not be higher than speeds.crouch',
+    ]);
+    // A class may change single cells; the rest come from the base.
+    const def = controllerSchema.parse({
+      ...valid,
+      stealth,
+      classes: { thief: { stealth: { profiles: { crouched: { walk: { noise: 0.1 } } } } } },
+    });
+    const thief = controllerTuningFor(def, 'thief').stealth;
+    expect(thief?.profiles.crouched.walk).toEqual({ noise: 0.1, visibility: 0.9 });
+    expect(thief?.profiles.standing).toEqual(row);
   });
 
   it('mw-e02.12: takes optional ledge tuning; heights ordered from auto-mantle to hang reach', () => {
