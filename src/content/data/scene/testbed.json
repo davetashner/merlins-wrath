@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "testbed",
   "name": "Greybox testbed",
-  "description": "The default scene: a room with an ivy-covered climbing wall up to a ledge, a narrow corridor with pillars and a hazard strip, and an arena with pillars, a ramp, platforms and three training dummies to lock on to.",
+  "description": "The default scene: a room with an ivy-covered climbing wall up to a ledge and a wooden target board on the back wall for arrows, a narrow corridor with pillars and a hazard strip, and an arena with pillars, a ramp, platforms and three training dummies to lock on to.",
   "grid": 1,
   "camera": {
     "position": [-14, 20, -14],
@@ -196,6 +196,13 @@
       "scale": [0.4, 3, 0.1],
       "purpose": "climbable",
       "properties": { "material": "ivy" }
+    },
+    {
+      "piece": "platform",
+      "at": [1.5, 0, -4.75],
+      "scale": [0.75, 2, 0.15],
+      "purpose": "interactive",
+      "properties": { "material": "wood" }
     }
   ],
   "spawns": [

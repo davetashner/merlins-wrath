@@ -17,6 +17,7 @@ const row = (key: string, patch: Partial<FrameDataRowModel> = {}): FrameDataRowM
   poise: '40/40',
   dps: '0.0',
   world: '',
+  arrows: '',
   ...patch,
 });
 
@@ -47,7 +48,7 @@ describe('frame-data overlay (mw-e04.9)', () => {
     expect(cell(panel, '7', 'phase').textContent).toBe('startup');
     expect(cell(panel, '7', 'phase').querySelector('span')?.dataset['phase']).toBe('startup');
     expect(cell(panel, '7', 'frame').textContent).toBe('5/42');
-    expect(panel.element.querySelectorAll('th')).toHaveLength(12);
+    expect(panel.element.querySelectorAll('th')).toHaveLength(13);
     expect(document.getElementById('vb-frame-data-styles')).not.toBeNull();
     new FrameDataPanel(); // the stylesheet is installed once
     expect(document.querySelectorAll('#vb-frame-data-styles')).toHaveLength(1);
@@ -111,5 +112,12 @@ describe('frame-data overlay (mw-e04.9)', () => {
       panel.update(model([row('3')]));
       expect(order()).toEqual(['3']);
     });
+  });
+
+  it('AC-4 (mw-e05.21): shows the selected arrow type and how many are left, 0 when empty', () => {
+    const panel = new FrameDataPanel();
+    panel.update(model([row('1', { arrows: 'standard 0' })]));
+    expect(cell(panel, '1', 'arrows').textContent).toBe('standard 0');
+    expect(panel.element.querySelector('thead')?.textContent).toContain('Arrows');
   });
 });

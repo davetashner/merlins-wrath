@@ -3,7 +3,7 @@
 // the move, whether it is invulnerable (i-frames) or armored (hyperarmor) right now, the hit-stop
 // freezing it (mw-e04.11), the hit reaction holding it, its health and poise, the damage per second
 // it is taking and the latest harm the world dealt it (a fall, a wall strike, a crushing object, a
-// hazard; mw-e04.34). A header line shows the world tick and the sim speed (slow motion). A HUD
+// hazard; mw-e04.34) and its arrows (mw-e05.21: the selected type and how many are left). A header line shows the world tick and the sim speed (slow motion). A HUD
 // widget like the others: it shows a view model the game derives from the sim after each tick
 // (src/game/combat/frame-data.ts) and writes the DOM only when a shown value changed.
 //
@@ -45,6 +45,8 @@ export interface FrameDataRowModel {
   readonly dps: string;
   /** The latest harm the world dealt it, kind and damage ("fall 42"), or ''. */
   readonly world: string;
+  /** Its bow: the selected arrow type and how many are left ("standard 20 · draw 24"), or ''. */
+  readonly arrows: string;
 }
 
 /** What the overlay shows. */
@@ -67,6 +69,7 @@ const COLUMNS = [
   ['poise', 'Poise'],
   ['dps', 'DPS'],
   ['world', 'World'],
+  ['arrows', 'Arrows'],
 ] as const;
 
 type Column = (typeof COLUMNS)[number][0];
@@ -244,6 +247,7 @@ function updateRow(view: RowView, row: FrameDataRowModel): void {
     'poise',
     'dps',
     'world',
+    'arrows',
   ] as const;
   for (const col of text) {
     c.set(col, row[col], (v) => {

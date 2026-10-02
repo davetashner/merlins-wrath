@@ -1,7 +1,7 @@
 // The testbed player replay (mw-e02.23 AC-4): the player walking the greybox testbed, built through
 // the same wiring the game boots (the sim's Rapier physics with physics objects and the scene's
-// movable props (mw-e03.39), the scene loader, setupTestbedPlayer with RapierCollisionWorld and lock-on
-// over RapierSightWorld (mw-e02.16)) and driven by ActionFrames sampled from a scripted key and mouse log by
+// movable props (mw-e03.39), the scene loader, setupTestbedPlayer with RapierCollisionWorld, lock-on
+// over RapierSightWorld (mw-e02.16) and the bow, whose arrows fly against the same world (mw-e05.21)) and driven by ActionFrames sampled from a scripted key and mouse log by
 // the real ActionSampler. Its recording (tests/integration/fixtures/testbed-player.replay.json)
 // replays in tests/integration/testbed-player.test.ts on every CI run, so a change to the wiring, the
 // testbed scene, the input mapping, the controller or Rapier that moves the player fails at the first
@@ -212,13 +212,14 @@ export function createGameWorld<TInput>(
     physics: {},
   });
   const scene = scenes.load(sceneId);
+  const collision = new RapierCollisionWorld(physics);
   const player = setupTestbedPlayer({
     world,
     scene,
     sync,
     tuning: content.get('controller', PLAYER_CONTROLLER_ID),
     cameraTuning: content.get('camera', PLAYER_CAMERA_ID),
-    collision: new RapierCollisionWorld(physics),
+    collision,
     object: {},
     binding: headless,
     camera: { position: { set: nothing }, lookAt: nothing, fov: 70, near: 0.1, aspect: 16 / 9 },
@@ -228,6 +229,7 @@ export function createGameWorld<TInput>(
     },
     moves: combat.moves,
     melee: combat.melee,
+    bow: combat.bow,
     // A target at zero health is defeated, as in src/main.ts (mw-e02.32: the dummy's death hands
     // the lock on).
     lockOn: {
@@ -240,7 +242,7 @@ export function createGameWorld<TInput>(
     climb: {},
   }).entity;
   focus.entity = player;
-  const combatants = startTestbedCombat(world, combat, scene.layout.spawns, player);
+  const combatants = startTestbedCombat(world, combat, scene.layout.spawns, player, collision);
   const sceneCreatures = startCreatures(world, creatures, combat, scene.layout.spawns);
   return { world, player, combat, combatants, creatures, sceneCreatures, sync };
 }

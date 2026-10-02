@@ -33,6 +33,12 @@
 // (LockFraming, presentation only). `lockTarget()` tells the HUD where the lock marker goes. With
 // `melee` too, the knight's attacks turn toward the locked target during startup (mw-e02.31),
 // located as lock-on locates it.
+//
+// With `bow` (mw-e05.21) and `moves`, the player also carries a bow and quiver (installPlayer's
+// combat.bow): its toggle takes the bow out, fire draws and looses, and the readout's `bow` shows
+// what is selected and how many arrows are left. While it draws, the orbit camera's field of view
+// eases from the camera's own toward the bow's aim.fov (AimZoom), and back once the draw ends. The
+// arrows themselves are the world's (startTestbedCombat installs the arrow system).
 
 import type {
   CameraTuning,
@@ -62,6 +68,9 @@ import {
   sceneLedges,
   sceneRopes,
   type BodyId,
+  BowComponent,
+  isDrawing,
+  QuiverComponent,
   staminaOf,
   type PlayerMeleeOptions,
   type CollisionWorld,
@@ -77,7 +86,9 @@ import {
   type TraversalMode,
   type World,
 } from '@sim/index';
+import type { TestbedBow } from '../combat/testbed-combat';
 import {
+  AimZoom,
   applyOrbitPose,
   LockFraming,
   lookSettings,
@@ -115,6 +126,20 @@ export interface PlayerReadout {
   readonly combat?: PlayerCombatReadout;
   /** The locked target's entity, or null; present only when the player has lock-on. */
   readonly lock?: EntityId | null;
+  /** The bow and quiver, when the player has a bow (mw-e05.21). */
+  readonly bow?: PlayerBowReadout;
+}
+
+/** The player's bow in a readout. */
+export interface PlayerBowReadout {
+  /** The bow is out. */
+  readonly equipped: boolean;
+  /** Arrow type the next draw nocks. */
+  readonly selected: string;
+  /** Ticks drawn so far, or null when not drawing. */
+  readonly draw: number | null;
+  /** Arrows left by type, in the quiver's cycle order. */
+  readonly quiver: Readonly<Record<string, number>>;
 }
 
 /** Lock-on for the player (mw-e02.16). */
@@ -161,6 +186,8 @@ export interface CameraReadout {
   readonly zoom: number;
   /** This frame's camera position (rounded to 0.1 mm). */
   readonly position: Vec3;
+  /** This frame's vertical field of view, degrees (rounded to 1e-4): narrower while aiming. */
+  readonly fov: number;
 }
 
 /**
@@ -245,6 +272,11 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
    * physics), since what can be climbed is read from them. Absent = none.
    */
   readonly climb?: TestbedClimbOptions;
+  /**
+   * A bow and quiver (mw-e05.21), with `moves`: drawn, the camera narrows to its aim. The world's
+   * arrow system (startTestbedCombat) flies what it looses. Absent = none.
+   */
+  readonly bow?: TestbedBow;
 }
 
 /** The player's climbing (mw-e02.13). */
@@ -368,6 +400,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
       combat: {
         moves: options.moves,
         ...(melee !== undefined && { melee }),
+        ...(options.bow !== undefined && { bow: options.bow }),
       },
     }),
   });
@@ -391,6 +424,8 @@ export function setupTestbedPlayer<TObject, TCommand>(
     }
   }
   const hasMoves = options.moves !== undefined;
+  const bow = hasMoves ? options.bow : undefined;
+  const aim = bow && { ...bow.aim, zoom: new AimZoom(cameraTuning.fov) };
   let framing: LockFraming | undefined;
   if (lockOn !== undefined) {
     installLockOn(world, entity, {
@@ -448,7 +483,28 @@ export function setupTestbedPlayer<TObject, TCommand>(
         },
       }),
       ...(lockOn !== undefined && { lock: world.get(entity, LockOnComponent)?.target ?? null }),
+      ...(bow !== undefined && { bow: bowReadout() }),
     };
+  };
+
+  const bowReadout = (): PlayerBowReadout => {
+    const state = world.get(entity, BowComponent);
+    const slots = world.get(entity, QuiverComponent)?.slots ?? [];
+    return {
+      equipped: state?.equipped ?? false,
+      selected: state?.selected ?? '',
+      draw: state?.draw?.ticks ?? null,
+      quiver: Object.fromEntries(slots.map((slot) => [slot.arrow, slot.count])),
+    };
+  };
+
+  /** Eases the lens toward the bow's aim while the player draws (mw-e05.21). */
+  const zoomLens = (dt: number): void => {
+    if (aim === undefined) return;
+    const fov = aim.zoom.update(isDrawing(world, entity), aim.fov, aim.time, dt);
+    if (fov === camera.fov) return;
+    camera.fov = fov;
+    camera.updateProjectionMatrix?.();
   };
 
   // Pitch is not part of the interpolated transform (the body does not tilt), so it is
@@ -492,6 +548,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
     const simView = { yaw: yawOf(shown.rotation), pitch: drawnPitch(look.pitch, alpha) };
     const pivot = { x: feet.x, y: feet.y + cameraTuning.pivotHeight, z: feet.z };
     const view = framing?.update(simView, pivot, lockTarget()?.point, dt) ?? simView;
+    zoomLens(dt);
     const pose = orbit.update({ feet, ...view, height }, camera, dt);
     applyOrbitPose(camera, pose);
     if (publishCamera === undefined) return;
@@ -503,6 +560,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
       boom: round(pose.boom),
       zoom: round(pose.ideal),
       position: roundVec(pose.position),
+      fov: round(camera.fov),
     });
   };
 

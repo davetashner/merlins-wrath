@@ -46,6 +46,13 @@ while locked on cycles instead (see Lock-on below), the usual convention.
 reels within 2 m in front of you and the light attack becomes a riposte. Timing and numbers:
 `src/content/data/move/shield-parry.json` and `sword-riposte.json`; the rules: `src/sim/combat/parry`.
 
+**Bow (testbed).** Until class kits bind the archer's buttons (mw-e02.3), the testbed knight also
+carries the shortbow (mw-e05.21): ability 4 (4, D-pad Left) takes it out or puts it away; while it is
+out the attack button (left click, RT) draws instead of swinging (hold to draw, let go to loose) and
+ability 2 (2, RB) cycles the arrow type. Cycle stays off ability 3, the knight's parry
+(`TESTBED_BOW_BUTTONS`, src/game/combat/testbed-combat.ts). While drawn the camera narrows from 70° to
+the bow's aim field of view; `?frames` shows the selected arrow type and how many are left.
+
 **Sprint toggle.** On the pad, clicking the left stick latches sprint on; it stays on until the stick
 comes back to centre or is clicked again (`GamepadSettings.sprintToggle`, default on). Off, sprint is
 held like the Shift key.

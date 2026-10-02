@@ -11,6 +11,7 @@ import { markExercised } from '@content/testing';
 import { AnimationController, compileGraph } from '@render/animation/index';
 import {
   box,
+  BowComponent,
   CharacterController,
   CombatFacingComponent,
   DAMAGE_COMPONENTS,
@@ -25,6 +26,7 @@ import {
   PlacementComponent,
   placeEntity,
   PlayerLook,
+  QuiverComponent,
   RapierSightWorld,
   registerWorldProperties,
   sceneTargetPosition,
@@ -997,5 +999,86 @@ describe('testbed player climbing (mw-e02.13)', () => {
     expect(rig.state().traversal).toBeNull();
     expect(rig.state().position.y).toBeCloseTo(SKIN, 3);
     expect(rig.state().position.z).toBeLessThan(3.9);
+  });
+});
+
+describe('testbed player with a bow (mw-e05.21)', () => {
+  const combat = prepareTestbedCombat(content);
+  const { aim } = combat.bow;
+
+  it("AC-2: drawing eases the camera's FOV from 70° toward the bow's aim.fov, two thirds in aim.time, and back after release", () => {
+    const camera = { ...fakeCamera(), rebuilt: 0 };
+    const withRebuild = Object.assign(camera, {
+      updateProjectionMatrix() {
+        camera.rebuilt += 1;
+      },
+    });
+    const publishCamera = vi.fn<(readout: CameraReadout) => void>();
+    const { sampler, run, state } = testbed({
+      moves: combat.moves,
+      bow: combat.bow,
+      camera: withRebuild,
+      publishCamera,
+    });
+    const fov = () => publishCamera.mock.calls.at(-1)?.[0].fov;
+    run(0.5);
+    expect(state().bow).toEqual({
+      equipped: false,
+      selected: 'standard',
+      draw: null,
+      quiver: { standard: 20, broadhead: 10, blunt: 10 },
+    });
+    expect(fov()).toBe(70);
+    tap(sampler, run, 'Digit4'); // the bow comes out: no draw, no zoom
+    expect(state().bow?.equipped).toBe(true);
+    expect(fov()).toBe(70);
+    expect(camera.rebuilt).toBe(0);
+    sampler.down('Mouse0');
+    run(aim.time);
+    const covered = (70 - (fov() ?? 70)) / (70 - aim.fov);
+    expect(covered).toBeGreaterThan(0.55);
+    expect(covered).toBeLessThan(0.75);
+    expect(state().bow?.draw).toBeGreaterThan(0);
+    expect(state().bow?.quiver['standard']).toBe(19); // nocked
+    run(1);
+    expect(fov()).toBe(aim.fov);
+    expect(camera.fov).toBe(aim.fov);
+    expect(camera.rebuilt).toBeGreaterThan(0);
+    // Put away mid-draw (the arrow goes back): the lens widens back to the camera's own.
+    tap(sampler, run, 'Digit4');
+    sampler.up('Mouse0');
+    expect(state().bow).toMatchObject({ equipped: false, draw: null });
+    expect(state().bow?.quiver['standard']).toBe(20);
+    run(aim.time - 2 / 60);
+    const back = ((fov() ?? 0) - aim.fov) / (70 - aim.fov);
+    expect(back).toBeGreaterThan(0.55);
+    expect(back).toBeLessThan(0.8);
+    run(1);
+    expect(fov()).toBe(70);
+    const settled = camera.rebuilt;
+    run(0.5);
+    expect(camera.rebuilt).toBe(settled); // a settled lens is not rebuilt every frame
+  });
+
+  it('works with a camera that needs no projection rebuild, and reads a bow taken away as none', () => {
+    const { sampler, run, state, camera, world, player } = testbed({
+      moves: combat.moves,
+      bow: combat.bow,
+    });
+    tap(sampler, run, 'Digit4');
+    sampler.down('Mouse0');
+    run(0.5);
+    expect(camera.fov).toBeLessThan(70);
+    world.remove(player.entity, BowComponent);
+    world.remove(player.entity, QuiverComponent);
+    run(1 / 60);
+    expect(state().bow).toEqual({ equipped: false, selected: '', draw: null, quiver: {} });
+  });
+
+  it('a bow without moves gives the player nothing', () => {
+    const { run, state } = testbed({ bow: combat.bow });
+    run(0.1);
+    expect(state().bow).toBeUndefined();
+    expect(state().combat).toBeUndefined();
   });
 });

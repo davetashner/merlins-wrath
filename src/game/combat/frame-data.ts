@@ -4,8 +4,10 @@
 // the invulnerability rule (dodge and wake-up i-frames) or its move's hyperarmor applies right now,
 // the hit-stop freezing it (mw-e04.11: its tier and frozen ticks left), the hit reaction holding it,
 // its parry (mw-e04.12: the parry's phase — startup, window, counter or recovery —, the Parried stun
-// and ticks left, or "riposte ready" while a Parried foe is in its riposte reach), its health and poise, and — from a DamageMeter listening to the sim's
-// DamageApplied — the damage per second it has taken over the last 5 s of sim time.
+// and ticks left, or "riposte ready" while a Parried foe is in its riposte reach), its health and poise, its
+// bow (mw-e05.21: the selected arrow type, how many of it the quiver holds and the draw in progress),
+// and — from a DamageMeter listening to the sim's DamageApplied — the damage per second it has taken
+// over the last 5 s of sim time.
 //
 // `sandboxFrameData` is plain JSON (the page publishes it on #app[data-frame-data] for the e2e);
 // `frameDataView` formats it for the overlay. Frame numbers are sim ticks: slow motion changes how
@@ -15,6 +17,7 @@ import type { MoveTable } from '@content/index';
 import {
   actionOf,
   AttackerDummyComponent,
+  BowComponent,
   DAMAGE_TAGS,
   DamageApplied,
   ENVIRONMENT_TAGS,
@@ -26,6 +29,7 @@ import {
   parryPhaseOf,
   phaseAt,
   poiseOf,
+  quiverCount,
   reactionOf,
   riposteTargetOf,
   SandboxDummyComponent,
@@ -132,6 +136,19 @@ export interface FighterFrame {
   readonly dps: number | null;
   /** The latest environmental harm taken in the meter's window, or null (also without a meter). */
   readonly environment: EnvironmentHit | null;
+  /** Its bow (mw-e05.21), or null without one. */
+  readonly bow: FighterBow | null;
+}
+
+/** A fighter's bow in the frame data. */
+export interface FighterBow {
+  /** The bow is out. */
+  readonly equipped: boolean;
+  /** The arrow type the next draw nocks, and how many of it the quiver holds. */
+  readonly selected: string;
+  readonly count: number;
+  /** Ticks drawn, or null when not drawing. */
+  readonly draw: number | null;
 }
 
 /** The frame data of one tick. */
@@ -177,6 +194,7 @@ function fighter(
   const stun = parriedOf(world, entity);
   const health = healthOf(world, entity);
   const poise = poiseOf(world, entity);
+  const bow = world.isRegistered(BowComponent) ? world.get(entity, BowComponent) : undefined;
   return {
     entity,
     role,
@@ -202,6 +220,15 @@ function fighter(
     poise: poise === undefined ? null : { current: poise.current, max: poise.max },
     dps: meter === undefined ? null : meter.dps(entity, world.tick, world.clock.hz),
     environment: meter?.environment(entity, world.tick) ?? null,
+    bow:
+      bow === undefined
+        ? null
+        : {
+            equipped: bow.equipped,
+            selected: bow.selected,
+            count: quiverCount(world, entity, bow.selected),
+            draw: bow.draw?.ticks ?? null,
+          },
   };
 }
 
@@ -241,6 +268,14 @@ function parryText(f: FighterFrame): string {
   return f.riposte ? 'riposte ready' : '';
 }
 
+/** The overlay's arrows cell: "standard 20", "· draw 24" while drawing, "(away)" with the bow put away. */
+function arrowsText(bow: FighterBow | null): string {
+  if (bow === null) return '';
+  const quiver = `${bow.selected} ${String(bow.count)}`;
+  if (!bow.equipped) return `${quiver} (away)`;
+  return bow.draw === null ? quiver : `${quiver} · draw ${String(bow.draw)}`;
+}
+
 /** The overlay's text for `data` (see src/ui/frame-data.ts). */
 export function frameDataView(data: SandboxFrameData): FrameDataModel {
   const speed =
@@ -266,6 +301,7 @@ export function frameDataView(data: SandboxFrameData): FrameDataModel {
       poise: meter(f.poise),
       dps: f.dps === null ? '' : f.dps.toFixed(1),
       world: f.environment === null ? '' : `${f.environment.kind} ${points(f.environment.amount)}`,
+      arrows: arrowsText(f.bow),
     })),
   };
 }
