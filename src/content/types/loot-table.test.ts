@@ -129,6 +129,8 @@ describe('loot-table schema (mw-e18.1)', () => {
       load({ entries: [{ table: 'crate', weight: 1, conditions: { when: { fact: 'nope' } } }] }),
     ).toEqual([
       '/entries/0/conditions/when/fact: loot-table:crate names undeclared fact "nope": declare it in src/content/data/fact/',
+      // A table rolling itself is a cycle (the loot validator, mw-e18.2).
+      '/entries/0/table: loot-table:crate entries[0] closes a cycle of nested tables: crate > crate',
     ]);
   });
 });

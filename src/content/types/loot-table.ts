@@ -10,7 +10,8 @@
 // `class` (the player's class is one of these) and `when` (a world-fact condition, mw-e27.5). Both
 // must hold. The sim evaluates them behind one predicate interface (src/sim/loot), which the DSL will
 // replace without changing it. The roller is src/sim/loot/tables.ts; the cross-table validator
-// (references, uniques, cycles, weights) is mw-e18.2. The field reference in
+// (references, cycles and depth, unique items, unreferenced tables) is src/content/loot-checks.ts
+// (mw-e18.2), so a cycle or an over-deep chain fails at load, not mid-roll. The field reference in
 // docs/content/loot-table-schema.md is generated (`pnpm content:docs`).
 
 import { z } from 'zod';

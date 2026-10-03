@@ -331,6 +331,7 @@ export {
   type PuzzleStep,
 } from './types/puzzle.ts';
 export { checkPuzzles } from './puzzle-checks.ts';
+export { checkLootTables, lootTableProblems, type LootProblems } from './loot-checks.ts';
 export {
   checkCreatureAttacks,
   CREATURE_MIN_WINDUP_TICKS,
