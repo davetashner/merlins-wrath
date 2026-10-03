@@ -1,7 +1,8 @@
 name: CI
 
 # Required checks reference these job names; keep them stable (mw-e00.3, mw-e00.10):
-# lint, typecheck, unit, coverage-gate, coverage-ratchet, e2e-smoke, build, beads-validate.
+# lint, typecheck, unit, coverage-gate, coverage-ratchet, e2e-smoke (aggregates the e2e-shard jobs),
+# build, beads-validate.
 on:
   pull_request:
   push:
@@ -99,9 +100,15 @@ jobs:
       # Falls back to the committed coverage-baseline.json with a warning annotation.
       - run: node scripts/coverage-ratchet-cli.ts
 
-  e2e-smoke:
+  # The suite runs in three shards so each stays well inside its timeout (mw-e00.34); the required
+  # e2e-smoke check below passes only when every shard does.
+  e2e-shard:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
@@ -125,23 +132,33 @@ jobs:
           pulseaudio --start --exit-idle-time=-1
           pactl load-module module-null-sink sink_name=ci_null
           pactl set-default-sink ci_null
-      - run: pnpm e2e
-      # The renderer boot smoke's first-frame screenshot, kept on every run (mw-e00.19).
+      - run: pnpm e2e --shard=${{ matrix.shard }}/3
+      # The renderer boot smoke's first-frame screenshot, kept on every run (mw-e00.19). Only the
+      # shard that runs the boot smoke has one.
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: boot-smoke-screenshot
+          name: boot-smoke-screenshot-${{ matrix.shard }}
           path: test-results/**/boot-frame.png
-          if-no-files-found: warn
+          if-no-files-found: ignore
           retention-days: 14
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: playwright-traces
+          name: playwright-traces-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/
           retention-days: 14
+
+  e2e-smoke:
+    needs: e2e-shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Every e2e shard passed
+        run: test "${{ needs.e2e-shard.result }}" = success
 
   build:
     runs-on: ubuntu-latest
