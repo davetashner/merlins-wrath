@@ -214,12 +214,154 @@
       ],
       "additionalProperties": false,
       "description": "Visibility model weights (mw-e09.2)."
+    },
+    "noise": {
+      "type": "object",
+      "properties": {
+        "audibleFloor": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 60,
+          "description": "Global audibility floor, dB: below it a sound is not heard and propagation stops searching."
+        },
+        "doors": {
+          "type": "object",
+          "properties": {
+            "open": {
+              "type": "number",
+              "minimum": -120,
+              "maximum": 0,
+              "description": "Gain through an open (or broken) door, dB (≤ 0)."
+            },
+            "ajar": {
+              "type": "number",
+              "minimum": -120,
+              "maximum": 0,
+              "description": "Gain through a door part-way open or moving, dB (≤ 0)."
+            },
+            "closed": {
+              "type": "number",
+              "minimum": -120,
+              "maximum": 0,
+              "description": "Gain through a closed door that muffles sound (`blocks.sound`), dB (≤ 0)."
+            },
+            "materials": {
+              "default": [],
+              "description": "Per leaf material overrides (iron muffles more than planks).",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "material": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "description": "Material id of the door leaf (a door profile’s `material`)."
+                  },
+                  "open": {
+                    "description": "Gain while open, dB (≤ 0); omitted: the default.",
+                    "type": "number",
+                    "minimum": -120,
+                    "maximum": 0
+                  },
+                  "ajar": {
+                    "description": "Gain while ajar (moving or stopped part-way), dB (≤ 0).",
+                    "type": "number",
+                    "minimum": -120,
+                    "maximum": 0
+                  },
+                  "closed": {
+                    "description": "Gain while closed, dB (≤ 0).",
+                    "type": "number",
+                    "minimum": -120,
+                    "maximum": 0
+                  }
+                },
+                "required": [
+                  "material"
+                ],
+                "additionalProperties": false,
+                "description": "Door gains for one leaf material; unset states use the defaults."
+              }
+            }
+          },
+          "required": [
+            "open",
+            "ajar",
+            "closed"
+          ],
+          "additionalProperties": false,
+          "description": "Portal gains by door state; a closed door that does not block sound (a grille) counts as open. Gains must never rise from open to ajar to closed."
+        },
+        "partitions": {
+          "type": "object",
+          "properties": {
+            "wall": {
+              "type": "number",
+              "minimum": -120,
+              "maximum": 0,
+              "description": "Default gain through a wall between side-by-side rooms, dB (≤ 0)."
+            },
+            "floor": {
+              "type": "number",
+              "minimum": -120,
+              "maximum": 0,
+              "description": "Default gain through a floor or ceiling between stacked rooms, dB (≤ 0)."
+            },
+            "materials": {
+              "default": [],
+              "description": "Per material overrides; a scene names a partition’s material.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "material": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "description": "Material id of the partition."
+                  },
+                  "wall": {
+                    "description": "Gain through a wall of it, dB (≤ 0); omitted: the default.",
+                    "type": "number",
+                    "minimum": -120,
+                    "maximum": 0
+                  },
+                  "floor": {
+                    "description": "Gain through a floor or ceiling of it, dB (≤ 0); omitted: the default.",
+                    "type": "number",
+                    "minimum": -120,
+                    "maximum": 0
+                  }
+                },
+                "required": [
+                  "material"
+                ],
+                "additionalProperties": false,
+                "description": "Partition gains for one material; unset kinds use the defaults."
+              }
+            }
+          },
+          "required": [
+            "wall",
+            "floor"
+          ],
+          "additionalProperties": false,
+          "description": "Transmission through walls and floors between adjacent rooms."
+        }
+      },
+      "required": [
+        "audibleFloor",
+        "doors",
+        "partitions"
+      ],
+      "additionalProperties": false,
+      "description": "Sound propagation (mw-e09.3): a noise loses 20·log10(d) dB over a path of d metres (none within 1 m) plus the gain of every door, wall and floor it passes."
     }
   },
   "required": [
     "id",
     "notes",
-    "visibility"
+    "visibility",
+    "noise"
   ],
   "additionalProperties": false
 }

@@ -32,3 +32,21 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `visibility.contrast.backgroundThreshold` | number 0–1 | required | Background light at or above which a target is silhouetted against it, 0–1. |
 | `visibility.contrast.darkTargetMax` | number 0–1 | required | The target counts as dark (a silhouette) when its own combined light is at or below this, 0–1. |
 | `visibility.contrast.bonus` | number 0–2 | required | Added to a silhouetted target’s light term (capped at the full-light term), 0–2. |
+| `noise` | object | required | Sound propagation (mw-e09.3): a noise loses 20·log10(d) dB over a path of d metres (none within 1 m) plus the gain of every door, wall and floor it passes. |
+| `noise.audibleFloor` | number 0–60 | required | Global audibility floor, dB: below it a sound is not heard and propagation stops searching. |
+| `noise.doors` | object | required | Portal gains by door state; a closed door that does not block sound (a grille) counts as open. Gains must never rise from open to ajar to closed. |
+| `noise.doors.open` | number -120–0 | required | Gain through an open (or broken) door, dB (≤ 0). |
+| `noise.doors.ajar` | number -120–0 | required | Gain through a door part-way open or moving, dB (≤ 0). |
+| `noise.doors.closed` | number -120–0 | required | Gain through a closed door that muffles sound (`blocks.sound`), dB (≤ 0). |
+| `noise.doors.materials` | list of object | `[]` | Per leaf material overrides (iron muffles more than planks). |
+| `noise.doors.materials[].material` | id | required | Material id of the door leaf (a door profile’s `material`). |
+| `noise.doors.materials[].open` | number -120–0 | — | Gain while open, dB (≤ 0); omitted: the default. |
+| `noise.doors.materials[].ajar` | number -120–0 | — | Gain while ajar (moving or stopped part-way), dB (≤ 0). |
+| `noise.doors.materials[].closed` | number -120–0 | — | Gain while closed, dB (≤ 0). |
+| `noise.partitions` | object | required | Transmission through walls and floors between adjacent rooms. |
+| `noise.partitions.wall` | number -120–0 | required | Default gain through a wall between side-by-side rooms, dB (≤ 0). |
+| `noise.partitions.floor` | number -120–0 | required | Default gain through a floor or ceiling between stacked rooms, dB (≤ 0). |
+| `noise.partitions.materials` | list of object | `[]` | Per material overrides; a scene names a partition’s material. |
+| `noise.partitions.materials[].material` | id | required | Material id of the partition. |
+| `noise.partitions.materials[].wall` | number -120–0 | — | Gain through a wall of it, dB (≤ 0); omitted: the default. |
+| `noise.partitions.materials[].floor` | number -120–0 | — | Gain through a floor or ceiling of it, dB (≤ 0); omitted: the default. |

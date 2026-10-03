@@ -3,13 +3,15 @@
 // (src/sim/stealth/visibility.ts) multiplies
 //   light term × stance term × motion term × profile term × line-of-sight fraction × distance falloff
 // so any zero term hides the target; a dark target silhouetted against bright background light gets
-// the contrast bonus on its light term. mw-e09.6 extends this file with the noise, door and hiding
-// tables and the difficulty override whitelist.
+// the contrast bonus on its light term. The `noise` block (mw-e09.3) holds the sound propagation
+// losses: door states (per door material), wall and floor transmission (per material) and the global
+// audibility floor. mw-e09.6 extends this file with the gait, surface and hiding tables and the
+// difficulty override whitelist.
 //
 // Every weight (a term or multiplier this file sets) is 0–2: 1 is neutral, below 1 hides, above 1
 // reveals. Curves are piecewise-linear point lists, held flat beyond their ends; motion is banded
 // (the fastest band the speed reaches applies). Light levels are the light field's 0–1 (mw-e03.15),
-// speeds m/s and distances metres. The field reference in docs/content/stealth-schema.md is
+// speeds m/s and distances metres. Noise losses are dB gains, 0 or below (0 = no loss). The field reference in docs/content/stealth-schema.md is
 // generated (`pnpm content:docs`).
 
 import { z } from 'zod';
@@ -119,6 +121,118 @@ const visibilitySchema = z
   })
   .describe('Visibility model weights (mw-e09.2).');
 
+/** The most any noise loss may take off, dB (a gain of −MAX_NOISE_LOSS_DB). */
+export const MAX_NOISE_LOSS_DB = 120;
+
+/** The states a portal's door can be in, loudest first (open passes sound freely). */
+export const DOOR_SOUND_STATES = ['open', 'ajar', 'closed'] as const;
+
+/** A door state noise propagation weighs. */
+export type DoorSoundState = (typeof DOOR_SOUND_STATES)[number];
+
+/** What a partition between two rooms is: a wall (side by side) or a floor/ceiling (stacked). */
+export const PARTITION_KINDS = ['wall', 'floor'] as const;
+
+/** A partition kind noise propagation weighs. */
+export type PartitionKind = (typeof PARTITION_KINDS)[number];
+
+const gainDb = z.number().min(-MAX_NOISE_LOSS_DB).max(0);
+
+const doorMaterialSchema = z
+  .strictObject({
+    material: contentId.describe('Material id of the door leaf (a door profile’s `material`).'),
+    open: gainDb.optional().describe('Gain while open, dB (≤ 0); omitted: the default.'),
+    ajar: gainDb.optional().describe('Gain while ajar (moving or stopped part-way), dB (≤ 0).'),
+    closed: gainDb.optional().describe('Gain while closed, dB (≤ 0).'),
+  })
+  .describe('Door gains for one leaf material; unset states use the defaults.');
+
+const partitionMaterialSchema = z
+  .strictObject({
+    material: contentId.describe('Material id of the partition.'),
+    wall: gainDb.optional().describe('Gain through a wall of it, dB (≤ 0); omitted: the default.'),
+    floor: gainDb
+      .optional()
+      .describe('Gain through a floor or ceiling of it, dB (≤ 0); omitted: the default.'),
+  })
+  .describe('Partition gains for one material; unset kinds use the defaults.');
+
+const noiseSchema = z
+  .strictObject({
+    audibleFloor: z
+      .number()
+      .min(0)
+      .max(60)
+      .describe(
+        'Global audibility floor, dB: below it a sound is not heard and propagation stops searching.',
+      ),
+    doors: z
+      .strictObject({
+        open: gainDb.describe('Gain through an open (or broken) door, dB (≤ 0).'),
+        ajar: gainDb.describe('Gain through a door part-way open or moving, dB (≤ 0).'),
+        closed: gainDb.describe(
+          'Gain through a closed door that muffles sound (`blocks.sound`), dB (≤ 0).',
+        ),
+        materials: z
+          .array(doorMaterialSchema)
+          .default([])
+          .describe('Per leaf material overrides (iron muffles more than planks).'),
+      } satisfies Record<DoorSoundState, typeof gainDb> & { materials: unknown })
+      .describe(
+        'Portal gains by door state; a closed door that does not block sound (a grille) counts as open. ' +
+          'Gains must never rise from open to ajar to closed.',
+      ),
+    partitions: z
+      .strictObject({
+        wall: gainDb.describe('Default gain through a wall between side-by-side rooms, dB (≤ 0).'),
+        floor: gainDb.describe(
+          'Default gain through a floor or ceiling between stacked rooms, dB (≤ 0).',
+        ),
+        materials: z
+          .array(partitionMaterialSchema)
+          .default([])
+          .describe('Per material overrides; a scene names a partition’s material.'),
+      } satisfies Record<PartitionKind, typeof gainDb> & { materials: unknown })
+      .describe('Transmission through walls and floors between adjacent rooms.'),
+  })
+  .describe(
+    'Sound propagation (mw-e09.3): a noise loses 20·log10(d) dB over a path of d metres (none ' +
+      'within 1 m) plus the gain of every door, wall and floor it passes.',
+  );
+
+type NoiseFields = z.output<typeof noiseSchema>;
+
+/** Adds an issue for a door table whose gains rise from open to closed, or a material named twice. */
+function checkNoise(n: NoiseFields, ctx: z.RefinementCtx): void {
+  const issue = (path: (string | number)[], message: string) => {
+    ctx.addIssue({ code: 'custom', path: ['noise', ...path], message });
+  };
+  const { doors } = n;
+  const ordered = (path: (string | number)[], gains: Record<DoorSoundState, number>) => {
+    if (gains.ajar > gains.open || gains.closed > gains.ajar) {
+      issue(path, 'door gains must never rise from open to ajar to closed');
+    }
+  };
+  ordered(['doors'], doors);
+  const seen = (list: readonly { material: string }[], path: string[]) => {
+    const names = new Set<string>();
+    list.forEach(({ material }, i) => {
+      if (names.has(material))
+        issue([...path, i, 'material'], `material "${material}" is listed twice`);
+      names.add(material);
+    });
+  };
+  seen(doors.materials, ['doors', 'materials']);
+  seen(n.partitions.materials, ['partitions', 'materials']);
+  doors.materials.forEach((m, i) => {
+    ordered(['doors', 'materials', i], {
+      open: m.open ?? doors.open,
+      ajar: m.ajar ?? doors.ajar,
+      closed: m.closed ?? doors.closed,
+    });
+  });
+}
+
 type VisibilityFields = z.output<typeof visibilitySchema>;
 
 const whenValid = {
@@ -170,9 +284,11 @@ export const stealthSchema = z
     id: contentId.describe('Unique table id; the game reads "stealth".'),
     notes: z.string().min(1).describe('Where the numbers come from (bead, tuning status).'),
     visibility: visibilitySchema,
+    noise: noiseSchema,
   })
   .superRefine((def, ctx) => {
     checkVisibility(def.visibility, ctx);
+    checkNoise(def.noise, ctx);
   }, whenValid);
 
 /** A stealth tuning table as written in JSON. */
@@ -183,3 +299,5 @@ export type StealthDef = z.output<typeof stealthSchema>;
 export type StealthEntry = Frozen<StealthDef>;
 /** The visibility weights the sim's visibility rule reads (frozen). */
 export type VisibilityTuning = Frozen<VisibilityFields>;
+/** The sound propagation losses the sim's noise propagation reads (frozen). */
+export type NoiseTuning = Frozen<NoiseFields>;

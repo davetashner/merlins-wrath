@@ -263,6 +263,62 @@ export const sceneLightSchema = z.strictObject({
     .describe('Directional lights (moon, sun); the brightest is the rendered key light.'),
 });
 
+/** The room id that stands for everywhere outside the scene's rooms (open terrain). */
+export const OUTSIDE_ROOM = 'outside';
+
+const roomRef = contentId.describe(`A room id of this scene, or "${OUTSIDE_ROOM}".`);
+
+/** A room for sound propagation: an axis-aligned box (mw-e09.3). */
+export const sceneRoomSchema = z
+  .strictObject({
+    id: contentId
+      .refine((id) => id !== OUTSIDE_ROOM, { message: `"${OUTSIDE_ROOM}" is reserved` })
+      .describe('Name of the room, unique in the scene, e.g. guard-room.'),
+    min: vec3Schema.describe('Lower corner, grid cells.'),
+    max: vec3Schema.describe('Upper corner, grid cells; above min on every axis.'),
+  })
+  .refine(({ min, max }) => max[0] > min[0] && max[1] > min[1] && max[2] > min[2], {
+    message: 'max must be above min on every axis',
+    path: ['max'],
+  });
+
+/** An opening sound passes through between two rooms: a doorway, an arch, a hatch (mw-e09.3). */
+export const scenePortalSchema = z.strictObject({
+  id: contentId.describe('Name of the portal, unique in the scene, e.g. guard-room-door.'),
+  rooms: z
+    .tuple([roomRef, roomRef])
+    .describe(`The two rooms it joins (one may be "${OUTSIDE_ROOM}").`),
+  at: vec3Schema.describe(
+    'Its middle, grid cells: where a listener on the far side hears a sound come from.',
+  ),
+  door: z
+    .string()
+    .min(1)
+    .optional()
+    .describe('Spawn id of the door in it; its state (open, ajar, closed) sets the loss.'),
+});
+
+/** The material of the wall or floor between two touching rooms (mw-e09.3). */
+export const scenePartitionSchema = z.strictObject({
+  rooms: z.tuple([contentId, contentId]).describe('The two touching rooms.'),
+  material: contentId.describe(
+    'Material id of what separates them; its wall or floor gain comes from the stealth tuning.',
+  ),
+});
+
+/**
+ * The scene's rooms and portals for sound propagation (mw-e09.3). Rooms that touch (side by side:
+ * a wall; stacked: a floor) transmit through their partition; everything else goes through portals.
+ */
+export const sceneAcousticsSchema = z.strictObject({
+  rooms: z.array(sceneRoomSchema).default([]).describe('Rooms; they must not overlap.'),
+  portals: z.array(scenePortalSchema).default([]).describe('Openings between rooms.'),
+  partitions: z
+    .array(scenePartitionSchema)
+    .default([])
+    .describe('Materials of partitions between touching rooms; the rest use the tuning default.'),
+});
+
 const cameraSchema = z.strictObject({
   position: vec3Schema.describe('Camera position in metres.'),
   target: vec3Schema.describe('Point the camera looks at, metres.'),
@@ -284,6 +340,9 @@ export const sceneSchema = z
       .array(sceneSignalSchema)
       .default([])
       .describe('Signal graphs wiring its switches, volumes and doors (mw-e03.18).'),
+    acoustics: sceneAcousticsSchema
+      .optional()
+      .describe('Rooms, portals and partitions for sound propagation (mw-e09.3).'),
   })
   .superRefine((scene, ctx) => {
     const seen = new Set<string>();
@@ -317,9 +376,54 @@ export const sceneSchema = z
         });
       }
     });
+    if (scene.acoustics !== undefined) checkAcoustics(scene.spawns, scene.acoustics, ctx);
   });
 
 type SpawnDef = z.output<typeof sceneSpawnSchema>;
+
+type AcousticsDef = z.output<typeof sceneAcousticsSchema>;
+
+/** Room, portal and partition names must be unique and name what the scene has. */
+function checkAcoustics(
+  spawns: readonly SpawnDef[],
+  acoustics: AcousticsDef,
+  ctx: z.RefinementCtx,
+): void {
+  const { rooms, portals, partitions } = acoustics;
+  const issue = (path: (string | number)[], message: string) => {
+    ctx.addIssue({ code: 'custom', path: ['acoustics', ...path], message });
+  };
+  const roomIds = new Set<string>();
+  rooms.forEach((room, i) => {
+    if (roomIds.has(room.id)) issue(['rooms', i, 'id'], `room id "${room.id}" is used twice`);
+    roomIds.add(room.id);
+  });
+  const doors = new Set(spawns.filter((s) => s.door !== undefined).map((s) => s.id));
+  const pair = (list: readonly [string, string], path: (string | number)[], outside: boolean) => {
+    list.forEach((id, side) => {
+      if (roomIds.has(id) || (outside && id === OUTSIDE_ROOM)) return;
+      issue([...path, side], `names room "${id}", which this scene does not have`);
+    });
+    if (list[0] === list[1]) issue(path, `joins room "${list[0]}" to itself`);
+  };
+  const portalIds = new Set<string>();
+  portals.forEach((portal, i) => {
+    if (portalIds.has(portal.id))
+      issue(['portals', i, 'id'], `portal id "${portal.id}" is used twice`);
+    portalIds.add(portal.id);
+    pair(portal.rooms, ['portals', i, 'rooms'], true);
+    if (portal.door !== undefined && !doors.has(portal.door)) {
+      issue(['portals', i, 'door'], `names door "${portal.door}", which no spawn of this scene is`);
+    }
+  });
+  const pairs = new Set<string>();
+  partitions.forEach((partition, i) => {
+    pair(partition.rooms, ['partitions', i, 'rooms'], false);
+    const key = [...partition.rooms].sort().join('|');
+    if (pairs.has(key)) issue(['partitions', i, 'rooms'], 'this partition is listed twice');
+    pairs.add(key);
+  });
+}
 
 /** A spawn's door and switch data must agree with each other and with its other fields. */
 function checkMechanism(spawn: SpawnDef, index: number, ctx: z.RefinementCtx): void {
@@ -358,3 +462,4 @@ export type SceneLightDef = z.output<typeof sceneLightSchema>;
 export type SceneDoorDef = z.output<typeof sceneDoorSchema>;
 export type SceneSwitchDef = z.output<typeof sceneSwitchSchema>;
 export type SceneSignalDef = z.output<typeof sceneSignalSchema>;
+export type SceneAcousticsDef = z.output<typeof sceneAcousticsSchema>;

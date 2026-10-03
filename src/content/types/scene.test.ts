@@ -97,6 +97,65 @@ describe('scene mechanisms (mw-e03.18)', () => {
   });
 });
 
+describe('scene acoustics (mw-e09.3)', () => {
+  const door = { id: 'door', at: [0, 0, 5], door: { profile: 'wooden-door' } };
+  const hall = { id: 'hall', min: [-5, 0, -5], max: [5, 3, 5] };
+  const closet = { id: 'closet', min: [-1, 0, 5], max: [1, 3, 7] };
+
+  it('takes rooms, portals and partition materials, all defaulting to none', () => {
+    const scene = sceneSchema.parse({
+      ...room,
+      spawns: [door],
+      acoustics: {
+        rooms: [hall, closet],
+        portals: [
+          { id: 'closet-door', rooms: ['hall', 'closet'], at: [0, 1, 5], door: 'door' },
+          { id: 'gate', rooms: ['hall', 'outside'], at: [0, 1, -5] },
+        ],
+        partitions: [{ rooms: ['hall', 'closet'], material: 'wood' }],
+      },
+    });
+    expect(scene.acoustics?.portals).toHaveLength(2);
+    expect(sceneSchema.parse({ ...room, acoustics: {} }).acoustics).toEqual({
+      rooms: [],
+      portals: [],
+      partitions: [],
+    });
+    expect(sceneSchema.parse(room).acoustics).toBeUndefined();
+  });
+
+  it('rejects reserved, repeated or unknown names, self-joins, empty boxes and non-door doors', () => {
+    expect(
+      problems({
+        ...room,
+        spawns: [door, { id: 'crate', at: [1, 0, 1] }],
+        acoustics: {
+          rooms: [hall, hall, { id: 'outside', min: [0, 0, 0], max: [0, 1, 1] }],
+          portals: [
+            { id: 'p', rooms: ['hall', 'cellar'], at: [0, 0, 0], door: 'crate' },
+            { id: 'p', rooms: ['hall', 'hall'], at: [0, 0, 0] },
+          ],
+          partitions: [
+            { rooms: ['hall', 'yard'], material: 'stone' },
+            { rooms: ['yard', 'hall'], material: 'stone' },
+          ],
+        },
+      }),
+    ).toEqual([
+      'acoustics.rooms.2.id: "outside" is reserved',
+      'acoustics.rooms.2.max: max must be above min on every axis',
+      'acoustics.rooms.1.id: room id "hall" is used twice',
+      'acoustics.portals.0.rooms.1: names room "cellar", which this scene does not have',
+      'acoustics.portals.0.door: names door "crate", which no spawn of this scene is',
+      'acoustics.portals.1.id: portal id "p" is used twice',
+      'acoustics.portals.1.rooms: joins room "hall" to itself',
+      'acoustics.partitions.0.rooms.1: names room "yard", which this scene does not have',
+      'acoustics.partitions.1.rooms.0: names room "yard", which this scene does not have',
+      'acoustics.partitions.1.rooms: this partition is listed twice',
+    ]);
+  });
+});
+
 describe('scene schema (mw-e00.21)', () => {
   it('fills defaults: 1 m grid, no yaw, unit scale, no spawns', () => {
     expect(sceneSchema.parse(room)).toEqual({

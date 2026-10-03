@@ -371,11 +371,14 @@ export {
   type KitShape,
 } from './types/kit.ts';
 export {
+  OUTSIDE_ROOM,
   SCENE_SNAP_STEP,
   SCENE_YAWS,
+  sceneAcousticsSchema,
   scenePlacementSchema,
   sceneSchema,
   sceneSpawnSchema,
+  type SceneAcousticsDef,
   type SceneDef,
   type SceneDefInput,
   type ScenePlacementDef,
@@ -457,10 +460,16 @@ export {
   type HitStopTier,
 } from './types/hit-stop.ts';
 export {
+  DOOR_SOUND_STATES,
+  MAX_NOISE_LOSS_DB,
   MAX_STEALTH_WEIGHT,
+  PARTITION_KINDS,
   STEALTH_ID,
   VISIBILITY_STANCES,
   stealthSchema,
+  type DoorSoundState,
+  type NoiseTuning,
+  type PartitionKind,
   type StealthDef,
   type StealthDefInput,
   type StealthEntry,

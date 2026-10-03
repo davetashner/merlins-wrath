@@ -1,4 +1,4 @@
-// Noise events (mw-e03.11, the first emitter; mw-e03.25 adds the rest): one event every world system
+// Noise events (mw-e03.11, the first emitter; mw-e03.25 adds the rest; mw-e09.3 propagates them): one event every world system
 // emits when it makes a sound worth hearing — a wall smashed, a pot shattered — so stealth's sound
 // propagation (e09) and creature hearing (e11) listen to one channel instead of to each system.
 // Loudness is a level in dB at 1 m from the source (e09 attenuates it with distance, doors and
@@ -21,6 +21,8 @@ export interface NoiseEvent {
   readonly entity: EntityId | null;
   /** Who it is attributed to (the knight who smashed the pot), or null. */
   readonly source: EntityId | null;
+  /** Free-form tags for listeners (e.g. `metal`, `voice`, `magic`); none when omitted. */
+  readonly tags?: readonly string[];
 }
 
 /** Fired for every noise; stealth and AI hearing consume it. */
