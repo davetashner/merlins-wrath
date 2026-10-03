@@ -71,12 +71,15 @@ non-commercial use are **placeholders only** and must be flagged `placeholder: y
 | Asset id | Type | Source | Tier | Date | Licence | Terms / URL | Author / attribution | Prompt file | Placeholder |
 |---|---|---|---|---|---|---|---|---|---|
 | music-title-main-theme | music | generated:suno/v6 | Suno Pro (annual) | 2026-09-27 | GEN-OWNED | https://suno.com/terms | owner | `assets/prompts/music/music-title-main-theme.md` | no |
+| music-open-world | music | generated:suno/v6 | Suno Pro (annual) | 2026-10-03 | GEN-OWNED | https://suno.com/terms | owner | `assets/prompts/music/music-open-world.md` | yes |
+| music-skeleton-arena-combat-music | music | generated:suno/v6 | Suno Pro (annual) | 2026-10-03 | GEN-OWNED | https://suno.com/terms | owner | `assets/prompts/music/music-skeleton-arena-combat-music.md` | yes |
 
 ## Sound effects & ambience
 
 | Asset id | Type | Source | Tier | Date | Licence | Terms / URL | Author / attribution | Prompt file | Placeholder |
 |---|---|---|---|---|---|---|---|---|---|
 | `sfx-*` — the synthesised placeholder pack: every `.wav` under `public/assets/audio/` (entries flagged `placeholder: true` in `src/audio/data/sound-manifest.json`) | sfx | original (procedural synthesis: `scripts/audio/gen-placeholders.ts`, mw-e28.2; no recordings, clips or generation APIs) | n/a | 2026-09-29 | ORIGINAL | n/a | The Vesper Bell project | n/a | yes |
+| amb-deepworks-drips-01 (source take `mine-ambience-bed`, Suno Sounds mode) | amb | generated:suno/v6 | Suno Pro (annual) | 2026-10-03 | GEN-OWNED | https://suno.com/terms | owner | `assets/prompts/music/mine-ambience-bed.md` | yes |
 
 ## Fonts
 
