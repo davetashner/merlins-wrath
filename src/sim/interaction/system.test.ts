@@ -14,6 +14,7 @@ import { hashWorld } from '../snapshot';
 import { placeEntity, PlacementComponent } from '../stimulus/placement';
 import type { InteractableSpec, InteractorKit } from './affordance';
 import {
+  addAffordanceGate,
   addInteractable,
   addInteractor,
   addSceneInteractables,
@@ -227,6 +228,30 @@ describe('interaction system (mw-e02.5)', () => {
     thief.world.step([PRESS]);
     steps(thief.world, HOLD, 119);
     expect(thief.events.map((e) => e.verb)).toEqual(['pick-lock']);
+  });
+
+  it('gates affordances on world state through added gates, in order, until they are removed', () => {
+    const { world, actor, events } = setup();
+    const target = place(world, 1.5, 0, { affordances: [{ verb: 'unlock' }, { verb: 'search' }] });
+    const offA = addAffordanceGate(world, (_w, who, what, affordance) =>
+      who === actor && what === target && affordance.verb === 'unlock' ? 'Locked.' : undefined,
+    );
+    const offB = addAffordanceGate(world, () => 'Busy.');
+    world.step([IDLE]);
+    expect(interactionPrompt(world, actor)?.options).toEqual([
+      { verb: 'unlock', label: 'Unlock', available: false, reason: 'Locked.' },
+      { verb: 'search', label: 'Search', available: false, reason: 'Busy.' },
+    ]);
+    world.step([PRESS]);
+    expect(events).toEqual([]);
+    offB();
+    offB(); // removing twice is harmless
+    expect(interactionPrompt(world, actor)).toMatchObject({ verb: 'search', available: true });
+    world.step([IDLE]);
+    world.step([PRESS]);
+    expect(events.map((e) => e.verb)).toEqual(['search']);
+    offA();
+    expect(interactionPrompt(world, actor)).toMatchObject({ verb: 'unlock', available: true });
   });
 
   it('AC-5: releasing a 1.0 s hold at 0.8 s cancels it and fires nothing', () => {

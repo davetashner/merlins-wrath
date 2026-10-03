@@ -15,6 +15,7 @@
 import { loadGameContent } from '@content/game-content';
 import {
   controllerTuningFor,
+  materialPresets,
   PLAYER_CAMERA_ID,
   PLAYER_CONTROLLER_ID,
   PLAYER_LOCK_ON_ID,
@@ -32,11 +33,13 @@ import {
 import { prepareCreatures, startCreatures, type GameCreatures } from '@game/creatures/index';
 import { ActionSampler } from '@game/input/index';
 import { prepareWorldItems, startWorldItems } from '@game/items/index';
+import { hasMechanisms, startMechanisms } from '@game/mechanisms/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
 import { installGamePhysics, playerFocus } from '@game/physics-objects';
 import { setupTestbedPlayer, type TransformReader } from '@game/player/index';
 import { SceneLoader } from '@game/scene/index';
 import {
+  InMemoryColliderSink,
   LineOfSight,
   physicsBodiesOf,
   DAMAGE_COMPONENTS,
@@ -55,6 +58,7 @@ import {
   type RapierModule,
   type ReplayScenario,
   type SceneCreatures,
+  type SceneMechanisms,
   type WorldItems,
 } from '@sim/index';
 
@@ -152,6 +156,8 @@ export interface HeadlessGame<TInput> {
   readonly combatants: TestbedCombatants;
   /** The world-item rules (mw-e17.7); the player has an inventory. */
   readonly items: WorldItems;
+  /** The scene's doors and switches (mw-e03.18), or undefined in a scene without mechanisms. */
+  readonly mechanisms: SceneMechanisms | undefined;
   /** The creatures content has, and what the scene's creature spawns spawned (mw-e12.4). */
   readonly creatures: GameCreatures;
   readonly sceneCreatures: SceneCreatures;
@@ -170,7 +176,7 @@ export function createTestbedWorld(
 /**
  * Scene `scene` (default the testbed) with the player, wired as src/main.ts wires it — debug
  * commands with the sandbox's and creatures' spawners, the combat sandbox rules, physics, the
- * player, combat, world items and creatures — minus the renderer. The combat sandbox's and creatures' e2e-free
+ * player, combat, world items, mechanisms and creatures — minus the renderer. The combat sandbox's and creatures' e2e-free
  * tests (tests/integration) run on it. `content` defaults to the game's; debug builds pass the dev
  * content (src/content/dev-content.ts), which has the fixture creatures.
  */
@@ -251,8 +257,29 @@ export function createGameWorld<TInput>(
   // World items (mw-e17.7): the scene's items, taken with Interact, dropped and thrown.
   const items = prepareWorldItems(content);
   startWorldItems(world, items, scene.spawns, player);
+  // Mechanisms (mw-e03.18) in scenes that have them, as src/main.ts starts them: door leaves collide
+  // in the physics port and keys come off the player's keyring (mw-e17.5). Headless, nothing
+  // reads the light occluders.
+  const mechanisms = hasMechanisms(scene.layout)
+    ? startMechanisms(world, scene, {
+        content,
+        materials: materialPresets(content.all('material')),
+        colliders: physics,
+        occluders: new InMemoryColliderSink(),
+      })
+    : undefined;
   const sceneCreatures = startCreatures(world, creatures, combat, scene.layout.spawns);
-  return { world, player, combat, combatants, items, creatures, sceneCreatures, sync };
+  return {
+    world,
+    player,
+    combat,
+    combatants,
+    items,
+    mechanisms,
+    creatures,
+    sceneCreatures,
+    sync,
+  };
 }
 
 /** The replay scenario, on the given Rapier module. */

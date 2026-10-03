@@ -109,8 +109,9 @@ test('mw-e03.39 AC-6: the testbed spawns its movable props as physics objects wi
   await page.goto('/?scene=testbed');
   const app = page.locator('#app');
   await expect(app).toHaveAttribute('data-scene', 'testbed', { timeout: 5_000 });
-  // The loose crate, the arena plank and the healing draught lying on the floor (mw-e17.7).
-  await expect(app).toHaveAttribute('data-physics-objects', '3');
+  // The loose crate, the arena plank, and the healing draught (mw-e17.7) and closet key (mw-e17.5)
+  // lying on the floor.
+  await expect(app).toHaveAttribute('data-physics-objects', '4');
   await nextFrames(page);
   await expect(app).not.toHaveAttribute('data-physics-budget', /.*/);
   expect(problems).toEqual([]);

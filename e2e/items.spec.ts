@@ -35,6 +35,13 @@ function collectProblems(page: Page): string[] {
   return problems;
 }
 
+/** The testbed closet's key (mw-e17.5) lies on the floor too; it stays there throughout. */
+const CLOSET_KEY: Stack = { item: 'testbed-closet-key', count: 1, flags: {} };
+
+/** What lies in the world besides the closet key. */
+const besidesKey = (world: Stack[] | undefined): Stack[] | undefined =>
+  world?.filter((stack) => stack.item !== CLOSET_KEY.item);
+
 async function items(page: Page): Promise<ItemsData | null> {
   const json = await page.locator('#app').getAttribute('data-items');
   return JSON.parse(json ?? 'null') as ItemsData | null;
@@ -110,7 +117,7 @@ test('mw-e17.7 AC-5: take, drop and take the draught again: one in the pack, non
     .poll(() => items(page))
     .toEqual({
       pack: [],
-      world: [{ item: 'healing-draught', count: 1, flags: {} }],
+      world: [{ item: 'healing-draught', count: 1, flags: {} }, CLOSET_KEY],
       taken: 0,
       dropped: 0,
       thrown: 0,
@@ -122,13 +129,13 @@ test('mw-e17.7 AC-5: take, drop and take the draught again: one in the pack, non
   await expect.poll(async () => (await items(page))?.taken).toBe(1);
   const afterTake = await items(page);
   expect(afterTake?.pack).toEqual([{ item: 'healing-draught', count: 1, flags: {} }]);
-  expect(afterTake?.world).toEqual([]);
+  expect(afterTake?.world).toEqual([CLOSET_KEY]);
 
   await page.keyboard.press('KeyG');
   await expect.poll(async () => (await items(page))?.dropped).toBe(1);
   const afterDrop = await items(page);
   expect(afterDrop?.pack).toEqual([]);
-  expect(afterDrop?.world).toEqual([{ item: 'healing-draught', count: 1, flags: {} }]);
+  expect(besidesKey(afterDrop?.world)).toEqual([{ item: 'healing-draught', count: 1, flags: {} }]);
 
   // It fell in front of the player, so the prompt offers it again.
   await expect(page.getByTestId('interact-prompt')).toContainText('Take Healing draught');
@@ -136,7 +143,7 @@ test('mw-e17.7 AC-5: take, drop and take the draught again: one in the pack, non
   await expect.poll(async () => (await items(page))?.taken).toBe(2);
   const end = await items(page);
   expect(end?.pack).toEqual(afterTake?.pack);
-  expect(end?.world).toEqual([]);
+  expect(end?.world).toEqual([CLOSET_KEY]);
   expect(end?.refused).toEqual([]);
   expect(problems).toEqual([]);
 });

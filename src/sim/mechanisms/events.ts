@@ -58,6 +58,25 @@ export interface LockUnlocked {
 
 export const lockUnlocked = defineEvent<LockUnlocked>('lockUnlocked');
 
+/**
+ * A key from an actor's keyring opened a lock (mw-e17.5): what quests listen to ("open the tower
+ * with the warden's key"). It follows the lock's `lockUnlocked`, which every way past a lock fires.
+ */
+export interface LockOpened {
+  readonly tick: number;
+  /** The door the lock is on. */
+  readonly entity: EntityId;
+  readonly lock: string;
+  /** The key item that opened it. */
+  readonly keyId: string;
+  /** Whose keyring it was on. */
+  readonly actor: EntityId;
+  /** A single-use key, used up opening it. */
+  readonly consumed: boolean;
+}
+
+export const lockOpened = defineEvent<LockOpened>('lock.opened');
+
 /** Why a lock held. */
 export type LockRefusal = 'no-key' | 'sealed' | 'unpickable' | 'pick-failed' | 'locked';
 

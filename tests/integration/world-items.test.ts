@@ -46,6 +46,12 @@ function facingDraught() {
     .ids()
     .find((id) => world.get(id, SceneSpawnComponent)?.id === 'testbed-draught');
   if (draught === undefined) throw new Error('no testbed draught');
+  // The draught alone: the closet key (mw-e17.5, keyring.test.ts) is taken out of the scene.
+  const key = world
+    .query(SceneSpawnComponent)
+    .ids()
+    .find((id) => world.get(id, SceneSpawnComponent)?.id === 'closet-key');
+  if (key !== undefined) world.destroy(key);
   world.set(player, PlayerLook, { yaw: -Math.PI / 2, pitch: 0 }); // facing +x
   for (let i = 0; i < 5; i++) world.step([IDLE]);
   const picked: ItemPickedUp[] = [];

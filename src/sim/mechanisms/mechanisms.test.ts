@@ -55,7 +55,7 @@ import {
 } from './events';
 import { closedBox } from './geometry';
 import { cos, hypot, sin } from '../math';
-import { keyFits, keyringFinder } from './keys';
+import { keyFits, keyring } from './keys';
 import {
   closeDoor,
   doorAffordances,
@@ -235,7 +235,7 @@ function player(world: World<never>, rules: InventoryRules, items: readonly stri
 describe('locks (mw-e03.18)', () => {
   it('AC-1: a player holding the matching key unlocks the door with Unlock; the unlocked event names the player', () => {
     const rules = new InventoryRules(ITEMS);
-    const { world, log } = setup({ keys: keyringFinder(rules) });
+    const { world, log } = setup({ keys: keyring(rules) });
     const gate = door(world, WOODEN_DOOR, { lock: TOWER_LOCK });
     const actor = player(world, rules, ['bread', 'odd-key', 'tower-key']);
     expect(doorStatus(world, gate)).toBe('locked');
@@ -260,7 +260,7 @@ describe('locks (mw-e03.18)', () => {
 
   it('AC-1: a master key opens by tag; without a key the lock holds and gives its hint', () => {
     const rules = new InventoryRules(ITEMS);
-    const { world, log } = setup({ keys: keyringFinder(rules) });
+    const { world, log } = setup({ keys: keyring(rules) });
     const gate = door(world, WOODEN_DOOR, { lock: TOWER_LOCK });
     const empty = player(world, rules, ['bread']);
     interact(world, empty, gate, 'unlock');
@@ -318,7 +318,7 @@ describe('locks (mw-e03.18)', () => {
 
   it('picks by default, refuses an unpickable lock, and a seal stops keys and picks until magic', () => {
     const rules = new InventoryRules(ITEMS);
-    const { world, log } = setup({ keys: keyringFinder(rules) });
+    const { world, log } = setup({ keys: keyring(rules) });
     const plain = door(world, WOODEN_DOOR, { lock: TOWER_LOCK });
     const vault = door(world, WOODEN_DOOR, { lock: { ...TOWER_LOCK, pickTier: null } });
     const sealed = door(world, WOODEN_DOOR, { lock: { ...TOWER_LOCK, sealed: true } });

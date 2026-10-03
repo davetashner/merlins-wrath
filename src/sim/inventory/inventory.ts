@@ -80,8 +80,15 @@ export interface InventoryItemDef {
   readonly maxStack?: number | undefined;
   readonly flags: { readonly unique: boolean; readonly questItem: boolean };
   readonly grants?: readonly { readonly capability: string }[];
-  /** A key's data: the lock ids it opens and the lock tag a master key opens (mw-e03.18). */
-  readonly key?: { readonly opens: readonly string[]; readonly opensTag?: string | undefined };
+  /**
+   * A key's data: the lock ids it opens, the lock tag a master key opens (mw-e03.18), and whether it
+   * is used up when it opens one (mw-e17.5).
+   */
+  readonly key?: {
+    readonly opens: readonly string[];
+    readonly opensTag?: string | undefined;
+    readonly singleUse?: boolean | undefined;
+  };
 }
 
 /** The views over an inventory (keys on the keyring, books on the bookshelf, and so on). */

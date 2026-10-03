@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- Keys work by themselves: walk up to a locked door holding its key and press Interact to unlock and
+  open it, with no menu. Without the key the prompt is greyed and says why ("Locked. The key can't be
+  far."). Some keys snap when used once; most stay on your keyring. The testbed's east wall now has a
+  locked closet whose key lies on the floor nearby.
 - Doors, locks, levers, buttons, cranks and wheels. Doors swing, slide, rise or drop open and stop
   against whatever is in their way; a dropping portcullis crushes what is weak and wedges on what is
   not. Wooden doors burn and break, iron ones do not. Locked doors open with the right key from your
