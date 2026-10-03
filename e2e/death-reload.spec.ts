@@ -95,7 +95,8 @@ test('AC-2: after a death, Load last save is playable within 3 s at the save’s
 
   await type(page, 'kill');
   const screen = page.locator('[data-screen="death"]');
-  await expect(screen).toBeVisible();
+  // The death beat (mw-e01.8, 90 sim ticks) runs first: seconds of wall time on a slow runner.
+  await expect(screen).toBeVisible({ timeout: 45_000 });
   await expect(page.locator('#app')).toHaveAttribute('data-death', /"last":"manual-1"/);
   const load = screen.getByRole('button', { name: 'Load last save' });
   await expect(load).toBeFocused();
@@ -131,7 +132,8 @@ test('AC-3: with no saves the death screen offers Restart area, which restarts w
 
   await type(page, 'kill');
   const screen = page.locator('[data-screen="death"]');
-  await expect(screen).toBeVisible();
+  // The death beat (mw-e01.8, 90 sim ticks) runs first: seconds of wall time on a slow runner.
+  await expect(screen).toBeVisible({ timeout: 45_000 });
   await expect(page.locator('#app')).toHaveAttribute('data-death', /"saves":0/);
   await expect(screen.getByRole('button', { name: 'Load last save' })).toHaveCount(0);
   const restart = screen.getByRole('button', { name: 'Restart area' });

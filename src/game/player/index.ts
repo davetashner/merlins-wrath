@@ -6,3 +6,4 @@ export * from './lock-marker';
 export * from './pointer-lock';
 export * from './testbed-player';
 export * from './controller-reload';
+export * from './death-beat';

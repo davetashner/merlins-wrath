@@ -49,6 +49,7 @@ import { lookForward, toRadians } from '../camera';
 import type { CharacterProbe } from '../animation';
 import {
   CROUCH_DROP,
+  DEATH_PULL_BACK,
   readPlayerTransform,
   setupTestbedPlayer,
   yawOf,
@@ -571,6 +572,22 @@ describe('testbed orbit camera (mw-e02.4)', () => {
     player.zoom(100);
     run(1 / 60);
     expect(zoom()).toBe(cameraTuning.distance.max);
+  });
+
+  it('the death beat pulls the camera back and tilts it down, clamped to 0–1 (mw-e01.8)', () => {
+    const publishCamera = vi.fn<(readout: CameraReadout) => void>();
+    const { run, player } = testbed({ publishCamera });
+    const last = () => publishCamera.mock.calls.at(-1)?.[0];
+    run(0.5);
+    const before = last();
+    player.pullBack(2);
+    run(1);
+    const after = last();
+    expect(after?.zoom).toBeCloseTo(cameraTuning.distance.initial + DEATH_PULL_BACK.metres, 4);
+    expect(after?.position.y ?? 0).toBeGreaterThan(before?.position.y ?? 0);
+    player.pullBack(-1);
+    run(1 / 60);
+    expect(last()?.zoom).toBe(cameraTuning.distance.initial);
   });
 
   it('the camera never changes the sim: same inputs, same hash, with or without it drawing', () => {

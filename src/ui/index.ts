@@ -10,6 +10,7 @@ export * from './components/controls';
 export * from './components/list';
 export * from './components/overlays';
 export * from './components/tabs';
+export * from './death-fade';
 export * from './death-screen';
 export * from './focus';
 export * from './frame-data';

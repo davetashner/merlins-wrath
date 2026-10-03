@@ -301,6 +301,11 @@ export interface TestbedPlayer {
   frame(info?: Pick<FrameInfo, 'alpha' | 'timeMs'>): void;
   /** Zooms the orbit camera by whole mouse-wheel notches (positive = out). */
   zoom(notches: number): void;
+  /**
+   * The death beat's camera pull-back (mw-e01.8), 0 (none) to 1 (all of DEATH_PULL_BACK): the orbit
+   * camera backs off and tilts down over the body. Presentation only.
+   */
+  pullBack(fraction: number): void;
   /** The player's state now, or undefined once disposed. */
   readout(): PlayerReadout | undefined;
   /** What the Interact prompt shows now; undefined with nothing in focus or no interaction. */
@@ -310,6 +315,9 @@ export interface TestbedPlayer {
   /** Unbinds the body and removes the player (its systems stay; they find no player). */
   dispose(): void;
 }
+
+/** How far the death beat pulls the orbit camera back (mw-e01.8): extra boom and downward tilt. */
+export const DEATH_PULL_BACK = Object.freeze({ metres: 2.5, pitch: (-20 * Math.PI) / 180 });
 
 const round = (n: number): number => Math.round(n * 1e4) / 1e4 + 0;
 const roundVec = ({ x, y, z }: Vec3): Vec3 => ({ x: round(x), y: round(y), z: round(z) });
@@ -377,6 +385,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
   const { world, scene, sync, camera, publish, publishCamera, collision, tuning } = options;
   const cameraTuning = options.cameraTuning;
   const look = lookSettings(cameraTuning);
+  const lowestPitch = look.minPitch;
   const { lockOn } = options;
   // With lock-on, attacks face the locked target during startup (mw-e02.31).
   const melee =
@@ -532,6 +541,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
   let publishedTick = -1;
   let drove = false;
   let drivesCamera = true;
+  let pulled = 0;
 
   const placeCamera = (alpha: number, dt: number): void => {
     const state = world.get(entity, CharacterController);
@@ -547,7 +557,14 @@ export function setupTestbedPlayer<TObject, TCommand>(
     const feet = shown.position;
     const simView = { yaw: yawOf(shown.rotation), pitch: drawnPitch(look.pitch, alpha) };
     const pivot = { x: feet.x, y: feet.y + cameraTuning.pivotHeight, z: feet.z };
-    const view = framing?.update(simView, pivot, lockTarget()?.point, dt) ?? simView;
+    const framed = framing?.update(simView, pivot, lockTarget()?.point, dt) ?? simView;
+    const view =
+      pulled === 0
+        ? framed
+        : {
+            ...framed,
+            pitch: Math.max(lowestPitch, framed.pitch + pulled * DEATH_PULL_BACK.pitch),
+          };
     zoomLens(dt);
     const pose = orbit.update({ feet, ...view, height }, camera, dt);
     applyOrbitPose(camera, pose);
@@ -589,6 +606,10 @@ export function setupTestbedPlayer<TObject, TCommand>(
     },
     zoom(notches) {
       orbit.zoomBy(notches);
+    },
+    pullBack(fraction) {
+      pulled = Math.min(1, Math.max(0, fraction));
+      orbit.pullBack = pulled * DEATH_PULL_BACK.metres;
     },
     readout,
     prompt() {

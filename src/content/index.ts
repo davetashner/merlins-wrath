@@ -341,6 +341,16 @@ export {
   type PuzzleStep,
 } from './types/puzzle.ts';
 export { checkPuzzles } from './puzzle-checks.ts';
+export {
+  checkRespawnRules,
+  RESPAWN_MODES as RESPAWN_RULE_MODES,
+  RESPAWN_RULES_ID,
+  respawnRulesSchema,
+  type RespawnRuleDef,
+  type RespawnRules as RespawnRulesDef,
+  type RespawnRulesEntry,
+  type RespawnRulesInput,
+} from './types/respawn-rules.ts';
 export { checkLootTables, lootTableProblems, type LootProblems } from './loot-checks.ts';
 export {
   checkCreatureAttacks,

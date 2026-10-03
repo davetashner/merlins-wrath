@@ -9,7 +9,8 @@
 // the capability registry, the items and the proficiency tags items call for (mw-e19.4), and the
 // spawns the signal graphs a scene places bind (mw-e03.18), loot tables' references, nesting and
 // unique items across the world (mw-e18.2), and baked navmeshes against their scenes' door spawns
-// (mw-e11.4). The `game` type is the one game configuration file (playable classes, mw-e01.15).
+// (mw-e11.4), and respawn-rule destinations against their scenes' spawns (mw-e01.8). The `game` type
+// is the one game configuration file (playable classes, mw-e01.15).
 
 import { checkAnimation } from './anim-checks.ts';
 import { checkCreatureAttacks } from './attack-checks.ts';
@@ -49,6 +50,7 @@ import { materialSchema } from './types/material.ts';
 import { moveSchema } from './types/move.ts';
 import { checkNavmeshes, navmeshSchema } from './types/navmesh.ts';
 import { puzzleSchema } from './types/puzzle.ts';
+import { checkRespawnRules, respawnRulesSchema } from './types/respawn-rules.ts';
 import { sandboxSchema } from './types/sandbox.ts';
 import { sceneSchema } from './types/scene.ts';
 import { senseSchema } from './types/sense.ts';
@@ -95,6 +97,7 @@ export const contentTypes = {
   move: moveSchema,
   navmesh: navmeshSchema,
   puzzle: puzzleSchema,
+  'respawn-rules': respawnRulesSchema,
   sandbox: sandboxSchema,
   scene: sceneSchema,
   sense: senseSchema,
@@ -125,6 +128,7 @@ export const contentChecks: readonly ContentCheck[] = [
   checkSceneSignals,
   checkLootTables,
   checkNavmeshes,
+  checkRespawnRules,
 ];
 
 export type ContentTypes = typeof contentTypes;

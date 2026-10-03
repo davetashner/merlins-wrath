@@ -131,6 +131,16 @@ describe('orbit camera geometry (mw-e02.4)', () => {
     expect(pose.focus.y).toBeCloseTo(1 - pose.radius, 12);
   });
 
+  it('the death beat’s pull-back lengthens the boom past the zoom, never below it (mw-e01.8)', () => {
+    const orbit = new OrbitCamera(TUNING, new FakeCollisionWorld([]));
+    expect(orbit.pullBack).toBe(0);
+    orbit.pullBack = 2;
+    expect(orbit.pullBack).toBe(2);
+    expect(orbit.update(subject(), LENS, 0).ideal).toBe(5.5);
+    orbit.pullBack = -1;
+    expect(orbit.pullBack).toBe(0);
+  });
+
   it('zooms in wheel notches within 2–6 m', () => {
     const orbit = new OrbitCamera(TUNING, new FakeCollisionWorld([]));
     expect(orbit.zoom).toBe(3.5);

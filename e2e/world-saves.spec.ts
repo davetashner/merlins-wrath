@@ -155,7 +155,8 @@ test('AC-4: open a door, loot, save, close the tab, load the save: the door is o
   expect((await data<ItemsData>(second, 'items'))?.world).toHaveLength(2);
   await type(second, 'kill');
   const screen = second.locator('[data-screen="death"]');
-  await expect(screen).toBeVisible();
+  // The death beat (mw-e01.8, 90 sim ticks) runs first: seconds of wall time on a slow runner.
+  await expect(screen).toBeVisible({ timeout: 45_000 });
   await screen.getByRole('button', { name: 'Load last save' }).click();
   await openTestbed(second);
   await expect(second.locator('#app')).toHaveAttribute('data-loaded-save', /"slot":"manual-1"/);

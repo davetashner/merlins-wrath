@@ -44,6 +44,7 @@ export {
 } from './difficulty';
 export {
   World,
+  type InputFilter,
   type SnapshotOptions,
   type System,
   type TickContext,
@@ -72,6 +73,7 @@ export * from './inventory';
 export * from './items';
 export * from './progression';
 export * from './properties';
+export * from './respawn';
 export * from './scene';
 export * from './sight';
 export * from './stealth';

@@ -56,6 +56,28 @@ describe('World scheduler', () => {
     expectTypeOf(w.clock).not.toHaveProperty('advance');
   });
 
+  it('input filters decide which inputs the systems see, from world state (mw-e01.8)', () => {
+    const world = new World<string>({ seed: 1 });
+    const seen: string[][] = [];
+    world.register(Health);
+    const gate = world.spawn();
+    world
+      .addInputFilter({ name: 'gate', keep: (input, w) => input !== 'a' || !w.has(gate, Health) })
+      .addInputFilter({ name: 'never', keep: (input) => input !== 'never' })
+      .addSystem(
+        system<string>('probe', ({ inputs, world: w }) => {
+          seen.push([...inputs]);
+          if (!w.has(gate, Health)) w.add(gate, Health, 1);
+        }),
+      );
+    world.step(['a', 'b', 'never']);
+    world.step(['a', 'b']);
+    expect(seen).toEqual([['a', 'b'], ['b']]);
+    expect(() => world.addInputFilter({ name: 'gate', keep: () => true })).toThrow(
+      'input filter "gate" is already registered',
+    );
+  });
+
   it('defaults to 60 Hz', () => {
     expect(new World({ seed: 1 }).clock.hz).toBe(60);
   });

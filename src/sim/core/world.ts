@@ -49,7 +49,7 @@ export interface WorldOptions {
 /** What a system receives each tick. */
 export interface TickContext<TInput> {
   readonly world: World<TInput>;
-  /** This tick's input commands, in the order given to `step`. */
+  /** This tick's input commands, in the order given to `step`, after the world's input filters. */
   readonly inputs: readonly TInput[];
   /** The tick being simulated (the clock advances after the last system). */
   readonly tick: number;
@@ -63,6 +63,18 @@ export interface System<TInput> {
   /** Unique within a world; used in errors and benchmarks. */
   readonly name: string;
   run(ctx: TickContext<TInput>): void;
+}
+
+/**
+ * Decides whether the systems see one of a tick's inputs (mw-e01.8: a dead player's ActionFrames
+ * are dropped). Runs at the start of each step with the world as it was at the end of the last tick,
+ * so a change made in tick N filters from tick N+1. Must be deterministic: read only world state.
+ */
+export interface InputFilter<TInput> {
+  /** Unique within a world, like system names. */
+  readonly name: string;
+  /** Whether the systems see `input` this tick. */
+  keep(input: TInput, world: World<TInput>): boolean;
 }
 
 /**
@@ -129,6 +141,7 @@ export class World<TInput = unknown> {
   private readonly streams = new Map<string, Rng>();
   private readonly stores = new Map<string, ComponentStore<unknown>>();
   private readonly systems: System<TInput>[] = [];
+  private readonly inputFilters: InputFilter<TInput>[] = [];
   private readonly queries = new Map<string, Query<ComponentList>>();
   private readonly removeListeners = new Map<ComponentStore<unknown>, RemoveListener<unknown>[]>();
   private readonly structure: StructureVersion = { version: 0 };
@@ -211,6 +224,18 @@ export class World<TInput = unknown> {
       throw new Error(`system "${system.name}" is already registered`);
     }
     this.systems.push(system);
+    return this;
+  }
+
+  /**
+   * Appends an input filter (see InputFilter): the systems see only the inputs every filter keeps,
+   * in their original order. Difficulty and fact commands are applied from the unfiltered inputs.
+   */
+  addInputFilter(filter: InputFilter<TInput>): this {
+    if (this.inputFilters.some((f) => f.name === filter.name)) {
+      throw new Error(`input filter "${filter.name}" is already registered`);
+    }
+    this.inputFilters.push(filter);
     return this;
   }
 
@@ -303,7 +328,7 @@ export class World<TInput = unknown> {
    * Simulates one fixed tick. First applies any `difficultyCommand` and `factCommand` among the
    * inputs (so the whole tick, and every later one, sees the new values). Then steps physics by one
    * tick (1 / hz seconds), so every system sees this tick's bodies and queries. Then runs every
-   * system in order with this tick's inputs, flushing events at
+   * system in order with this tick's inputs (after the input filters), flushing events at
    * each phase boundary, then applies queued structural changes and advances the clock. If a system
    * or handler throws, the tick's queued changes are dropped and the world should be restored from a
    * snapshot.
@@ -319,9 +344,14 @@ export class World<TInput = unknown> {
       this.config = config;
       for (const change of changes) this.events.emit(DifficultyChanged, change);
       this.physicsPort?.step(1 / this.simClock.hz);
+      const filters = this.inputFilters;
+      const filtered =
+        filters.length === 0
+          ? inputs
+          : inputs.filter((input) => filters.every((filter) => filter.keep(input, this)));
       const ctx: TickContext<TInput> = {
         world: this,
-        inputs,
+        inputs: filtered,
         tick,
         clock: this.simClock,
         difficulty: config,
