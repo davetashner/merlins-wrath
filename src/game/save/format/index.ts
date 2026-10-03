@@ -36,6 +36,7 @@ export {
   migrateSection,
   validateSection,
   type SaveSection,
+  type SectionLoadContext,
   type SectionMigration,
   type SectionRecord,
   type SectionResult,

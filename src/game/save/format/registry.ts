@@ -6,7 +6,7 @@
 // rolled back to exactly its prior state. Sections from a newer build that this build does not know
 // are kept verbatim so re-saving never destroys them.
 
-import { DIFFICULTY_KEYS, type World, type WorldSnapshot } from '@sim/index';
+import { DIFFICULTY_KEYS, type FactSnapshot, type World, type WorldSnapshot } from '@sim/index';
 import { z } from 'zod';
 import { decodeSave, encodeSave, type BuildInfo, type SaveEnvelope } from './envelope';
 import { SaveApplyError, SaveCorruptError, type SaveLoadError } from './errors';
@@ -15,6 +15,7 @@ import {
   migrateSection,
   validateSection,
   type SaveSection,
+  type SectionLoadContext,
   type SectionRecord,
 } from './section';
 
@@ -25,9 +26,13 @@ export const WORLD_SECTION_ID = 'world';
  * Data version of the world section (the WorldSnapshot shape). v2 (mw-e27.1) adds the optional
  * `facts` record; a v1 save has no facts, so its migration is the identity. v3 (mw-e30.7) adds the
  * optional `physics` state of a world that owns physics (ADR-0001), so the game's worlds can be
- * saved; a v2 save could not hold a physics world, so its migration is the identity too.
+ * saved; a v2 save could not hold a physics world, so its migration is the identity too. v4
+ * (mw-e27.4): when a section owns facts (`ownsFacts`), the world section no longer holds them. The
+ * shape is unchanged, so the migration is the identity: an older save's facts stay here and the
+ * owning section reads them (`SectionLoadContext.worldFacts`); the bump keeps older builds from
+ * loading a save whose facts they would not find.
  */
-export const WORLD_SECTION_VERSION = 3;
+export const WORLD_SECTION_VERSION = 4;
 
 const worldSnapshotSchema = z.strictObject({
   seed: z.number(),
@@ -47,8 +52,9 @@ export interface SaveWarning {
   /**
    * `unknown-section`: the save has a section this build does not register (kept for re-saving).
    * `missing-section`: a registered section is absent from the save (its state was left empty).
+   * `recovered`: a section dropped a damaged part of its data and loaded the rest (mw-e27.4).
    */
-  readonly kind: 'unknown-section' | 'missing-section';
+  readonly kind: 'unknown-section' | 'missing-section' | 'recovered';
   readonly section: string;
   readonly message: string;
 }
@@ -69,13 +75,19 @@ export type CheckSaveResult =
   | { readonly ok: true; readonly envelope: SaveEnvelope }
   | { readonly ok: false; readonly error: SaveLoadError };
 
+type PreparedSection =
+  | { readonly section: SaveSection; readonly data: unknown; readonly missing?: never }
+  | { readonly section: SaveSection; readonly missing: true };
+
 type Prepared =
   | {
       readonly ok: true;
       readonly envelope: SaveEnvelope;
       readonly warnings: SaveWarning[];
       readonly unknownSections: Record<string, SectionRecord>;
-      readonly prepared: readonly { section: SaveSection; data: unknown }[];
+      /** `missing`: the save has no record of the section and the section's `missing` hook runs. */
+      readonly prepared: readonly PreparedSection[];
+      readonly worldFacts: FactSnapshot | undefined;
     }
   | { readonly ok: false; readonly error: SaveLoadError };
 
@@ -95,6 +107,8 @@ export class SaveRegistry {
   private readonly ids = new Set<string>();
   /** Component name → id of the section that saves it. */
   private readonly owners = new Map<string, string>();
+  /** Id of the section that saves the world's facts, if any. */
+  private factsOwner: string | undefined;
 
   constructor() {
     this.ordered = [
@@ -102,16 +116,19 @@ export class SaveRegistry {
         id: WORLD_SECTION_ID,
         version: WORLD_SECTION_VERSION,
         schema: worldSnapshotSchema,
-        migrations: { 1: (data) => data, 2: (data) => data },
+        migrations: { 1: (data) => data, 2: (data) => data, 3: (data) => data },
         serialize: (world) => {
-          const snapshot = world.snapshot();
+          const { facts, ...snapshot } = world.snapshot();
           const components = Object.fromEntries(
             Object.entries(snapshot.components).filter(([name]) => !this.owners.has(name)),
           );
-          return { ...snapshot, components };
+          const kept = this.factsOwner === undefined && facts !== undefined ? { facts } : {};
+          return { ...snapshot, ...kept, components };
         },
-        deserialize: (world, data) => {
-          world.restore(data);
+        deserialize: (world, { facts, ...data }) => {
+          world.restore(
+            this.factsOwner === undefined && facts !== undefined ? { ...data, facts } : data,
+          );
         },
       }),
     ];
@@ -133,7 +150,11 @@ export class SaveRegistry {
         throw new Error(`component "${name}" is already saved by section "${owner}"`);
       }
     }
+    if (checked.ownsFacts === true && this.factsOwner !== undefined) {
+      throw new Error(`world facts are already saved by section "${this.factsOwner}"`);
+    }
     for (const { name } of checked.components ?? []) this.owners.set(name, checked.id);
+    if (checked.ownsFacts === true) this.factsOwner = checked.id;
     this.ids.add(checked.id);
     this.ordered.push(checked);
     return this;
@@ -193,10 +214,17 @@ export class SaveRegistry {
     const { envelope, warnings, unknownSections, prepared } = result;
     const before = world.snapshot();
     let applying = WORLD_SECTION_ID;
+    const context = (section: string): SectionLoadContext => ({
+      warn: (message) => {
+        warnings.push({ kind: 'recovered', section, message });
+      },
+      worldFacts: result.worldFacts,
+    });
     try {
-      for (const { section, data } of prepared) {
-        applying = section.id;
-        section.deserialize(world, data);
+      for (const entry of prepared) {
+        applying = entry.section.id;
+        if (entry.missing === true) entry.section.missing?.(world, context(applying));
+        else entry.section.deserialize(world, entry.data, context(applying));
       }
     } catch (cause) {
       world.restore(before);
@@ -221,12 +249,16 @@ export class SaveRegistry {
       });
     }
 
-    const prepared: { section: SaveSection; data: unknown }[] = [];
+    const prepared: PreparedSection[] = [];
     for (const section of this.ordered) {
       const record = envelope.sections[section.id];
       if (record === undefined) {
         if (section.id === WORLD_SECTION_ID) {
           return { ok: false, error: new SaveCorruptError('the world section is missing') };
+        }
+        if (section.missing !== undefined) {
+          prepared.push({ section, missing: true });
+          continue;
         }
         warnings.push({
           kind: 'missing-section',
@@ -241,7 +273,7 @@ export class SaveRegistry {
       if (!valid.ok) return valid;
       prepared.push({ section, data: valid.data });
     }
-
-    return { ok: true, envelope, warnings, unknownSections, prepared };
+    const worldFacts = (prepared[0] as { data: WorldSnapshot }).data.facts;
+    return { ok: true, envelope, warnings, unknownSections, prepared, worldFacts };
   }
 }

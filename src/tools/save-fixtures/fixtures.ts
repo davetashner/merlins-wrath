@@ -11,6 +11,7 @@ import {
   EquipmentRules,
   hashWorld,
   InventoryRules,
+  levelDeltasOf,
   QuickSlotsComponent,
   replayScenarios,
   Rng,
@@ -78,6 +79,59 @@ export function packAnActor(world: World): void {
 }
 
 /**
+ * Records the changes of two levels the player has left (mw-e27.4): an opened, unlocked door, a
+ * looted chest, a smashed wall and a dropped draught in one; a moved crate in the other.
+ */
+export function visitLevels(world: World): void {
+  levelDeltasOf(world).restore([
+    {
+      level: 'mechanism-room',
+      entities: [
+        {
+          id: 'spawn:north-gate',
+          aspects: { door: { openness: 1, target: 1, jammed: false, broken: false } },
+        },
+        { id: 'spawn:south-door', aspects: { lock: { locked: false } } },
+      ],
+      spawned: [],
+    },
+    {
+      level: 'testbed',
+      entities: [
+        { id: 'piece:6', destroyed: true },
+        {
+          id: 'spawn:closet-door',
+          aspects: { door: { openness: 1, target: 1, jammed: false, broken: false } },
+        },
+        { id: 'spawn:testbed-draught', destroyed: true },
+        {
+          id: 'spawn:loose-crate',
+          aspects: {
+            transform: {
+              position: { x: -1.5, y: 0.5, z: -2 },
+              rotation: { x: 0, y: 0, z: 0, w: 1 },
+            },
+          },
+        },
+      ],
+      spawned: [
+        {
+          id: 'spawned:412',
+          kind: 'item',
+          data: {
+            defId: 'healing-draught',
+            count: 1,
+            flags: {},
+            position: { x: 2, y: 0.1, z: 3 },
+            rotation: { x: 0, y: 0, z: 0, w: 1 },
+          },
+        },
+      ],
+    },
+  ]);
+}
+
+/**
  * The worlds each new fixture revision saves. Add one when a system gains saved state that these do
  * not reach (for example a scenario for a new section); existing revisions keep what they had.
  */
@@ -123,6 +177,18 @@ export const FIXTURE_WORLDS: readonly FixtureWorld[] = [
     seed: 17,
     ticks: 60,
     prepare: packAnActor,
+  },
+  {
+    name: 'core-world-state',
+    description: 'core scenario after 1 s with world facts and the changes of two visited levels',
+    scenario: 'core',
+    seed: 19,
+    ticks: 60,
+    facts: {
+      'entity:testbed/closet-door.opened': true,
+      'entity:testbed/testbed-draught.looted': true,
+    },
+    prepare: visitLevels,
   },
 ];
 

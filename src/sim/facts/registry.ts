@@ -10,9 +10,13 @@ import type { FactSpec, FactStore, UndeclaredFactPolicy } from './store';
 /** One fact declaration as the content registry holds it. */
 export type FactDeclaration = GameEntry<'fact'>['facts'][number];
 
-/** The store spec of a registry declaration (`default: null` = no default: unset until written). */
+/**
+ * The store spec of a registry declaration (`default: null` = no default: unset until written), with
+ * the keys it was saved under before (`renamedFrom`, mw-e27.4) when it has any.
+ */
 export function factSpecFromDef(def: FactDeclaration): FactSpec {
-  const spec = def.type === 'enum' ? { type: def.type, values: def.values } : { type: def.type };
+  const typed = def.type === 'enum' ? { type: def.type, values: def.values } : { type: def.type };
+  const spec = def.renamedFrom === undefined ? typed : { ...typed, renamedFrom: def.renamedFrom };
   return (def.default === null ? spec : { ...spec, default: def.default }) as FactSpec;
 }
 

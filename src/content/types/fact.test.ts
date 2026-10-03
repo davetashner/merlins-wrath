@@ -72,6 +72,39 @@ describe('fact schema', () => {
     ]);
   });
 
+  it('renamedFrom lists former keys: never the key itself, templates only for templates (mw-e27.4)', () => {
+    expect(
+      problems(
+        group([
+          {
+            ...fact,
+            key: 'door.cellar.open',
+            type: 'bool',
+            default: false,
+            renamedFrom: ['cellar_door_open'],
+          },
+          {
+            ...fact,
+            key: 'entity:*.emptied',
+            type: 'bool',
+            default: false,
+            renamedFrom: ['entity:*.looted'],
+          },
+          { ...fact, key: 'a', type: 'bool', default: false, renamedFrom: ['a', 'entity:*.a'] },
+          { ...fact, key: 'entity:*.b', type: 'bool', default: false, renamedFrom: ['old-b'] },
+          { ...fact, key: 'c', type: 'bool', default: false, renamedFrom: [] },
+          { ...fact, key: 'd', type: 'bool', default: false, renamedFrom: [''] },
+        ]),
+      ),
+    ).toEqual([
+      'facts.4.renamedFrom: Too small: expected array to have >=1 items',
+      'facts.5.renamedFrom.0: Too small: expected string to have >=1 characters',
+      'facts.2.renamedFrom.0: a fact cannot be renamed from itself',
+      'facts.2.renamedFrom.1: "entity:*.a" is a template',
+      'facts.3.renamedFrom.0: "old-b" must be a template, as the key is',
+    ]);
+  });
+
   it('enum values are unique and include the default', () => {
     expect(
       problems(

@@ -4,7 +4,7 @@
 // upgraded one step at a time (N → N+1 → … → current) by the section's migrations, and only then
 // validated against the current zod schema, so a schema only ever describes the current shape.
 
-import type { ComponentType, World } from '@sim/index';
+import type { ComponentType, FactSnapshot, World } from '@sim/index';
 import type { z } from 'zod';
 import {
   MissingMigrationError,
@@ -20,6 +20,20 @@ export type SectionMigration = (data: unknown) => unknown;
 export interface SectionRecord {
   readonly version: number;
   readonly data: unknown;
+}
+
+/** What a section's `deserialize` and `missing` hooks can use besides the world (mw-e27.4). */
+export interface SectionLoadContext {
+  /**
+   * Reports something the section recovered from (a damaged part it dropped, loading the rest); it
+   * becomes a `recovered` warning of the load result.
+   */
+  warn(message: string): void;
+  /**
+   * The facts the world section held: saves from before a section owned facts (`ownsFacts`) keep
+   * them there. Undefined when it held none.
+   */
+  readonly worldFacts: FactSnapshot | undefined;
 }
 
 /**
@@ -44,6 +58,12 @@ export interface SaveSection<TData = unknown> {
    */
   readonly components?: readonly ComponentType<unknown>[];
   /**
+   * This section saves the world's facts itself (mw-e27.4): they are left out of the world section
+   * and not restored by it (the section restores them, reading older saves' facts from
+   * `context.worldFacts`). At most one section of a registry owns facts.
+   */
+  readonly ownsFacts?: boolean;
+  /**
    * `migrations[n]` upgrades data from version n to n + 1; keys must lie in [1, version − 1]. A gap
    * in the chain is reported as MissingMigrationError when a save needs it.
    */
@@ -54,7 +74,13 @@ export interface SaveSection<TData = unknown> {
    * Writes validated data into the world. Runs after the world snapshot is restored (entities exist,
    * owned components are empty) and after sections registered before it.
    */
-  deserialize(world: World, data: TData): void;
+  deserialize(world: World, data: TData, context: SectionLoadContext): void;
+  /**
+   * Runs in place of `deserialize` when the save has no record of this section (one written before
+   * the section existed), at the same point of the load. When it is defined the load raises no
+   * `missing-section` warning: the section has handled the absence.
+   */
+  missing?(world: World, context: SectionLoadContext): void;
 }
 
 const SECTION_ID = /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/;

@@ -60,6 +60,50 @@ describe('fact checks', () => {
     ]);
   });
 
+  it('rejects former keys (renamedFrom) that are still declared or claimed twice (mw-e27.4)', () => {
+    const renames = source('data/fact/renames.json', {
+      id: 'renames',
+      name: 'Renames',
+      notes: 'Test.',
+      facts: [
+        {
+          ...fact,
+          key: 'vault.unsealed',
+          type: 'bool',
+          default: false,
+          renamedFrom: ['vault.open'],
+        },
+        {
+          ...fact,
+          key: 'cellar.open',
+          type: 'bool',
+          default: false,
+          renamedFrom: ['cellar_door_open'],
+        },
+        {
+          ...fact,
+          key: 'cellar.ajar',
+          type: 'bool',
+          default: false,
+          renamedFrom: ['cellar_door_open'],
+        },
+      ],
+    });
+    expect(issuesOf([registry, renames])).toEqual([
+      {
+        file: 'data/fact/renames.json',
+        pointer: '/facts/0/renamedFrom/0',
+        message: 'fact "vault.unsealed" is renamed from "vault.open", which is still declared',
+      },
+      {
+        file: 'data/fact/renames.json',
+        pointer: '/facts/2/renamedFrom/0',
+        message:
+          'fact "cellar.ajar" is renamed from "cellar_door_open", which "cellar.open" already claims',
+      },
+    ]);
+  });
+
   it('accepts declared facts and entity keys covered by a template', () => {
     expect(
       issuesOf([

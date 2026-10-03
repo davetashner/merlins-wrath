@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Saves now keep the whole world, not just you: doors you opened, things you picked up and the
+  story's facts come back exactly as you left them, and the changes to places you have already left
+  are kept for when you return. A save made before a fact was renamed still loads with its value,
+  and if part of a save is damaged, only that place starts over as built while the rest of your
+  progress loads.
 - Choose your class when you start a new game: Knight, Archer, Sorcerer or Thief, each card showing a
   short pitch, three signature verbs and the starting kit. Highlight a class and confirm, by mouse,
   keyboard or gamepad; you start with that class's abilities, gear (worn where it belongs) and gold,

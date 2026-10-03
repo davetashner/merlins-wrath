@@ -32,8 +32,12 @@ export type FactType = (typeof FACT_TYPES)[number];
 /** A stored fact value: always a primitive, so snapshots stay plain data. */
 export type FactValue = boolean | number | string;
 
-/** A fact's declared type, with its default (read by `get` until the fact is first set). */
-export type FactSpec =
+/**
+ * A fact's declared type, with its default (read by `get` until the fact is first set) and the keys
+ * it was saved under before (`renamedFrom`, mw-e27.4): a save holding a former key loads into this
+ * one (see `currentKey` and facts/migrate.ts). A template's former keys are templates.
+ */
+export type FactSpec = (
   | { readonly type: 'bool'; readonly default?: boolean }
   | { readonly type: 'int'; readonly default?: number }
   | {
@@ -43,7 +47,11 @@ export type FactSpec =
       readonly default?: string;
     }
   | { readonly type: 'id'; readonly default?: string }
-  | { readonly type: 'tick'; readonly default?: number };
+  | { readonly type: 'tick'; readonly default?: number }
+) & { readonly renamedFrom?: readonly string[] };
+
+/** Why `FactStore.restoreProblem` would refuse a fact: not declared (under a strict policy) or invalid. */
+export type FactRestoreProblem = 'undeclared' | 'invalid';
 
 /** Plain-data fact state: key → value, keys in code-unit order. */
 export type FactSnapshot = Readonly<Record<string, FactValue>>;
@@ -82,6 +90,9 @@ export const FACT_KEY_PATTERN = new RegExp(
 
 /** A fact template: `entity:*.<fact>` declares `<fact>` for every entity of every level. */
 export const FACT_TEMPLATE_PATTERN = new RegExp(`^entity:\\*\\.${SEGMENT}(?:\\.${SEGMENT})*$`);
+
+/** What every template starts with. */
+const TEMPLATE_PREFIX = 'entity:*.';
 
 /** Captures the fact name of an entity-scoped key. */
 const ENTITY_FACT = new RegExp(`^entity:${SEGMENT}/${SEGMENT}\\.(.+)$`);
@@ -226,6 +237,8 @@ export class FactStore {
   private values = new Map<string, FactValue>();
   private readonly specs = new Map<string, FactSpec>();
   private policy: UndeclaredFactPolicy = { mode: 'infer' };
+  /** Former key (or template) → the declared key (or template) it was renamed to. */
+  private readonly formerKeys = new Map<string, string>();
   /** Writes of the open transaction, oldest first; null outside a transaction. */
   private journal: JournalEntry[] | null = null;
   /** Keys in code-unit order; null when a key was added or removed since it was built. */
@@ -266,15 +279,49 @@ export class FactStore {
         `default ${describe(spec.default)} is not of type ${spec.type}`,
       );
     }
+    const { renamedFrom: former = [], ...typed } = spec;
+    this.checkRenames(key, template, former);
     for (const [held, current] of this.values) {
       const governed = template
         ? factTemplateOf(held) === key && !this.specs.has(held)
         : held === key;
       if (governed && !accepts(spec, current)) throw new FactTypeError(held, spec.type, current);
     }
-    const copy = spec.type === 'enum' ? { ...spec, values: Object.freeze([...spec.values]) } : spec;
-    this.specs.set(key, Object.freeze({ ...copy }));
+    const copy =
+      typed.type === 'enum' ? { ...typed, values: Object.freeze([...typed.values]) } : typed;
+    const renames = former.length > 0 ? { renamedFrom: Object.freeze([...former]) } : {};
+    this.specs.set(key, Object.freeze({ ...copy, ...renames }));
+    for (const old of former) this.formerKeys.set(old, key);
     return this;
+  }
+
+  /**
+   * The key a fact saved under `key` holds now: the declared key that lists it in `renamedFrom`
+   * (for an entity-scoped key, the same entity's fact under the renamed template), else `key`
+   * itself. A key declared exactly is never renamed.
+   */
+  currentKey(key: string): string {
+    if (this.specs.has(key)) return key;
+    const exact = this.formerKeys.get(key);
+    if (exact !== undefined) return exact;
+    const template = factTemplateOf(key);
+    const renamed = template === undefined ? undefined : this.formerKeys.get(template);
+    if (template === undefined || renamed === undefined) return key;
+    const prefix = key.slice(0, key.length - template.length + TEMPLATE_PREFIX.length);
+    return prefix + renamed.slice(TEMPLATE_PREFIX.length);
+  }
+
+  /**
+   * Whether `restore` would take `value` for `key`, and why not: `invalid` for a malformed key or a
+   * value its declared (or, undeclared, inferable) type rejects; `undeclared` for an undeclared fact
+   * under the `throw` or `ignore` policy, so a fact removed from the registry leaves saves on load.
+   */
+  restoreProblem(key: string, value: unknown): FactRestoreProblem | undefined {
+    if (!isFactKey(key)) return 'invalid';
+    const spec = this.spec(key);
+    if (spec !== undefined) return accepts(spec, value) ? undefined : 'invalid';
+    if (this.policy.mode !== 'infer') return 'undeclared';
+    return inferType(value) === undefined ? 'invalid' : undefined;
   }
 
   /** The declaration governing `key` (its own, else its entity template's), if any. */
@@ -429,6 +476,33 @@ export class FactStore {
       this.values = values;
       this.order = null;
     };
+  }
+
+  /** Rejects a `renamedFrom` list that is malformed or overlaps another declaration. */
+  private checkRenames(key: string, template: boolean, former: readonly string[]): void {
+    if (this.formerKeys.has(key)) {
+      throw new FactDeclarationError(
+        key,
+        `is a former key of "${String(this.formerKeys.get(key))}"`,
+      );
+    }
+    for (const old of former) {
+      const problem =
+        old === '' || old === key
+          ? 'must be a non-empty string other than the key'
+          : isFactTemplate(old) !== template
+            ? template
+              ? 'must be a template, as the key is'
+              : 'must not be a template'
+            : this.specs.has(old)
+              ? 'is still declared'
+              : this.formerKeys.has(old) || former.indexOf(old) !== former.lastIndexOf(old)
+                ? 'is claimed twice'
+                : undefined;
+      if (problem !== undefined) {
+        throw new FactDeclarationError(key, `renamedFrom "${old}" ${problem}`);
+      }
+    }
   }
 
   /** Applies the undeclared policy to a write of `key`: true to go ahead, false to drop it. */
