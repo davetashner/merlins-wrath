@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "testbed",
   "name": "Greybox testbed",
-  "description": "The default scene: a room with an ivy-covered climbing wall up to a ledge, a wooden target board on the back wall for arrows and a locked closet in the east wall whose key lies nearby, a narrow corridor with pillars and a hazard strip, and an arena with pillars, a ramp, platforms and three training dummies to lock on to.",
+  "description": "The default scene: a room with an ivy-covered climbing wall up to a ledge, a wooden target board on the back wall for arrows and a locked closet in the east wall whose key lies nearby, a supply chest to loot, a narrow corridor with pillars and a hazard strip, and an arena with pillars, a ramp, platforms and three training dummies to lock on to.",
   "grid": 1,
   "camera": {
     "position": [-14, 20, -14],
@@ -295,6 +295,11 @@
       "at": [-3, 0, 23],
       "yaw": 180,
       "targetable": "training-dummy"
+    },
+    {
+      "id": "supply-chest",
+      "at": [-2, 0, 1],
+      "container": { "loot": "testbed-supply-crate" }
     }
   ],
   "light": {

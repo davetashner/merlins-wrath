@@ -38,6 +38,7 @@ import {
   startConsumables,
   startWorldItems,
 } from '@game/items/index';
+import { hasContainers, prepareContainers, startContainers } from '@game/items/containers';
 import { hasMechanisms, startMechanisms } from '@game/mechanisms/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
 import { installGamePhysics, playerFocus } from '@game/physics-objects';
@@ -166,6 +167,8 @@ export interface HeadlessGame<TInput> {
   readonly consumables: Consumables;
   /** The scene's doors and switches (mw-e03.18), or undefined in a scene without mechanisms. */
   readonly mechanisms: SceneMechanisms | undefined;
+  /** The scene's containers (mw-e18.3), in scene order. */
+  readonly containers: readonly EntityId[];
   /** The creatures content has, and what the scene's creature spawns spawned (mw-e12.4). */
   readonly creatures: GameCreatures;
   readonly sceneCreatures: SceneCreatures;
@@ -184,7 +187,7 @@ export function createTestbedWorld(
 /**
  * Scene `scene` (default the testbed) with the player, wired as src/main.ts wires it — debug
  * commands with the sandbox's and creatures' spawners, the combat sandbox rules, physics, the
- * player, combat, world items, mechanisms and creatures — minus the renderer. The combat sandbox's and creatures' e2e-free
+ * player, combat, world items, mechanisms, containers and creatures — minus the renderer. The combat sandbox's and creatures' e2e-free
  * tests (tests/integration) run on it. `content` defaults to the game's; debug builds pass the dev
  * content (src/content/dev-content.ts), which has the fixture creatures.
  */
@@ -279,6 +282,10 @@ export function createGameWorld<TInput>(
         occluders: new InMemoryColliderSink(),
       })
     : undefined;
+  // Containers (mw-e18.3) in scenes that have them, after mechanisms (which unlock a locked chest).
+  const containers = hasContainers(scene.layout)
+    ? startContainers(world, prepareContainers(content, items.inventory), scene, content)
+    : [];
   const sceneCreatures = startCreatures(world, creatures, combat, scene.layout.spawns);
   return {
     world,
@@ -288,6 +295,7 @@ export function createGameWorld<TInput>(
     items,
     consumables,
     mechanisms,
+    containers,
     creatures,
     sceneCreatures,
     sync,

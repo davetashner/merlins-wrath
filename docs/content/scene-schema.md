@@ -180,6 +180,13 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].switch.kind` | `"lever"` \| `"button"` \| `"crank"` \| `"wheel"` | required | lever, button, crank or wheel. |
 | `spawns[].switch.positions` | integer 2–8 | — | Positions it steps through (crank and wheel; a lever has 2, a button none). |
 | `spawns[].switch.initial` | integer ≥ 0 | `0` | Position it starts in (0 = off). |
+| `spawns[].container` | object | — | Makes the spawned entity a lootable container: loot table, contents and lock (mw-e18.3). |
+| `spawns[].container.loot` | ref → loot-table | — | Loot table rolled into it the first time it is opened (once; saves keep the result). |
+| `spawns[].container.contents` | list of object | — | What it holds from the start, before any roll. |
+| `spawns[].container.contents[].item` | ref → item | required | An item it holds from the start. |
+| `spawns[].container.contents[].count` | integer 1–9999 | `1` | Units of it; default 1. |
+| `spawns[].container.lock` | ref → lock | — | The lock it carries: unlocked and picked like a door’s (mw-e03.18). |
+| `spawns[].container.locked` | boolean | — | Starts locked; defaults to true when it has a lock (needs one). |
 | `light` | object | — | Static lighting: ambient level, ambient zones, directional lights (mw-e03.37). |
 | `light.ambient` | number 0–1 | — | Ambient level wherever no ambient zone applies, 0–1. |
 | `light.ambientZones` | list of object | `[]` | Boxes with their own ambient level; later zones win where they overlap. |

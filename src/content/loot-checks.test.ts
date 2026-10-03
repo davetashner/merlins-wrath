@@ -235,8 +235,8 @@ describe('loot-table validator (mw-e18.2)', () => {
     ];
     const found = lootTableProblems(entries);
     expect(warnings(entries)).toEqual([
-      't/orphan.json#: loot-table:orphan is not referenced by any creature or loot table',
-      't/ouroboros.json#: loot-table:ouroboros is not referenced by any creature or loot table',
+      't/orphan.json#: loot-table:orphan is not referenced by any creature, container or loot table',
+      't/ouroboros.json#: loot-table:ouroboros is not referenced by any creature, container or loot table',
     ]);
     expect(found.errors.map((e) => e.message)).toEqual([
       'loot-table:ouroboros entries[0] closes a cycle of nested tables: ouroboros > ouroboros',
@@ -255,5 +255,63 @@ describe('loot-table validator (mw-e18.2)', () => {
     ]);
     expect(entries.some((e) => e.type === 'loot-table')).toBe(true);
     expect(lootTableProblems(entries).errors).toEqual([]);
+  });
+});
+
+/** A scene whose spawns are containers: spawn id → its loot table and contents. */
+const scene = (
+  id: string,
+  containers: Record<string, { loot?: string; contents?: [string, number][] }>,
+): LoadedEntry => {
+  const value = {
+    id,
+    spawns: [
+      { id: 'marker' },
+      ...Object.entries(containers).map(([spawn, { loot, contents = [] }]) => ({
+        id: spawn,
+        container: {
+          ...(loot !== undefined && { loot: { id: loot } }),
+          contents: contents.map(([item, count]) => ({ item: { id: item }, count })),
+        },
+      })),
+    ],
+  };
+  return { type: 'scene', file: `s/${id}.json`, value };
+};
+
+describe('loot-table validator: scene containers (mw-e18.3)', () => {
+  it('a container rolling a table references it; one naming a missing table fails', () => {
+    const entries = [
+      item('bread'),
+      table({ id: 'pantry', guaranteed: [{ item: 'bread' }] }),
+      scene('cellar', { larder: { loot: 'pantry' }, crate: { loot: 'nowhere' }, shelf: {} }),
+    ];
+    expect(warnings(entries)).toEqual([]);
+    expect(errors(entries)).toEqual([
+      's/cellar.json#/spawns/2/container/loot: scene:cellar/crate loot names missing loot-table "nowhere"',
+    ]);
+  });
+
+  it('a unique item counts once per container that rolls its table, and once per container holding it', () => {
+    const entries = [
+      item('bread'),
+      item('crown', true),
+      table({ id: 'regalia', guaranteed: [{ item: 'crown' }] }),
+      scene('keep', {
+        throne: { loot: 'regalia' },
+        vault: {
+          contents: [
+            ['crown', 2],
+            ['bread', 3],
+          ],
+        },
+      }),
+    ];
+    expect(errors(entries)).toEqual([
+      's/keep.json#/spawns/2/container/contents/0/count: scene:keep/vault contents[0] holds 2 of unique item "crown"; a unique item drops once',
+      't/regalia.json#/guaranteed/0: unique item "crown" is guaranteed in 2 placements; it may be guaranteed in at most one: scene:keep/throne (via loot-table:regalia guaranteed[0]), scene:keep/vault contents[0]',
+    ]);
+    const once = [item('crown', true), scene('keep', { vault: { contents: [['crown', 1]] } })];
+    expect(errors(once)).toEqual([]);
   });
 });

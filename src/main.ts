@@ -50,6 +50,12 @@ import {
   startWorldItems,
 } from '@game/items/index';
 import {
+  ContainerWatch,
+  hasContainers,
+  prepareContainers,
+  startContainers,
+} from '@game/items/containers';
+import {
   doorLeafLooks,
   hasMechanisms,
   MechanismWatch,
@@ -1019,6 +1025,25 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
         };
         drawMechanisms();
         afterStep.push(drawMechanisms);
+      }
+      // Containers (mw-e18.3): only in scenes that have them, after world items (they share the
+      // inventory rules) and mechanisms (which unlock a locked chest). Interact on one takes
+      // everything; the e2e reads what each holds from #app[data-containers].
+      if (hasContainers(loaded.layout)) {
+        const made = startContainers(
+          world,
+          prepareContainers(content, worldItems.inventory),
+          loaded,
+          content,
+        );
+        const watch = new ContainerWatch(world, made);
+        let publishedContainers = '';
+        const drawContainers = (): void => {
+          const json = JSON.stringify(watch.readout());
+          if (json !== publishedContainers) root.dataset['containers'] = publishedContainers = json;
+        };
+        drawContainers();
+        afterStep.push(drawContainers);
       }
       // The scene's creature spawns (mw-e12.4), after combat so they are hittable and lockable. A
       // spawn naming a creature or faction that does not exist is reported, not fatal.

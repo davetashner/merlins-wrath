@@ -46,7 +46,7 @@ export const doorBlocked = defineEvent<DoorBlocked>('doorBlocked');
 /** A lock was opened. */
 export interface LockUnlocked {
   readonly tick: number;
-  /** The door the lock is on. */
+  /** What the lock is on: a door, a chest (mw-e18.3). */
   readonly entity: EntityId;
   readonly lock: string;
   readonly by: UnlockMethod;
@@ -64,7 +64,7 @@ export const lockUnlocked = defineEvent<LockUnlocked>('lockUnlocked');
  */
 export interface LockOpened {
   readonly tick: number;
-  /** The door the lock is on. */
+  /** What the lock is on: a door, a chest (mw-e18.3). */
   readonly entity: EntityId;
   readonly lock: string;
   /** The key item that opened it. */

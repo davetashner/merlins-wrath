@@ -8,7 +8,9 @@
 //   plugs in), and it opens straight away; pull a lever, press a button, turn a crank or wheel.
 //   Unlock is gated on the keyring (mw-e17.5): without a fitting key (or on a sealed lock) it is
 //   offered greyed with the lock's hint, so Interact moves on to Pick lock or does nothing. A key
-//   that opens its lock fires `lock.opened` with the key, and a single-use key is used up.
+//   that opens its lock fires `lock.opened` with the key, and a single-use key is used up. A lock on
+//   anything that is not a door (a chest, src/sim/loot/containers.ts) is unlocked and picked the
+//   same way; whatever carries it decides what unlocking lets the actor do.
 // - Signals (`signalReceived`): a `door` or `mechanism` receiver bound to a door opens it while its
 //   input is on and closes it when it goes off (a lever, a pressure plate, a shot bell, mw-e05.13);
 //   one bound to a switch sets it. A switch drives every lever and button node bound to it.
@@ -165,14 +167,20 @@ export function doorShutsOut(world: World<never>, entity: EntityId): DoorBlocks 
   return door !== undefined && doorState(door) === 'closed' ? door.blocks : NONE;
 }
 
+/**
+ * The affordances a locked lock offers on whatever carries it (a door, a chest): Unlock, gated on
+ * the keyring, and Pick lock, gated on lockpicks, unless the lock is sealed or cannot be picked.
+ */
+export function lockAffordances(lock: Lock): AffordanceSpec[] {
+  const unlock: AffordanceSpec = { verb: 'unlock', label: 'Unlock' };
+  if (lock.sealed || lock.pickTier === null) return [unlock];
+  return [unlock, { verb: 'pick-lock', requires: [{ capability: LOCKPICK_CAPABILITY }] }];
+}
+
 /** The affordances a door offers in its state (none for a broken door or a shut signal door). */
 export function doorAffordances(door: Door, lock: Lock | undefined): AffordanceSpec[] {
   if (door.broken) return [];
-  if (lock?.locked === true) {
-    const unlock: AffordanceSpec = { verb: 'unlock', label: 'Unlock' };
-    if (lock.sealed || lock.pickTier === null) return [unlock];
-    return [unlock, { verb: 'pick-lock', requires: [{ capability: LOCKPICK_CAPABILITY }] }];
-  }
+  if (lock?.locked === true) return lockAffordances(lock);
   if (!door.manual) return [];
   return door.target === 1
     ? [{ verb: 'close', label: 'Close door' }]
@@ -787,7 +795,12 @@ export function installMechanisms<TInput>(
         return;
       }
       const door = w.get(target, DoorComponent);
-      if (door === undefined) return;
+      if (door === undefined) {
+        // A lock on something else (a chest, mw-e18.3) yields the same way; its owner opens it.
+        if (verb === 'unlock') tryKey(w, target, actor, rules);
+        else if (verb === 'pick-lock') tryPick(w, target, actor, rules);
+        return;
+      }
       switch (verb) {
         case 'unlock':
           if (tryKey(w, target, actor, rules) && door.manual) openDoor(w, target, actor);
