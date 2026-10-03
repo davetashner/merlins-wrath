@@ -2,11 +2,14 @@
 // lock must match this build's save sections, and every committed fixture — from every revision,
 // oldest first — must load through the current migration chain into a world that passes its
 // invariants. On failure the message says exactly what to do (bump + migrate + pnpm save:fixture).
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { loadGameContent } from '@content/index';
+import { decodeSave } from '@game/save/format';
 import { createGameSaveRegistry } from '@game/save/sections';
-import { captureInventories } from '@sim/index';
+import { captureInventories, levelDeltasOf, replayScenarios, type WorldSnapshot } from '@sim/index';
 import { checkSaveFixtures, listFixtures, loadFixtureFile } from '@tools/save-fixtures/files';
+import { parseFixture } from '@tools/save-fixtures/fixtures';
 
 const root = process.cwd();
 const fixtures = Object.values(listFixtures(root)).flat();
@@ -41,5 +44,46 @@ describe('inventory fixture (mw-e17.8)', () => {
     expect(slot?.defId).toBe('healing-draught');
     const bound = actor?.inventory?.items.find((item) => item.instanceId === slot?.instanceId);
     expect(bound).toMatchObject({ defId: 'healing-draught', count: 10 });
+  });
+});
+
+describe('world state fixtures (mw-e27.4)', () => {
+  const previous = fixtures.filter((path) => path.includes('/4/'));
+
+  it.each(previous)(
+    'AC-5: %s, written by the previous release, loads in the current build without error',
+    (path) => {
+      const fixture = parseFixture(JSON.parse(readFileSync(path, 'utf8')));
+      const registry = createGameSaveRegistry();
+      const world = replayScenarios[fixture.scenario]?.create({ seed: fixture.seed, hz: 60 });
+      if (world === undefined) throw new Error(`no scenario ${fixture.scenario}`);
+      const result = registry.read(world, Buffer.from(fixture.save, 'base64'));
+      if (!result.ok) throw result.error;
+      // No world-facts or level-deltas section yet: their missing hooks take over, unwarned.
+      expect(result.warnings).toEqual([]);
+      expect(levelDeltasOf(world).levels()).toEqual([]);
+      // The facts the world section held are in the store, and the next save moves them.
+      const decoded = decodeSave(Buffer.from(fixture.save, 'base64'));
+      const saved = decoded.ok ? (decoded.envelope.sections['world']?.data as WorldSnapshot) : null;
+      expect(world.facts.snapshot()).toEqual(saved?.facts ?? {});
+      expect(world.tick).toBe(fixture.ticks);
+    },
+  );
+
+  it('the world-state fixture brings back its facts and both levels’ changes', () => {
+    const { world } = loadFixtureFile(
+      root,
+      'tests/save-fixtures/5/core-world-state.json',
+      createGameSaveRegistry(),
+    );
+    expect(world.facts.get('entity:testbed/closet-door.opened')).toBe(true);
+    const store = levelDeltasOf(world);
+    expect(store.levels()).toEqual(['mechanism-room', 'testbed']);
+    expect(store.deltas('testbed')?.entities.map(({ id }) => id)).toEqual([
+      'piece:6',
+      'spawn:closet-door',
+      'spawn:testbed-draught',
+      'spawn:loose-crate',
+    ]);
   });
 });

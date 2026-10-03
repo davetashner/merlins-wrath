@@ -14,6 +14,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `facts[].key` | string | required | Fact key, or an `entity:*.<fact>` template for a fact every entity can hold. |
 | `facts[].description` | string | required | What the fact records, when it changes and what reads it (designers, owner review). |
 | `facts[].owner` | id | required | System that writes the fact, e.g. "signals", "quest", "interaction". |
+| `facts[].renamedFrom` | list of string (at least 1) | — | Keys this fact was saved under before (any older spelling; for a template, older templates). A save holding one loads into this key with its value (mw-e27.4); never remove an entry once a build shipped it. |
 | `facts[].persistence` | `"permanent"` | `"permanent"` | How long a written value lasts; `permanent` keeps it in saves forever. |
 | `facts[].type` | `"bool"` | required | A true/false flag. |
 | `facts[].default` | boolean | required | Value read before the fact is first written. |

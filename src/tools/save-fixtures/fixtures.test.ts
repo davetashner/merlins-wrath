@@ -92,7 +92,7 @@ describe('fixture worlds', () => {
 
   it('records the section versions and round-trips through its file form', () => {
     const fixture = fixtureWith(withInventory());
-    expect(fixture.sections).toEqual({ world: 3, inventory: 1 });
+    expect(fixture.sections).toEqual({ world: 4, inventory: 1 });
     const text = serializeFixture(fixture);
     expect(text.endsWith('\n')).toBe(true);
     expect(parseFixture(JSON.parse(text))).toEqual(fixture);

@@ -43,6 +43,15 @@
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
                 "description": "System that writes the fact, e.g. \"signals\", \"quest\", \"interaction\"."
               },
+              "renamedFrom": {
+                "description": "Keys this fact was saved under before (any older spelling; for a template, older templates). A save holding one loads into this key with its value (mw-e27.4); never remove an entry once a build shipped it.",
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
               "persistence": {
                 "default": "permanent",
                 "description": "How long a written value lasts; `permanent` keeps it in saves forever.",
@@ -86,6 +95,15 @@
                 "type": "string",
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
                 "description": "System that writes the fact, e.g. \"signals\", \"quest\", \"interaction\"."
+              },
+              "renamedFrom": {
+                "description": "Keys this fact was saved under before (any older spelling; for a template, older templates). A save holding one loads into this key with its value (mw-e27.4); never remove an entry once a build shipped it.",
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
               },
               "persistence": {
                 "default": "permanent",
@@ -132,6 +150,15 @@
                 "type": "string",
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
                 "description": "System that writes the fact, e.g. \"signals\", \"quest\", \"interaction\"."
+              },
+              "renamedFrom": {
+                "description": "Keys this fact was saved under before (any older spelling; for a template, older templates). A save holding one loads into this key with its value (mw-e27.4); never remove an entry once a build shipped it.",
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
               },
               "persistence": {
                 "default": "permanent",
@@ -188,6 +215,15 @@
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
                 "description": "System that writes the fact, e.g. \"signals\", \"quest\", \"interaction\"."
               },
+              "renamedFrom": {
+                "description": "Keys this fact was saved under before (any older spelling; for a template, older templates). A save holding one loads into this key with its value (mw-e27.4); never remove an entry once a build shipped it.",
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
               "persistence": {
                 "default": "permanent",
                 "description": "How long a written value lasts; `permanent` keeps it in saves forever.",
@@ -239,6 +275,15 @@
                 "type": "string",
                 "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
                 "description": "System that writes the fact, e.g. \"signals\", \"quest\", \"interaction\"."
+              },
+              "renamedFrom": {
+                "description": "Keys this fact was saved under before (any older spelling; for a template, older templates). A save holding one loads into this key with its value (mw-e27.4); never remove an entry once a build shipped it.",
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
               },
               "persistence": {
                 "default": "permanent",

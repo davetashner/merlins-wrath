@@ -75,6 +75,7 @@ import {
   createGameLoop,
   object3DBinding,
 } from '@game/loop/index';
+import { installFactRegistry } from '@game/facts';
 import { bootPhysics } from '@game/physics-loader';
 import {
   formatBudgetWarning,
@@ -154,18 +155,24 @@ import {
   installDebugCommands,
   LineOfSight,
   LEDGE_HANG_CAPABILITY,
+  levelDeltasOf,
+  persistDroppedItems,
   physicsBodiesOf,
   PhysicsObjectComponent,
   playerStart,
   RapierCollisionWorld,
   RapierSightWorld,
   creaturesInstalled,
+  registerPersistence,
   registerSceneComponents,
+  sceneAuthoredEntities,
   SceneSpawnComponent,
   SpilledComponent,
   testPropSpawners,
   tuneCommand,
   World,
+  WorldPersistence,
+  worldItemSpawner,
   zeroHealth,
   type ActionFrame,
   type DebugCommand,
@@ -428,6 +435,9 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
   // out of the initial bundle.
   const startWorld = (physics: RapierPhysics, content: GameContent): void => {
     const world = registerSceneComponents(new World<GameCommand>({ seed: BOOT_SEED, physics }));
+    // The fact registry (mw-e27.2) on the world's facts: typed declarations, and the former keys
+    // that let a save's renamed facts load under their current keys (mw-e27.4).
+    installFactRegistry(world.facts, content);
     // The knight's sword and shield (mw-e04.6): moves, socket tracks, the wood shield and the
     // damage model with the shield rule; and the combat sandbox's tuning (mw-e04.9).
     const combat = prepareTestbedCombat(content);
@@ -1088,6 +1098,22 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
         const centre = playerStart(loaded.layout.spawns)?.position ?? { x, y, z };
         vfxDemo = new VfxDemo(vfx, vfxMode, centre);
       }
+      // Level deltas (mw-e27.3, mw-e27.4): with everything the scene spawned in place, before the
+      // first tick, the level's baseline is taken and any changes stored for it are applied. Saves
+      // capture how the level differs from it; dropped items persist with the level.
+      registerPersistence(world);
+      levelDeltasOf(world).enter(
+        world,
+        new WorldPersistence({
+          spawners: [worldItemSpawner(worldItems)],
+          warn: (message) => {
+            console.warn(message);
+          },
+        }),
+        scene.id,
+        sceneAuthoredEntities(world, loaded),
+      );
+      persistDroppedItems(world, () => scene.id);
       label.textContent = sceneLabel(scene, __BUILD_SHA__);
       root.dataset['scene'] = scene.id;
     } else {
@@ -1124,6 +1150,11 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
           describe: () => ({ characterName: 'Knight', classId: 'knight', areaId: areaId ?? '' }),
           publish: (readout) => {
             root.dataset[READOUT_ATTRIBUTE[readout.kind]] = JSON.stringify(readout);
+            // The level changes a save holds, and the loaded level's changes after a load
+            // (mw-e27.4): the e2e reads them from #app[data-level-deltas].
+            if (readout.kind !== 'death') {
+              root.dataset['levelDeltas'] = JSON.stringify(levelDeltasOf(world).capture(world));
+            }
           },
           warn: (message) => {
             console.warn(message);

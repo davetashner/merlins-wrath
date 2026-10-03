@@ -83,7 +83,12 @@ describe('pnpm save:fixture / save:check', () => {
   it('defaultIo writes to the console and uses the game registry', () => {
     const real = defaultIo('/repo');
     expect(real.cwd).toBe('/repo');
-    expect(real.registry().sections.map((s) => s.id)).toEqual(['world', 'inventory']);
+    expect(real.registry().sections.map((s) => s.id)).toEqual([
+      'world',
+      'inventory',
+      'world-facts',
+      'level-deltas',
+    ]);
     expect(real.worlds.length).toBeGreaterThan(0);
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);

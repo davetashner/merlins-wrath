@@ -2,7 +2,7 @@
 // having if content cannot name a fact it doesn't declare. After every file has parsed, these checks
 // report keys declared twice across registry files, and every fact a content file names that the
 // registry does not declare (exactly or by an `entity:*` template), naming the file, the JSON pointer
-// and the fact. Each content type that names facts registers where it does so in FACT_USAGES:
+// and the fact, and former keys (`renamedFrom`) that are still declared or claimed twice. Each content type that names facts registers where it does so in FACT_USAGES:
 // signal graphs today; dialogue (mw-e22) and quests (mw-e23) add a line. Facts named inside
 // conditions are checked, with their operators, by src/content/condition-checks.ts (mw-e27.5).
 
@@ -65,13 +65,44 @@ function duplicateKeys(groups: readonly LoadedEntry[]): ContentIssue[] {
 }
 
 /**
- * The content check for facts: registry keys are unique across files, and every fact named by
- * content is well formed and declared.
+ * Former keys (`renamedFrom`, mw-e27.4) that would make a saved fact ambiguous: one still declared,
+ * or one claimed by two declarations.
+ */
+function formerKeyIssues(groups: readonly LoadedEntry[], index: FactIndex): ContentIssue[] {
+  const claimedBy = new Map<string, string>();
+  const issues: ContentIssue[] = [];
+  for (const { file, value } of groups) {
+    (value as FactGroup).facts.forEach(({ key, renamedFrom = [] }, i) => {
+      renamedFrom.forEach((old, j) => {
+        const pointer = `/facts/${String(i)}/renamedFrom/${String(j)}`;
+        const claimant = claimedBy.get(old);
+        if (index.has(old)) {
+          issues.push({
+            file,
+            pointer,
+            message: `fact "${key}" is renamed from "${old}", which is still declared`,
+          });
+        } else if (claimant !== undefined) {
+          issues.push({
+            file,
+            pointer,
+            message: `fact "${key}" is renamed from "${old}", which "${claimant}" already claims`,
+          });
+        } else claimedBy.set(old, key);
+      });
+    });
+  }
+  return issues;
+}
+
+/**
+ * The content check for facts: registry keys are unique across files, former keys are unambiguous,
+ * and every fact named by content is well formed and declared.
  */
 export const checkFacts: ContentCheck = (entries) => {
   const groups = entries.filter((entry) => entry.type === 'fact');
   const index = factIndex(groups.map((entry) => entry.value as FactGroup));
-  const issues = duplicateKeys(groups);
+  const issues = [...duplicateKeys(groups), ...formerKeyIssues(groups, index)];
   for (const { type, file, value } of entries) {
     const usages = Object.hasOwn(FACT_USAGES, type) ? FACT_USAGES[type] : undefined;
     for (const { pointer, key } of usages?.(value as never) ?? []) {

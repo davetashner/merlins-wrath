@@ -165,6 +165,7 @@ describe('declareFacts', () => {
     { ...common, key: 'bell.cast-by', type: 'id', default: 'npc-horn' },
     { ...common, key: 'bell.last-rung', type: 'tick', default: null },
     { ...common, key: 'entity:*.looted', type: 'bool', default: false },
+    { ...common, key: 'vault.open', type: 'bool', default: false, renamedFrom: ['vault_open'] },
   ];
 
   it('maps registry declarations to store specs; null defaults mean unset', () => {
@@ -176,6 +177,7 @@ describe('declareFacts', () => {
       { type: 'id', default: 'npc-horn' },
       { type: 'tick' },
       { type: 'bool', default: false },
+      { type: 'bool', default: false, renamedFrom: ['vault_open'] },
     ]);
   });
 

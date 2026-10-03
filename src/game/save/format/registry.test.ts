@@ -437,3 +437,65 @@ describe('SaveRegistry', () => {
     ).toThrow(RangeError);
   });
 });
+
+describe('section load hooks (mw-e27.4)', () => {
+  /** A section that owns the world's facts, recording what its hooks saw. */
+  function factsSection(seen: string[]): SaveSection<Record<string, boolean>> {
+    return {
+      id: 'facts',
+      version: 1,
+      schema: z.record(z.string(), z.boolean()),
+      ownsFacts: true,
+      serialize: (world) => Object.fromEntries(world.facts.entries()) as Record<string, boolean>,
+      deserialize: (world, facts, context) => {
+        seen.push(`deserialize ${JSON.stringify(context.worldFacts ?? null)}`);
+        context.warn('dropped one');
+        world.facts.prepareRestore({ ...context.worldFacts, ...facts })();
+      },
+      missing: (world, context) => {
+        seen.push(`missing ${JSON.stringify(context.worldFacts ?? null)}`);
+        world.facts.prepareRestore(context.worldFacts)();
+      },
+    };
+  }
+
+  it('a facts-owning section takes the facts out of the world section and restores them', () => {
+    const seen: string[] = [];
+    const registry = new SaveRegistry().register(factsSection(seen));
+    const world = new World({ seed: 2 });
+    world.facts.set('gate.open', true);
+    const bytes = registry.write(world, options);
+    const decoded = decodeSave(bytes);
+    expect(decoded.ok && decoded.envelope.sections[WORLD_SECTION_ID]?.data).not.toHaveProperty(
+      'facts',
+    );
+    expect(decoded.ok && decoded.envelope.sections['facts']?.data).toEqual({ 'gate.open': true });
+    const target = new World({ seed: 9 });
+    const result = registry.read(target, bytes);
+    expect(result.ok && result.warnings).toEqual([
+      { kind: 'recovered', section: 'facts', message: 'dropped one' },
+    ]);
+    expect(seen).toEqual(['deserialize null']);
+    expect(hashWorld(target)).toBe(hashWorld(world));
+  });
+
+  it('an older save keeps its facts in the world section; the missing hook gets them, unwarned', () => {
+    const world = new World({ seed: 2 });
+    world.facts.set('gate.open', true);
+    const old = new SaveRegistry().write(world, options);
+    const seen: string[] = [];
+    const target = new World({ seed: 9 });
+    target.facts.set('stale.fact', false);
+    const result = new SaveRegistry().register(factsSection(seen)).read(target, old);
+    expect(result.ok && result.warnings).toEqual([]);
+    expect(seen).toEqual(['missing {"gate.open":true}']);
+    expect(target.facts.snapshot()).toEqual({ 'gate.open': true });
+  });
+
+  it('allows one facts-owning section per registry', () => {
+    const registry = new SaveRegistry().register(factsSection([]));
+    expect(() => registry.register({ ...factsSection([]), id: 'more-facts' })).toThrow(
+      'world facts are already saved by section "facts"',
+    );
+  });
+});

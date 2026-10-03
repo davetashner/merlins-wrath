@@ -48,6 +48,29 @@
           "fingerprint": "sha256:189da40834cb8897c29d12322457a629388f1363536b78601fe6a6f88ca4f1dc"
         }
       }
+    },
+    {
+      "revision": 5,
+      "formatVersion": 1,
+      "saveSchemaVersion": 1,
+      "sections": {
+        "inventory": {
+          "version": 1,
+          "fingerprint": "sha256:cf95c1be53add37cb3c76b6fff830dae72b1536b8c19ff9aeba8c36a0fd52c79"
+        },
+        "level-deltas": {
+          "version": 1,
+          "fingerprint": "sha256:72e50a37e2977d06a9f89d8f60fabaeaa284584d3e5b07b3d1b0f538cfc017e8"
+        },
+        "world": {
+          "version": 4,
+          "fingerprint": "sha256:189da40834cb8897c29d12322457a629388f1363536b78601fe6a6f88ca4f1dc"
+        },
+        "world-facts": {
+          "version": 1,
+          "fingerprint": "sha256:fbc6c8a56bb9720b7253c54c07edc39772d5ca787fca646ab167bc8b4eb48b75"
+        }
+      }
     }
   ]
 }

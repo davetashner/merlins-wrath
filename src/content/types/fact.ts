@@ -59,6 +59,13 @@ const common = {
       'What the fact records, when it changes and what reads it (designers, owner review).',
     ),
   owner: contentId.describe('System that writes the fact, e.g. "signals", "quest", "interaction".'),
+  renamedFrom: z
+    .array(z.string().min(1))
+    .min(1)
+    .optional()
+    .describe(
+      'Keys this fact was saved under before (any older spelling; for a template, older templates). A save holding one loads into this key with its value (mw-e27.4); never remove an entry once a build shipped it.',
+    ),
   persistence: z
     .enum(FACT_PERSISTENCE)
     .default('permanent')
@@ -116,6 +123,16 @@ export const factSchema = z
       };
       if (seen.has(fact.key)) issue(['key'], `"${fact.key}" is declared twice in this file`);
       seen.add(fact.key);
+      const template = FACT_TEMPLATE_PATTERN.test(fact.key);
+      fact.renamedFrom?.forEach((old, i) => {
+        if (old === fact.key) issue(['renamedFrom', i], 'a fact cannot be renamed from itself');
+        else if (FACT_TEMPLATE_PATTERN.test(old) !== template) {
+          issue(
+            ['renamedFrom', i],
+            template ? `"${old}" must be a template, as the key is` : `"${old}" is a template`,
+          );
+        }
+      });
       if (fact.type !== 'enum') return;
       fact.values.forEach((value, i) => {
         if (fact.values.indexOf(value) !== i) issue(['values', i], `duplicate value "${value}"`);
