@@ -19,12 +19,19 @@ export interface Blackboard {
   awareness: number;
   /** Where the thing it noticed is, or null. */
   stimulus: Vec3 | null;
+  /** The tick a stimulus was last written, -1 = never (`timeoutFrom: "stimulus"` counts from it). */
+  stimulusTick: number;
   /** The entity it is after, or null. */
   target: EntityId | null;
   /** Whether it sees its target now. */
   targetVisible: boolean;
   /** The tick it last saw its target, -1 = never. */
   targetSeenTick: number;
+  /**
+   * Where it believes its target is (last-known position), or null: where it last saw it, or, struck
+   * from the unseen, a guess back along the blow's direction (mw-e11.7; target memory is mw-e11.8).
+   */
+  lkp: Vec3 | null;
   /** The patrol waypoint it walks toward next. */
   waypoint: number;
 }
@@ -70,6 +77,13 @@ export interface Brain {
   blackboard: Blackboard;
   /** What it is aware of, one record per perceived source, by source (awareness.ts). */
   awareness: AwarenessRecord[];
+  /**
+   * The tick its heightened baseline ends, -1 = none (mw-e11.7): standing down from a `postAlert`
+   * state, it stays on edge for a while (`isPostAlert`).
+   */
+  postAlertUntil: number;
+  /** Awareness accumulation multiplier while on edge (1 otherwise). */
+  postAlertRate: number;
 }
 
 /** The brain component. */
@@ -85,7 +99,7 @@ export interface AlertStateChange {
   readonly cause: string;
 }
 
-/** An agent's alert state changed (mw-e11.7 consumes it; emitted on every transition). */
+/** An agent's alert state changed (mw-e11.7; emitted on every transition, from the table only). */
 export const AlertStateChanged = defineEvent<AlertStateChange>('aiAlertStateChanged');
 
 /** A `play-cue` step: presentation (barks, animations, VFX) reacts to it. */

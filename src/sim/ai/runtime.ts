@@ -7,13 +7,19 @@
 //    budget are owed a think and get it on the next ticks before newly due agents, the one that has
 //    waited longest (earliest last think, then lowest id) first.
 //    A think first moves the machine (the state's timeout, then its transitions in listed order; at
-//    most one transition, emitting AlertStateChanged), then scores the state's activities
+//    most one transition, emitting AlertStateChanged; mw-e11.7), then scores the state's activities
 //    (weight × Π curve(input); +inertia for the running one; ties to the earlier-listed; a score of
 //    0 never wins; an activity that failed is excluded for its retryAfterS) and switches to the best
 //    unless the running one is not interruptible.
 // 2. Act. Every agent with a running activity runs its current step, every tick, in ascending
 //    entity id. Steps that finish at once chain within the tick. The last step's success makes the
 //    activity `done`, a step's failure makes it `failed`; either is read by the next think.
+//
+// The alert machine (mw-e11.7) takes only moves its table lists. A timeout counts from entering the
+// state, or with `timeoutFrom: "stimulus"` from the later of that and the last stimulus. Standing
+// down to unaware from a `postAlert` state puts the agent on edge for `postAlertS` (awareness builds
+// `postAlertAwarenessRate` times faster, awareness.ts); standing down from a calmer state leaves a
+// running window alone. The window is cleared by the first think after it ends.
 //
 // All brain state is plain data in `ai.brain`. A despawned agent's brain leaves with it at the end
 // of the tick, so from then on nothing runs for it; an agent whose behaviour this world does not
@@ -30,6 +36,7 @@ import {
   type BehaviourTable,
   type CompiledActivity,
   type CompiledBehaviour,
+  type CompiledState,
 } from './behaviour';
 import { AlertStateChanged, BrainComponent, type Blackboard, type Brain } from './components';
 import { straightLineNavigation, type AiNavigation } from './navigation';
@@ -76,9 +83,22 @@ function begin(view: AgentView, activity: CompiledActivity): void {
   startStep(view, at(activity.steps, 0));
 }
 
-function enter(view: AgentView, to: AlertState, cause: string): void {
+/** Ticks `brain` has been in `state` by its timeout's clock. */
+function timeoutClock(view: AgentView, state: CompiledState): number {
+  const { enteredTick, blackboard } = view.brain;
+  const since = state.timeoutFromStimulus
+    ? Math.max(enteredTick, blackboard.stimulusTick)
+    : enteredTick;
+  return view.tick - since;
+}
+
+function enter(view: AgentView, from: CompiledState, to: AlertState, cause: string): void {
   const brain = view.brain;
-  const from = brain.state;
+  if (to === 'unaware' && from.postAlert !== null) {
+    const until = view.tick + ticks(from.postAlert.seconds(view), view.hz);
+    brain.postAlertUntil = Math.max(brain.postAlertUntil, until);
+    brain.postAlertRate = from.postAlert.rate(view);
+  }
   brain.state = to;
   brain.enteredTick = view.tick;
   brain.activity = null;
@@ -88,7 +108,7 @@ function enter(view: AgentView, to: AlertState, cause: string): void {
   view.world.events.emit(AlertStateChanged, {
     tick: view.tick,
     entity: view.entity,
-    from,
+    from: from.name,
     to,
     cause,
   });
@@ -98,10 +118,14 @@ function enter(view: AgentView, to: AlertState, cause: string): void {
 function think(view: AgentView, behaviour: CompiledBehaviour): void {
   const { brain, tick } = view;
   brain.thoughtTick = tick;
+  if (brain.postAlertUntil >= 0 && tick >= brain.postAlertUntil) {
+    brain.postAlertUntil = -1;
+    brain.postAlertRate = 1;
+  }
   const state = got(behaviour.states, brain.state);
   let next: AlertState | null = null;
   let cause = '';
-  if (state.timeout !== null && tick - brain.enteredTick >= ticks(state.timeout(view), view.hz)) {
+  if (state.timeout !== null && timeoutClock(view, state) >= ticks(state.timeout(view), view.hz)) {
     next = state.onTimeout;
     cause = 'timeout';
   } else {
@@ -115,7 +139,7 @@ function think(view: AgentView, behaviour: CompiledBehaviour): void {
   }
   brain.ended = null;
   brain.events = [];
-  if (next !== null) enter(view, next, cause);
+  if (next !== null) enter(view, state, next, cause);
 
   const current = brain.activity === null ? undefined : behaviour.activities.get(brain.activity);
   if (current !== undefined && !current.interruptible) return;
@@ -304,12 +328,16 @@ export function giveBrain(world: World<never>, entity: EntityId, spec: BrainSpec
     blackboard: {
       awareness: 0,
       stimulus: null,
+      stimulusTick: -1,
       target: null,
       targetVisible: false,
       targetSeenTick: -1,
+      lkp: null,
       waypoint: 0,
     },
     awareness: [],
+    postAlertUntil: -1,
+    postAlertRate: 1,
   });
 }
 
@@ -318,14 +346,20 @@ export function brainOf(world: World<never>, entity: EntityId): Readonly<Brain> 
   return getIf(world, entity, BrainComponent);
 }
 
-/** A blackboard update; `stimulus` is copied. */
-export type BlackboardPatch = Partial<Readonly<Omit<Blackboard, 'stimulus'>>> & {
+/** A blackboard update; positions are copied, and the ticks are recorded by the write. */
+export type BlackboardPatch = Partial<
+  Readonly<Omit<Blackboard, 'stimulus' | 'lkp' | 'stimulusTick' | 'targetSeenTick'>>
+> & {
   readonly stimulus?: Vec3 | null;
+  readonly lkp?: Vec3 | null;
 };
 
+const copy = (p: Vec3 | null): Vec3 | null => (p === null ? null : { x: p.x, y: p.y, z: p.z });
+
 /**
- * Writes `patch` into `entity`'s blackboard (awareness calls this). Seeing the target
- * (`targetVisible: true`) also records the tick. Returns false when `entity` has no brain.
+ * Writes `patch` into `entity`'s blackboard (awareness calls this). A stimulus records the tick it
+ * was written, and seeing the target (`targetVisible: true`) the tick it was seen. Returns false
+ * when `entity` has no brain.
  */
 export function writeBlackboard(
   world: World<never>,
@@ -334,13 +368,15 @@ export function writeBlackboard(
 ): boolean {
   const brain = getIf(world, entity, BrainComponent);
   if (brain === undefined) return false;
-  const { stimulus, ...rest } = patch;
-  Object.assign(brain.blackboard, rest);
+  const { stimulus, lkp, ...rest } = patch;
+  const board = brain.blackboard;
+  Object.assign(board, rest);
   if (stimulus !== undefined) {
-    brain.blackboard.stimulus =
-      stimulus === null ? null : { x: stimulus.x, y: stimulus.y, z: stimulus.z };
+    board.stimulus = copy(stimulus);
+    if (stimulus !== null) board.stimulusTick = world.tick;
   }
-  if (patch.targetVisible === true) brain.blackboard.targetSeenTick = world.tick;
+  if (lkp !== undefined) board.lkp = copy(lkp);
+  if (patch.targetVisible === true) board.targetSeenTick = world.tick;
   return true;
 }
 

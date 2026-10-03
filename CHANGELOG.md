@@ -24,6 +24,13 @@ check enforces this).
   raised off one side. The way out is an iron door, and without its key it stays locked ("Locked.").
   Two checkpoints mark your progress on the way in, and stepping through the exit door finishes the
   slice. The skeleton, the key and the loot arrive next.
+- Guards react in readable stages. Something catches a guard's eye and it stops to look, then goes
+  to check the spot, then searches the area once it has lost you, and fights only when it can
+  actually see you. If nothing new turns up for a few seconds, a wary guard relaxes again, so you
+  can recover from a slip. A guard that loses you mid-fight searches where it last saw you instead
+  of forgetting you. Afterwards it calms down but stays on edge for a while and spots you faster.
+  Shoot a guard from the shadows and it raises the alarm and heads toward where the shot came from,
+  not straight at you. The Forgotten skeleton follows the same rules.
 - Creatures notice you gradually instead of all at once. A glimpse of you at the edge of a guard's
   vision builds its suspicion slowly, while standing in torchlight right in front of it gives you
   away fast, so you have time to back off into the dark. A loud noise puts a guard on edge at once.

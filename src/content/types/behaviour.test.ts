@@ -3,7 +3,13 @@ import { ContentLoadError, loadContent, type ContentSource } from '../loader.ts'
 import { contentChecks, contentTypes } from '../registry.ts';
 import { ContentRef, serializeContent } from '../schema.ts';
 import { loadFixtureContent } from '../test-fixtures.ts';
-import { behaviourSchema, isBehaviourInput, type BehaviourDefInput } from './behaviour.ts';
+import {
+  ALERT_TIMER_KEYS,
+  ALERT_TUNING_DEFAULTS,
+  behaviourSchema,
+  isBehaviourInput,
+  type BehaviourDefInput,
+} from './behaviour.ts';
 
 const watcher = {
   id: 'watcher',
@@ -177,10 +183,128 @@ describe('behaviour schema', () => {
     ).toHaveLength(1);
   });
 
+  describe('the alert table (mw-e11.7)', () => {
+    const fight = {
+      timeoutS: 4,
+      onTimeout: 'suspicious',
+      transitions: [{ to: 'suspicious', when: { input: 'targetLostS', gte: 5 } }],
+      activities: ['stand'],
+    };
+
+    it('AC-7: a tuning file with a timeout of 0 or less fails validation, naming the key', () => {
+      const timeoutFromTuning = edited((b) => {
+        Object.assign(must(b.states['suspicious']), { timeoutS: { tuning: 'peerS' } });
+        b.tuning['peerS'] = 0;
+      });
+      expect(problems(timeoutFromTuning)).toEqual([
+        'tuning.peerS: timeout "peerS" must be positive, got 0',
+      ]);
+      expect(
+        problems(
+          edited((b) => {
+            b.tuning['searchingTimeoutS'] = -1;
+          }),
+        ),
+      ).toEqual(['tuning.searchingTimeoutS: timeout "searchingTimeoutS" must be positive, got -1']);
+      expect(
+        problems(
+          edited((b) => {
+            Object.assign(must(b.states['suspicious']), { timeoutS: 0 });
+          }),
+        ),
+      ).toEqual([expect.stringMatching(/^states\.suspicious\.timeoutS/)]);
+      // Through the loader: the file and the pointer to the bad value.
+      let error: unknown;
+      try {
+        loadContent(
+          contentTypes,
+          [{ path: 'data/behaviour/watcher.json', text: JSON.stringify(timeoutFromTuning) }],
+          contentChecks,
+        );
+      } catch (e) {
+        error = e;
+      }
+      expect((error as ContentLoadError).issues.map((i) => [i.file, i.pointer])).toEqual([
+        ['data/behaviour/watcher.json', '/tuning/peerS'],
+      ]);
+      expect(ALERT_TIMER_KEYS.every((key) => (ALERT_TUNING_DEFAULTS[key] ?? 0) > 0)).toBe(true);
+    });
+
+    it('fills the built-in alert tuning under its own keys, and the state defaults', () => {
+      const def = behaviourSchema.parse(edited((b) => (b.tuning['combatLostS'] = 9)));
+      expect(def.tuning).toEqual({ ...ALERT_TUNING_DEFAULTS, alarmAt: 0.4, combatLostS: 9 });
+      expect(def.tuning).toMatchObject({
+        suspiciousAt: 0.3,
+        investigateAt: 0.6,
+        suspiciousTimeoutS: 6,
+        searchingTimeoutS: 60,
+        combatLostS: 9,
+        postAlertS: 300,
+        postAlertAwarenessRate: 1.5,
+      });
+      expect(def.states.suspicious).toMatchObject({ timeoutFrom: 'entered', postAlert: false });
+      const lkp = edited((b) => {
+        must(b.activities['peer']).steps[0] = { do: 'move-to', target: 'lkp' };
+        Object.assign(must(b.states['suspicious']), { timeoutFrom: 'stimulus', postAlert: true });
+      });
+      expect(problems(lkp)).toEqual([]);
+    });
+
+    it('combat never drops straight to unaware, and unseen damage never starts combat', () => {
+      expect(
+        problems(
+          edited((b) => {
+            b.states['combat'] = {
+              ...structuredClone(fight),
+              onTimeout: 'unaware',
+              transitions: [{ to: 'unaware', when: { input: 'targetLostS', gte: 5 } }],
+            };
+            must(b.states['unaware']).transitions.push({
+              to: 'combat',
+              when: { event: 'damaged-by-unseen' },
+            });
+          }),
+        ),
+      ).toEqual([
+        'states.unaware.transitions.1.to: damage from an unseen source cannot start combat (the attacker is unknown: alerted)',
+        'states.combat.onTimeout: combat never falls back to unaware directly (search first)',
+        'states.combat.transitions.0.to: combat never goes to unaware directly (search first)',
+      ]);
+      expect(
+        problems(
+          edited((b) => {
+            b.states['combat'] = structuredClone(fight);
+            must(b.states['unaware']).transitions.push({
+              to: 'combat',
+              when: { event: 'ally-alarm' },
+            });
+          }),
+        ),
+      ).toEqual([]);
+    });
+
+    it('a timeout counted from the stimulus needs a timeout', () => {
+      expect(
+        problems(
+          edited((b) => {
+            Object.assign(must(b.states['unaware']), { timeoutFrom: 'stimulus' });
+          }),
+        ),
+      ).toEqual(['states.unaware.timeoutFrom: timeoutFrom needs a timeoutS']);
+    });
+  });
+
   it('the fixture guard behaviour loads with the fixtures and names a real attack', () => {
     const content = loadFixtureContent();
     const guard = content.get('behaviour', 'fixture-guard');
-    expect(Object.keys(guard.states)).toEqual(['unaware', 'suspicious', 'investigating', 'combat']);
+    expect(Object.keys(guard.states)).toEqual([
+      'unaware',
+      'suspicious',
+      'investigating',
+      'searching',
+      'alerted',
+      'combat',
+    ]);
     const strike = guard.activities['engage']?.steps[2];
     expect(strike).toEqual({
       do: 'attack',

@@ -17,13 +17,16 @@
 // - A record not stimulated holds for the grace period, then decays at the decay rate; at 0 it is
 //   removed. A record whose source no longer exists (the `present` port) is removed first.
 // Trait modifier = Π over the tuning's traits of (1 + weight × (2 × trait − 1)): 1 for a trait at
-// 0.5 (the default), 1 ± weight at its extremes.
+// 0.5 (the default), 1 ± weight at its extremes. An agent on edge after standing down (mw-e11.7's
+// heightened baseline) multiplies every contribution by its post-alert rate.
 //
 // Awareness then writes the blackboard the behaviour reads: `awareness` is the highest record's
 // level; `stimulus` is where that record's cause was perceived, when it was stimulated in this think;
 // a seen source the `target` port resolves becomes the `target`, visible while its record is at the
-// Detected threshold. Alert transitions read `awareness` against the behaviour's thresholds (the
-// state machine is mw-e11.7); the tuning ships default thresholds for it and for the UI.
+// Detected threshold, and where it was seen becomes the last-known position (`lkp`). Alert
+// transitions read `awareness` against the behaviour's `suspiciousAt` / `investigateAt` tuning,
+// whose built-in defaults (content ALERT_TUNING_DEFAULTS) equal these thresholds — one set, pinned
+// by a test; the Detected threshold is awareness's alone (it decides `targetVisible`).
 // The tuning is PLACEHOLDER, to tune in play; moving it into content is mw-e11.16.
 
 import type { Frozen, SenseProfile } from '@content/index';
@@ -38,6 +41,7 @@ import {
   type PerceptSource,
 } from '../perception/percept';
 import type { Vec3 } from '../stimulus/shapes';
+import { isPostAlert } from './alert';
 import { BrainComponent, type Brain } from './components';
 import { writeBlackboard } from './runtime';
 import { getIf } from './util';
@@ -111,6 +115,8 @@ export interface AwarenessFactors {
   readonly sightSpeed: number;
   /** Difficulty `detectionSpeed`. */
   readonly difficulty: number;
+  /** The heightened-baseline multiplier while on edge after standing down (default 1). */
+  readonly heightened?: number;
 }
 
 /** What one think did to an agent's records. */
@@ -145,7 +151,10 @@ export function contribution(
   const rate = tuning.senses[p.sense] ?? tuning.otherSenses;
   const base = 'perS' in rate ? rate.perS * seconds : rate.perPercept;
   const sight = p.sense === 'sight' ? factors.sightSpeed : 1;
-  return p.strength * base * sight * traitModifier(factors.traits, tuning) * factors.difficulty;
+  const edge = factors.heightened ?? 1;
+  return (
+    p.strength * base * sight * traitModifier(factors.traits, tuning) * factors.difficulty * edge
+  );
 }
 
 interface Stimulus {
@@ -274,7 +283,28 @@ function factorsOf(
     traits: brain.traits,
     sightSpeed: senses?.sight?.detectionSpeed ?? 1,
     difficulty: difficulty.detectionSpeed,
+    heightened: isPostAlert(brain, world.tick) ? brain.postAlertRate : 1,
   };
+}
+
+/** A sighting of a source the agent may fight. */
+interface Sighting {
+  readonly source: PerceptSource;
+  readonly target: EntityId;
+  readonly position: Vec3;
+}
+
+/** The first seen source that is a target (the player): the one it is after. */
+function sightingOf(
+  percepts: readonly Percept[],
+  resolve: (source: PerceptSource) => EntityId | undefined,
+): Sighting | undefined {
+  for (const p of percepts) {
+    if (p.kind !== 'seen-target') continue;
+    const target = resolve(p.source);
+    if (target !== undefined) return { source: p.source, target, position: p.position };
+  }
+  return undefined;
 }
 
 /**
@@ -303,18 +333,20 @@ export function installAwareness(world: World<never>, options: AwarenessOptions 
       const entity = resolve(source);
       return entity !== undefined && entity === board.target;
     });
-    // The first seen source that is a target (the player) is the one it is after.
-    const seenTarget = think.seen.find((source) => resolve(source) !== undefined);
-    const target = seenTarget === undefined ? undefined : resolve(seenTarget);
+    const sighting = sightingOf(percepts, resolve);
     const visible = brain.awareness.some(
-      (r) => r.source === seenTarget && r.level >= tuning.thresholds.detected,
+      (r) => r.source === sighting?.source && r.level >= tuning.thresholds.detected,
     );
     writeBlackboard(world, agent, {
       awareness: top?.level ?? 0,
       ...(top !== undefined && think.stimulated.includes(top.source)
         ? { stimulus: top.cause.position }
         : {}),
-      ...(target !== undefined ? { target } : lost ? { target: null } : {}),
+      ...(sighting !== undefined
+        ? { target: sighting.target, lkp: sighting.position }
+        : lost
+          ? { target: null }
+          : {}),
       targetVisible: visible,
     });
   });

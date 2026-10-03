@@ -23,7 +23,7 @@
       "minLength": 1
     },
     "tuning": {
-      "description": "Default tuning values `{ \"tuning\": key }` reads; creatures override them.",
+      "description": "Default tuning values `{ \"tuning\": key }` reads; creatures override them. Keys left out come from the built-in alert tuning.",
       "default": {},
       "type": "object",
       "propertyNames": {
@@ -111,6 +111,20 @@
               "alerted",
               "combat"
             ]
+          },
+          "timeoutFrom": {
+            "default": "entered",
+            "description": "What the timeout counts from: entering the state, or the last stimulus (a new one restarts it).",
+            "type": "string",
+            "enum": [
+              "entered",
+              "stimulus"
+            ]
+          },
+          "postAlert": {
+            "default": false,
+            "description": "Standing down from this state to unaware starts the heightened baseline (postAlertS, postAlertAwarenessRate).",
+            "type": "boolean"
           },
           "transitions": {
             "description": "Checked in order after the timeout; at most one is taken per think.",
@@ -408,6 +422,7 @@
                       "enum": [
                         "stimulus",
                         "target",
+                        "lkp",
                         "nearest-waypoint",
                         "origin"
                       ],
@@ -517,6 +532,7 @@
                       "enum": [
                         "stimulus",
                         "target",
+                        "lkp",
                         "nearest-waypoint",
                         "origin"
                       ],

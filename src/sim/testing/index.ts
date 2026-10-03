@@ -29,3 +29,4 @@ export {
   type SensedStimulus,
   type SensesContext,
 } from './senses';
+export { fuzzAlertMachine, type AlertFuzzOptions, type AlertFuzzReport } from './alert-fuzz';
