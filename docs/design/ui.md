@@ -239,6 +239,38 @@ kitPanel.update(kitModel(world, player, content)); // HUD: class, gold, carried 
   as before. `#app[data-player-class]` publishes the sim's `player.class`. The title screen flow is
   mw-e01.2 and the card art is mw-e37.125.
 
+## Title menu and save screens (`src/ui/save-menus.ts`, `src/game/save/menus`, mw-e30.11)
+
+```ts
+const menus = new SaveMenus({ ui, world, store, registry, build, now, describe, warning,
+  captureThumbnail, load: (pending) => deathReload.reload(pending), newGame });
+await menus.openTitle();  // Continue (most recent save), New Game, Load
+await menus.openSave();   // the ten manual slots
+await menus.openLoad();   // every save, most recent first
+```
+
+- **Title menu.** With a save, Continue takes focus and is described by "Last save: …". With none,
+  it stays in place, greyed and `aria-disabled`, and the tooltip "No saves yet" is its
+  `aria-describedby`. New Game takes focus instead. A save list that cannot be read disables
+  Continue with "Saves could not be read". Back never closes the title menu.
+- **Slot lists.** One row per slot: a thumbnail (or a placeholder), the title and details, and the
+  verb (Load or Save here) on the row's main button, with Delete to its right. Up and down move
+  between rows, right reaches Delete, Enter presses and Esc closes the list. An empty Load list says
+  so and focuses Back. A slot with no readable copy stays listed, disabled with its reason, so it
+  can still be deleted.
+- **Confirmations.** Saving over an occupied slot and deleting a save open `confirmDialog`, with
+  focus on Cancel. Results show in the list's status line ("Saved to …", "Overwrote …",
+  "Deleted …"), and storage failures show as an alert. After a redraw, focus stays on the same slot
+  and action.
+- **Memory fallback.** When saves live only in memory (`OpenedSaveStore.warning`), every slot screen
+  shows that warning as an alert.
+- **In the game.** `?menu=title|load|save` opens a menu at boot over the freshly built area, with
+  the sim paused. Continue and Load reload into the save's area through the death screen's hand-off
+  (`DeathReload.reload`). New Game reloads with `?newgame`. The thumbnail is read from the canvas
+  straight after the next render. The e2e reads `#app[data-save-menu-saved]` (tick and hash) and
+  `#app[data-save-menu-title|list|deleted]`. mw-e01.2 makes the title menu the front door, and
+  mw-e01.3 opens Save and Load from the pause menu.
+
 ## Testing
 
 - **Unit tests:** put `// @vitest-environment happy-dom` at the top of the file. happy-dom has no

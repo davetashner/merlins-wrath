@@ -30,6 +30,12 @@ check enforces this).
   stop for a set time, faces a set way, and may lean on a wall or warm its hands while it waits.
   After a search, it heads for whichever stop it can reach soonest, not the next one in line. When a
   locked door cuts off a stop, it skips that stop and carries on.
+- A title menu with Continue, New Game and Load, plus Save and Load screens (for now reached with
+  `?menu=title`, `?menu=save` or `?menu=load`). Continue picks up your most recent save. With no
+  saves yet it is greyed out and says "No saves yet". Each slot shows a picture of where you saved,
+  your area, playtime and how long ago you saved. Saving over a slot or deleting a save asks you to
+  confirm first. Everything works with the keyboard or a gamepad alone, and if your browser is
+  blocking storage the screens warn you that saves will not last.
 - An AI debug overlay for debug builds (`ai.debug on` in the console). Each creature shows its sight
   cone tinted by alert state, its hearing range, the route it walks and where it thinks its target
   is, with a label giving its state and how long it has been in it, what it is doing and how aware
