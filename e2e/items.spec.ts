@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { stubPointerLock, takeControl, turnTo } from './helpers/player';
 
 // mw-e17.7: world items in ?scene=testbed, against the production build (Chromium). A healing
 // draught lies on the floor to the player's left; the page publishes the player's pack, the world
@@ -48,61 +49,20 @@ async function items(page: Page): Promise<ItemsData | null> {
 }
 
 async function play(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    const lock: { element: Element | null } = { element: null };
-    const change = () => document.dispatchEvent(new Event('pointerlockchange'));
-    Object.defineProperty(Document.prototype, 'pointerLockElement', {
-      configurable: true,
-      get: () => lock.element,
-    });
-    Element.prototype.requestPointerLock = function requestPointerLock(this: Element) {
-      lock.element = this;
-      change();
-      return Promise.resolve();
-    };
-    Document.prototype.exitPointerLock = function exitPointerLock() {
-      lock.element = null;
-      change();
-    };
-  });
+  await stubPointerLock(page);
   await page.goto('/?scene=testbed');
   const app = page.locator('#app');
   await expect(app).toHaveAttribute('data-scene', 'testbed', { timeout: 5_000 });
   await expect(app).toHaveAttribute('data-player', /"grounded":true/);
-  await page.getByTestId('game-canvas').click();
-  await expect.poll(() => page.evaluate(() => document.pointerLockElement !== null)).toBe(true);
+  await takeControl(page);
 }
 
 /**
- * Turns the player left (to face +x, where the draught lies) with mouse moves sent from the page,
- * one per drawn frame, so a slow CI renderer costs frames rather than test round trips. The yaw comes
- * from #app[data-player]; facing +x is −sin(yaw) = 1.
+ * Turns the player left to face +x, where the draught lies (yaw −π/2: facing (−sin yaw, −cos yaw) =
+ * (1, 0)), through the convergent, tick-paced mouse-look loop in helpers/player.
  */
 async function turnToDraught(page: Page): Promise<void> {
-  const turned = await page.evaluate(
-    () =>
-      new Promise<boolean>((resolve) => {
-        const app = document.querySelector('#app');
-        const started = performance.now();
-        const step = () => {
-          const json = app?.getAttribute('data-player');
-          const yaw =
-            json === null || json === undefined ? 0 : (JSON.parse(json) as { yaw: number }).yaw;
-          if (-Math.sin(yaw) > 0.97) {
-            resolve(true);
-            return;
-          }
-          if (performance.now() - started > 20_000) {
-            resolve(false);
-            return;
-          }
-          window.dispatchEvent(new MouseEvent('mousemove', { movementX: -15, movementY: 0 }));
-          requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      }),
-  );
-  expect(turned).toBe(true);
+  await turnTo(page, -Math.PI / 2);
   await expect(page.getByTestId('interact-prompt')).toContainText('Take Healing draught');
 }
 
