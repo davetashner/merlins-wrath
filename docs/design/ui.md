@@ -124,6 +124,31 @@ binding.frame(latestSnapshot, frame.timeMs);
   preference. `reducedMotion(root, matchMedia)` reports the effective state for scripted motion.
 - The settings UI that calls these belongs to mw-e31.
 
+## Settings and the options menu (`src/game/settings`, mw-e31.1)
+
+```ts
+const settings = createSettingsStore({ storage: () => globalThis.localStorage });
+settings.on('audio.master', (volume) => mixer.setMaster(volume)); // once per actual change
+settings.set('camera.invertY', true);   // applies at once, then persists
+settings.reset('camera');               // only this category returns to defaults
+openOptionsMenu(ui, settings, { category: 'audio' });
+```
+
+- **Schema** (`schema.ts`): categories `controls`, `camera`, `display`, `audio`, `accessibility`,
+  `gameplay`. Each setting has a kind (`toggle`, `slider`, `select`, `keybind` placeholder), a default,
+  a label and help text, and a range or choices. Types and a strict zod schema are derived from it, and
+  the options menu builds its controls from the same metadata.
+- **Loading is lenient**: unknown keys and categories are dropped, an out-of-range number is clamped,
+  any other bad value falls back to its default, and every repair logs a warning.
+- **Versioning**: stored as `{ version, settings }` under `vesper-bell.settings`. Renaming, moving or
+  re-scaling a setting bumps `SETTINGS_VERSION` and adds a step to `SETTINGS_MIGRATIONS` (one step per
+  version, as with save sections). Adding a setting needs no migration.
+- **Storage refused** (blocked site data, private mode, quota): the store runs in memory for the
+  session (`persistent` is false, one warning) and never throws. `#app[data-settings-store]` reports
+  `local` or `memory`.
+- Settings are per-browser, not per-save. The sim never reads the store: difficulty assists reach it
+  as injected config.
+
 ## Testing
 
 - **Unit tests:** put `// @vitest-environment happy-dom` at the top of the file. happy-dom has no

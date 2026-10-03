@@ -72,6 +72,7 @@ import {
   playerFocus,
   propBodies,
 } from '@game/physics-objects';
+import { createSettingsStore } from '@game/settings/index';
 import { createUiGameBridge } from '@game/ui/index';
 import {
   createGameLight,
@@ -204,6 +205,9 @@ type GameCommand = ActionFrame | DebugCommand | DifficultyCommand | SandboxComma
 const app = document.querySelector<HTMLElement>('#app');
 if (app) {
   app.dataset['layers'] = [...layers, tools].join(' ');
+  // Player settings (mw-e31.1): per-browser, loaded first; in memory when the browser blocks storage.
+  const settings = createSettingsStore({ storage: () => globalThis.localStorage });
+  app.dataset['settingsStore'] = settings.persistent ? 'local' : 'memory';
   startRenderer(app, startSaves(app));
 }
 
