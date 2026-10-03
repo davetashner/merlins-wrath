@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const fixture = (name: string) => fileURLToPath(new URL(`fixtures/${name}`, import.meta.url));
 
-/** Directories holding agent code (awareness and memory join them as they are built). */
+/** Directories holding agent code (awareness, mw-e11.6, is src/sim/ai/awareness.ts; memory joins). */
 const AGENT_DIRS = ['src/sim/ai'];
 
 /** Imports agent code may not make (relative or through the @sim alias). */
@@ -21,7 +21,7 @@ const FORBIDDEN = [
   /(?:^|\/)character(?:\/|$)/,
   /(?:^|\/)stealth(?:\/|$)/,
   /(?:^|\/)sight(?:\/|$)/,
-  /(?:^|\/)perception\/(?:system|sight|hearing|channels)(?:\.ts)?$/,
+  /(?:^|\/)perception\/(?:system|sight|hearing|channels|touch)(?:\.ts)?$/,
   /^@sim\/index$/,
 ];
 

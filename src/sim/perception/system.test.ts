@@ -25,7 +25,7 @@ import { partial } from '../sight/occlusion';
 import { VisibilityProfileComponent } from '../stealth/self-visibility';
 import { PlacementComponent } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
-import { perceived, type Percept, type PerceptionReport } from './percept';
+import { entitySource, perceived, type Percept, type PerceptionReport } from './percept';
 import {
   perceptionBudgetUnits,
   perceptionSystem,
@@ -33,6 +33,7 @@ import {
   type PerceptionOptions,
   type TargetSighting,
 } from './system';
+import { touchPercept } from './touch';
 import { DEFAULT_PERCEPTION_TUNING } from './tuning';
 
 const CONTROLLER: Frozen<ControllerTuning> = {
@@ -237,7 +238,8 @@ describe('perception: sight (mw-e11.5)', () => {
     addPlayer(world, { x: 0, y: 1.62 - 1.2, z: 0 });
     const guard = addAgent(world);
     step();
-    expect(perceptsOf(reports, guard)).toHaveLength(1);
+    // It also feels the target it stands inside (touch, mw-e11.6).
+    expect(perceptsOf(reports, guard).map((p) => p.kind)).toEqual(['seen-target', 'touched']);
   });
 
   it('perceives only targets with a body it can read, never itself', () => {
@@ -565,5 +567,51 @@ describe('perception: schedule and budget (mw-e11.5)', () => {
     ).toThrow('perception rateHz must be positive');
     expect(perceptionBudgetUnits(0.5)).toBe(Math.floor(0.5 * PERCEPTION_UNITS_PER_MS));
     expect(perceptionBudgetUnits(0)).toBe(1);
+  });
+});
+
+describe('perception: touch (mw-e11.6)', () => {
+  it('feels a target in contact from any side in any light, whatever its senses', () => {
+    const { world, reports, step } = setup({ light: lit(0) });
+    const player = addPlayer(world, { x: 0, y: 0, z: -0.85 }); // behind it: radius 0.4 + reach 0.5
+    const numb = addAgent(world, {});
+    step();
+    expect(perceptsOf(reports, numb)).toEqual([
+      {
+        source: `entity:${String(player)}`,
+        kind: 'touched',
+        sense: 'touch',
+        position: { x: 0, y: 0, z: -0.85 },
+        strength: 1,
+        certainty: 1,
+      },
+    ]);
+  });
+
+  it('feels nothing beyond its radius plus the reach, or too far above or below', () => {
+    const { world, reports, step } = setup({ light: lit(0) });
+    addPlayer(world, { x: 0.7, y: 0, z: -0.7 }); // 0.99 m away
+    addPlayer(world, { x: 0, y: 1.2, z: -0.5 }); // on a ledge above
+    const guard = addAgent(world, {});
+    step();
+    expect(perceptsOf(reports, guard)).toEqual([]);
+  });
+
+  it('uses the placement radius of an agent without a nav agent', () => {
+    const { world, reports, step } = setup({ light: lit(0) });
+    addPlayer(world, { x: 1.4, y: 0, z: 0 });
+    const guard = world.spawn();
+    world.add(guard, CreatureSensesComponent, {});
+    world.add(guard, PlacementComponent, { ...ORIGIN, radius: 1 });
+    step();
+    expect(perceptsOf(reports, guard).map((p) => p.kind)).toEqual(['touched']);
+    expect(
+      touchPercept(
+        ORIGIN,
+        0,
+        { source: entitySource(1), feet: ahead(0.6) },
+        DEFAULT_PERCEPTION_TUNING,
+      ),
+    ).toBeUndefined();
   });
 });

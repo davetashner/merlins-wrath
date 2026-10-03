@@ -17,7 +17,13 @@ import { defineEvent } from '../core/events';
 import type { Vec3 } from '../stimulus/shapes';
 
 /** What a percept is about. */
-export const PERCEPT_KINDS = ['seen-target', 'heard-noise', 'seen-anomaly', 'sensed-life'] as const;
+export const PERCEPT_KINDS = [
+  'seen-target',
+  'heard-noise',
+  'seen-anomaly',
+  'sensed-life',
+  'touched',
+] as const;
 
 /** What a percept is about. */
 export type PerceptKind = (typeof PERCEPT_KINDS)[number];
@@ -49,7 +55,7 @@ export function soundSource(kind: string): PerceptSource {
 export interface Percept {
   readonly source: PerceptSource;
   readonly kind: PerceptKind;
-  /** The sense that perceived it: `sight`, `hearing` or a special-sense channel (`life-sense`). */
+  /** The sense that perceived it: `sight`, `hearing`, `touch` or a special-sense channel (`life-sense`). */
   readonly sense: string;
   /** Where the agent perceived it (not necessarily where it is), metres. */
   readonly position: Vec3;
@@ -66,7 +72,7 @@ export interface PerceptionReport {
   readonly agent: EntityId;
   /** Seconds since this agent's previous evaluation (its nominal period for the first one). */
   readonly seconds: number;
-  /** Everything it perceived, in a fixed order: sight, anomalies, hearing, special senses. */
+  /** Everything it perceived, in a fixed order: sight, anomalies, hearing, special senses, touch. */
   readonly percepts: readonly Percept[];
 }
 

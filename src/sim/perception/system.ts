@@ -25,6 +25,8 @@
 //   `heard-noise` percept at the perceived position (hearing.ts). The system keeps each agent's
 //   `noise.listener` in step with its hearing, so noise propagation (mw-e09.3) knows who listens.
 // - Special senses: each channel of the profile with a registered handler (channels.ts).
+// - Touch (every agent, whatever its profile): each target in contact with it (touch.ts), in any light
+//   and from any side, as a `touched` percept (mw-e11.6). It costs no work units beyond the agent's.
 //
 // The agent's eye is its placement raised by the tuning's eye height × its nav agent height; its
 // facing is its combat facing (+z without one). The queue, the per-agent hearing buffers and the
@@ -56,8 +58,15 @@ import { PlacementComponent, type Placement } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import { defaultSenseChannels, type SenseChannelRegistry, type SenseTarget } from './channels';
 import { hearingPercept } from './hearing';
-import { anomalySource, entitySource, perceived, type Percept } from './percept';
+import {
+  anomalySource,
+  entitySource,
+  perceived,
+  type Percept,
+  type PerceptSource,
+} from './percept';
 import { coneHit, sightPercept, type ConeHit, type SightProfile } from './sight';
+import { touchPercept } from './touch';
 import { DEFAULT_PERCEPTION_TUNING, type PerceptionTuning } from './tuning';
 
 /**
@@ -82,6 +91,18 @@ export interface AnomalySighting {
   readonly position: Vec3;
   /** How much it stands out, 0–1 (scales its visibility). */
   readonly salience: number;
+}
+
+const ENTITY_SOURCE = /^entity:(\d+)$/;
+
+/**
+ * Whether what `source` names still exists in `world`: an entity source while its entity is alive;
+ * anomaly and sound sources always (they are not things that despawn). For whoever wires awareness
+ * to a world (src/sim/ai/awareness.ts takes it as a port; agent code never reads the world).
+ */
+export function perceptSourcePresent(world: World<never>, source: PerceptSource): boolean {
+  const entity = ENTITY_SOURCE.exec(source)?.[1];
+  return entity === undefined || world.isAlive(Number(entity));
 }
 
 /** A target that passed the cone test, for debug views and the scenario timeline. */
@@ -406,6 +427,13 @@ export function perceptionSystem<TInput>(
               ...handler({ channel, sense, eye, targets: senseTargets, lineOfSight: ray, tuning }),
             );
           }
+        }
+
+        const radius = nav?.radius ?? at.radius;
+        for (const target of targetIds()) {
+          const body = target === agent ? undefined : bodyOf(target);
+          const touched = body === undefined ? undefined : touchPercept(at, radius, body, tuning);
+          if (touched !== undefined) percepts.push(touched);
         }
 
         const last = lastEvaluated.get(agent);

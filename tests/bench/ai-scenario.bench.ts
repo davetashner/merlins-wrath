@@ -2,7 +2,7 @@
 // fixture guards walk their own 6 m squares in a 3 × 2 grid under a torch each; the player walks a
 // loop through all their views (walking, crouching, sprinting) and throws two stones, so the guards
 // keep perceiving, climbing the ladder and moving. The whole scenario run is timed (building the
-// world, every tick through the replay recorder, perception and the stand-in awareness, AI, the player controller, the
+// world, every tick through the replay recorder, perception and awareness, AI, the player controller, the
 // light field, hashing and the expectations), after one warm-up run; the median of three counts.
 import { describe, expect, test } from 'vitest';
 import { compileCreatures, controllerTuningFor, PLAYER_CONTROLLER_ID } from '@content/index';
