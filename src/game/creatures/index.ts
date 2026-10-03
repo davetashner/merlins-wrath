@@ -66,6 +66,7 @@ import { installCreatureAi, type CreatureAi, type CreatureAiOptions } from './ai
 import type { RenderSync, SceneBinding } from '../loop/render-sync';
 
 export * from './ai';
+export * from './save-veto';
 
 /** The first half of the creature wiring (see the file header). */
 export interface GameCreatures {

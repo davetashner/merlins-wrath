@@ -178,7 +178,7 @@ describe('title menu', () => {
     expect(document.activeElement).toBe(menu.continueButton);
     expect(s.readouts.at(-1)).toEqual({ kind: 'title', saves: 2, last: 'manual-1' });
     expect(document.querySelector('.vb-title-last')?.textContent).toBe(
-      'Last save: Manual save 1 · testbed · 0:01 played · 2 min ago',
+      'Last save: Manual save 1 · Knight · testbed · 0:01 played · 2 min ago',
     );
     menu.continueButton.click();
     expect(s.loads).toEqual([{ slot: 'manual-1', areaId: 'testbed' }]);
@@ -329,7 +329,7 @@ describe('Save screen', () => {
     ]);
     expect(text('save-slots-status')).toBe('Saved to Manual save 1');
     expect(rows()[0]?.actions).toEqual(['choose', 'delete']);
-    expect(rows()[0]?.text).toBe('Manual save 1testbed · 0:00 played · just nowSave here');
+    expect(rows()[0]?.text).toBe('Manual save 1Knight · testbed · 0:00 played · just nowSave here');
     const first = (await s.store.read('manual-1')).status === 'ok';
     expect(first).toBe(true);
 

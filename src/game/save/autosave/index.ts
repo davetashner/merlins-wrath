@@ -16,3 +16,9 @@ export {
   type AutosaveTriggerKind,
 } from './scheduler';
 export { SafetyVetoes, type ActiveVeto, type SafetyVeto } from './vetoes';
+export {
+  autosaveReadout,
+  GameAutosave,
+  type AutosaveReadout,
+  type GameAutosaveOptions,
+} from './game';

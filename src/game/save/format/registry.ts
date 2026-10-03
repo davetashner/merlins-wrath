@@ -6,7 +6,13 @@
 // rolled back to exactly its prior state. Sections from a newer build that this build does not know
 // are kept verbatim so re-saving never destroys them.
 
-import { DIFFICULTY_KEYS, type FactSnapshot, type World, type WorldSnapshot } from '@sim/index';
+import {
+  DIFFICULTY_KEYS,
+  type ComponentType,
+  type FactSnapshot,
+  type World,
+  type WorldSnapshot,
+} from '@sim/index';
 import { z } from 'zod';
 import { decodeSave, encodeSave, type BuildInfo, type SaveEnvelope } from './envelope';
 import { SaveApplyError, SaveCorruptError, type SaveLoadError } from './errors';
@@ -104,6 +110,16 @@ export interface WriteSaveOptions {
   readonly preserve?: Readonly<Record<string, SectionRecord>>;
 }
 
+/** How a registry treats worlds. */
+export interface SaveRegistryOptions {
+  /**
+   * Component types a world registers only on first use (a class applied mid-game registers the
+   * player's class and stats then). A save holding rows of one registers it before the world is
+   * restored, so the save loads into a freshly built world that has not used it yet (mw-e01.7).
+   */
+  readonly onDemand?: readonly ComponentType<unknown>[];
+}
+
 /** Sections that make up a save, in apply order (the world section first). */
 export class SaveRegistry {
   private readonly ordered: SaveSection[];
@@ -113,7 +129,8 @@ export class SaveRegistry {
   /** Id of the section that saves the world's facts, if any. */
   private factsOwner: string | undefined;
 
-  constructor() {
+  constructor(options: SaveRegistryOptions = {}) {
+    const onDemand = options.onDemand ?? [];
     this.ordered = [
       defineSaveSection<WorldSnapshot>({
         id: WORLD_SECTION_ID,
@@ -129,6 +146,9 @@ export class SaveRegistry {
           return { ...snapshot, ...kept, components };
         },
         deserialize: (world, { facts, ...data }) => {
+          for (const type of onDemand) {
+            if (type.name in data.components && !world.isRegistered(type)) world.register(type);
+          }
           world.restore(
             this.factsOwner === undefined && facts !== undefined ? { ...data, facts } : data,
           );

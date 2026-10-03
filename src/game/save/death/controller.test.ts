@@ -164,7 +164,9 @@ describe('death screen', () => {
     expect(death).not.toBeNull();
     expect(buttons(find(`[data-screen="${DEATH_SCREEN}"]`))).toEqual(['Load last save', 'Load…']);
     expect(document.activeElement?.textContent).toBe('Load last save');
-    expect(death?.textContent).toContain('Last save: Manual save 1 · testbed · 0:02 played');
+    expect(death?.textContent).toContain(
+      'Last save: Manual save 1 · Knight · testbed · 0:02 played',
+    );
     expect(s.readouts.at(-1)).toEqual({ kind: 'death', saves: 2, last: 'manual-1' });
     expect(s.ui.pausesSim).toBe(true);
 
@@ -198,8 +200,8 @@ describe('death screen', () => {
     const list = find('[data-testid="death-saves"]');
     expect(list.hidden).toBe(false);
     expect(buttons(list)).toEqual([
-      'Manual save 1 · testbed · 0:02 played · just now',
-      'Autosave 1 · testbed · 0:01 played · 1 min ago',
+      'Manual save 1 · Knight · testbed · 0:02 played · just now',
+      'Autosave 1 · Knight · testbed · 0:01 played · 1 min ago',
       'Back',
     ]);
     expect(document.activeElement?.textContent).toContain('Manual save 1');
@@ -214,7 +216,7 @@ describe('death screen', () => {
     expect(document.activeElement?.textContent).toBe('Load last save');
 
     press('Load…');
-    press('Autosave 1 · testbed · 0:01 played · 1 min ago');
+    press('Autosave 1 · Knight · testbed · 0:01 played · 1 min ago');
     expect(takePendingLoad(s.storage)).toMatchObject({ slot: 'auto-1', areaId: 'testbed' });
   });
 
@@ -468,7 +470,7 @@ describe('save text', () => {
     expect(deathSaveEntry({ ...bare, details, damaged: false }, T0)).toEqual({
       id: 'quick',
       title: 'Before the bridge',
-      detail: 'testbed · 1:02:05 played · just now',
+      detail: 'Knight · testbed · 1:02:05 played · just now',
     });
   });
 

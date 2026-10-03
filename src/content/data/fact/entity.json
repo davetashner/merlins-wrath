@@ -17,6 +17,13 @@
       "default": false,
       "description": "The container or corpse has been emptied by the player. Saves and loot tables read it so it stays empty.",
       "owner": "interaction"
+    },
+    {
+      "key": "entity:*.slain",
+      "type": "bool",
+      "default": false,
+      "description": "The creature a level placed at this spawn point has been killed (mw-e01.7), e.g. entity:slice/skeleton.slain. Set once, when it dies; saves carry it, and quests, dialogue and level variants read it.",
+      "owner": "creatures"
     }
   ]
 }

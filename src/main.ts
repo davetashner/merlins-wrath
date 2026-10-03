@@ -38,6 +38,8 @@ import {
 } from '@game/combat/index';
 import {
   bindCreatures,
+  combatVeto,
+  COMBAT_VETO_ID,
   creatureReadout,
   CreatureTelegraphs,
   formatPerceptionStats,
@@ -147,7 +149,10 @@ import {
   searchWithoutMenu,
   type SaveMenuReadout,
 } from '@game/save/menus/index';
+import { autosaveReadout, GameAutosave } from '@game/save/autosave/index';
+import { describeSave } from '@game/save/describe';
 import { createGameSaveRegistry } from '@game/save/sections';
+import { SaveSlots } from '@game/save/slots/index';
 import { openSaveStore, type OpenedSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
 import { vfxTextureManifest, vfxTextureUrls, VfxSystem } from '@game/vfx/index';
@@ -199,6 +204,7 @@ import {
   RapierSightWorld,
   creaturesInstalled,
   registerPersistence,
+  installSlainFacts,
   registerSceneComponents,
   RespawnRules,
   sceneAuthoredEntities,
@@ -219,6 +225,7 @@ import {
   type SandboxCommand,
   type UseQuickSlotCommand,
   type EntityId,
+  type VolumeCrossing,
   type LightEmitterView,
   type RapierPhysics,
   type Vec3,
@@ -279,6 +286,8 @@ const SAVE_MENU_ATTRIBUTE = {
 
 /** How long a save waits for a drawn frame to take its thumbnail from. */
 const THUMBNAIL_WAIT_MS = 5000;
+/** The slice's pass fact (docs/design/vertical-slice.md §5); setting it autosaves (mw-e01.7). */
+const SLICE_COMPLETE_FACT = 'slice.complete';
 
 /** Placeholder world seed until new-game/save flows choose one. */
 const BOOT_SEED = 1;
@@ -749,6 +758,19 @@ function startRenderer(
     // death screen. Set up once the player and the death screen exist (below).
     let deathBeat: DeathBeat | undefined;
     let captureAfterRender: ((capture: Promise<CapturedThumbnail>) => void) | undefined;
+    // A save's thumbnail (mw-e30.11): the next drawn frame, or the placeholder when no frame comes
+    // (a hidden tab). Manual saves and autosaves both take one.
+    const captureThumbnail = (): Promise<CapturedThumbnail> =>
+      new Promise<CapturedThumbnail>((resolve, reject) => {
+        captureAfterRender = (capture) => {
+          capture.then(resolve, reject);
+        };
+        setTimeout(() => {
+          reject(new Error('no frame was drawn for the thumbnail'));
+        }, THUMBNAIL_WAIT_MS);
+      });
+    // The scene's checkpoint volumes (mw-e01.4), which request autosaves (mw-e01.7).
+    let isCheckpoint: ((crossing: VolumeCrossing) => boolean) | undefined;
     // The title screen is the front door (mw-e01.2): a page naming no scene, new-game choice or menu
     // boots the game's start scene with the title menu over it, and its New Game opens class
     // selection right there (`startNewGame`), with no reload. The e2e reads the timings (page-relative
@@ -1240,11 +1262,12 @@ function startRenderer(
         drawMechanisms();
         afterStep.push(drawMechanisms);
         // Checkpoints (mw-e01.4): the e2e reads the checkpoint volumes the player has entered,
-        // oldest first, from #app[data-checkpoints]. The autosave each requests is mw-e01.7's.
-        const isCheckpoint = sceneCheckpoints(loaded.layout);
+        // oldest first, from #app[data-checkpoints]. Each requests an autosave (mw-e01.7, below).
+        const checkpoint = sceneCheckpoints(loaded.layout);
+        isCheckpoint = checkpoint;
         const reached: string[] = [];
         world.events.on(volumeEntered, (crossing) => {
-          if (!isCheckpoint(crossing)) return;
+          if (!checkpoint(crossing)) return;
           reached.push(crossing.node);
           root.dataset['checkpoints'] = JSON.stringify(reached);
         });
@@ -1288,6 +1311,8 @@ function startRenderer(
         navigation,
       });
       for (const line of sceneCreatureErrors(sceneCreatures)) console.error(line);
+      // A placed creature's death sets its slain fact (mw-e01.7), e.g. entity:slice/skeleton.slain.
+      installSlainFacts(world, scene.id);
       const watch = watchCreatureAi(world, sceneCreatures.ai, navigation);
       if (watch !== undefined) {
         let publishedAi = '';
@@ -1426,12 +1451,8 @@ function startRenderer(
       buildSha: __BUILD_SHA__,
       contentHash: 'unversioned',
     };
-    // Class selection (mw-e19) names the character and class; the knight until then.
-    const describeSave = () => ({
-      characterName: 'Knight',
-      classId: 'knight',
-      areaId: areaId ?? '',
-    });
+    // Every save names the player's class (mw-e30.14), the one class selection applied.
+    const describe = () => describeSave(world, player?.entity, content, areaId ?? '');
     const deathReload = saves.then(
       ({ store }) =>
         new DeathReload({
@@ -1452,7 +1473,7 @@ function startRenderer(
               scene === undefined ? {} : { scene },
             );
           },
-          describe: describeSave,
+          describe,
           publish: (readout) => {
             root.dataset[READOUT_ATTRIBUTE[readout.kind]] = JSON.stringify(readout);
             // A death's reload has loaded its save: the player is back in play (mw-e01.8).
@@ -1490,17 +1511,8 @@ function startRenderer(
           registry: saveRegistry,
           build: saveBuild,
           now: () => Date.now(),
-          describe: describeSave,
-          captureThumbnail: () =>
-            new Promise<CapturedThumbnail>((resolve, reject) => {
-              captureAfterRender = (capture) => {
-                capture.then(resolve, reject);
-              };
-              // No frame drawn (a hidden tab): the save goes ahead with the placeholder.
-              setTimeout(() => {
-                reject(new Error('no frame was drawn for the thumbnail'));
-              }, THUMBNAIL_WAIT_MS);
-            }),
+          describe,
+          captureThumbnail,
           warning,
           load: (load) => {
             reload.reload(load);
@@ -1523,6 +1535,37 @@ function startRenderer(
           },
         }),
     );
+    // Autosaves (mw-e01.7, mw-e30.5): in a scene with a player, entering a checkpoint volume (the
+    // slice's CP-1 and CP-2) and finishing the slice write the autosave ring once it is safe, never
+    // while a creature is in Combat. The e2e reads each attempt from #app[data-autosave].
+    if (player !== undefined && areaId !== undefined) {
+      const checkpoints = isCheckpoint;
+      let autosave: GameAutosave | undefined;
+      void saves.then(({ store }) => {
+        autosave = new GameAutosave({
+          world,
+          slots: new SaveSlots({
+            store,
+            registry: saveRegistry,
+            build: saveBuild,
+            now: () => Date.now(),
+          }),
+          describe: () => ({ ...describe(), captureThumbnail }),
+          ...(checkpoints !== undefined && { isCheckpoint: checkpoints }),
+          milestones: [SLICE_COMPLETE_FACT],
+          vetoes: { [COMBAT_VETO_ID]: combatVeto(world) },
+          publish: (event) => {
+            root.dataset['autosave'] = JSON.stringify(autosaveReadout(event));
+          },
+          warn: (message) => {
+            console.warn(message);
+          },
+        });
+      });
+      afterStep.push(() => {
+        void autosave?.afterStep();
+      });
+    }
     const openRequestedMenu = (): void => {
       const menu = bootMenuRequest(location.search);
       if (menu.kind === 'unknown')

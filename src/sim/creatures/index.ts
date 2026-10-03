@@ -4,3 +4,4 @@ export * from './condition';
 export * from './persistence';
 export * from './spawn';
 export * from './target-sharing';
+export * from './slain';
