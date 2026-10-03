@@ -86,6 +86,11 @@ export const MAX_ARMOR_PIECE_KG = 20;
 /** The resource pools a consumable can restore or a boon item can raise (ADR-0004). */
 export const ITEM_POOLS = ['health', 'stamina', 'mana'] as const;
 
+/** Longest English item name the inventory card is laid out for. */
+export const MAX_ITEM_NAME_LENGTH = 40;
+/** Longest English flavour text the inventory card is laid out for. */
+export const MAX_ITEM_DESCRIPTION_LENGTH = 280;
+
 /** UI icon asset ids for items: `icon-item-<subject>-<variant>` (style bible §15.1). */
 export const ITEM_ICON_PATTERN = /^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -241,6 +246,24 @@ const base = {
   descKey: localisationKey
     .optional()
     .describe('Localisation key of the description; absent = "item.<id>.desc".'),
+  name: z
+    .string()
+    .min(1)
+    .max(MAX_ITEM_NAME_LENGTH)
+    .optional()
+    .describe(
+      'English display name until the string tables land (the inventory screen, mw-e17.10); ' +
+        'absent = a readable form of the id.',
+    ),
+  description: z
+    .string()
+    .min(1)
+    .max(MAX_ITEM_DESCRIPTION_LENGTH)
+    .optional()
+    .describe(
+      'English flavour text the inventory card shows (room for a joke), until the string ' +
+        'tables land.',
+    ),
   icon: z
     .string()
     .regex(ITEM_ICON_PATTERN, 'must be an item icon asset id, e.g. "icon-item-lockpick-iron-01"')

@@ -9,6 +9,7 @@ import {
   hashWorld,
   installDebugCommands,
   actCommand,
+  useQuickSlotCommand,
   blastCommand,
   killCommand,
   PlayerLook,
@@ -246,6 +247,18 @@ describe('built-in console commands', () => {
     expect(s.registry.execute('act').ok).toBe(false);
   });
 
+  it('mw-e17.10: quickslot uses a quick slot of the player (1-based), until the controls bind them', () => {
+    const s = session({ withPlayer: true });
+    expect(s.registry.execute('quickslot 2').lines).toEqual(['using quick slot 2']);
+    expect(s.queue.drain()).toEqual([useQuickSlotCommand(s.hero, 1)]);
+    expect(s.registry.execute('quickslot 5').ok).toBe(false);
+    expect(s.registry.execute('quickslot 0').ok).toBe(false);
+    expect(session().registry.execute('quickslot 1')).toEqual({
+      ok: false,
+      lines: ['no player in this scene'],
+    });
+  });
+
   it('mw-e03.37: prop sets a world property of a live entity, parsing the value', () => {
     const s = session();
     const torch = s.world.spawn();
@@ -439,6 +452,7 @@ describe('built-in console commands', () => {
       'kill',
       'noclip',
       'prop',
+      'quickslot',
       'save',
       'scene',
       'seed',

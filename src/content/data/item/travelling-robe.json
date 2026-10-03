@@ -2,6 +2,8 @@
   "$schema": "../item.schema.json",
   "id": "travelling-robe",
   "category": "armor",
+  "name": "Travelling robe",
+  "description": "Heavy wool with deep pockets and a hood. Smells faintly of road dust and other people’s fireplaces.",
   "notes": "A cloth robe at ADR-0003's reference weight (2 kg). Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
   "icon": "icon-item-travelling-robe-01",
   "value": 10,

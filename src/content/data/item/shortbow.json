@@ -2,6 +2,8 @@
   "$schema": "../item.schema.json",
   "id": "shortbow",
   "category": "weapon",
+  "name": "Shortbow",
+  "description": "A hunter’s bow, short enough to draw in a cramped corridor and loud enough to regret it.",
   "notes": "The archer's bow; draw, launch and aim are the shortbow bow profile (mw-e05.3). Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
   "icon": "icon-item-shortbow-01",
   "value": 35,

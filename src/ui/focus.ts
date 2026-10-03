@@ -101,6 +101,11 @@ export class FocusManager {
     this.#rectOf = options.rectOf ?? boundingRect;
   }
 
+  /** `el`'s box, as spatial navigation measures it (components doing their own moves use it). */
+  rect(el: HTMLElement): Rect {
+    return this.#rectOf(el);
+  }
+
   /** The focused element if it is inside `scope`. */
   current(scope: Element): HTMLElement | undefined {
     const active = scope.ownerDocument.activeElement;

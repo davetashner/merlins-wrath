@@ -218,6 +218,42 @@ describe('createFrameLoop', () => {
     expect(sim.steps).toHaveLength(1);
   });
 
+  it('mw-e17.10: while paused, stepWhilePaused runs exactly one step per frame it asks for', () => {
+    let pending = 0;
+    const log: string[] = [];
+    const { frames, sim, rendered, loop } = setup({
+      simPaused: () => true,
+      stepWhilePaused: () => pending > 0,
+      sampleCommands: (tick) => {
+        pending = 0;
+        return [`cmd-${String(tick)}`];
+      },
+      onStep: (tick) => log.push(`step ${String(tick)}`),
+    });
+    loop.start();
+    frames.frame(1000); // a long paused frame: nothing to do, no catch-up later
+    pending = 1;
+    frames.frame(1000);
+    frames.frame(1000);
+    expect(sim.steps).toEqual([['cmd-0']]);
+    expect(log).toEqual(['step 1']);
+    expect(rendered.map((frame) => frame.steps)).toEqual([0, 1, 0]);
+  });
+
+  it('mw-e17.10: stopping from onStep during a paused step ends the frame without rendering', () => {
+    const { frames, sim, rendered, loop } = setup({
+      simPaused: () => true,
+      stepWhilePaused: () => true,
+      onStep: () => {
+        loop.stop();
+      },
+    });
+    loop.start();
+    frames.frame(1000 / 60);
+    expect(sim.steps).toHaveLength(1);
+    expect(rendered).toHaveLength(0);
+  });
+
   it('steps with no commands when there is no command sampler', () => {
     const { frames, sim, loop } = setup();
     loop.start();

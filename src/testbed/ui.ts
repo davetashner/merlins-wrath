@@ -2,17 +2,23 @@
 // hooks on window.__ui for the Playwright helpers (e2e/helpers/ui.ts). Query parameters:
 //   ?scale=2       sets --ui-text-scale
 //   ?hudbench=30   updates the vitals HUD every tick for N seconds and reports per-frame UI cost
-// Screens: `gallery` (opened at load) and `options` (the settings menu, mw-e31.1, on localStorage).
+// Screens: `gallery` (opened at load), `options` (the settings menu, mw-e31.1, on localStorage) and
+// `inventory` (the inventory screen, mw-e17.10, over a demo pack; a chosen action is echoed on its
+// status line).
 import { createSettingsStore, OPTIONS_SCREEN, openOptionsMenu } from '@game/settings/index';
 import {
   browserGeometry,
   findClippedText,
   focusables,
+  INVENTORY_SCREEN,
   openGallery,
+  openInventory,
   reducedMotion,
   setTextScale,
   UiRoot,
   type Gallery,
+  type InventoryItemModel,
+  type InventoryModel,
   type VitalsViewModel,
 } from '@ui/index';
 
@@ -33,12 +39,129 @@ let gallery: Gallery = openGallery(ui, {
 
 const settings = createSettingsStore({ storage: () => window.localStorage });
 
+const demoItem = (id: number, item: Omit<InventoryItemModel, 'id'>): InventoryItemModel => ({
+  id,
+  ...item,
+});
+
+/** A demo pack: every tab, a stolen item, a long name, a quick slot and an equipped weapon. */
+const DEMO_PACK: InventoryModel = {
+  gold: 1234,
+  items: [
+    demoItem(9, {
+      name: 'Healing draught',
+      description: 'Red, faintly fizzy and tasting of copper pennies.',
+      category: 'Consumable',
+      icon: 'consumable',
+      tabs: ['consumables'],
+      count: 3,
+      value: 15,
+      stolen: false,
+      verbs: ['Restore health (30)'],
+      quickSlot: 1,
+      actions: ['use', 'assign', 'unassign', 'drop', 'throw'],
+    }),
+    demoItem(8, {
+      name: 'Exceedingly ornate ceremonial lantern of the harbour guild',
+      description: 'It is very shiny and somebody will definitely miss it.',
+      category: 'Artifact',
+      icon: 'artifact',
+      tabs: ['quest'],
+      count: 1,
+      value: 300,
+      stolen: true,
+      owner: 'the Harbour Guild',
+      verbs: ['Light the way'],
+      actions: ['drop', 'throw'],
+    }),
+    demoItem(7, {
+      name: 'Arming sword',
+      description: 'A plain, honest blade.',
+      category: 'Weapon',
+      icon: 'weapon',
+      tabs: ['arms'],
+      count: 1,
+      value: 40,
+      stolen: false,
+      verbs: ['Wield in one hand'],
+      equipped: 'Main hand',
+      actions: ['unequip', 'drop', 'throw'],
+    }),
+    demoItem(6, {
+      name: 'Lockpicks',
+      description: 'Legally, a set of very small dental instruments.',
+      category: 'Tool',
+      icon: 'tool',
+      tabs: ['tools'],
+      count: 1,
+      value: 20,
+      stolen: false,
+      verbs: ['Pick Locks while carried'],
+      actions: ['drop', 'throw'],
+    }),
+    demoItem(5, {
+      name: 'A Primer of Small Fires',
+      description: 'Chapter one: do not.',
+      category: 'Book',
+      icon: 'book',
+      tabs: ['books'],
+      count: 1,
+      value: 25,
+      stolen: false,
+      verbs: ['Read', 'Learn Ember'],
+      actions: ['drop', 'throw'],
+    }),
+    demoItem(4, {
+      name: 'Rusted gallery key',
+      description: '',
+      category: 'Key',
+      icon: 'key',
+      tabs: ['keys', 'quest'],
+      count: 1,
+      value: 0,
+      stolen: false,
+      verbs: ['Unlock: Slice exit lock'],
+      notes: ['Can’t be dropped.'],
+      actions: [],
+    }),
+    demoItem(3, {
+      name: 'Oil flask',
+      description: 'Anything nearby becomes keen to catch fire.',
+      category: 'Consumable',
+      icon: 'consumable',
+      tabs: ['consumables'],
+      count: 2,
+      value: 10,
+      stolen: false,
+      verbs: ['Throw (flammable, liquid)'],
+      actions: ['use', 'assign', 'drop', 'throw'],
+    }),
+  ],
+  quickSlots: [
+    { label: '', count: 0 },
+    { label: 'Healing draught', count: 3 },
+    { label: '', count: 0 },
+    { label: '', count: 0 },
+  ],
+};
+
 /** Opens a screen by id, closing everything else first (the Playwright `openScreen` helper). */
 function openScreen(id: string): void {
-  if (id !== 'gallery' && id !== OPTIONS_SCREEN) throw new Error(`unknown screen ${id}`);
+  if (id !== 'gallery' && id !== OPTIONS_SCREEN && id !== INVENTORY_SCREEN) {
+    throw new Error(`unknown screen ${id}`);
+  }
   ui.clear();
   if (id === OPTIONS_SCREEN) {
     openOptionsMenu(ui, settings);
+    return;
+  }
+  if (id === INVENTORY_SCREEN) {
+    const inventory = openInventory(ui, {
+      model: DEMO_PACK,
+      onAction: (request) => {
+        inventory.say(`${request.action} ${String(request.itemId)}`);
+      },
+    });
     return;
   }
   gallery = openGallery(ui, { reducedMotion: () => reducedMotion(ui.element, matchMedia) });

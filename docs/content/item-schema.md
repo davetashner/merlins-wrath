@@ -11,6 +11,8 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `notes` | string | required | What the item is for, for designers and review. |
 | `nameKey` | string | — | Localisation key of the display name; absent = "item.<id>.name". |
 | `descKey` | string | — | Localisation key of the description; absent = "item.<id>.desc". |
+| `name` | string | — | English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id. |
+| `description` | string | — | English flavour text the inventory card shows (room for a joke), until the string tables land. |
 | `icon` | string | required | Inventory icon asset id (style bible §15.1); a placeholder until the art lands. |
 | `value` | integer ≥ 0 | required | Base price in gold (merchants adjust it, mw-e20). |
 | `stackable` | boolean | `false` | Several units share one inventory entry. |

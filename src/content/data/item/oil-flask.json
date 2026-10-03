@@ -2,6 +2,8 @@
   "$schema": "../item.schema.json",
   "id": "oil-flask",
   "category": "consumable",
+  "name": "Oil flask",
+  "description": "Lamp oil in a stoppered clay flask. Throw it and anything nearby becomes keen to catch fire.",
   "notes": "A stoppered flask of lamp oil to throw (mw-e17.6). It flies and lands as a flammable liquid (the oil material: ignites at 210 °C, burns 60 s), so a torch, a fire arrow or any flame sets it and what it lies against alight through the e03 fire rules. Grey-box; tuned with the final kits in m2/m3.",
   "icon": "icon-item-oil-flask-01",
   "value": 10,

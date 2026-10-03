@@ -30,8 +30,8 @@ B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT
 | Ability 3 / parry (knight) | LB                       | 3                        |
 | Ability 4        | D-pad Left                         | 4                        |
 | Inventory        | View                               | I                        |
-| Drop item        | (inventory screen, mw-e17.10)      | G                        |
-| Throw item       | (inventory screen, mw-e17.10)      | T                        |
+| Drop item        | (inventory screen)                 | G                        |
+| Throw item       | (inventory screen)                 | T                        |
 | Pause            | Menu                               | Esc, P                   |
 
 B is the souls-like dodge button (mw-e04.8), which moved crouch to D-pad Down; the rest of the d-pad
@@ -56,16 +56,19 @@ ability 2 (2, RB) cycles the arrow type. Cycle stays off ability 3, the knight's
 (`TESTBED_BOW_BUTTONS`, src/game/combat/testbed-combat.ts). While drawn the camera narrows from 70° to
 the bow's aim field of view; `?frames` shows the selected arrow type and how many are left.
 
-**Items.** Interact takes an item lying in reach ("Take <name>"; mw-e17.7). Until the inventory
-screen (mw-e17.10) lets you pick which item, G drops the most recently picked-up item that may be
-dropped (a whole stack, in front of you) and T throws one of it along your look; quest items cannot
-be dropped or thrown. The pad gets drop and throw from the inventory screen, so they have no pad
-button yet.
+**Items.** Interact takes an item lying in reach ("Take <name>"; mw-e17.7). G drops the most
+recently picked-up item that may be dropped (a whole stack, in front of you) and T throws one of it
+along your look; quest items cannot be dropped or thrown. To drop or throw a particular item, open
+the inventory (I, View; mw-e17.10), pick the item and choose Drop or Throw. That is also how the pad
+drops and throws, so those actions have no pad button. The inventory screen pauses the game; I or
+View closes it again, as do Esc and B.
 
 **Quick slots.** Four quick slots use consumables without a menu (mw-e17.6): drink a draught, throw
 an oil flask. They have no default buttons yet: 1–4 and the d-pad are the
-abilities', so the bindings wait on the owner's layout decision (the inventory screen, mw-e17.10,
-assigns items to them). Until then the sim's `useQuickSlotCommand` uses a slot.
+abilities', so the bindings wait on the owner's layout decision (mw-e17.17). The inventory screen
+assigns items to them (pick an item, Assign to quick slot), and the strip at the bottom of the screen
+shows them. Until the bindings land, the sim's `useQuickSlotCommand` uses a slot, and so does the
+debug console's `quickslot <1–4>`.
 
 **Slow walk.** The quietest way to move (mw-e02.10): hold X to walk at 1.2 m/s, or push the left
 stick 30% or less. It works standing or crouched. Sprint while crouched stands you up (not under a
