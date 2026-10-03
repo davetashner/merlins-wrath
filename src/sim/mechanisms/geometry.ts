@@ -13,9 +13,12 @@
 // - portcullis: the leaf rises by o · height into the wall above;
 // - sliding: the leaf slides by o · width towards the hinge side, into the wall.
 //
-// Obstacles are bounding spheres. A turning leaf (hinged, trapdoor) touches a sphere when the sphere
-// overlaps the sector it sweeps; a portcullis or sliding leaf touches one when its leading edge
-// reaches it. The leaf stops where it first touches, so it never ends inside what it met. Only the
+// Obstacles are bounding spheres, or upright bodies (a character's capsule: its feet, footprint
+// radius and height, mw-e01.19). A turning leaf (hinged, trapdoor) touches an obstacle when it
+// overlaps the sector the leaf sweeps; a portcullis or sliding leaf touches one when its leading edge
+// reaches it. A hinged leaf meets an upright body by its footprint over its height, so a character
+// pressed against the back of a door that swings away from it does not stop it, while one standing in
+// the swing still does; every other leaf meets an upright body as its bounding sphere. The leaf stops where it first touches, so it never ends inside what it met. Only the
 // leaf's leading motion meets things: a rising portcullis or a door sliding into the wall never does.
 
 import type { SceneYaw } from '@content/index';
@@ -27,6 +30,15 @@ import type { Door } from './components';
 
 /** The door data the geometry reads. */
 export type DoorFrame = Pick<Door, 'kind' | 'size' | 'origin' | 'yaw' | 'hinge' | 'swing'>;
+
+/**
+ * Something a leaf can meet, world metres: a bounding sphere (centre and radius), or, with `height`,
+ * an upright body standing on (x, y, z) with a footprint of `radius` (a character's capsule).
+ */
+export interface Obstacle extends Placement {
+  /** Feet to crown, metres: set for an upright body. */
+  readonly height?: number;
+}
 
 const QUARTER = Math.PI / 2;
 const INVERSE: Readonly<Record<SceneYaw, SceneYaw>> = { 0: 0, 90: 270, 180: 180, 270: 90 };
@@ -111,18 +123,23 @@ function halfWidth(rho: number, r: number): number {
   return rho <= r ? Math.PI : atan2(r, Math.sqrt(rho * rho - r * r));
 }
 
-/** Turning leaf: where in angle a sweep from `from` to `to` (radians) first touches. */
+/**
+ * Turning leaf: where in angle a sweep from `from` to `to` (radians) first touches a disc of radius
+ * `r` at `p` in the plane the leaf turns in, given the obstacle spans [bottom, top] along the hinge
+ * (height for a door, z for a hatch).
+ */
 function turnedContact(
   door: DoorFrame,
   from: number,
   to: number,
   p: Vec3,
   r: number,
+  bottom: number,
+  top: number,
 ): number | undefined {
   const { x: w, y: h } = door.size;
   const hatch = door.kind === 'trapdoor';
-  // Along the hinge: height for a door, the z extent for a hatch.
-  const along = hatch ? Math.abs(p.z) < h / 2 + r : p.y - r < h && p.y + r > 0;
+  const along = hatch ? bottom < h / 2 && top > -h / 2 : bottom < h && top > 0;
   if (!along) return undefined;
   const a = (p.x - hingeX(door)) * freeSide(door);
   const b = hatch ? p.y : door.swing === 'forward' ? p.z : -p.z;
@@ -136,17 +153,33 @@ function turnedContact(
 }
 
 /**
- * Where a leaf moving from openness `from` to `to` first touches `obstacle` (a bounding sphere, world
- * metres), as an openness between them; undefined when it does not touch it.
+ * Where a leaf moving from openness `from` to `to` first touches `obstacle` (world metres), as an
+ * openness between them; undefined when it does not touch it.
  */
 export function contactOpenness(
   door: DoorFrame,
   from: number,
   to: number,
-  obstacle: Placement,
+  obstacle: Obstacle,
 ): number | undefined {
-  const p = toLocal(door, obstacle);
-  const r = obstacle.radius;
+  const local = toLocal(door, obstacle);
+  const { height } = obstacle;
+  if (door.kind === 'hinged' && height !== undefined) {
+    // An upright body: its footprint, over its height.
+    const angle = turnedContact(
+      door,
+      from * QUARTER,
+      to * QUARTER,
+      local,
+      obstacle.radius,
+      local.y,
+      local.y + height,
+    );
+    return angle === undefined ? undefined : angle / QUARTER;
+  }
+  // Anything else meets it as a bounding sphere.
+  const p = height === undefined ? local : vec(local.x, local.y + height / 2, local.z);
+  const r = height === undefined ? obstacle.radius : Math.max(obstacle.radius, height / 2);
   const { x: w, y: h, z: t } = door.size;
   switch (door.kind) {
     case 'portcullis': {
@@ -168,7 +201,8 @@ export function contactOpenness(
       return Math.min(from, (w / 2 - (u - r)) / w);
     }
     default: {
-      const angle = turnedContact(door, from * QUARTER, to * QUARTER, p, r);
+      const [bottom, top] = door.kind === 'trapdoor' ? [p.z - r, p.z + r] : [p.y - r, p.y + r];
+      const angle = turnedContact(door, from * QUARTER, to * QUARTER, p, r, bottom, top);
       return angle === undefined ? undefined : angle / QUARTER;
     }
   }

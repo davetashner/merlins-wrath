@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Placement } from '../stimulus/placement';
 import {
+  type Obstacle,
   closedBox,
   contactOpenness,
   leafBox,
@@ -23,6 +24,14 @@ const door = (over: Partial<DoorFrame> = {}): DoorFrame => ({
   ...over,
 });
 const ball = (x: number, y: number, z: number, radius: number): Placement => ({ x, y, z, radius });
+/** An upright body (the player's capsule: 0.35 m footprint, 1.8 m tall) with its feet at (x, y, z). */
+const upright = (x: number, y: number, z: number, radius = 0.35, height = 1.8): Obstacle => ({
+  x,
+  y,
+  z,
+  radius,
+  height,
+});
 
 describe('door frame', () => {
   it('turns local points by the yaw and back', () => {
@@ -110,6 +119,55 @@ describe('contacts', () => {
   it('holds a turning leaf where it is when a body sits on its hinge', () => {
     expect(contactOpenness(door(), 0.2, 0.3, ball(-0.6, 1, 0, 0.3))).toBe(0.2);
     expect(contactOpenness(door(), 0.3, 0.2, ball(-0.6, 1, 0, 0.3))).toBe(0.3);
+  });
+
+  it('AC-1: a hinged leaf swinging away from a body pressed against its back face opens past it (mw-e01.19)', () => {
+    // The 0.1 m leaf's back face is at z = −0.05; the capsule touches it from behind.
+    const pressed = upright(0, 0, -0.05 - 0.35);
+    expect(contactOpenness(door(), 0, 1, pressed)).toBeUndefined();
+    // Anywhere along the leaf, by the hinge or the free edge, and in every yaw.
+    for (const x of [-0.5, 0.5]) {
+      expect(contactOpenness(door(), 0, 1, upright(x, 0, -0.4))).toBeUndefined();
+    }
+    for (const yaw of [0, 90, 180, 270] as const) {
+      const turned = door({ yaw, origin: { x: 3, y: 1, z: -2 }, hinge: 'right' });
+      const at = toWorld(turned, { x: 0, y: 0, z: -0.4 });
+      expect(contactOpenness(turned, 0, 1, upright(at.x, at.y, at.z))).toBeUndefined();
+    }
+    // A door swinging back, with the body pressed against its front.
+    expect(contactOpenness(door({ swing: 'back' }), 0, 1, upright(0, 0, 0.4))).toBeUndefined();
+    // Its bounding sphere (1.8 m across) would have reached into the sweep: the bug.
+    expect(contactOpenness(door(), 0, 1, ball(0, 0.9, -0.4, 0.9))).toBe(0);
+  });
+
+  it('AC-2: a hinged leaf still stops against an upright body standing in its swing (mw-e01.19)', () => {
+    const inTheWay = upright(0, 0, 0.6);
+    const opening = contactOpenness(door(), 0, 1, inTheWay);
+    expect(opening).toBeGreaterThan(0.2);
+    expect(opening).toBeLessThan(0.35);
+    // Met by its footprint, exactly as a sphere of that radius at the same spot.
+    expect(opening).toBe(contactOpenness(door(), 0, 1, ball(0, 1, 0.6, 0.35)));
+    // Closing onto it from open, and swinging back into one behind.
+    expect(contactOpenness(door(), 1, 0, inTheWay)).toBeGreaterThan(0.6);
+    expect(contactOpenness(door({ swing: 'back' }), 0, 1, upright(0, 0, -0.6))).toBe(opening);
+    // Up against the leaf on the side it swings into: it barely moves.
+    expect(contactOpenness(door(), 0, 1, upright(0, 0, 0.4))).toBeLessThan(0.06);
+    // Its whole height counts: a body standing on a ledge above the door, or below the floor, does not.
+    expect(contactOpenness(door(), 0, 1, upright(0, 2.3, 0.6))).toBeUndefined();
+    expect(contactOpenness(door(), 0, 1, upright(0, -1.9, 0.6))).toBeUndefined();
+    expect(contactOpenness(door(), 0, 1, upright(0, -1.7, 0.6))).toBe(opening);
+  });
+
+  it('meets an upright body as its bounding sphere with every other kind of leaf', () => {
+    const hatch = door({ kind: 'trapdoor', size: { x: 1, y: 2, z: 0.1 } });
+    expect(contactOpenness(hatch, 0, 1, upright(0, 0, 0))).toBe(
+      contactOpenness(hatch, 0, 1, ball(0, 0.9, 0, 0.9)),
+    );
+    const gate = door({ kind: 'portcullis' });
+    expect(contactOpenness(gate, 1, 0, upright(0, 0, 0))).toBeCloseTo(1.8 / 2.2);
+    // A squat body: its footprint is the wider.
+    expect(contactOpenness(gate, 1, 0, upright(0, 0, 0, 0.5, 0.6))).toBeCloseTo(0.8 / 2.2);
+    expect(contactOpenness(door({ kind: 'sliding' }), 1, 0, upright(0, 0, 0))).toBeDefined();
   });
 
   it('lifts a trapdoor into what stands on it', () => {
