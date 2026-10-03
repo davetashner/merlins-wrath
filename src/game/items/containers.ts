@@ -8,7 +8,7 @@
 // - `ContainerWatch` publishes what is in each container and whether it has been opened, for the
 //   e2e (#app[data-containers]).
 //
-// There is no container window yet (mw-e18.4): Interact on a chest takes everything in it.
+// Interact on a chest opens it; the container window (mw-e18.4, container-window.ts) takes from it.
 
 import type { GameContent } from '@content/index';
 import {

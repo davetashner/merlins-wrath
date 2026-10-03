@@ -214,6 +214,8 @@ describe('UiRoot', () => {
     ui.push({ id: 'journal', label: 'Journal', content: panel(btn('a'), strip) });
     ui.intent('tabNext', 'gamepad');
     ui.intent('tabPrev', 'keyboard');
+    // The secondary action (R, X) is the screen's own: unhandled, it does nothing.
+    expect(ui.intent('secondary', 'keyboard')).toBe(true);
     expect(got).toEqual(['tabNext', 'tabPrev']);
     ui.pop();
     ui.push({ id: 'plain', label: 'Plain', content: panel(btn('b')) });

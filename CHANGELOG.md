@@ -13,6 +13,13 @@ check enforces this).
 
 ### Added
 
+- A container window. Searching a chest, barrel or corpse now opens a small window listing what is
+  inside, with icons. Take one thing, or press R (X on a controller) to Take All and close it in one
+  go; Take All also has focus when the window opens, so Interact then confirm loots a chest. An empty
+  container just says "Empty". Everything you pick up now shows a short note in the bottom-right
+  corner: up to four at a time, with repeats of the same item merged into one note with a count.
+  A unique artifact gets its own gold-edged "Discovery" note with its flavour line, which stays for
+  six seconds. The notes follow the HUD scale and Text size settings.
 - An inventory screen. Press I (View on a controller) to see everything you carry, sorted newest
   first, with tabs for Weapons & Armor, Tools, Consumables, Books, Keys and Quest & Artifacts. Each
   item has a card with its name, a line or two of flavour text, what it lets you do and what it's

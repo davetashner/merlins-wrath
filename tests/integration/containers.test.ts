@@ -1,6 +1,7 @@
 // mw-e18.3 AC-5: the testbed's supply chest as the game wires it (createGameWorld: Rapier physics,
 // the player with interaction and an inventory, world items, mechanisms and containers), driven by
-// ActionFrames. The player loots it with Interact, the game saves through its save registry, a fresh
+// ActionFrames. The player opens it with Interact and empties it with the container window's Take All
+// command (mw-e18.4), the game saves through its save registry, a fresh
 // world loads the save, and the chest is empty when the player opens it again: its table is not
 // rolled a second time.
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
@@ -9,6 +10,7 @@ import {
   actionButton,
   actionFrame,
   actionVector,
+  containerActionCommand,
   containerOpened,
   hashWorld,
   interactionPrompt,
@@ -72,6 +74,8 @@ describe('the testbed supply chest (mw-e18.3)', () => {
     t.world.step([INTERACT]);
     expect(t.opened).toHaveLength(1);
     expect(t.opened[0]?.first).toBe(true);
+    expect(t.units(t.player)).toBe(before); // Search opens it; the window takes
+    t.world.step([IDLE, containerActionCommand(t.player, t.chest, { op: 'take-all' })]);
     // Everything rolled is carried now (always a healing draught, then one or two picks).
     const rolled = t.opened[0]?.rolled ?? [];
     expect(rolled[0]).toEqual({ item: 'healing-draught', count: 1 });
@@ -100,6 +104,7 @@ describe('the testbed supply chest (mw-e18.3)', () => {
     const carried = back.units(back.player);
     back.world.step([INTERACT]);
     expect(back.opened).toEqual([]);
+    expect(t.opened).toHaveLength(2); // the take-all opened it too
     expect(back.units(back.chest)).toBe(0);
     expect(back.units(back.player)).toBe(carried);
   });
