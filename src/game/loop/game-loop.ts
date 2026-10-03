@@ -23,6 +23,8 @@ export interface GameLoopOptions<TCommand> {
   readonly maxStepsPerFrame?: number;
   /** Pauses sim stepping while true (see FrameLoopOptions.simPaused). */
   readonly simPaused?: () => boolean;
+  /** Runs one step on a paused frame when true (see FrameLoopOptions.stepWhilePaused). */
+  readonly stepWhilePaused?: () => boolean;
   /** Where dropped-time reports go; defaults to `droppedTimeLogger()` for this build. */
   readonly warn?: FrameLoopOptions<TCommand>['warn'];
 }
@@ -51,7 +53,8 @@ export interface GameLoop {
 }
 
 export function createGameLoop<TCommand>(options: GameLoopOptions<TCommand>): GameLoop {
-  const { world, sources, draw, sampleCommands, maxStepsPerFrame, simPaused } = options;
+  const { world, sources, draw, sampleCommands, maxStepsPerFrame, simPaused, stepWhilePaused } =
+    options;
   const warn = options.warn ?? droppedTimeLogger();
   const sync = new RenderSync(world);
   const loop = createFrameLoop<TCommand>({
@@ -61,6 +64,7 @@ export function createGameLoop<TCommand>(options: GameLoopOptions<TCommand>): Ga
     ...(sampleCommands && { sampleCommands }),
     ...(maxStepsPerFrame !== undefined && { maxStepsPerFrame }),
     ...(simPaused && { simPaused }),
+    ...(stepWhilePaused && { stepWhilePaused }),
     warn,
     onStep: (tick) => {
       sync.capture();

@@ -328,6 +328,112 @@ ${tokens}
   font-size: ${size(0.75)};
   font-variant-numeric: tabular-nums;
 }
+.vb-icon { width: 1em; height: 1em; flex: none; vertical-align: -0.125em; }
+.vb-panel.vb-inventory { width: min(60em, 100%); max-width: 100%; }
+.vb-inventory-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--ui-space-2); }
+.vb-inventory-head h1 { margin: 0; }
+.vb-inventory-gold, .vb-inventory-hint, .vb-inventory-status { margin: 0; }
+.vb-inventory-gold { font-weight: 700; font-variant-numeric: tabular-nums; }
+.vb-inventory-hint { color: var(--ui-color-text-muted); font-size: ${size(0.875)}; }
+.vb-inventory-status:empty { display: none; }
+.vb-inventory [role='tablist'] { flex-wrap: wrap; }
+.vb-inventory-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-3);
+  align-items: flex-start;
+}
+.vb-inventory-items { position: relative; flex: 3 1 20em; min-width: 0; }
+.vb-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10em, 1fr));
+  gap: var(--ui-space-2);
+  max-height: 24em;
+  overflow-y: auto;
+  padding: var(--ui-space-1);
+}
+.vb-inventory-grid[hidden], .vb-inventory-empty[hidden], .vb-item-details[hidden] { display: none; }
+.vb-item-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--ui-space-1) var(--ui-space-2);
+  padding: var(--ui-space-2);
+  background: var(--ui-color-panel-raised);
+  border: 2px solid var(--ui-color-text-muted);
+  border-radius: var(--ui-radius);
+  cursor: pointer;
+}
+.vb-item-card[aria-selected='true'] { border-color: var(--ui-color-text); background: var(--ui-color-accent); }
+.vb-item-icon { width: 1.75em; height: 1.75em; grid-row: span 2; }
+.vb-item-name { overflow-wrap: anywhere; line-height: 1.2; }
+.vb-item-count { font-variant-numeric: tabular-nums; font-weight: 700; }
+.vb-item-badges { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: var(--ui-space-1); }
+.vb-item-badges:empty { display: none; }
+.vb-item-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4em;
+  padding: 0 0.2em;
+  border: 1px solid currentColor;
+  border-radius: var(--ui-radius);
+  font-size: ${size(0.75)};
+  font-weight: 700;
+}
+.vb-item-badge[data-part='stolen'] { color: var(--ui-color-warning); border-color: var(--ui-color-warning); }
+.vb-item-card[aria-selected='true'] .vb-item-badge[data-part='stolen'] { color: var(--ui-color-text); border-color: var(--ui-color-text); }
+.vb-inventory-empty { margin: 0; padding: var(--ui-space-3); font-style: italic; }
+.vb-item-details {
+  flex: 2 1 14em;
+  min-width: 0;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3);
+  background: var(--ui-color-panel-raised);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius);
+  overflow-wrap: anywhere;
+}
+.vb-item-details p, .vb-item-details ul, .vb-item-details h2, .vb-item-details h3 { margin: 0; }
+.vb-item-details ul { padding-left: 1.2em; }
+.vb-item-details-head { display: flex; align-items: center; gap: var(--ui-space-2); }
+.vb-icon-large { width: 2.5em; height: 2.5em; }
+.vb-item-meta { color: var(--ui-color-text-muted); }
+.vb-item-stolen { font-weight: 700; }
+.vb-item-stolen .vb-icon { color: var(--ui-color-warning); }
+.vb-item-description { font-style: italic; }
+.vb-item-note { font-size: ${size(0.875)}; }
+.vb-panel.vb-item-menu { width: min(22em, 100%); }
+.vb-item-menu h2 { overflow-wrap: anywhere; }
+.vb-item-menu-actions .vb-button { width: 100%; text-align: left; }
+.vb-quick-slots {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  pointer-events: none;
+}
+.vb-quick-slot {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--ui-color-border);
+  background: var(--ui-color-bar-track);
+  color: var(--ui-color-hud-text);
+}
+.vb-quick-slot[data-state='empty'] { opacity: 0.6; }
+.vb-quick-slot[data-state='depleted'] .vb-quick-slot-icon { opacity: 0.4; }
+.vb-quick-slot-icon { width: 55%; height: 55%; }
+.vb-quick-slot-key, .vb-quick-slot-count {
+  position: absolute;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.vb-quick-slot-key { left: -0.15em; top: -0.15em; }
+.vb-quick-slot-count { right: -0.15em; bottom: -0.15em; }
 .vb-tooltip {
   position: absolute;
   z-index: 10;

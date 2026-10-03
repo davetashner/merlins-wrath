@@ -13,6 +13,14 @@ check enforces this).
 
 ### Added
 
+- An inventory screen. Press I (View on a controller) to see everything you carry, sorted newest
+  first, with tabs for Weapons & Armor, Tools, Consumables, Books, Keys and Quest & Artifacts. Each
+  item has a card with its name, a line or two of flavour text, what it lets you do and what it's
+  worth; stolen goods carry a red hand, and hovering or focusing them says whose they were. Pick an
+  item to Use, Equip, Drop or Throw it, or put a potion in one of four quick slots, which now sit at
+  the bottom of the screen showing what is in them and how many are left. The screen pauses the
+  game, works fully with mouse, keyboard or controller, and follows the Text size setting, which
+  now applies to the game's menus and HUD text.
 - Guards keep routines you can watch and time. A guard can walk a loop, pace back and forth, wander
   between spots at random, or stand at a post sweeping its gaze across an arc. It pauses at each
   stop for a set time, faces a set way, and may lean on a wall or warm its hands while it waits.

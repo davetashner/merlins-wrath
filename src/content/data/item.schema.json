@@ -28,6 +28,18 @@
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
         },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
         "icon": {
           "type": "string",
           "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
@@ -192,6 +204,18 @@
           "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
         },
         "icon": {
           "type": "string",
@@ -358,6 +382,18 @@
           "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
         },
         "icon": {
           "type": "string",
@@ -529,6 +565,18 @@
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
         },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
         "icon": {
           "type": "string",
           "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
@@ -631,6 +679,18 @@
           "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
         },
         "icon": {
           "type": "string",
@@ -743,6 +803,18 @@
           "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
         },
         "icon": {
           "type": "string",
@@ -857,6 +929,18 @@
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
         },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
         "icon": {
           "type": "string",
           "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
@@ -942,6 +1026,18 @@
           "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
         },
         "icon": {
           "type": "string",
@@ -1088,6 +1184,18 @@
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
         },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
         "icon": {
           "type": "string",
           "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
@@ -1173,6 +1281,18 @@
           "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
         },
         "icon": {
           "type": "string",
@@ -1319,6 +1439,18 @@
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
         },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
+        },
         "icon": {
           "type": "string",
           "pattern": "^icon-item-[a-z0-9]+(?:-[a-z0-9]+)*$",
@@ -1404,6 +1536,18 @@
           "description": "Localisation key of the description; absent = \"item.<id>.desc\".",
           "type": "string",
           "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "name": {
+          "description": "English display name until the string tables land (the inventory screen, mw-e17.10); absent = a readable form of the id.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "description": {
+          "description": "English flavour text the inventory card shows (room for a joke), until the string tables land.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 280
         },
         "icon": {
           "type": "string",

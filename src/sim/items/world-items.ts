@@ -24,9 +24,9 @@
 // friction and bounce come from its material, it has a `temperature` (the property's 20 °C default
 // unless its data says otherwise) so heat stimuli and the element field reach it (a thrown oil flask
 // catches fire from a torch, mw-e17.6), and its shape is a box sized by category, the
-// placeholder the renderer also draws. The drop and throw buttons act on the selected item: until the
-// inventory screen (mw-e17.10) lets the player choose, that is the most recently acquired item that
-// may be dropped.
+// placeholder the renderer also draws. The drop and throw buttons act on the selected item, the most
+// recently acquired item that may be dropped; the inventory screen (mw-e17.10) drops or throws the
+// item the player picks, through `drop` and `throw` (src/sim/items/inventory-actions.ts).
 
 import type { ItemCategory, WeightClass } from '../../content/types/item';
 import { CharacterController } from '../character/system';

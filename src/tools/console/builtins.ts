@@ -1,6 +1,7 @@
 // The debug console's built-in commands (mw-e33.1): help, spawn, despawn (mw-e12.4), give, god,
 // noclip, kill, prop (mw-e03.37), tp, timescale, scene, set and seed, blast (mw-e04.34), save
-// (mw-e30.7) and act (mw-e03.11: the knight's heavy attack until the controls bind it).
+// (mw-e30.7), act (mw-e03.11: the knight's heavy attack until the controls bind it) and quickslot
+// (mw-e17.10: uses a quick slot until the controls bind them, mw-e17.17).
 // Everything that changes the sim goes out as a sim command through
 // `host.submit` (applied next tick, recorded in replays); the host's other members only read the
 // sim or drive the page (time scale, scene reload), never sim state.
@@ -24,6 +25,8 @@ import {
   type DifficultyKey,
   type EntityId,
   type Vec3,
+  QUICK_SLOT_COUNT,
+  useQuickSlotCommand,
   WORLD_PROPERTY_KEYS,
 } from '@sim/index';
 import { MAX_TIME_SCALE } from '@game/loop/fixed-step';
@@ -319,6 +322,17 @@ export function registerBuiltins(registry: CommandRegistry<ConsoleHost>): void {
     run: ([move], host) => {
       host.submit(actCommand(player(host), move));
       return `player performs ${move}`;
+    },
+  });
+
+  registry.registerCommand({
+    name: 'quickslot',
+    summary: 'use one of the player’s quick slots (until the controls bind them)',
+    usage: `<1–${String(QUICK_SLOT_COUNT)}>`,
+    args: z.tuple([z.coerce.number<string>().int().min(1).max(QUICK_SLOT_COUNT)]),
+    run: ([slot], host) => {
+      host.submit(useQuickSlotCommand(player(host), slot - 1));
+      return `using quick slot ${String(slot)}`;
     },
   });
 

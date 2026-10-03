@@ -2,6 +2,8 @@
   "$schema": "../item.schema.json",
   "id": "ash-staff",
   "category": "weapon",
+  "name": "Ash staff",
+  "description": "Seasoned ash, worn smooth where a hand has gripped it through a great many lectures. Also good for poking things you would rather not touch.",
   "notes": "The sorcerer's walking staff; no moves of its own yet (mw-e04). Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
   "icon": "icon-item-ash-staff-01",
   "value": 15,

@@ -54,6 +54,7 @@ import {
   startConsumables,
   startWorldItems,
 } from '@game/items/index';
+import { startInventoryUi, type InventoryUi } from '@game/items/inventory-screen';
 import {
   ContainerWatch,
   hasContainers,
@@ -198,7 +199,9 @@ import {
   type ActionFrame,
   type DebugCommand,
   type DifficultyCommand,
+  type InventoryActionCommand,
   type SandboxCommand,
+  type UseQuickSlotCommand,
   type EntityId,
   type LightEmitterView,
   type RapierPhysics,
@@ -222,6 +225,7 @@ import {
   LockMarker,
   openClassSelect,
   reducedMotion,
+  setTextScale,
   UiRoot,
 } from '@ui/index';
 import {
@@ -252,7 +256,13 @@ const READOUT_ATTRIBUTE = { death: 'death', saved: 'savedGame', loaded: 'loadedS
 const BOOT_SEED = 1;
 
 /** Everything the game feeds `World.step`: sampled input plus queued debug-console commands. */
-type GameCommand = ActionFrame | DebugCommand | DifficultyCommand | SandboxCommand;
+type GameCommand =
+  | ActionFrame
+  | DebugCommand
+  | DifficultyCommand
+  | InventoryActionCommand
+  | SandboxCommand
+  | UseQuickSlotCommand;
 
 const app = document.querySelector<HTMLElement>('#app');
 if (app) {
@@ -385,6 +395,11 @@ function startRenderer(
   // The HUD/menu layer (mw-e00.23). Screens pushed onto it may capture input (gameplay action frames
   // are withheld) and pause the sim; menus need the pointer, so capture releases pointer lock.
   const ui = new UiRoot(root);
+  // The text size setting (accessibility.textScale) scales every menu and HUD text.
+  setTextScale(ui.element, settings.get('accessibility.textScale'));
+  settings.on('accessibility.textScale', (scale) => {
+    setTextScale(ui.element, scale);
+  });
   // The contextual Interact prompt (mw-e02.5): the player's focus, with the bound key or button.
   const interactPrompt = new InteractPrompt();
   ui.hud.append(interactPrompt.element);
@@ -393,10 +408,19 @@ function startRenderer(
     navigator: globalThis.navigator,
     now: () => performance.now(),
   });
+  // The Inventory action (I, View) opens and closes the inventory screen (mw-e17.10), once the world
+  // has one: seen in gameplay frames while it is closed, and in the frames drained while it pauses.
+  let inventoryUi: InventoryUi | undefined;
   const bridge = createUiGameBridge({
     ui,
-    sampleCommands: sampler.sampleCommands,
-    drain: () => sampler.sample(),
+    sampleCommands: (tick) => {
+      const frames = sampler.sampleCommands(tick);
+      if (frames.some((frame) => frame.inventory.pressed)) inventoryUi?.toggle();
+      return frames;
+    },
+    drain: () => {
+      if (sampler.sample().inventory.pressed) inventoryUi?.toggle();
+    },
   });
   // The lock-on marker (mw-e02.16) rides the HUD layer over the locked target's lock point.
   const lockMarker = new LockMarker();
@@ -704,6 +728,8 @@ function startRenderer(
       // Queued debug-console commands pass even while a UI screen withholds gameplay frames.
       sampleCommands: commands.sampler(bridge.sampleCommands),
       simPaused: bridge.simPaused,
+      // A pausing menu's queued command (the inventory's Use, Drop…) still runs, one tick a frame.
+      stepWhilePaused: () => commands.size > 0,
       onStep: () => {
         player?.onStep();
         animation?.driver.capture();
@@ -966,7 +992,35 @@ function startRenderer(
       // Consumables (mw-e17.6): the use pipeline and the player's four quick slots; a thrown
       // consumable flies as a world item carrying its world properties. No buttons use the slots
       // yet (keys 1–4 are the abilities').
-      startConsumables(world, prepareConsumables(content, worldItems), player?.entity);
+      const consumables = prepareConsumables(content, worldItems);
+      startConsumables(world, consumables, player?.entity);
+      // The inventory screen and the quick-slot strip (mw-e17.10): I or View opens the screen; its
+      // actions reach the sim as commands. The e2e reads #app[data-inventory] (open/closed) and
+      // #app[data-quick-slots].
+      inventoryUi = startInventoryUi({
+        ui,
+        world,
+        content,
+        consumables,
+        player: player?.entity,
+        submit: (command) => {
+          commands.push(command);
+        },
+        hudScale: settings.get('accessibility.hudScale'),
+        publish: (key, value) => {
+          root.dataset[key] = value;
+        },
+        closeKeys: () => sampler.bindings.inventory,
+      });
+      globalThis.window.addEventListener('keydown', (event) => {
+        if (inventoryUi?.keydown(event) === true) event.preventDefault();
+      });
+      settings.on('accessibility.hudScale', (scale) => {
+        inventoryUi?.setHudScale(scale);
+      });
+      afterStep.push(() => {
+        inventoryUi?.afterStep();
+      });
       // Class selection (mw-e19.5): the chosen class's capabilities, kit and stats go onto the player
       // once its inventory exists, and the player then moves on the class's controller tuning. The
       // kit panel shows the class and the pack; #app[data-player-class] is the sim's player.class

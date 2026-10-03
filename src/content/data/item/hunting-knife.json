@@ -2,6 +2,8 @@
   "$schema": "../item.schema.json",
   "id": "hunting-knife",
   "category": "weapon",
+  "name": "Hunting knife",
+  "description": "Short, sharp and unglamorous. It skins rabbits, cuts rope and settles arguments with stubborn knots.",
   "notes": "A short knife for the archer's and thief's off moments; no moves of its own yet (mw-e04). Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
   "icon": "icon-item-hunting-knife-01",
   "value": 12,

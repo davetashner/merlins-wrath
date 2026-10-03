@@ -2,6 +2,8 @@
   "$schema": "../item.schema.json",
   "id": "leather-jerkin",
   "category": "armor",
+  "name": "Leather jerkin",
+  "description": "Boiled leather, cut close. It creaks only when you are trying very hard not to be heard.",
   "notes": "A leather body piece at ADR-0003's reference weight (3 kg): a light load for anyone. Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
   "icon": "icon-item-leather-jerkin-01",
   "value": 30,

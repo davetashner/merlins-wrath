@@ -46,6 +46,26 @@ describe('createGameLoop', () => {
     expect(xs.at(-1)).toBeCloseTo(3, 10);
   });
 
+  it('mw-e17.10: passes simPaused and stepWhilePaused to the frame loop', () => {
+    const world = new World<string>({ seed: 1 });
+    const fake = new FakeFrames();
+    let pending = true;
+    const { loop } = createGameLoop({
+      world,
+      sources: sources(fake),
+      draw: () => undefined,
+      simPaused: () => true,
+      stepWhilePaused: () => pending,
+      onStep: () => {
+        pending = false;
+      },
+    });
+    loop.start();
+    fake.frame(1000);
+    fake.frame(1000);
+    expect(world.tick).toBe(1);
+  });
+
   it('calls onStep after every step, once render sync has captured it', () => {
     const world = new World<string>({ seed: 1 });
     const fake = new FakeFrames();

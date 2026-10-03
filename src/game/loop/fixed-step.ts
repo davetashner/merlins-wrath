@@ -79,6 +79,12 @@ export interface FrameLoopOptions<TCommand> {
    * but no sim step runs and no commands are sampled; the paused time is discarded, not caught up.
    */
   readonly simPaused?: () => boolean;
+  /**
+   * Asked once per paused frame: true runs exactly one sim step that frame (with sampled commands),
+   * so a command a pausing menu queued (the inventory screen's Use or Drop, mw-e17.10) takes effect
+   * while the menu stays open. The menu's action costs one tick of game time, never a catch-up.
+   */
+  readonly stepWhilePaused?: () => boolean;
   /** Spiral-of-death guard (default 5). */
   readonly maxStepsPerFrame?: number;
   /** Where dropped-time warnings go (default console.warn). */
@@ -163,9 +169,16 @@ export function createFrameLoop<TCommand>(options: FrameLoopOptions<TCommand>): 
     const timeMs = now();
     const delta = Math.max(0, timeMs - last);
     last = timeMs;
-    accumulator = options.simPaused?.() === true ? 0 : accumulator + delta * timeScale;
+    const simPaused = options.simPaused?.() === true;
+    accumulator = simPaused ? 0 : accumulator + delta * timeScale;
 
     let steps = 0;
+    if (simPaused && options.stepWhilePaused?.() === true) {
+      sim.step(sample(sim.tick));
+      steps++;
+      options.onStep?.(sim.tick);
+      if (!isRunning()) return;
+    }
     while (accumulator + EPSILON_MS >= stepMs && steps < maxSteps) {
       sim.step(sample(sim.tick));
       accumulator -= stepMs;

@@ -2,6 +2,8 @@
   "$schema": "../item.schema.json",
   "id": "healing-draught",
   "category": "consumable",
+  "name": "Healing draught",
+  "description": "Red, faintly fizzy and tasting of copper pennies. The label says \"shake well\". The label has been shaken quite enough.",
   "notes": "A small red draught that restores 30 health. Grey-box starting kit item (mw-e19.4); tuned with the final kits in m2/m3.",
   "icon": "icon-item-healing-draught-01",
   "value": 15,

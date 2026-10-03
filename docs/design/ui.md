@@ -159,6 +159,56 @@ openOptionsMenu(ui, settings, { category: 'audio' });
 - Settings are per-browser, not per-save. The sim never reads the store: difficulty assists reach it
   as injected config.
 
+## Inventory screen and quick slots (`src/ui/inventory.ts`, `src/game/items/inventory-screen.ts`, mw-e17.10)
+
+```ts
+const inventory = openInventory(ui, {
+  model,                       // InventoryViews.model(world, player): stacks newest first
+  onAction: (request) => submit(inventoryActionCommand(player, requestAction(request))),
+});
+inventory.update(nextModel);   // after a sim step that changed the pack
+inventory.say('You can’t let go of that: someone is counting on it.');
+quickSlots.update(views.quickSlots(world, player)); // QuickSlotHud, bottom centre
+```
+
+- **Tabs:** All, Weapons & Armor, Tools, Consumables, Books, Keys, Quest & Artifacts. The model says
+  which tabs list an item (its category's; quest items also go in Quest & Artifacts). Q/E,
+  PageUp/PageDown or LB/RB switch tabs from anywhere on the screen.
+- **Grid:** a listbox of item cards with a roving tabindex, so it is one Tab stop. Directions move
+  between cards spatially (`FocusManager.rect` gives the component the same geometry as screen
+  navigation), and at the grid's edge the intent goes back to the screen. A card shows a placeholder
+  category icon (`src/ui/item-icons.ts`, until the e37 icon beads land), the name, the count, and
+  badges for stolen (a red hand), equipped (E) and quick slot (its number). The accessible name lists
+  them. A stolen card's tooltip, shown on focus or hover and linked as its description, names the
+  owner ("Stolen from the Warden", or just "Stolen").
+- **Inspect card:** the focused item's name, category, value, flavour text (item data's `description`)
+  and "Lets you": its verbs, written from its data as verbs ("Restore health (30)", "Throw (flammable,
+  liquid)", "Pick Locks while carried", "Wear (8 kg while worn)"). Only worn armor has a weight; the
+  pack itself is weightless.
+- **Actions:** confirm or a click opens the card's context menu, a modal screen
+  (`inventory-actions`): Use, Assign to quick slot, Remove from quick slot, Equip or Unequip, Drop,
+  Throw, as the item's rules allow. Assign opens a slot picker (`inventory-assign`). The choice goes to
+  the sim as an `item.inventoryAction` command (`src/sim/items/inventory-actions.ts`), routed through
+  the consumables, world items and equipment rules. Assigning moves an item out of any other slot.
+  A refusal comes back as `item.inventoryAction` with a reason, and the screen shows it on its status
+  line.
+- **Pausing:** the screen pauses the sim. A command it queues still runs: the frame loop's
+  `stepWhilePaused` runs exactly one step on a paused frame while commands are waiting, so the screen
+  updates with the result while it stays open.
+- **Empty:** an empty pack shows "Your pack is empty…" instead of the grid; an empty tab says so too.
+- **Opening:** the Inventory action (I, View) toggles the screen. While the screen is open, keyboard
+  gameplay input isn't sampled, because the menu releases pointer lock, so the glue closes the screen
+  on the action's own keys (`InventoryUi.keydown`). Back (Esc, B) closes the top menu, then the screen.
+- **Text size:** every size is in `em`, and names wrap (`overflow-wrap: anywhere`), so the screen
+  reflows at any text scale. The game applies `accessibility.textScale` to the UI root.
+- **Quick slots HUD** (`QuickSlotHud`): four brass-rimmed circles at the bottom centre, each with the
+  item's icon, the slot number and the units left. A depleted slot dims at 0 and refills when more of
+  its item arrive. Sizes are inline pixels from `quickSlotLayout(hudScale)`, like the combat HUD.
+  Until the controls bind the slots (mw-e17.17), the debug console's `quickslot <1–4>` uses one.
+- **Readouts:** `#app[data-inventory]` is `open` or `closed`, and `#app[data-quick-slots]` holds
+  each slot's `{label, count}` or null. The UI testbed opens the screen over a demo pack with
+  `openScreen('inventory')`.
+
 ## Class selection and the kit panel (`src/ui/class-select.ts`, `src/game/classes.ts`, mw-e19.5)
 
 ```ts
