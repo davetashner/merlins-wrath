@@ -5,11 +5,13 @@
 //   behaviour profile and tuning (read by AI, e11) and its current need levels (e12.12).
 // - `creature.senses`: its resolved sense profile (perception, e11).
 // - `creature.nav`: its nav agent, derived from its locomotion (navigation, e12.6).
+// - `creature.condition`: its morale and whether it is knocked out (./condition.ts, mw-e12.14).
 
 import type { Frozen, NavAgent, SenseProfile } from '@content/index';
 import { defineComponent } from '../core/component';
 import type { PatrolRoutine } from '../ai/routes';
 import type { Vec3 } from '../stimulus/shapes';
+import { CreatureConditionComponent } from './condition';
 
 /** Where and how a creature was spawned: enough to spawn it again (`respawnCreature`). */
 export interface CreatureOrigin {
@@ -54,4 +56,5 @@ export const CREATURE_COMPONENTS = Object.freeze([
   CreatureComponent,
   CreatureSensesComponent,
   CreatureNavComponent,
+  CreatureConditionComponent,
 ] as const);

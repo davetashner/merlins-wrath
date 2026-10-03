@@ -86,13 +86,13 @@ describe('fixture worlds', () => {
     const withFacts = buildFixtureWorld({ ...core, facts: { 'bell.rung': true } });
     expect(withFacts.facts.get('bell.rung')).toBe(true);
     expect(() => buildFixtureWorld({ ...core, scenario: 'nope' })).toThrow(
-      /unknown scenario "nope" \(registered: core\)/,
+      /unknown scenario "nope" \(registered: core, creature-guards\)/,
     );
   });
 
   it('records the section versions and round-trips through its file form', () => {
     const fixture = fixtureWith(withInventory());
-    expect(fixture.sections).toEqual({ world: 4, inventory: 1 });
+    expect(fixture.sections).toEqual({ world: 5, inventory: 1 });
     const text = serializeFixture(fixture);
     expect(text.endsWith('\n')).toBe(true);
     expect(parseFixture(JSON.parse(text))).toEqual(fixture);

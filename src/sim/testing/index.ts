@@ -19,6 +19,7 @@ export {
   type ScenarioDeps,
   type ScenarioResult,
   type ScenarioSpec,
+  type ScenarioStart,
   type StateName,
   type TimelineEntry,
   type WindowExpectation,

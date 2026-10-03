@@ -7,7 +7,6 @@
 
 import { createGameSaveRegistry } from '@game/save/sections';
 import type { SaveRegistry } from '@game/save/format';
-import { replayScenarios } from '@sim/index';
 import {
   checkSaveFixtures,
   generateSaveFixtures,
@@ -16,6 +15,7 @@ import {
   LOCK_PATH,
 } from './files';
 import { FIXTURE_WORLDS, type FixtureWorld, type ScenarioRegistry } from './fixtures';
+import { FIXTURE_SCENARIOS } from './scenarios';
 
 export interface CliIo {
   /** Repo root: fixture paths resolve against it. */
@@ -37,7 +37,7 @@ export const defaultIo = (cwd: string): CliIo => ({
   },
   registry: createGameSaveRegistry,
   worlds: FIXTURE_WORLDS,
-  scenarios: replayScenarios,
+  scenarios: FIXTURE_SCENARIOS,
 });
 
 export const USAGE = `Usage:

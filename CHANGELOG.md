@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- Saves keep each creature's state of mind: how alert it is, how long it has been searching, where
+  it last saw you, what it just heard, its morale and whether it is knocked out. A reload picks up
+  exactly where you left off, so a guard hunting for you is still hunting the same spot with the
+  same time left.
 - A container window. Searching a chest, barrel or corpse now opens a small window listing what is
   inside, with icons. Take one thing, or press R (X on a controller) to Take All and close it in one
   go; Take All also has focus when the window opens, so Interact then confirm loots a chest. An empty
