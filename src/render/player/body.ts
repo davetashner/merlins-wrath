@@ -8,7 +8,7 @@
 // Playwright testbed player e2e (e2e/testbed-player.spec.ts).
 
 import { createGreyboxRig, type GreyboxRig, type Rig } from '../animation/index';
-import { createKnightRig, type KnightModel } from './knight-model';
+import { createKnightRig, type KnightAssets } from './knight-model';
 
 /** The player body's tint (the old capsule's parchment). */
 export const PLAYER_BODY_COLOUR = 0xd8d2c4;
@@ -17,7 +17,7 @@ export const PLAYER_BODY_COLOUR = 0xd8d2c4;
  * The player's body: `rig` (the grey-box humanoid) as boxes, named "player". With `model`, the boxes
  * give way to the knight once it resolves; a rejected `model` leaves them.
  */
-export function createPlayerBody(rig: Rig, model?: Promise<KnightModel>): GreyboxRig {
+export function createPlayerBody(rig: Rig, model?: Promise<KnightAssets>): GreyboxRig {
   const boxes = createGreyboxRig(rig, PLAYER_BODY_COLOUR);
   boxes.root.name = 'player';
   let knight: GreyboxRig | undefined;

@@ -168,11 +168,12 @@ import {
   disposeArrowShaft,
 } from '@render/combat/index';
 import { createCreatureProxy, showCreatureTelegraph } from '@render/creatures/index';
+import { pickVariant, randomSalt, variantFromSearch } from '@render/creatures/variant';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { createLightRig } from '@render/light/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
-import { createPlayerBody, loadKnightModel, projectToNdc } from '@render/player/index';
+import { createPlayerBody, loadKnight, projectToNdc } from '@render/player/index';
 import { createVfxRenderer } from '@render/vfx/index';
 import { captureCanvasThumbnail, type CapturedThumbnail } from '@render/thumbnail';
 import {
@@ -942,7 +943,7 @@ function startRenderer(
           content.all('anim-clip'),
         );
         // The knight's model (mw-e37.21) takes the boxes' place once it has loaded.
-        const body = createPlayerBody(graph.rig, loadKnightModel());
+        const body = createPlayerBody(graph.rig, loadKnight());
         let publishedPlayerProbe = '';
         player = setupTestbedPlayer({
           world,
@@ -1352,6 +1353,10 @@ function startRenderer(
       // Its body glows while it winds up a telegraphed move (mw-e04.20); the telegraph watch exists
       // only where creatures do, and a step with no telegraph change costs one empty check.
       const creatureProxies = new Map<EntityId, ReturnType<typeof createCreatureProxy>>();
+      // Which look each Forgotten miner wears: one salt per game session, hashed with the miner's
+      // entity, so a new game looks different; ?miner=N pins one (mw-1ja).
+      const minerSalt = randomSalt();
+      const pinnedMiner = variantFromSearch(location.search);
       const drawCreatures = (): void => {
         bindCreatures(world, sync, (entity, look) => {
           const object = createCreatureProxy({
@@ -1360,6 +1365,7 @@ function startRenderer(
             height: look.nav.height,
             armed: look.armed,
             mesh: creatures.table.get(look.id)?.def.presentation.mesh,
+            variant: pinnedMiner ?? pickVariant(minerSalt, entity),
           });
           view.scene.add(object);
           creatureProxies.set(entity, object);
