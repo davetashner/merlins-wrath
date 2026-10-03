@@ -2,3 +2,4 @@
 export * from './cheats';
 export * from './commands';
 export * from './system';
+export * from './ai-snapshot';

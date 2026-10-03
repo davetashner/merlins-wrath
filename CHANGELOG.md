@@ -26,6 +26,12 @@ check enforces this).
   stop for a set time, faces a set way, and may lean on a wall or warm its hands while it waits.
   After a search, it heads for whichever stop it can reach soonest, not the next one in line. When a
   locked door cuts off a stop, it skips that stop and carries on.
+- An AI debug overlay for debug builds (`ai.debug on` in the console). Each creature shows its sight
+  cone tinted by alert state, its hearing range, the route it walks and where it thinks its target
+  is, with a label giving its state and how long it has been in it, what it is doing and how aware
+  it is of each thing it noticed. Noises ring where they were made. `ai.freeze` holds the game and
+  `ai.step` advances it one tick; click a creature or type `ai.debug select` to see everything about
+  it. Release builds do not include it.
 - Health and stamina bars in the bottom-left corner. When you take a hit, the health you lost stays
   visible in a lighter colour for half a second before it drains away. The health bar pulses when
   you are below a quarter of your health, and the stamina bar flashes when you try something you
