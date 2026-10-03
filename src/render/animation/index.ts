@@ -4,3 +4,4 @@ export * from './controller';
 export * from './library';
 export * from './math';
 export * from './three-rig';
+export * from './auto-skin';
