@@ -33,6 +33,7 @@ pnpm dev                 # Vite dev server
 | `pnpm content:coverage` | After `pnpm test`: fails listing content entries no passing test exercised |
 | `pnpm content:schemas`  | Regenerates `src/content/data/<type>.schema.json` for editor autocompletion |
 | `pnpm content:docs`     | Regenerates the field reference `docs/content/<type>-schema.md` for each content type |
+| `pnpm nav:bake [scene…]` | Bakes creature navmeshes into `src/content/data/navmesh/<scene>.json` (`nav:check` fails when one is stale) |
 | `pnpm replay:record`    | Records a registered sim scenario into a golden replay in `tests/replays/` |
 | `pnpm replay:rebless`   | Re-records golden replays after an intended sim/content change (review the diff) |
 

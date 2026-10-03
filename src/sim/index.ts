@@ -62,6 +62,7 @@ export * from './interaction';
 export * from './light';
 export * from './loot';
 export * from './mechanisms';
+export * from './nav';
 export * as simMath from './math';
 export * from './noise';
 export * from './physics';

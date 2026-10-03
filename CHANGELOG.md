@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Creatures can now find their way around a level. They go through doorways, up ramps and stairs,
+  and down ledges. Climbers go up ivy and ladders, but a walker has to take the long way round. A
+  locked door keeps them out until it is unlocked and opened, and a wolf cannot open a door at all.
+  If you are somewhere a creature cannot reach, it comes as close as it can and stops there. Guards
+  will use this once their patrols and searches move them.
 - An options menu: settings for controls, camera, display, audio, accessibility and gameplay, one
   tab each, all reachable by keyboard or gamepad. Changes apply at once and are remembered by your
   browser; each tab can be reset to its defaults without touching the others. If your browser blocks

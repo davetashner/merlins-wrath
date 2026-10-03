@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "The scene it was baked from (its id)."
+    },
+    "version": {
+      "type": "number",
+      "const": 1,
+      "description": "Bake version."
+    },
+    "source": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}$",
+      "description": "Fingerprint of everything the bake read."
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "cellSize": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Bake cell size, m."
+        },
+        "agentRadius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Agent radius the walkable area is shrunk by, m."
+        },
+        "agentHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Headroom a walkable surface needs, m."
+        },
+        "stepHeight": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Tallest step between neighbouring cells, m."
+        },
+        "maxSlope": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 90,
+          "description": "Steepest walkable slope, degrees."
+        },
+        "maxJump": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Highest jump link baked, m."
+        },
+        "maxDrop": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Highest drop link baked, m."
+        }
+      },
+      "required": [
+        "cellSize",
+        "agentRadius",
+        "agentHeight",
+        "stepHeight",
+        "maxSlope",
+        "maxJump",
+        "maxDrop"
+      ],
+      "additionalProperties": false,
+      "description": "The agent and grid it was baked for; `pnpm nav:bake` keeps them on a re-bake."
+    },
+    "origin": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "description": "Metres."
+        },
+        {
+          "type": "number",
+          "description": "Metres."
+        }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2,
+      "description": "World x, z of cell corner (0, 0), m."
+    },
+    "polys": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Cell index."
+          },
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Cell index."
+          },
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Cell index."
+          },
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Cell index."
+          },
+          {
+            "type": "number",
+            "description": "Metres."
+          },
+          {
+            "type": "number",
+            "description": "Metres."
+          },
+          {
+            "type": "number",
+            "description": "Metres."
+          },
+          {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3
+          },
+          {
+            "type": "integer",
+            "minimum": -1,
+            "maximum": 9007199254740991
+          }
+        ],
+        "items": false,
+        "minItems": 9,
+        "maxItems": 9,
+        "description": "[i0, k0, i1, k1, a, gx, gz, area, door]: cells [i0, i1) × [k0, k1), y = a + gx·x + gz·z."
+      },
+      "description": "Walkable rectangles, one row each: [i0, k0, i1, k1, a, gx, gz, area, door] — cells [i0, i1) × [k0, k1), surface y = a + gx·x + gz·z, nav area index, door index or −1."
+    },
+    "portals": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Cell index."
+          },
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Cell index."
+          },
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Cell index."
+          },
+          {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Cell index."
+          }
+        ],
+        "items": false,
+        "minItems": 6,
+        "maxItems": 6,
+        "description": "[a, b, i0, k0, i1, k1]: polygons a < b share the edge (i0, k0)–(i1, k1)."
+      },
+      "description": "Edges shared by two rectangles: [a, b, i0, k0, i1, k1] — polygons a < b, edge from cell corner (i0, k0) to (i1, k1)."
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "prefixItems": [
+          {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 5
+          },
+          {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          {
+            "type": "number",
+            "description": "Metres."
+          },
+          {
+            "type": "number",
+            "description": "Metres."
+          },
+          {
+            "type": "number",
+            "description": "Metres."
+          },
+          {
+            "type": "number",
+            "description": "Metres."
+          },
+          {
+            "type": "number",
+            "description": "Metres."
+          },
+          {
+            "type": "number",
+            "description": "Metres."
+          },
+          {
+            "type": "number",
+            "minimum": 0
+          }
+        ],
+        "items": false,
+        "minItems": 10,
+        "maxItems": 10,
+        "description": "[kind, from, to, ax, ay, az, bx, by, bz, measure]: one-way off-mesh link."
+      },
+      "description": "Off-mesh links, one way: [kind, from, to, ax, ay, az, bx, by, bz, measure] — kind index (jump, drop, climb…), polygons, end points in metres, rise/fall or climb grade."
+    },
+    "doors": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "description": "Door spawn ids; a polygon’s `door` indexes this list."
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "source",
+    "settings",
+    "origin",
+    "polys",
+    "portals",
+    "links",
+    "doors"
+  ],
+  "additionalProperties": false
+}

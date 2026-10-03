@@ -19,6 +19,7 @@ coherent plan. Read `CONSTITUTION.md` first — this document is subordinate to 
 | Physics | **Rapier, deterministic build** (`@dimforge/rapier3d-deterministic`, WASM), stepped inside `src/sim` on the fixed timestep behind a sim-owned physics port; the renderer only interpolates transforms (ADR-0001). |
 | Tests | Vitest (unit/integration, v8 coverage), Playwright (browser smoke, e2e, perf budgets). |
 | Enemy AI | **HFSM over the six alert states with utility selection of activities inside each state**, behaviour definitions as JSON content (ADR-0005, `docs/adr/0005-ai-architecture.md`). Runtime `mw-e11.2` in `src/sim/ai/`. |
+| Navigation | **Pure-TypeScript navmesh** baked from grey-box geometry at content build time (`pnpm nav:bake` → `src/content/data/navmesh/<scene>.json`), queried in `src/sim/nav` (A* + funnel, capability masks, door states, per-tick request budget) — no navigation library (ADR-0006, `docs/adr/0006-navmesh-and-pathfinding.md`). |
 | Content data | Data-driven JSON/TS content validated by schemas (zod). Spells, items, creatures, puzzles, dialogue, quests, loot tables are **data**, not code. |
 | Repo / flow | https://github.com/davetashner/thevesperbell — all work via PR from a git worktree, **squash merge only**, branch auto-deleted, CI must be green. |
 | Issue tracking | `bd` (beads), prefix `mw-`. Epics use explicit IDs `mw-e00`…`mw-e40`; children get hierarchical IDs `mw-e09.1`, `mw-e09.2`… |

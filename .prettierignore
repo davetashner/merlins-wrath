@@ -7,6 +7,8 @@ pnpm-lock.yaml
 coverage-baseline.json
 # Written by pnpm content:schemas; checked byte-for-byte by scripts/content-schemas.test.ts.
 src/content/data/*.schema.json
+# Written by pnpm nav:bake one row per line; checked by src/tools/navmesh/cli.test.ts (mw-e11.4).
+src/content/data/navmesh/
 # Written by pnpm audio:placeholders; checked by scripts/audio/gen-placeholders.test.ts.
 src/audio/data/sound-manifest.json
 public/assets/audio/
