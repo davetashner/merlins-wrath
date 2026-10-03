@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- Sound now travels like it does in a building. Noise fades with distance, a shut door muffles it,
+  an iron door more than a wooden one, and stone walls and floors swallow most of it. Someone in the
+  next room hears where it came through the doorway, not where you are. Guards don't listen for it
+  yet; their hearing comes next.
 - The world can now remember what you did to it: smashed walls, charred crates, boxes you moved,
   doors and levers you left open, looted chests, dead creatures and items you dropped stay that way
   when a level is left and loaded again. Only the changes are kept, not the whole level. You will

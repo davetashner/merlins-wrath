@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { serializeContent } from '../schema.ts';
 import { describeContent } from '../testing.ts';
-import { MAX_STEALTH_WEIGHT, STEALTH_ID, stealthSchema, type StealthDefInput } from './stealth.ts';
+import {
+  MAX_NOISE_LOSS_DB,
+  MAX_STEALTH_WEIGHT,
+  STEALTH_ID,
+  stealthSchema,
+  type StealthDefInput,
+} from './stealth.ts';
 
 const valid = {
   id: 'test-stealth',
@@ -25,6 +31,20 @@ const valid = {
       { metres: 20, term: 0.5 },
     ],
     contrast: { backgroundThreshold: 0.7, darkTargetMax: 0.2, bonus: 0.3 },
+  },
+  noise: {
+    audibleFloor: 10,
+    doors: {
+      open: 0,
+      ajar: -6,
+      closed: -20,
+      materials: [{ material: 'iron', closed: -25 }],
+    },
+    partitions: {
+      wall: -30,
+      floor: -25,
+      materials: [{ material: 'wood', floor: -15 }],
+    },
   },
 } satisfies StealthDefInput;
 
@@ -180,6 +200,61 @@ describe('stealth schema (mw-e09.2)', () => {
         { metres: -2, term: 1 },
       ]),
     ).toHaveLength(2);
+  });
+});
+
+type Noise = typeof valid.noise;
+const withNoise = (patch: Partial<Record<keyof Noise, unknown>>) => ({
+  ...valid,
+  noise: { ...valid.noise, ...patch },
+});
+
+describe('stealth noise tuning (mw-e09.3)', () => {
+  it('gains are dB at or below 0, down to the most a loss may take off', () => {
+    const door = (closed: number) =>
+      problems(withNoise({ doors: { ...valid.noise.doors, closed } }));
+    expect(door(-MAX_NOISE_LOSS_DB)).toEqual([]);
+    expect(door(-MAX_NOISE_LOSS_DB - 1)).toHaveLength(1);
+    const wall = (w: number) =>
+      problems(withNoise({ partitions: { ...valid.noise.partitions, wall: w } }));
+    expect(wall(0)).toEqual([]);
+    expect(wall(1)).toEqual(['noise.partitions.wall: Too big: expected number to be <=0']);
+    expect(problems(withNoise({ audibleFloor: -1 }))).toHaveLength(1);
+  });
+
+  it('door gains never rise from open to ajar to closed, defaults or per material', () => {
+    expect(
+      problems(withNoise({ doors: { ...valid.noise.doors, open: -10, materials: [] } })),
+    ).toEqual(['noise.doors: door gains must never rise from open to ajar to closed']);
+    expect(problems(withNoise({ doors: { ...valid.noise.doors, closed: -3 } }))).toEqual([
+      'noise.doors: door gains must never rise from open to ajar to closed',
+    ]);
+    const materials = [{ material: 'iron', ajar: -30 }];
+    expect(problems(withNoise({ doors: { ...valid.noise.doors, materials } }))).toEqual([
+      'noise.doors.materials.0: door gains must never rise from open to ajar to closed',
+    ]);
+  });
+
+  it('names a material listed twice', () => {
+    const doors = { ...valid.noise.doors, materials: [{ material: 'iron' }, { material: 'iron' }] };
+    expect(problems(withNoise({ doors }))).toEqual([
+      'noise.doors.materials.1.material: material "iron" is listed twice',
+    ]);
+    const partitions = {
+      ...valid.noise.partitions,
+      materials: [{ material: 'wood' }, { material: 'wood', wall: -10 }],
+    };
+    expect(problems(withNoise({ partitions }))).toEqual([
+      'noise.partitions.materials.1.material: material "wood" is listed twice',
+    ]);
+  });
+
+  it('material lists default to empty', () => {
+    const doors = { open: 0, ajar: -6, closed: -20 };
+    const partitions = { wall: -30, floor: -25 };
+    const parsed = stealthSchema.parse(withNoise({ doors, partitions }));
+    expect(parsed.noise.doors.materials).toEqual([]);
+    expect(parsed.noise.partitions.materials).toEqual([]);
   });
 });
 

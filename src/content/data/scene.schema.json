@@ -1361,6 +1361,170 @@
         ],
         "additionalProperties": false
       }
+    },
+    "acoustics": {
+      "description": "Rooms, portals and partitions for sound propagation (mw-e09.3).",
+      "type": "object",
+      "properties": {
+        "rooms": {
+          "default": [],
+          "description": "Rooms; they must not overlap.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "Name of the room, unique in the scene, e.g. guard-room."
+              },
+              "min": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "Lower corner, grid cells."
+              },
+              "max": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "Upper corner, grid cells; above min on every axis."
+              }
+            },
+            "required": [
+              "id",
+              "min",
+              "max"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "portals": {
+          "default": [],
+          "description": "Openings between rooms.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "Name of the portal, unique in the scene, e.g. guard-room-door."
+              },
+              "rooms": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "description": "A room id of this scene, or \"outside\"."
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                    "description": "A room id of this scene, or \"outside\"."
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "The two rooms it joins (one may be \"outside\")."
+              },
+              "at": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3,
+                "description": "Its middle, grid cells: where a listener on the far side hears a sound come from."
+              },
+              "door": {
+                "description": "Spawn id of the door in it; its state (open, ajar, closed) sets the loss.",
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "rooms",
+              "at"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "partitions": {
+          "default": [],
+          "description": "Materials of partitions between touching rooms; the rest use the tuning default.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rooms": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                  },
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "The two touching rooms."
+              },
+              "material": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "description": "Material id of what separates them; its wall or floor gain comes from the stealth tuning."
+              }
+            },
+            "required": [
+              "rooms",
+              "material"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": [

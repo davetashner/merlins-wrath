@@ -195,3 +195,16 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `signals` | list of object | — | Signal graphs wiring its switches, volumes and doors (mw-e03.18). |
 | `signals[].graph` | ref → signal-graph | required | The graph to place. |
 | `signals[].bindings` | map of id → id | `{}` | Binding name → spawn id, for names that are not themselves spawn ids. |
+| `acoustics` | object | — | Rooms, portals and partitions for sound propagation (mw-e09.3). |
+| `acoustics.rooms` | list of object | `[]` | Rooms; they must not overlap. |
+| `acoustics.rooms[].id` | id | required | Name of the room, unique in the scene, e.g. guard-room. |
+| `acoustics.rooms[].min` | list of any (at least 3) | required | Lower corner, grid cells. |
+| `acoustics.rooms[].max` | list of any (at least 3) | required | Upper corner, grid cells; above min on every axis. |
+| `acoustics.portals` | list of object | `[]` | Openings between rooms. |
+| `acoustics.portals[].id` | id | required | Name of the portal, unique in the scene, e.g. guard-room-door. |
+| `acoustics.portals[].rooms` | list of any (at least 2) | required | The two rooms it joins (one may be "outside"). |
+| `acoustics.portals[].at` | list of any (at least 3) | required | Its middle, grid cells: where a listener on the far side hears a sound come from. |
+| `acoustics.portals[].door` | string | — | Spawn id of the door in it; its state (open, ajar, closed) sets the loss. |
+| `acoustics.partitions` | list of object | `[]` | Materials of partitions between touching rooms; the rest use the tuning default. |
+| `acoustics.partitions[].rooms` | list of any (at least 2) | required | The two touching rooms. |
+| `acoustics.partitions[].material` | id | required | Material id of what separates them; its wall or floor gain comes from the stealth tuning. |

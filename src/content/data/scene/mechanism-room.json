@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "mechanism-room",
   "name": "Mechanism room",
-  "description": "Grey-box prefabs of every mechanism (mw-e03.18), laid out like the slice's spawn room: pull the lever by the north doorway to raise the portcullis onto the corridor; the west closet's wooden door opens by hand (and burns); the south closet's iron door is locked (Unlock finds no key; lockpicks pick it); the button by the east doorway slides the stone door open for six seconds; the floor crank lifts the trapdoor.",
+  "description": "Grey-box prefabs of every mechanism (mw-e03.18), laid out like the slice's spawn room: pull the lever by the north doorway to raise the portcullis onto the corridor; the west closet's wooden door opens by hand (and burns); the south closet's iron door is locked (Unlock finds no key; lockpicks pick it); the button by the east doorway slides the stone door open for six seconds; the floor crank lifts the trapdoor. Its acoustics (mw-e09.3) make each closet and the corridor a room behind its doorway, so a shut door muffles what happens inside.",
   "grid": 1,
   "camera": {
     "position": [-6, 7, -7],
@@ -241,5 +241,47 @@
         "reach": 60
       }
     ]
+  },
+  "acoustics": {
+    "rooms": [
+      { "id": "hall", "min": [-5, 0, -5], "max": [5, 3, 5] },
+      { "id": "corridor", "min": [-1, 0, 5], "max": [1, 3, 13] },
+      { "id": "south-closet", "min": [-1, 0, -7], "max": [1, 3, -5] },
+      { "id": "west-closet", "min": [-7, 0, -1], "max": [-5, 3, 1] },
+      { "id": "east-closet", "min": [5, 0, -1], "max": [7, 3, 1] }
+    ],
+    "portals": [
+      {
+        "id": "north-doorway",
+        "rooms": ["hall", "corridor"],
+        "at": [0, 1, 5],
+        "door": "north-gate"
+      },
+      {
+        "id": "south-doorway",
+        "rooms": ["hall", "south-closet"],
+        "at": [0, 1, -5],
+        "door": "south-door"
+      },
+      {
+        "id": "west-doorway",
+        "rooms": ["hall", "west-closet"],
+        "at": [-5, 1, 0],
+        "door": "west-door"
+      },
+      {
+        "id": "east-doorway",
+        "rooms": ["hall", "east-closet"],
+        "at": [5, 1, 0],
+        "door": "east-door"
+      },
+      {
+        "id": "trapdoor-hatch",
+        "rooms": ["hall", "outside"],
+        "at": [-3, 0, -3],
+        "door": "trapdoor"
+      }
+    ],
+    "partitions": [{ "rooms": ["hall", "corridor"], "material": "stone" }]
   }
 }
