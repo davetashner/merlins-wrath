@@ -76,8 +76,20 @@ export interface CompiledState {
   /** Seconds before `onTimeout`, or null for none. */
   readonly timeout: Num | null;
   readonly onTimeout: AlertState | null;
+  /** The timeout counts from the later of entering and the last stimulus (else from entering). */
+  readonly timeoutFromStimulus: boolean;
+  /** The heightened baseline standing down from it to unaware starts, or null for none. */
+  readonly postAlert: CompiledPostAlert | null;
   readonly transitions: readonly CompiledTransition[];
   readonly activities: readonly CompiledActivity[];
+}
+
+/** The heightened baseline after standing down (tuning `postAlertS`, `postAlertAwarenessRate`). */
+export interface CompiledPostAlert {
+  /** Seconds it lasts. */
+  readonly seconds: Num;
+  /** Awareness accumulation multiplier. */
+  readonly rate: Num;
 }
 
 /** A behaviour ready to run. */
@@ -89,6 +101,22 @@ export interface CompiledBehaviour {
   readonly tuning: Readonly<Record<string, number>>;
   readonly states: ReadonlyMap<AlertState, CompiledState>;
   readonly activities: ReadonlyMap<string, CompiledActivity>;
+}
+
+/** One move of the alert machine, `from>to`. */
+export type AlertMove = `${AlertState}>${AlertState}`;
+
+/**
+ * Every move behaviour `b`'s alert machine may make (mw-e11.7): its states' transitions and
+ * timeouts. The runtime takes no other (the table is the machine).
+ */
+export function alertMoves(b: CompiledBehaviour): ReadonlySet<AlertMove> {
+  const moves = new Set<AlertMove>();
+  for (const state of b.states.values()) {
+    for (const t of state.transitions) moves.add(`${state.name}>${t.to}`);
+    if (state.onTimeout !== null) moves.add(`${state.name}>${state.onTimeout}`);
+  }
+  return moves;
 }
 
 /** Compiled behaviours by id. */
@@ -181,6 +209,13 @@ export function compileBehaviour(def: Frozen<BehaviourDef>): CompiledBehaviour {
       name,
       timeout: s.timeoutS === undefined ? null : num(where)(s.timeoutS),
       onTimeout: s.onTimeout === undefined ? null : state(where, s.onTimeout),
+      timeoutFromStimulus: s.timeoutFrom === 'stimulus',
+      postAlert: s.postAlert
+        ? {
+            seconds: num(where)({ tuning: 'postAlertS' }),
+            rate: num(where)({ tuning: 'postAlertAwarenessRate' }),
+          }
+        : null,
       transitions: s.transitions.map((t) => ({
         to: state(where, t.to),
         ...condition(where, t.when),

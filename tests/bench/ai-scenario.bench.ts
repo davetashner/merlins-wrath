@@ -69,11 +69,13 @@ const player = [
 
 function run(): number {
   const scenario = aiScenario({ name: 'six-guards', layout, player, duration: DURATION_S }, deps);
+  // Nothing strikes or alarms them, so none is ever Alerted (mw-e11.7: only unseen damage and an
+  // ally's alarm lead there; losing the player in Combat now leads to Searching).
   for (let i = 0; i < cells.length; i++) {
     scenario
       .during(0, DURATION_S)
       .expect(`guard${String(i)}`)
-      .notState('searching');
+      .notState('alerted');
   }
   const start = performance.now();
   const result = scenario.run();

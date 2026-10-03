@@ -7,6 +7,7 @@ import type { AlertState, BehaviourCurveDef } from '@content/index';
 import type { EntityId } from '../core/component';
 import type { World } from '../core/world';
 import { CreatureComponent } from '../creatures/components';
+import { isPostAlert } from './alert';
 import { BrainComponent } from './components';
 import { aiBehaviour, aiPorts } from './runtime';
 import { at, getIf, got } from './util';
@@ -34,6 +35,8 @@ export interface BrainReadout {
   readonly state: AlertState;
   /** Seconds in the current state. */
   readonly timeInState: number;
+  /** It stood down recently and is still on edge (heightened baseline, mw-e11.7). */
+  readonly postAlert: boolean;
   readonly activity: string | null;
   /** Index of the running step (0 when idle). */
   readonly step: number;
@@ -74,6 +77,7 @@ export function introspectBrain(world: World<never>, entity: EntityId): BrainRea
     behaviour: brain.behaviour,
     state: brain.state,
     timeInState: (world.tick - brain.enteredTick) / hz,
+    postAlert: isPostAlert(brain, world.tick),
     activity: activity?.name ?? null,
     step: brain.step,
     primitive,

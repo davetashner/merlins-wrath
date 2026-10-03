@@ -9,7 +9,15 @@
 // A creature names its behaviour with `behaviour.profile` and may override any `tuning` key with
 // `behaviour.tuning`. A number in a behaviour may be written as `{ "tuning": "<key>" }` to read that
 // key, so tuning changes without touching structure (the AI tuning profiles of mw-e11.16 will
-// supply the defaults; until then they live in the behaviour's own `tuning`).
+// supply the defaults; until then they live in the behaviour's own `tuning`, filled from
+// ALERT_TUNING_DEFAULTS for the keys it leaves out).
+//
+// The alert machine (mw-e11.7) is the table: a state may move only along its listed transitions and
+// its timeout. Two rules of the ladder are enforced here: Combat never drops straight to Unaware (it
+// searches first), and damage from an unseen source never jumps to Combat (the attacker is unknown,
+// so it is Alerted at most). Every timeout, including one read from tuning, is positive. A state
+// with `postAlert` de-escalates to Unaware with a heightened baseline: awareness builds
+// `postAlertAwarenessRate` times faster for `postAlertS` seconds.
 //
 // The lists of primitives, inputs and events are the runtime's vocabulary: a new primitive is one
 // step schema here plus its handler in src/sim/ai/primitives.ts (typed against this file, so the two
@@ -37,6 +45,46 @@ export const ALERT_STATES = [
 export type AlertState = (typeof ALERT_STATES)[number];
 
 /**
+ * Built-in alert tuning (mw-e11.7; PLACEHOLDER until the AI tuning profiles of mw-e11.16): every
+ * behaviour's `tuning` starts from these, and its own keys win. `suspiciousAt` and `investigateAt`
+ * are the same thresholds awareness uses for its bands (src/sim/ai/awareness.ts; a test pins them
+ * equal), so there is one set of alert thresholds.
+ */
+export const ALERT_TUNING_DEFAULTS: Readonly<Record<string, number>> = Object.freeze({
+  /** Awareness at which an Unaware agent becomes Suspicious. */
+  suspiciousAt: 0.3,
+  /** Awareness at which it investigates. */
+  investigateAt: 0.6,
+  /** Seconds Suspicious lasts without a new stimulus. */
+  suspiciousTimeoutS: 6,
+  /** Seconds it investigates before giving up. */
+  investigatingTimeoutS: 20,
+  /** Seconds it searches around the last-known position before standing down. */
+  searchingTimeoutS: 60,
+  /** Seconds it hunts while Alerted before searching. */
+  alertedTimeoutS: 120,
+  /** Seconds the target is out of perception before Combat becomes Searching. */
+  combatLostS: 5,
+  /** Seconds of heightened baseline after standing down from a `postAlert` state. */
+  postAlertS: 300,
+  /** Awareness accumulation multiplier during the heightened baseline. */
+  postAlertAwarenessRate: 1.5,
+});
+
+/** Tuning keys that are durations and so must be positive, wherever they are used. */
+export const ALERT_TIMER_KEYS = [
+  'suspiciousTimeoutS',
+  'investigatingTimeoutS',
+  'searchingTimeoutS',
+  'alertedTimeoutS',
+  'combatLostS',
+  'postAlertS',
+] as const;
+
+/** What a state's timeout counts from: entering it, or its last stimulus (whichever is later). */
+export const ALERT_TIMEOUT_FROM = ['entered', 'stimulus'] as const;
+
+/**
  * Inputs every agent has, read by considerations and transition conditions (ADR-0005 §5), besides
  * `trait.<trait>` (personality, 0–1) and `need.<need>` (need level / 100, 0 when it has no such need).
  */
@@ -59,8 +107,17 @@ export const BEHAVIOUR_EVENTS = ['damaged-by-unseen', 'ally-alarm'] as const;
 /** An external AI event name. */
 export type BehaviourEvent = (typeof BEHAVIOUR_EVENTS)[number];
 
-/** Where a step moves or looks: the stimulus, the target, the nearest patrol waypoint, the spawn. */
-export const BEHAVIOUR_TARGETS = ['stimulus', 'target', 'nearest-waypoint', 'origin'] as const;
+/**
+ * Where a step moves or looks: the stimulus, the target, the target's last-known position, the
+ * nearest patrol waypoint, the spawn.
+ */
+export const BEHAVIOUR_TARGETS = [
+  'stimulus',
+  'target',
+  'lkp',
+  'nearest-waypoint',
+  'origin',
+] as const;
 
 /** A step target. */
 export type BehaviourTarget = (typeof BEHAVIOUR_TARGETS)[number];
@@ -228,6 +285,18 @@ const stateSchema = z.strictObject({
     .optional()
     .describe('Seconds in this state before `onTimeout`; absent = no timeout.'),
   onTimeout: z.enum(ALERT_STATES).optional().describe('State it falls back to on timeout.'),
+  timeoutFrom: z
+    .enum(ALERT_TIMEOUT_FROM)
+    .default('entered')
+    .describe(
+      'What the timeout counts from: entering the state, or the last stimulus (a new one restarts it).',
+    ),
+  postAlert: z
+    .boolean()
+    .default(false)
+    .describe(
+      'Standing down from this state to unaware starts the heightened baseline (postAlertS, postAlertAwarenessRate).',
+    ),
   transitions: z
     .array(transitionSchema)
     .prefault([])
@@ -279,15 +348,23 @@ function checkBehaviour(b: BehaviourShape, ctx: z.RefinementCtx): void {
     ctx.addIssue({ code: 'custom', path, message });
   };
   const hasState = (s: AlertState) => b.states[s] !== undefined;
+  const timers = new Set<string>(ALERT_TIMER_KEYS);
   if (!hasState(b.initial)) issue(['initial'], `unknown state "${b.initial}"`);
   for (const [name, state] of Object.entries(b.states)) {
     const at = ['states', name];
     if ((state.timeoutS === undefined) !== (state.onTimeout === undefined)) {
       issue(at, 'timeoutS and onTimeout go together');
     }
+    if (state.timeoutFrom !== 'entered' && state.timeoutS === undefined) {
+      issue([...at, 'timeoutFrom'], 'timeoutFrom needs a timeoutS');
+    }
     if (state.onTimeout !== undefined && !hasState(state.onTimeout)) {
       issue([...at, 'onTimeout'], `unknown state "${state.onTimeout}"`);
     }
+    if (name === 'combat' && state.onTimeout === 'unaware') {
+      issue([...at, 'onTimeout'], 'combat never falls back to unaware directly (search first)');
+    }
+    if (typeof state.timeoutS === 'object') timers.add(state.timeoutS.tuning);
     state.activities.forEach((activity, i) => {
       if (!Object.hasOwn(b.activities, activity)) {
         issue([...at, 'activities', i], `unknown activity "${activity}"`);
@@ -297,6 +374,15 @@ function checkBehaviour(b: BehaviourShape, ctx: z.RefinementCtx): void {
       const where = [...at, 'transitions', i];
       if (!hasState(t.to)) issue([...where, 'to'], `unknown state "${t.to}"`);
       else if (t.to === name) issue([...where, 'to'], `transition to its own state "${t.to}"`);
+      if (name === 'combat' && t.to === 'unaware') {
+        issue([...where, 'to'], 'combat never goes to unaware directly (search first)');
+      }
+      if ('event' in t.when && t.when.event === 'damaged-by-unseen' && t.to === 'combat') {
+        issue(
+          [...where, 'to'],
+          'damage from an unseen source cannot start combat (the attacker is unknown: alerted)',
+        );
+      }
       const ends = 'done' in t.when ? t.when.done : 'failed' in t.when ? t.when.failed : null;
       if (ends !== null && !state.activities.includes(ends)) {
         issue([...where, 'when'], `unknown activity "${ends}" (not listed in state "${name}")`);
@@ -307,6 +393,12 @@ function checkBehaviour(b: BehaviourShape, ctx: z.RefinementCtx): void {
   tuningRefs({ states: b.states, activities: b.activities }, [], refs);
   for (const [key, path] of refs) {
     if (!Object.hasOwn(b.tuning, key)) issue(path, `unknown tuning key "${key}"`);
+  }
+  for (const key of timers) {
+    const value = b.tuning[key];
+    if (value !== undefined && value <= 0) {
+      issue(['tuning', key], `timeout "${key}" must be positive, got ${String(value)}`);
+    }
   }
 }
 
@@ -326,7 +418,10 @@ export const behaviourSchema = z
     tuning: z
       .record(z.string().min(1), z.number())
       .prefault({})
-      .describe('Default tuning values `{ "tuning": key }` reads; creatures override them.'),
+      .transform((own) => ({ ...ALERT_TUNING_DEFAULTS, ...own }))
+      .describe(
+        'Default tuning values `{ "tuning": key }` reads; creatures override them. Keys left out come from the built-in alert tuning.',
+      ),
     thinkHz: z
       .number()
       .positive()

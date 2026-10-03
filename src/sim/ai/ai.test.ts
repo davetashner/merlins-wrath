@@ -84,6 +84,8 @@ interface StateSpec {
   readonly transitions?: BehaviourStateDef['transitions'];
   readonly timeoutS?: BehaviourStateDef['timeoutS'];
   readonly onTimeout?: BehaviourStateDef['onTimeout'];
+  readonly timeoutFrom?: BehaviourStateDef['timeoutFrom'];
+  readonly postAlert?: boolean;
 }
 
 interface BehaviourSpec {
@@ -108,7 +110,13 @@ function behaviour(spec: BehaviourSpec): Frozen<BehaviourDef> {
     states: Object.fromEntries(
       Object.entries(spec.states).map(([name, s]) => [
         name,
-        { transitions: [], ...s, activities: [...s.activities] },
+        {
+          transitions: [],
+          timeoutFrom: 'entered',
+          postAlert: false,
+          ...s,
+          activities: [...s.activities],
+        },
       ]),
     ),
     activities: Object.fromEntries(
@@ -1076,6 +1084,7 @@ describe('introspection', () => {
       behaviour: 'test',
       state: 'unaware',
       timeInState: 1.1,
+      postAlert: false,
       activity: 'patrol',
       step: 1,
       primitive: 'follow-route',

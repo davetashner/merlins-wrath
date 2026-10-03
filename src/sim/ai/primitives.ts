@@ -76,6 +76,8 @@ function targetPoint(v: AgentView, target: BehaviourTarget): Vec3 | undefined {
       return bb.stimulus ?? undefined;
     case 'target':
       return bb.target === null ? undefined : placementOf(v, bb.target);
+    case 'lkp':
+      return bb.lkp ?? undefined;
     case 'origin':
       return v.creature?.origin.at;
     case 'nearest-waypoint':

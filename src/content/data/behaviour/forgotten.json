@@ -1,10 +1,11 @@
 {
   "$schema": "../behaviour.schema.json",
   "id": "forgotten",
-  "notes": "The Forgotten skeleton's fight (mw-e13.1, ADR-0005), the vertical slice's arena encounter: it stands where it was left until it notices someone, turns to a noise and shambles over to look, and fights anyone it sees. In Combat it closes in and picks among the e04 grey-box set: the overhead chop first (the parry-practice swing), the two-hit slash while the chop cools down, and the lunging thrust when the target hangs back at 1.6-2.8 m. A move on cooldown or out of range fails its activity, which then sits out retryAfterS while the others are scored. Its habits (sweeping, hauling, ignoring quiet players) are mw-e13.4; the resting idle and wake are mw-e01.5; crumbling and reassembling is mw-e13.3.",
+  "notes": "The Forgotten skeleton's fight (mw-e13.1, ADR-0005), the vertical slice's arena encounter: it stands where it was left until it notices someone, turns to a noise and shambles over to look, and fights anyone it sees. Struck by something it did not see, it is Alerted: it turns toward where the blow came from and hurries over to look. When its target slips out of sight it searches the last place it saw them, then stands down still on edge (mw-e11.7). In Combat it closes in and picks among the e04 grey-box set: the overhead chop first (the parry-practice swing), the two-hit slash while the chop cools down, and the lunging thrust when the target hangs back at 1.6-2.8 m. A move on cooldown or out of range fails its activity, which then sits out retryAfterS while the others are scored. Its habits (sweeping, hauling, ignoring quiet players) are mw-e13.4; the resting idle and wake are mw-e01.5; crumbling and reassembling is mw-e13.3.",
   "tuning": {
-    "suspiciousAt": 0.3,
     "suspiciousTimeoutS": 12,
+    "searchingTimeoutS": 20,
+    "alertedTimeoutS": 15,
     "combatLostS": 6,
     "chopWithin": 1.3,
     "thrustWithin": 2.4
@@ -19,7 +20,7 @@
           "to": "suspicious",
           "when": { "input": "awareness", "gte": { "tuning": "suspiciousAt" } }
         },
-        { "to": "combat", "when": { "event": "damaged-by-unseen" } }
+        { "to": "alerted", "when": { "event": "damaged-by-unseen" } }
       ],
       "activities": ["stand"]
     },
@@ -28,16 +29,33 @@
       "onTimeout": "unaware",
       "transitions": [
         { "to": "combat", "when": { "input": "targetVisible", "gte": 1 } },
-        { "to": "combat", "when": { "event": "damaged-by-unseen" } },
+        { "to": "alerted", "when": { "event": "damaged-by-unseen" } },
         { "to": "unaware", "when": { "done": "seek" } },
         { "to": "unaware", "when": { "failed": "seek" } }
       ],
       "activities": ["seek"]
     },
+    "searching": {
+      "timeoutS": { "tuning": "searchingTimeoutS" },
+      "onTimeout": "unaware",
+      "postAlert": true,
+      "transitions": [{ "to": "combat", "when": { "input": "targetVisible", "gte": 1 } }],
+      "activities": ["search", "scan"]
+    },
+    "alerted": {
+      "timeoutS": { "tuning": "alertedTimeoutS" },
+      "onTimeout": "searching",
+      "transitions": [
+        { "to": "combat", "when": { "input": "targetVisible", "gte": 1 } },
+        { "to": "searching", "when": { "done": "hunt" } },
+        { "to": "searching", "when": { "failed": "hunt" } }
+      ],
+      "activities": ["hunt"]
+    },
     "combat": {
       "transitions": [
         {
-          "to": "suspicious",
+          "to": "searching",
           "when": { "input": "targetLostS", "gte": { "tuning": "combatLostS" } }
         }
       ],
@@ -54,6 +72,23 @@
         { "do": "move-to", "target": "stimulus", "within": 1 },
         { "do": "look-around", "seconds": 3 },
         { "do": "forget-stimulus" }
+      ]
+    },
+    "search": {
+      "steps": [
+        { "do": "move-to", "target": "lkp", "within": 1 },
+        { "do": "look-around", "seconds": 4 }
+      ]
+    },
+    "scan": {
+      "weight": 0.5,
+      "steps": [{ "do": "look-around", "seconds": 4 }]
+    },
+    "hunt": {
+      "steps": [
+        { "do": "look-at", "target": "lkp", "seconds": 1 },
+        { "do": "move-to", "target": "lkp", "within": 1, "gait": "run" },
+        { "do": "look-around", "seconds": 3 }
       ]
     },
     "chop": {

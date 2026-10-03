@@ -10,7 +10,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `id` | id | required | Behaviour id creatures name in `behaviour.profile`. |
 | `schemaVersion` | `1` | `1` | Behaviour schema version, for future migrations. |
 | `notes` | string | — | What it is for, for owner review. |
-| `tuning` | map of string → number | `{}` | Default tuning values `{ "tuning": key }` reads; creatures override them. |
+| `tuning` | map of string → number | `{}` | Default tuning values `{ "tuning": key }` reads; creatures override them. Keys left out come from the built-in alert tuning. |
 | `thinkHz` | number > 0 ≤ 60 | `10` | Thinks per second (it acts every tick). |
 | `inertia` | number ≥ 0 | `0.1` | Score bonus of the running activity (hysteresis). |
 | `initial` | `"unaware"` \| `"suspicious"` \| `"investigating"` \| `"searching"` \| `"alerted"` \| `"combat"` | `"unaware"` | State it spawns in. |
@@ -18,6 +18,8 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `states.<key>.timeoutS` | number > 0 or object | — | Seconds in this state before `onTimeout`; absent = no timeout. |
 | `states.<key>.timeoutS.tuning` | string | required | Tuning key. |
 | `states.<key>.onTimeout` | `"unaware"` \| `"suspicious"` \| `"investigating"` \| `"searching"` \| `"alerted"` \| `"combat"` | — | State it falls back to on timeout. |
+| `states.<key>.timeoutFrom` | `"entered"` \| `"stimulus"` | `"entered"` | What the timeout counts from: entering the state, or the last stimulus (a new one restarts it). |
+| `states.<key>.postAlert` | boolean | `false` | Standing down from this state to unaware starts the heightened baseline (postAlertS, postAlertAwarenessRate). |
 | `states.<key>.transitions` | list of object | `[]` | Checked in order after the timeout; at most one is taken per think. |
 | `states.<key>.transitions[].to` | `"unaware"` \| `"suspicious"` \| `"investigating"` \| `"searching"` \| `"alerted"` \| `"combat"` | required | State it moves to (defined in this behaviour). |
 | `states.<key>.transitions[].when` | object | required | Transition condition. |
@@ -48,7 +50,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `activities.<key>.considerations[].curve.exponent` | integer 1–8 | required |  |
 | `activities.<key>.steps` | list of object (at least 1) | required | Primitives run in order. |
 | `activities.<key>.steps[].do` | `"move-to"` | required |  |
-| `activities.<key>.steps[].target` | `"stimulus"` \| `"target"` \| `"nearest-waypoint"` \| `"origin"` | required | Where to go. |
+| `activities.<key>.steps[].target` | `"stimulus"` \| `"target"` \| `"lkp"` \| `"nearest-waypoint"` \| `"origin"` | required | Where to go. |
 | `activities.<key>.steps[].within` | number > 0 or object | `0.5` | Arrives within this many metres. |
 | `activities.<key>.steps[].within.tuning` | string | required | Tuning key. |
 | `activities.<key>.steps[].gait` | `"sneak"` \| `"walk"` \| `"run"` | `"walk"` | Gait (its speed comes from the creature). |
@@ -56,7 +58,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `activities.<key>.steps[].dwellS` | number ≥ 0 or object | `0` | Seconds it stands at each waypoint. |
 | `activities.<key>.steps[].dwellS.tuning` | string | required | Tuning key. |
 | `activities.<key>.steps[].do` | `"look-at"` | required |  |
-| `activities.<key>.steps[].target` | `"stimulus"` \| `"target"` \| `"nearest-waypoint"` \| `"origin"` | required | What to face. |
+| `activities.<key>.steps[].target` | `"stimulus"` \| `"target"` \| `"lkp"` \| `"nearest-waypoint"` \| `"origin"` | required | What to face. |
 | `activities.<key>.steps[].seconds` | number ≥ 0 or object | required | How long it looks. |
 | `activities.<key>.steps[].seconds.tuning` | string | required | Tuning key. |
 | `activities.<key>.steps[].do` | `"look-around"` | required |  |

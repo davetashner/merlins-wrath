@@ -1,13 +1,17 @@
 {
   "$schema": "../../../data/behaviour.schema.json",
   "id": "fixture-guard",
-  "notes": "Frozen test fixture (mw-e11.2), not bestiary content: the ADR-0005 guard reduced to what the runtime's tests need. Patrols its route (or naps when sleepy and lax), turns toward a noise when Suspicious, walks to it and looks around when Investigating, and fights a visible target in Combat.",
+  "notes": "Frozen test fixture (mw-e11.2), not bestiary content: the ADR-0005 guard reduced to what the runtime's tests need. Patrols its route (or naps when sleepy and lax), turns toward a noise when Suspicious, walks to it and looks around when Investigating, and fights a visible target in Combat. Losing its target, it searches the last-known position, then stands down on edge; struck from the unseen or alarmed by an ally, it is Alerted and hunts toward where the trouble came from (mw-e11.7).",
   "tuning": {
     "suspiciousAt": 0.3,
     "investigateAt": 0.6,
     "suspiciousTimeoutS": 8,
     "investigatingTimeoutS": 20,
-    "combatLostS": 5
+    "combatLostS": 5,
+    "searchingTimeoutS": 60,
+    "alertedTimeoutS": 120,
+    "postAlertS": 300,
+    "postAlertAwarenessRate": 1.5
   },
   "thinkHz": 10,
   "inertia": 0.1,
@@ -19,7 +23,8 @@
           "to": "suspicious",
           "when": { "input": "awareness", "gte": { "tuning": "suspiciousAt" } }
         },
-        { "to": "combat", "when": { "event": "damaged-by-unseen" } }
+        { "to": "alerted", "when": { "event": "damaged-by-unseen" } },
+        { "to": "alerted", "when": { "event": "ally-alarm" } }
       ],
       "activities": ["patrol", "return-to-route", "nap"]
     },
@@ -47,10 +52,27 @@
       ],
       "activities": ["investigate", "call-it-off"]
     },
+    "searching": {
+      "timeoutS": { "tuning": "searchingTimeoutS" },
+      "onTimeout": "unaware",
+      "postAlert": true,
+      "transitions": [{ "to": "combat", "when": { "input": "targetVisible", "gte": 1 } }],
+      "activities": ["search-lkp"]
+    },
+    "alerted": {
+      "timeoutS": { "tuning": "alertedTimeoutS" },
+      "onTimeout": "searching",
+      "transitions": [
+        { "to": "combat", "when": { "input": "targetVisible", "gte": 1 } },
+        { "to": "searching", "when": { "done": "hunt" } },
+        { "to": "searching", "when": { "failed": "hunt" } }
+      ],
+      "activities": ["hunt"]
+    },
     "combat": {
       "transitions": [
         {
-          "to": "investigating",
+          "to": "searching",
           "when": { "input": "targetLostS", "gte": { "tuning": "combatLostS" } }
         }
       ],
@@ -114,6 +136,19 @@
         { "input": "timeInState", "curve": { "kind": "linear", "slope": 0.1, "intercept": 0 } }
       ],
       "steps": [{ "do": "forget-stimulus" }]
+    },
+    "search-lkp": {
+      "steps": [
+        { "do": "move-to", "target": "lkp", "gait": "sneak" },
+        { "do": "look-around", "seconds": 5 }
+      ]
+    },
+    "hunt": {
+      "steps": [
+        { "do": "play-cue", "cue": "guard-alarm" },
+        { "do": "move-to", "target": "lkp", "gait": "run" },
+        { "do": "look-around", "seconds": 3 }
+      ]
     },
     "engage": {
       "interruptible": false,
