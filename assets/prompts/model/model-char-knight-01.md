@@ -20,7 +20,7 @@ licence is verified on the Higgsfield side only (see Licence). Replace before m3
   `texture_quality` / `geometry_quality` standard, `quad` false, `auto_size` true.
 - Raw result: 11,182 triangles, one material, one 2048² JPEG base-colour texture, unrigged, facing +x.
 
-## Licence (checked 2026-10-03, mw-qov)
+## Licence (checked 2026-10-03, mw-qov; open item mw-uuk)
 
 The job ran on Higgsfield (Plus plan), so Higgsfield's terms are the ones that bind us.
 
