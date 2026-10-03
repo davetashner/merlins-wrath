@@ -67,7 +67,9 @@ const menuState = (page: Page): Promise<MenuState> =>
       top: top?.dataset['screen'] ?? null,
       mode: list?.dataset['mode'] ?? null,
       focus: {
-        slot: active?.closest<HTMLElement>('[data-slot]')?.dataset['slot'] ?? '-',
+        slot:
+          active?.closest<HTMLElement>('[data-testid="save-slots"] [data-slot]')?.dataset['slot'] ??
+          '-',
         action: active?.dataset['action'] ?? '',
         text: active?.textContent ?? '',
       },
@@ -78,7 +80,9 @@ const menuState = (page: Page): Promise<MenuState> =>
               disabled: cont.getAttribute('aria-disabled') === 'true',
               description: describedBy(cont),
             },
-      rows: [...document.querySelectorAll<HTMLElement>('[data-slot]')].map((row) => ({
+      rows: [
+        ...document.querySelectorAll<HTMLElement>('[data-testid="save-slots"] [data-slot]'),
+      ].map((row) => ({
         slot: row.dataset['slot'] ?? '',
         actions: [...row.querySelectorAll<HTMLElement>('[data-action]')].map(
           (el) => el.dataset['action'] ?? '',
