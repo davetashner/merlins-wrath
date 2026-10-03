@@ -189,6 +189,7 @@ export class RecoveringLength {
 /** The orbit camera's state between frames: zoom and the two recovering lengths. */
 export class OrbitCamera {
   #zoom: number;
+  #pullBack = 0;
   readonly #boom: RecoveringLength;
   readonly #shoulder: RecoveringLength;
 
@@ -210,6 +211,18 @@ export class OrbitCamera {
   zoomBy(notches: number): void {
     const { min, max, step } = this.tuning.distance;
     this.#zoom = Math.min(max, Math.max(min, this.#zoom + notches * step));
+  }
+
+  /**
+   * Extra boom length beyond the zoom distance, metres (≥ 0): the death beat pulls the camera back
+   * (mw-e01.8). Collision still pulls the boom in; a longer boom eases out like any recovery.
+   */
+  get pullBack(): number {
+    return this.#pullBack;
+  }
+
+  set pullBack(metres: number) {
+    this.#pullBack = Math.max(0, metres);
   }
 
   /** Drops the eased lengths, so the next frame places the camera without recovering (a cut). */
@@ -238,7 +251,7 @@ export class OrbitCamera {
 
     const forward = lookForward(subject.yaw, subject.pitch);
     const back = { x: -forward.x, y: -forward.y, z: -forward.z };
-    const ideal = this.#zoom;
+    const ideal = this.#zoom + this.#pullBack;
     const boom = this.#boom.update(clearance(collision, focus, back, ideal, radius), ideal, dt);
     return { position: along(focus, back, boom), forward, focus, boom, ideal, radius };
   }

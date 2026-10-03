@@ -1,0 +1,24 @@
+{
+  "$schema": "../respawn-rules.schema.json",
+  "id": "respawn-rules",
+  "notes": "Where the player comes back after dying (mw-e01.8). m1 ships one game rule: a death in the slice reloads the last save (docs/design/vertical-slice.md F1). The grey-box testbed gets the same rule so its death and reload tests run without a content warning. Contextual wake-ups (the Fold) are e01-contextual-respawn (mw-e01.12).",
+  "deathBeatSeconds": 1.5,
+  "rules": [
+    {
+      "id": "slice-reload",
+      "notes": "Death in the slice: the death screen offers Load last save; with no save the slice restarts at player-start (mw-e01.16).",
+      "region": "slice",
+      "priority": 0,
+      "destination": { "scene": "slice", "spawn": "player-start" },
+      "mode": "reload"
+    },
+    {
+      "id": "testbed-reload",
+      "notes": "Development scene: the death → reload e2e (mw-e30.7, mw-e27.4, mw-e18.3) dies here.",
+      "region": "testbed",
+      "priority": 0,
+      "destination": { "scene": "testbed", "spawn": "player-start" },
+      "mode": "reload"
+    }
+  ]
+}

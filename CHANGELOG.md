@@ -18,6 +18,9 @@ check enforces this).
   you are below a quarter of your health, and the stamina bar flashes when you try something you
   don't have the stamina for. A hit from off screen shows a red arc pointing towards where it came
   from. A new HUD size option under Accessibility scales the bars from 75 % to 200 %.
+- Dying now plays a short death beat before the death screen. Your controls stop responding, the
+  camera pulls back over your body and the screen fades to dark for a second and a half. Then the
+  death screen offers Load last save. Dying in the slice takes you back to your last save.
 - The vertical slice has a level to play through, in grey box (`?scene=slice`). Open the wooden door
   out of the spawn room and walk a dim corridor, where ivy in a side alcove climbs to a torchlit
   ledge. The corridor opens into a pillared arena lit by torches and a brazier, with a loot alcove

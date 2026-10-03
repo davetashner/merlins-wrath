@@ -5,7 +5,7 @@
 // bool, `gte` an int or tick, an enum value is one of its values). Issues name the file, the JSON
 // pointer and the problem. Each content type with condition fields registers where they are in
 // CONDITION_USAGES: named conditions, puzzle goals (mw-e15.1), unlock requirements (mw-e19.3) and
-// loot-table entry conditions (mw-e18.1) today; dialogue (mw-e22) and quests (mw-e23) add a line.
+// loot-table entry conditions (mw-e18.1) and respawn rules (mw-e01.8) today; dialogue (mw-e22) and quests (mw-e23) add a line.
 
 import { factIndex, lookupFact, type FactIndex } from './fact-checks.ts';
 import type { ContentCheck, ContentIssue, Frozen } from './loader.ts';
@@ -21,6 +21,7 @@ import {
 import type { FactDef, FactGroup } from './types/fact.ts';
 import type { LootTable } from './types/loot-table.ts';
 import type { Puzzle } from './types/puzzle.ts';
+import type { RespawnRules } from './types/respawn-rules.ts';
 import type { UnlockGroup } from './types/unlock.ts';
 
 /** One condition in a content entry. */
@@ -42,6 +43,17 @@ export const CONDITION_USAGES: Readonly<
         : [{ pointer: `/entries/${String(i)}/conditions/when`, condition: conditions.when }],
     ),
   puzzle: (entry: Puzzle) => [{ pointer: '/goal', condition: entry.goal }],
+  // A rule's conditions, and each fact it writes as `{ fact, eq: value }` (declared, value fits).
+  'respawn-rules': (entry: RespawnRules) =>
+    entry.rules.flatMap(({ conditions, factsToSet }, i) => [
+      ...(conditions === undefined
+        ? []
+        : [{ pointer: `/rules/${String(i)}/conditions`, condition: conditions }]),
+      ...factsToSet.map(({ fact, value }, f) => ({
+        pointer: `/rules/${String(i)}/factsToSet/${String(f)}`,
+        condition: { fact, eq: value },
+      })),
+    ]),
   unlock: (entry: UnlockGroup) =>
     entry.unlocks.flatMap(({ requirements }, i) =>
       requirements === undefined

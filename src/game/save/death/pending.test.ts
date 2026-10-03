@@ -54,6 +54,23 @@ describe('pending load', () => {
     expect(s.items.has(PENDING_LOAD_KEY)).toBe(false);
   });
 
+  it('carries a respawn rule across the reload (mw-e01.8), dropping a malformed one', () => {
+    const s = storage();
+    writePendingLoad(s, { slot: 'manual-1', areaId: 'slice', respawn: { rule: 'slice-reload' } });
+    expect(takePendingLoad(s)).toEqual({
+      slot: 'manual-1',
+      areaId: 'slice',
+      requestedAt: undefined,
+      respawn: { rule: 'slice-reload' },
+    });
+    writePendingLoad(s, { slot: 'manual-1', areaId: 'slice', respawn: { rule: null } });
+    expect(takePendingLoad(s)?.respawn).toEqual({ rule: null });
+    for (const respawn of ['"x"', 'null', '{"rule":3}']) {
+      s.setItem(PENDING_LOAD_KEY, `{"slot":"manual-1","respawn":${respawn}}`);
+      expect(takePendingLoad(s)).toEqual({ slot: 'manual-1', areaId: undefined });
+    }
+  });
+
   it('ignores a non-string area', () => {
     const s = storage();
     s.setItem(PENDING_LOAD_KEY, '{"slot":"manual-2","areaId":4}');

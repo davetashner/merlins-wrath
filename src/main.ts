@@ -12,6 +12,7 @@ import {
   PLAYER_CONTROLLER_ID,
   PLAYER_CLASSES,
   PLAYER_LOCK_ON_ID,
+  RESPAWN_RULES_ID,
   type GameContent,
   type PlayerClass,
 } from '@content/index';
@@ -111,9 +112,11 @@ import {
 import {
   attachPlayerInput,
   CONTROLLER_HOT_EVENT,
+  DeathBeat,
   interactPromptModel,
   lockMarkerModel,
   readControllerFile,
+  respawnRulesFrom,
   setupTestbedPlayer,
   type ControllerHotUpdate,
   type TestbedPlayer,
@@ -153,6 +156,7 @@ import { createPlayerBody, projectToNdc } from '@render/player/index';
 import { createVfxRenderer } from '@render/vfx/index';
 import {
   addCapabilities,
+  announceRespawn,
   AttackerDummyComponent,
   classOf,
   equipChanged,
@@ -163,21 +167,24 @@ import {
   checkSandboxCommand,
   checkSandboxSpawn,
   DAMAGE_COMPONENTS,
-  Died,
   HIT_VOLUME_COMPONENTS,
   installDebugCommands,
+  installPlayerDeath,
+  isPlayerDead,
   LineOfSight,
   LEDGE_HANG_CAPABILITY,
   levelDeltasOf,
   persistDroppedItems,
   physicsBodiesOf,
   PhysicsObjectComponent,
+  playerRespawned,
   playerStart,
   RapierCollisionWorld,
   RapierSightWorld,
   creaturesInstalled,
   registerPersistence,
   registerSceneComponents,
+  RespawnRules,
   sceneAuthoredEntities,
   SceneSpawnComponent,
   SpilledComponent,
@@ -209,6 +216,7 @@ import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/fr
 import { formatVfxStats, parseVfxParam, VfxDemo } from '@tools/vfx-demo/index';
 import {
   CombatHud,
+  DeathFade,
   InteractPrompt,
   KitPanel,
   LockMarker,
@@ -682,6 +690,9 @@ function startRenderer(
       if (json !== publishedArrows) root.dataset['arrows'] = publishedArrows = json;
     };
 
+    // The death beat (mw-e01.8): the camera pull-back and fade between the player's death and the
+    // death screen. Set up once the player and the death screen exist (below).
+    let deathBeat: DeathBeat | undefined;
     let lastFrameMs: number | undefined;
     const interactions: { tick: number; verb: string; spawn: string | null }[] = [];
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
@@ -705,13 +716,15 @@ function startRenderer(
         const elapsedMs = timeMs - (lastFrameMs ?? timeMs);
         if (debugCamera.update(elapsedMs)) writeCameraData();
         lastFrameMs = timeMs;
+        deathBeat?.frame(frame.alpha);
         player?.frame(frame);
         if (player !== undefined) {
           const glyph = inputGlyph('interact', sampler.lastDevice, {
             keyboardMouse: sampler.bindings,
             gamepad: sampler.padBindings,
           });
-          interactPrompt.update(interactPromptModel(player.prompt(), glyph));
+          const dead = isPlayerDead(world, player.entity);
+          interactPrompt.update(interactPromptModel(dead ? undefined : player.prompt(), glyph));
         }
         if (dummy !== undefined) {
           // The e2e reads the dummy's health here (mw-e04.6 AC-7).
@@ -1243,6 +1256,16 @@ function startRenderer(
           describe: () => ({ characterName: 'Knight', classId: 'knight', areaId: areaId ?? '' }),
           publish: (readout) => {
             root.dataset[READOUT_ATTRIBUTE[readout.kind]] = JSON.stringify(readout);
+            // A death's reload has loaded its save: the player is back in play (mw-e01.8).
+            const respawn = pending?.respawn;
+            if (readout.kind === 'loaded' && respawn !== undefined && player !== undefined) {
+              announceRespawn(world, {
+                player: player.entity,
+                mode: 'reload',
+                rule: respawn.rule,
+                slot: readout.slot,
+              });
+            }
             // The level changes a save holds, and the loaded level's changes after a load
             // (mw-e27.4): the e2e reads them from #app[data-level-deltas].
             if (readout.kind !== 'death') {
@@ -1254,11 +1277,49 @@ function startRenderer(
           },
         }),
     );
-    world.events.on(Died, ({ target }) => {
-      if (player?.entity === target) {
-        void deathReload.then((reload) => reload.playerDied());
-      }
-    });
+    // The player's death (mw-e01.8): its Died freezes its input and starts the death beat (the sim
+    // counts it in ticks; the content says how long); when the beat ends, the respawn rule for the
+    // scene decides what follows, which in m1 is always the death screen. The e2e reads the death
+    // from #app[data-player-death] and the respawn after a reload from #app[data-respawned].
+    if (player !== undefined && request.kind === 'scene') {
+      const rules = content.get('respawn-rules', RESPAWN_RULES_ID);
+      installPlayerDeath(world, {
+        player: player.entity,
+        region: request.id,
+        rules: new RespawnRules(respawnRulesFrom(rules)),
+        beatSeconds: rules.deathBeatSeconds,
+        warn: (message) => {
+          console.warn(message);
+        },
+      });
+      const fade = new DeathFade();
+      ui.hud.append(fade.element);
+      const body = player;
+      deathBeat = new DeathBeat({
+        world,
+        player: body.entity,
+        view: {
+          pullBack: (fraction) => {
+            body.pullBack(fraction);
+          },
+          fade: (progress) => {
+            fade.update(progress);
+          },
+        },
+        onReload: ({ rule }) => {
+          void deathReload.then((reload) => reload.playerDied({ rule }));
+        },
+        publish: (readout) => {
+          root.dataset['playerDeath'] = JSON.stringify(readout);
+        },
+        warn: (message) => {
+          console.warn(message);
+        },
+      });
+      world.events.on(playerRespawned, (respawned) => {
+        root.dataset['respawned'] = JSON.stringify(respawned);
+      });
+    }
     const pending: PendingLoad | undefined = takePendingLoad(session);
     // The debug console (mw-e33.1): its own chunk, loaded only in dev builds or with ?debug=1.
     const consoleGate = {

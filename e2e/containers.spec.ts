@@ -114,7 +114,8 @@ test('AC-5: loot the testbed chest, save, close the tab, load the save: the ches
   expect(await chest(second)).toEqual({ opened: false, items: [], gold: 0 });
   await type(second, 'kill');
   const screen = second.locator('[data-screen="death"]');
-  await expect(screen).toBeVisible();
+  // The death beat (mw-e01.8, 90 sim ticks) runs first: seconds of wall time on a slow runner.
+  await expect(screen).toBeVisible({ timeout: 45_000 });
   await screen.getByRole('button', { name: 'Load last save' }).click();
   await openTestbed(second);
   await expect(second.locator('#app')).toHaveAttribute('data-loaded-save', /"slot":"manual-1"/);

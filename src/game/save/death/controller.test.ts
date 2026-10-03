@@ -177,6 +177,17 @@ describe('death screen', () => {
     });
   });
 
+  it('carries the death’s respawn rule into the pending load (mw-e01.8)', async () => {
+    const s = setup();
+    await save(s, 'manual-1', 120, T0 + MIN);
+    await s.reload.playerDied({ rule: 'testbed-reload' });
+    press('Load last save');
+    expect(takePendingLoad(s.storage)).toMatchObject({
+      slot: 'manual-1',
+      respawn: { rule: 'testbed-reload' },
+    });
+  });
+
   it('Load… lists every save most recent first; Back returns to the choices and never closes the screen', async () => {
     const s = setup();
     await save(s, 'auto-1', 100, T0);

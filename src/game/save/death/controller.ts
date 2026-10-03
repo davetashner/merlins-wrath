@@ -145,9 +145,10 @@ export class DeathReload {
 
   /**
    * The player died: opens the death screen (once). A save list that cannot be read counts as no
-   * saves, so the player can always at least restart the area.
+   * saves, so the player can always at least restart the area. `respawn` (the death beat's rule,
+   * mw-e01.8) rides the pending load, so boot can announce the respawn once the save has loaded.
    */
-  async playerDied(): Promise<void> {
+  async playerDied(respawn?: PendingLoad['respawn']): Promise<void> {
     if (this.dead) return;
     this.dead = true;
     let saves: SaveChoice[] = [];
@@ -160,7 +161,11 @@ export class DeathReload {
     openDeathScreen(this.options.ui, {
       saves: saves.map((save) => ({ ...deathSaveEntry(save, now), save })),
       onLoad: ({ save }) => {
-        this.reload({ slot: save.slot, areaId: save.details?.areaId });
+        this.reload({
+          slot: save.slot,
+          areaId: save.details?.areaId,
+          ...(respawn !== undefined && { respawn }),
+        });
       },
       onRestart: () => {
         this.restart();

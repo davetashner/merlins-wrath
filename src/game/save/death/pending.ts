@@ -16,6 +16,11 @@ export interface PendingLoad {
   readonly areaId: string | undefined;
   /** Wall-clock milliseconds when the player chose it, to time the reload; undefined: unknown. */
   readonly requestedAt?: number | undefined;
+  /**
+   * Set when the load is a respawn after a death (mw-e01.8): the respawn rule that sent the player
+   * back (null: the fallback). Boot announces player.respawned once the save has loaded.
+   */
+  readonly respawn?: { readonly rule: string | null } | undefined;
 }
 
 /** The part of `Storage` the hand-off uses. */
@@ -47,11 +52,18 @@ export function takePendingLoad(storage: PendingLoadStorage): PendingLoad | unde
     return undefined;
   }
   if (typeof value !== 'object' || value === null) return undefined;
-  const { slot, areaId, requestedAt } = value as Record<string, unknown>;
+  const { slot, areaId, requestedAt, respawn } = value as Record<string, unknown>;
   if (typeof slot !== 'string' || !isSlotId(slot)) return undefined;
   return {
     slot,
     areaId: typeof areaId === 'string' ? areaId : undefined,
     requestedAt: typeof requestedAt === 'number' ? requestedAt : undefined,
+    ...(isRespawn(respawn) && { respawn: { rule: respawn.rule } }),
   };
+}
+
+function isRespawn(value: unknown): value is { rule: string | null } {
+  if (typeof value !== 'object' || value === null) return false;
+  const { rule } = value as Record<string, unknown>;
+  return rule === null || typeof rule === 'string';
 }
