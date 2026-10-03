@@ -32,7 +32,12 @@ import {
 } from '@game/combat/index';
 import { prepareCreatures, startCreatures, type GameCreatures } from '@game/creatures/index';
 import { ActionSampler } from '@game/input/index';
-import { prepareWorldItems, startWorldItems } from '@game/items/index';
+import {
+  prepareConsumables,
+  prepareWorldItems,
+  startConsumables,
+  startWorldItems,
+} from '@game/items/index';
 import { hasMechanisms, startMechanisms } from '@game/mechanisms/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
 import { installGamePhysics, playerFocus } from '@game/physics-objects';
@@ -59,6 +64,7 @@ import {
   type ReplayScenario,
   type SceneCreatures,
   type SceneMechanisms,
+  type Consumables,
   type WorldItems,
 } from '@sim/index';
 
@@ -156,6 +162,8 @@ export interface HeadlessGame<TInput> {
   readonly combatants: TestbedCombatants;
   /** The world-item rules (mw-e17.7); the player has an inventory. */
   readonly items: WorldItems;
+  /** The consumable rules (mw-e17.6); the player has quick slots. */
+  readonly consumables: Consumables;
   /** The scene's doors and switches (mw-e03.18), or undefined in a scene without mechanisms. */
   readonly mechanisms: SceneMechanisms | undefined;
   /** The creatures content has, and what the scene's creature spawns spawned (mw-e12.4). */
@@ -257,6 +265,9 @@ export function createGameWorld<TInput>(
   // World items (mw-e17.7): the scene's items, taken with Interact, dropped and thrown.
   const items = prepareWorldItems(content);
   startWorldItems(world, items, scene.spawns, player);
+  // Consumables (mw-e17.6): the use pipeline and the player's quick slots.
+  const consumables = prepareConsumables(content, items);
+  startConsumables(world, consumables, player);
   // Mechanisms (mw-e03.18) in scenes that have them, as src/main.ts starts them: door leaves collide
   // in the physics port and keys come off the player's keyring (mw-e17.5). Headless, nothing
   // reads the light occluders.
@@ -275,6 +286,7 @@ export function createGameWorld<TInput>(
     combat,
     combatants,
     items,
+    consumables,
     mechanisms,
     creatures,
     sceneCreatures,

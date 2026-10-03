@@ -3,7 +3,9 @@ import { loadGameContent } from '@content/index';
 import {
   addInventory,
   addPhysicsObject,
+  addQuickSlots,
   inventoryOf,
+  quickSlotsOf,
   RapierPhysics,
   registerSceneComponents,
   World,
@@ -18,7 +20,9 @@ import { SceneLoader } from '../scene/scene-loader';
 import {
   bindWorldItems,
   ItemWatch,
+  prepareConsumables,
   prepareWorldItems,
+  startConsumables,
   startWorldItems,
   worldItemDef,
 } from './index';
@@ -154,5 +158,38 @@ describe('world items in the game (mw-e17.7)', () => {
     expect(watch.version).toBe(6);
     expect(new ItemWatch(world, undefined).readout().pack).toEqual([]);
     expect(new ItemWatch(world, world.spawn()).readout().pack).toEqual([]);
+  });
+});
+
+describe('consumables in the game (mw-e17.6)', () => {
+  it('maps use effects, a coating’s properties keyed by material id', () => {
+    const content = loadGameContent();
+    expect(worldItemDef(content.get('item', 'oil-flask')).use).toEqual([{ op: 'throw' }]);
+    expect(worldItemDef(content.get('item', 'arming-sword')).use).toBeUndefined();
+    const oil = content.get('item', 'oil-flask');
+    const coated = worldItemDef({
+      ...oil,
+      use: [{ op: 'coat', properties: { ...oil.worldProperties, flammable: true }, seconds: 30 }],
+    } as never);
+    expect(coated.use).toEqual([
+      { op: 'coat', properties: { material: 'oil', flammable: true, liquid: true }, seconds: 30 },
+    ]);
+  });
+
+  it('gives the player quick slots once; without a player it only installs', () => {
+    const { content, world, items, player } = testbed();
+    const consumables = prepareConsumables(content, items);
+    expect(consumables.items).toBe(items);
+    expect(consumables.usable(consumables.def('oil-flask'))).toBe(true);
+    addQuickSlots(world, must(player));
+    const slots = quickSlotsOf(world, must(player));
+    startConsumables(world, consumables, player);
+    expect(quickSlotsOf(world, must(player))).toBe(slots); // kept, not replaced
+    const fresh = testbed();
+    startConsumables(fresh.world, prepareConsumables(content, fresh.items), fresh.player);
+    expect(quickSlotsOf(fresh.world, must(fresh.player))?.slots).toEqual([null, null, null, null]);
+    const alone = testbed(false);
+    startConsumables(alone.world, prepareConsumables(content, alone.items), undefined);
+    expect(alone.world.query(WorldItemComponent).ids()).toHaveLength(1);
   });
 });

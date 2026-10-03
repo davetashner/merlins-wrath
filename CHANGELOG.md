@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- Consumables and four quick slots: drink a draught or throw an oil flask without opening a menu.
+  A slot refills from your next stack of the same item and shows as empty when you run out. A
+  thrown oil flask lands as flammable oil that a flame sets alight, and the fire spreads from it
+  through heat like any other. The slots have no keys yet (1–4 are your abilities).
 - Keys work by themselves: walk up to a locked door holding its key and press Interact to unlock and
   open it, with no menu. Without the key the prompt is greyed and says why ("Locked. The key can't be
   far."). Some keys snap when used once; most stay on your keyring. The testbed's east wall now has a

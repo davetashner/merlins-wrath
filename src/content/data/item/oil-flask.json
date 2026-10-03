@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "oil-flask",
+  "category": "consumable",
+  "notes": "A stoppered flask of lamp oil to throw (mw-e17.6). It flies and lands as a flammable liquid (the oil material: ignites at 210 °C, burns 60 s), so a torch, a fire arrow or any flame sets it and what it lies against alight through the e03 fire rules. Grey-box; tuned with the final kits in m2/m3.",
+  "icon": "icon-item-oil-flask-01",
+  "value": 10,
+  "stackable": true,
+  "maxStack": 10,
+  "worldProperties": {
+    "material": "oil",
+    "flammable": true,
+    "liquid": true
+  },
+  "use": [
+    {
+      "op": "throw"
+    }
+  ]
+}

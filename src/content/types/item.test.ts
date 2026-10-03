@@ -18,6 +18,7 @@ import {
   itemKeys,
   itemSchema,
   MAX_PENALTY_MULTIPLIER,
+  MAX_USE_SECONDS,
   type ItemDef,
   type ItemDefInput,
   type ItemEntry,
@@ -265,6 +266,29 @@ describe('item schema: categories and rules', () => {
     const boon = { op: 'stat-step', pool: 'health', amount: 10 };
     expect(problems({ ...potion, use: [boon] })).toEqual([]);
     expect(problems({ ...potion, use: [{ ...boon, amount: 20 }] })).toHaveLength(1);
+  });
+
+  it('statuses and coatings are timed; a thrown item needs world properties (mw-e17.6)', () => {
+    const potion = { ...misc, category: 'consumable' };
+    const status = { op: 'status', status: 'warded', seconds: 30 };
+    expect(problems({ ...potion, use: [status] })).toEqual([]);
+    expect(problems({ ...potion, use: [{ ...status, seconds: 0 }] })).toHaveLength(1);
+    expect(
+      problems({ ...potion, use: [{ ...status, seconds: MAX_USE_SECONDS + 1 }] }),
+    ).toHaveLength(1);
+    const coat = { op: 'coat', properties: { flammable: true }, seconds: 60 };
+    expect(problems({ ...potion, use: [coat] })).toEqual([]);
+    expect(problems({ ...potion, use: [{ ...coat, properties: { wet: 1 } }] })).toHaveLength(1);
+    expect(problems({ ...potion, use: [{ op: 'throw' }] })).toEqual([
+      'use.0: item "test-item": a thrown item needs worldProperties (what it does where it lands)',
+    ]);
+    expect(
+      problems({
+        ...potion,
+        worldProperties: { flammable: true, liquid: true },
+        use: [{ op: 'throw' }],
+      }),
+    ).toEqual([]);
   });
 
   it('a key opens locks by id or by tag', () => {

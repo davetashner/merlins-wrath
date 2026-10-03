@@ -39,7 +39,14 @@ import {
   type GameCreatures,
 } from '@game/creatures/index';
 import { bindBreakLeftovers, BreakWatch, hasBreakables } from '@game/breakables/index';
-import { bindWorldItems, ItemWatch, prepareWorldItems, startWorldItems } from '@game/items/index';
+import {
+  bindWorldItems,
+  ItemWatch,
+  prepareConsumables,
+  prepareWorldItems,
+  startConsumables,
+  startWorldItems,
+} from '@game/items/index';
 import {
   doorLeafLooks,
   hasMechanisms,
@@ -861,6 +868,10 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
       // is rebuilt only after a take, drop, throw or refusal.
       const worldItems = prepareWorldItems(content);
       startWorldItems(world, worldItems, loaded.spawns, player?.entity);
+      // Consumables (mw-e17.6): the use pipeline and the player's four quick slots; a thrown
+      // consumable flies as a world item carrying its world properties. No buttons use the slots
+      // yet (keys 1–4 are the abilities').
+      startConsumables(world, prepareConsumables(content, worldItems), player?.entity);
       const itemWatch = new ItemWatch(world, player?.entity);
       let publishedItems = -1;
       const drawItems = (): void => {

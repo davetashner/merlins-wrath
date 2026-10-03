@@ -2,6 +2,8 @@
 // (src/sim/items) and the renderer.
 //
 // - `prepareWorldItems` builds the sim's world-item rules over content's items and materials.
+// - `prepareConsumables` and `startConsumables` do the same for consumables and quick slots
+//   (mw-e17.6): the use pipeline, and thrown consumables spawning as world items.
 // - `startWorldItems` installs them in a world after the player (so the drop and throw buttons act on
 //   this tick's position), gives the player an inventory and turns the scene's item spawns into
 //   world items.
@@ -13,7 +15,10 @@
 import { toPropertyInit, type GameContent, materialPresets, type ItemEntry } from '@content/index';
 import {
   addInventory,
+  addQuickSlots,
   addSceneItems,
+  Consumables,
+  installConsumables,
   installWorldItems,
   inventoryOf,
   itemDropped,
@@ -21,23 +26,35 @@ import {
   itemPickedUp,
   itemPickupRefused,
   PhysicsObjectComponent,
+  quickSlotsOf,
   WorldItemComponent,
   WorldItems,
+  type ConsumableDef,
   type EntityId,
   type ItemInstanceFlags,
   type ItemSpawnEntity,
   type Vec3,
   type World,
-  type WorldItemDef,
 } from '@sim/index';
 import type { RenderSync, SceneBinding } from '../loop/render-sync';
 
-/** The sim's view of a content item: its world properties with the material as an id. */
-export function worldItemDef(item: ItemEntry): WorldItemDef {
-  const { worldProperties, ...rest } = item;
-  return worldProperties === undefined
-    ? rest
-    : { ...rest, worldProperties: toPropertyInit(worldProperties) };
+/**
+ * The sim's view of a content item: its world properties (and a coating's) with the material as an
+ * id. It is both a world item's and a consumable's definition.
+ */
+export function worldItemDef(item: ItemEntry): ConsumableDef {
+  const { worldProperties, use, ...rest } = item;
+  return {
+    ...rest,
+    ...(worldProperties !== undefined && { worldProperties: toPropertyInit(worldProperties) }),
+    ...(use !== undefined && {
+      use: use.map((effect) =>
+        effect.op === 'coat'
+          ? { ...effect, properties: toPropertyInit(effect.properties) }
+          : effect,
+      ),
+    }),
+  };
 }
 
 /** World-item rules over every content item, with content's material presets. */
@@ -45,6 +62,29 @@ export function prepareWorldItems(content: Pick<GameContent, 'all'>): WorldItems
   return new WorldItems(content.all('item').map(worldItemDef), {
     materials: materialPresets(content.all('material')),
   });
+}
+
+/** Consumable rules (mw-e17.6) over every content item, sharing `items`' world-item rules. */
+export function prepareConsumables(
+  content: Pick<GameContent, 'all'>,
+  items: WorldItems,
+): Consumables {
+  return new Consumables(content.all('item').map(worldItemDef), { items });
+}
+
+/**
+ * Installs consumables in `world` (after world items: thrown consumables spawn as world items) and
+ * gives `player` quick slots when there is one. Nothing binds buttons to the slots yet: the
+ * quick-slot command uses them (see docs/design/controls.md).
+ */
+export function startConsumables<T>(
+  world: World<T>,
+  consumables: Consumables,
+  player: EntityId | undefined,
+): void {
+  const sim = world as unknown as World<never>;
+  installConsumables(world, consumables);
+  if (player !== undefined && quickSlotsOf(sim, player) === undefined) addQuickSlots(sim, player);
 }
 
 /**
