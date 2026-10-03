@@ -25,6 +25,7 @@ B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT
 | Cycle target     | RS flick left/right (while locked) | Tab (right); fast mouse swipe left/right |
 | Primary attack   | RT                                 | Left click               |
 | Secondary / block | LT                                | Right click              |
+| Shield bash (knight) | Hold LT, press RT              | Hold right click, left click |
 | Ability 1 / heavy attack (knight) | Y, D-pad Up               | 1                        |
 | Ability 2        | RB, D-pad Right                    | 2                        |
 | Ability 3 / parry (knight) | LB                       | 3                        |
@@ -56,6 +57,15 @@ windup holds, the charge is full after 1 s (ChargeReady) and swings itself at 1.
 shrugs off up to 40 poise; a harder hit staggers it and the charge is lost). Timing and numbers:
 `src/content/data/move/sword-heavy.json` and `sword-heavy-charged.json`; the rules:
 `src/sim/combat/timeline/charge.ts`.
+
+**Shield bash.** Attack while blocking bashes with the shield (mw-e04.14): hold block (LT, right
+click) and press attack (RT, left click). It is a chord on the knight's existing buttons, not a
+button of its own, so it costs no slot while the owner settles the knight's layout (the chord is
+`meleeChords` in `src/sim/player/player.ts`). The bash interrupts a foe's interruptible move (spell
+windups), breaks a shieldless guard outright, shoves things up to 60 kg and knocks breakables. With
+no shield equipped the same chord kicks instead. With the testbed bow out the attack button draws,
+so there is no bash. Timing and numbers: `src/content/data/move/shield-bash.json`; the rules:
+`src/sim/combat/melee/bash.ts`.
 
 **Bow (testbed).** Until class kits bind the archer's buttons (mw-e02.3), the testbed knight also
 carries the shortbow (mw-e05.21): ability 4 (4, D-pad Left) takes it out or puts it away; while it is

@@ -43,7 +43,9 @@
 //
 // Input. Entities with an ActionInput are driven by the tick's ActionFrame: a press (not a hold) of a
 // bound button requests its move, in BUTTON_ACTIONS order, so of two presses on one tick the later
-// in that order wins. A held move is let go on the first tick no button bound to it is down.
+// in that order wins. A chord turns a bound button's press into another move while a second button
+// is held (attack while blocking is the knight's shield bash, mw-e04.14). A held move is let go on
+// the first tick no button bound to it is down.
 // Anything else (AI, scripts, tests) calls `requestMove`.
 //
 // Traversal. While the entity's character controller is in a traversal mode (mantle, hang, climb:
@@ -560,8 +562,10 @@ export function actionTimelineSystem<TInput>(options: ActionTimelineOptions): Sy
             releaseCharge(w, entity);
           }
           for (const action of BUTTON_ACTIONS) {
-            const move = bindings[action];
-            if (move === undefined || !frame[action].pressed) continue;
+            const bound = bindings[action];
+            if (bound === undefined || !frame[action].pressed) continue;
+            const chord = input.chords?.find((c) => c.press === action && frame[c.held].held);
+            const move = chord?.move ?? bound;
             requestMove(w, entity, move, { hold: charges.has(move) });
           }
         });

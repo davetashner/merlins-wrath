@@ -265,6 +265,15 @@ describe('move schema', () => {
     expect(problems({ ...swing, worldImpact: { fire: 10 } })).toEqual([
       'worldImpact: Unrecognized key: "fire"',
     ]);
+    // mw-e04.14: a shove may carry a weight limit; a limit needs a shove.
+    const bash = compileMove(
+      moveSchema.parse({ ...swing, worldImpact: { force: 150, maxWeight: 60 } }),
+    );
+    expect(bash.worldImpact).toEqual({ force: 150, maxWeight: 60 });
+    expect(problems({ ...swing, worldImpact: { blunt: 60, maxWeight: 60 } })).toEqual([
+      'worldImpact.maxWeight: move "fixture-swing": a weight limit needs a force to limit',
+    ]);
+    expect(problems({ ...swing, worldImpact: { force: 150, maxWeight: 0 } })).toHaveLength(1);
     const heavy = compileMoves(loadGameContent().all('move')).get('sword-heavy');
     expect(heavy?.worldImpact).toEqual({ blunt: 150 });
   });

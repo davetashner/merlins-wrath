@@ -10,6 +10,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `id` | id | required | Unique shield id, e.g. "wood-shield". |
 | `name` | string | required | Player-facing name. |
 | `notes` | string | required | What the shield is for, and where its numbers come from. |
+| `kind` | `"shield"` \| `"weapon"` | `"shield"` | What blocks: "shield", or "weapon" for a shieldless guard (a blade or forearm), which a shield bash breaks outright (mw-e04.14). Defaults to "shield". |
 | `absorption` | map of `"slash"` \| `"pierce"` \| `"blunt"` \| `"fire"` \| `"frost"` \| `"shock"` \| `"arcane"` \| `"poison"` → number 0–100 | required | Percentage of each damage type a blocked hit loses, 0–100; unlisted types pass through (0%). The rest of the hit (the unabsorbed remainder) still lands. |
 | `stability` | number 0–100 | required | Stamina a block saves, 0–100: the blocker loses the hit’s staminaDamage × (1 − stability/100). |
 | `raiseTicks` | integer 0–60 | required | Sim ticks (60 Hz) the shield must be held up before it blocks (6 = 100 ms). |

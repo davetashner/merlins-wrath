@@ -591,6 +591,12 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000
+        },
+        "maxWeight": {
+          "description": "Heaviest thing the shove moves, kg: anything heavier resists it (ImpactResisted) and stays put, e.g. the shield bash’s 60 kg (mw-e04.14). Only with `force`; absent = no limit.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100000
         }
       },
       "additionalProperties": false,

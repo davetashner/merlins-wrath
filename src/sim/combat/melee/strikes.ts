@@ -21,9 +21,10 @@
 // World impact (mw-e03.11): a move with a `worldImpact` also strikes the world through the one
 // stimulus API when it enters its active phase: its hitbox, placed at the middle of the swing, applies
 // one stimulus per kind of hit it lists (blunt, slash, pierce J; force N·s along the swing's facing),
-// attributed to the attacker, with no falloff. Whatever the shape reaches reacts by its own
-// properties — an old wall weak to blunt crumbles under the knight's heavy overhead — and no code
-// here knows what a wall is.
+// attributed to the attacker, with no falloff, sparing the attacker itself. Whatever the shape reaches
+// reacts by its own properties — an old wall weak to blunt crumbles under the knight's heavy overhead
+// — and no code here knows what a wall is. A shove with a `maxWeight` (the shield bash's 60 kg,
+// mw-e04.14) moves only things that light; heavier ones resist it (the stimulus's ImpactResisted).
 
 import type { MoveTable, RuntimeMove } from '@content/index';
 import type { EntityId } from '../../core/component';
@@ -149,7 +150,9 @@ export function strikeWorld(
       intensity,
       falloff: 'none',
       source: attacker,
+      sparesSource: true,
       ...(element === 'force' && { direction: facing }),
+      ...(element === 'force' && impact.maxWeight !== undefined && { maxWeight: impact.maxWeight }),
     });
     if (applied) queued += 1;
   }

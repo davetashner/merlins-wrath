@@ -86,6 +86,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `worldImpact.slash` | number 0–1000000 | — | Slash impact energy, J. |
 | `worldImpact.pierce` | number 0–1000000 | — | Pierce impact energy, J. |
 | `worldImpact.force` | number 0–1000000 | — | Shove, N·s (pushes and strains whatever it reaches). |
+| `worldImpact.maxWeight` | number > 0 ≤ 100000 | — | Heaviest thing the shove moves, kg: anything heavier resists it (ImpactResisted) and stays put, e.g. the shield bash’s 60 kg (mw-e04.14). Only with `force`; absent = no limit. |
 | `hitStop` | `"light"` \| `"heavy"` \| `"charged"` \| `"parry"` \| `"critical"` | — | Hit-stop tier of its hits (e04.11): how long a hit freezes attacker and victim, from the hit-stop table (light, heavy, charged, parry, critical). Only with a hitbox; absent = light. |
 | `presentation` | object | required | Presentation ids: unknown ids warn (assets may lag) but never fail validation. |
 | `presentation.anim` | string | required | Animation clip id (style bible §15.1), e.g. "anim-knight-sword-light-1". |

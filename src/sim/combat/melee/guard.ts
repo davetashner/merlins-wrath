@@ -20,6 +20,11 @@
 // lands — the share the stamina could not pay for is not absorbed. A fighter without a stamina pool
 // never runs out. Which reaction plays (animation, audio) is the hit reactions' choice (e04.7).
 //
+// Shieldless guards (mw-e04.14). A guard whose shield is of kind `weapon` (a blade or forearm raised
+// against a blow) blocks like a shield, but a hit tagged `guard-crush` (the shield bash) breaks it
+// outright: no stamina is drained, nothing is absorbed, and the guard break above follows whatever
+// stamina the blocker has left. A real shield meets a guard-crushing hit like any other.
+//
 // While the shield is up the fighter moves at the shield's `moveSpeedScale` (half speed) and its
 // stamina regenerates at the pool's blocking rate; during an attack it is planted (`locomotionScale`).
 
@@ -115,6 +120,11 @@ export function shieldGuard(): DamageModifier {
       }
       if (!inGuardArc(guard, facingOf(world, target), direction)) return;
       const { shield } = guard;
+      if (shield.kind === 'weapon' && packet.tags.includes(DAMAGE_TAGS.guardCrush)) {
+        guardBreak(world, target, packet);
+        const tags = [...hit.tags, DAMAGE_TAGS.blocked, DAMAGE_TAGS.guardBreak];
+        return { ...hit, poiseDamage: 0, tags };
+      }
       const needUnits = scaleUnits(toUnits(hit.staminaDamage), 1 - shield.stability / 100);
       const need = fromUnits(needUnits);
       const pool = world.get(target, StaminaComponent);

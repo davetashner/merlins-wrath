@@ -50,6 +50,16 @@ export const DAMAGE_TAGS = Object.freeze({
   blocked: 'blocked',
   /** A blocked hit that emptied the blocker's stamina and broke the guard (e04.6). */
   guardBreak: 'guard-break',
+  /**
+   * Cancels a target's move flagged interruptible (a spell windup), whatever its phase or hyperarmor,
+   * and makes it flinch: carried by the shield bash's hits (e04.14, the hit reactions' rule).
+   */
+  interrupt: 'interrupt',
+  /**
+   * Breaks a shieldless guard (a blade or forearm) outright, whatever stamina the blocker has left:
+   * carried by the shield bash's hits (e04.14, the shield rule).
+   */
+  guardCrush: 'guard-crush',
 } as const);
 
 /** A hit as its source describes it; see `DamagePacket` for the fields. */

@@ -582,9 +582,11 @@ export {
   type RuntimeBow,
 } from './types/bow.ts';
 export {
+  GUARD_KINDS,
   KNIGHT_SHIELD_ID,
   compileShield,
   shieldSchema,
+  type GuardKind,
   type RuntimeShield,
   type ShieldDef,
   type ShieldDefInput,

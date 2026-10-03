@@ -22,10 +22,11 @@ const problems = (value: unknown) =>
 describe('shield schema (mw-e04.6)', () => {
   it('accepts a shield and compiles it to frozen runtime data', () => {
     const parsed = shieldSchema.parse(valid);
-    expect(parsed).toEqual(valid);
+    expect(parsed).toEqual({ ...valid, kind: 'shield' });
     const runtime = compileShield(parsed);
     expect(runtime).toEqual({
       id: 'test-shield',
+      kind: 'shield',
       absorption: { slash: 85, fire: 30 },
       stability: 60,
       raiseTicks: 6,
@@ -48,6 +49,11 @@ describe('shield schema (mw-e04.6)', () => {
     expect(problems({ ...valid, arcDegrees: 0 })).toHaveLength(1);
     expect(problems({ ...valid, moveSpeedScale: 1.5 })).toHaveLength(1);
     expect(problems({ ...valid, extra: true })).toHaveLength(1);
+    expect(problems({ ...valid, kind: 'bracer' })).toHaveLength(1);
+  });
+
+  it('a shieldless guard (mw-e04.14) is of kind "weapon"', () => {
+    expect(compileShield(shieldSchema.parse({ ...valid, kind: 'weapon' })).kind).toBe('weapon');
   });
 });
 
@@ -60,6 +66,7 @@ describeContent('shield', 'AC-2: the wood shield has the bead’s numbers', (shi
   if (shield.id !== KNIGHT_SHIELD_ID) return;
   expect(compileShield(shield)).toEqual({
     id: 'wood-shield',
+    kind: 'shield',
     absorption: { slash: 85, pierce: 85, blunt: 85, fire: 30 },
     stability: 60,
     raiseTicks: 6,

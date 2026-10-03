@@ -48,9 +48,11 @@ import {
   DEFAULT_PARRY_BUTTON,
   installPlayer,
   KNIGHT_HEAVY_ATTACK,
+  KNIGHT_KICK,
   KNIGHT_LIGHT_ATTACK,
   KNIGHT_PARRY,
   KNIGHT_RIPOSTE,
+  KNIGHT_SHIELD_BASH,
   PlayerLook,
   restrainMovement,
   type PlayerMeleeOptions,
@@ -83,6 +85,7 @@ const START: SceneSpawnPlacement = {
 
 const WOOD: RuntimeShield = {
   id: 'wood-shield',
+  kind: 'shield',
   absorption: { slash: 85, pierce: 85, blunt: 85, fire: 30 },
   stability: 60,
   raiseTicks: 6,
@@ -188,6 +191,8 @@ const MOVES: MoveTable = new Map(
     light('sword-light-2', [10, 4, 20], 14, 22, 'sword-light-3'),
     light('sword-light-3', [16, 5, 26], 18, 30, null),
     light('poke', [2, 2, 2], 0, 1, null),
+    light('bash', [14, 4, 20], 18, 5, null),
+    light('kick', [10, 3, 16], 8, 3, null),
     {
       ...light('guard-parry', [4, 10, 16], 10, 0, null),
       verb: 'parry' as const,
@@ -211,7 +216,8 @@ function frame(
   });
 }
 
-function knight(melee: Partial<PlayerMeleeOptions> = {}) {
+function knight(options: Partial<PlayerMeleeOptions> & { noShield?: true } = {}) {
+  const { noShield, ...melee } = options;
   const collision = new FakeCollisionWorld([
     box({ x: -20, y: -1, z: -20 }, { x: 20, y: 0, z: 20 }), // floor, top at y = 0
   ]);
@@ -224,7 +230,7 @@ function knight(melee: Partial<PlayerMeleeOptions> = {}) {
     spawns: [START],
     collision,
     tuning: TUNING,
-    combat: { moves: MOVES, melee: { shield: WOOD, ...melee } },
+    combat: { moves: MOVES, melee: noShield ? melee : { shield: WOOD, ...melee } },
   });
   world.addSystem(hitVolumeSystem({ isAlly: noAllies }));
   const damage = new DamageModel();
@@ -427,6 +433,36 @@ describe('the knight player (mw-e04.6)', () => {
     expect(() => {
       k.run(2);
     }).not.toThrow();
+  });
+});
+
+describe('the knight’s shield bash (mw-e04.14)', () => {
+  const blockAttack = frame(['primaryAttack'], ['secondaryAttack']);
+
+  it('attack while blocking bashes; without a bash it is the light attack', () => {
+    const k = knight({ bash: 'bash', bashFallback: 'kick' });
+    k.run(10, frame([], ['secondaryAttack']));
+    k.run(1, blockAttack);
+    k.run(60);
+    k.run(1, frame(['primaryAttack']));
+    expect(k.started.map((e) => e.move)).toEqual(['bash', 'sword-light-1']);
+    expect([KNIGHT_SHIELD_BASH, KNIGHT_KICK]).toEqual(['shield-bash', 'kick']);
+    const plain = knight();
+    plain.run(1, blockAttack);
+    expect(plain.started.map((e) => e.move)).toEqual(['sword-light-1']);
+  });
+
+  it('AC-4: with no shield equipped, block + attack kicks (and nothing blocks)', () => {
+    const k = knight({ noShield: true, bash: 'bash', bashFallback: 'kick' });
+    expect(guardOf(k.world, k.player)).toBeUndefined();
+    k.run(5, frame([], ['secondaryAttack']));
+    expect(staminaOf(k.world, k.player)?.blocking).toBe(false);
+    k.run(1, blockAttack);
+    expect(k.started.map((e) => e.move)).toEqual(['kick']);
+    // Without a fallback the bash itself plays, shield or not.
+    const bare = knight({ noShield: true, bash: 'bash' });
+    bare.run(1, blockAttack);
+    expect(bare.started.map((e) => e.move)).toEqual(['bash']);
   });
 });
 

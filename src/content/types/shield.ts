@@ -17,11 +17,26 @@ export const KNIGHT_SHIELD_ID = 'wood-shield';
 
 const percent = z.number().min(0).max(100);
 
+/**
+ * What a guard blocks with: a shield, or a weapon or forearm (a shieldless guard, mw-e04.14). A shield
+ * bash breaks a shieldless guard outright, whatever stamina the blocker has left.
+ */
+export const GUARD_KINDS = ['shield', 'weapon'] as const;
+/** One kind of guard. */
+export type GuardKind = (typeof GUARD_KINDS)[number];
+
 /** Schema of one shield file, `src/content/data/shield/<id>.json`. */
 export const shieldSchema = z.strictObject({
   id: contentId.describe('Unique shield id, e.g. "wood-shield".'),
   name: z.string().min(1).describe('Player-facing name.'),
   notes: z.string().min(1).describe('What the shield is for, and where its numbers come from.'),
+  kind: z
+    .enum(GUARD_KINDS)
+    .default('shield')
+    .describe(
+      'What blocks: "shield", or "weapon" for a shieldless guard (a blade or forearm), which a ' +
+        'shield bash breaks outright (mw-e04.14). Defaults to "shield".',
+    ),
   absorption: z
     .partialRecord(z.enum(DAMAGE_TYPES), percent)
     .describe(
@@ -58,6 +73,8 @@ export type ShieldEntry = Frozen<ShieldDef>;
 /** A shield as the sim's guard rule reads it. */
 export interface RuntimeShield {
   readonly id: string;
+  /** A shield, or a shieldless guard (a weapon or forearm) that a shield bash breaks (mw-e04.14). */
+  readonly kind: GuardKind;
   /** Absorbed percentage per damage type (0–100); unlisted types 0. */
   readonly absorption: Readonly<Partial<Record<DamageTypeName, number>>>;
   readonly stability: number;
@@ -70,6 +87,7 @@ export interface RuntimeShield {
 export function compileShield(shield: ShieldEntry): RuntimeShield {
   return Object.freeze({
     id: shield.id,
+    kind: shield.kind,
     absorption: Object.freeze({ ...shield.absorption }),
     stability: shield.stability,
     raiseTicks: shield.raiseTicks,

@@ -72,9 +72,25 @@ export interface ActionTimeline {
   readonly chain: ChainMemory | null;
 }
 
+/**
+ * A press that requests another move while a button is held (the knight's shield bash: attack while
+ * blocking, mw-e04.14). It applies only while the pressed button is bound to a move of its own, so
+ * a binding stowed away (the bow takes the attack button) takes its chords with it.
+ */
+export interface ActionChord {
+  /** The button held down (block). */
+  readonly held: ButtonAction;
+  /** The button pressed while it is held (attack). */
+  readonly press: ButtonAction;
+  /** The move the press requests instead of its own binding's. */
+  readonly move: string;
+}
+
 /** Which move each abstract button starts, for entities driven by the tick's ActionFrame. */
 export interface ActionInput {
   readonly bindings: Readonly<Partial<Record<ButtonAction, string>>>;
+  /** Chords, the first matching one winning (mw-e04.14); absent = none. */
+  readonly chords?: readonly ActionChord[];
 }
 
 /** The action timeline component (`combat.timeline`; a snapshot and save key, never renamed). */
@@ -108,17 +124,24 @@ export function giveActionTimeline(world: World<never>, entity: EntityId): void 
 }
 
 /**
- * Lets the tick's ActionFrame drive `entity`'s timeline: a press of a bound button requests its move.
- * Bindings name abstract actions, never keys (remapping happens before the sim, mw-e02.1).
+ * Lets the tick's ActionFrame drive `entity`'s timeline: a press of a bound button requests its move,
+ * or a chord's move while the chord's other button is held. Bindings name abstract actions, never
+ * keys (remapping happens before the sim, mw-e02.1).
  */
 export function giveActionInput(
   world: World<never>,
   entity: EntityId,
   bindings: Readonly<Partial<Record<ButtonAction, string>>>,
+  chords: readonly ActionChord[] = [],
 ): void {
   world.add(
     entity,
     ActionInputComponent,
-    Object.freeze({ bindings: Object.freeze({ ...bindings }) }),
+    Object.freeze({
+      bindings: Object.freeze({ ...bindings }),
+      ...(chords.length > 0 && {
+        chords: Object.freeze(chords.map((chord) => Object.freeze({ ...chord }))),
+      }),
+    }),
   );
 }

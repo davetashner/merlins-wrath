@@ -10,7 +10,9 @@
 //
 // With `combat.melee` (mw-e04.6) the player is also a knight: the attack button starts the light
 // chain (or, with a riposte, the riposte while a Parried foe is in reach: mw-e04.12), the heavy
-// button its heavy attack (held, it charges: mw-e04.13), the parry button its parry, the block button holds its shield up, and it has a combat facing, hitboxes and a placement
+// button its heavy attack (held, it charges: mw-e04.13), the parry button its parry, the block button
+// holds its shield up, attack while blocking bashes with it (or, with no shield, kicks: mw-e04.14),
+// and it has a combat facing, hitboxes and a placement
 // at its feet (the frame its swings are placed in). Three more systems join: block (just before the
 // timeline), facing (after it: idle the knight faces where it looks — or its lock-on target — and a
 // move's startup turns at 360°/s, then locks) and, after the controller, placement. While it swings
@@ -78,6 +80,7 @@ import {
   ACTION_TIMELINE_COMPONENTS,
   giveActionInput,
   giveActionTimeline,
+  type ActionChord,
 } from '../combat/timeline/components';
 import { actionTimelineSystem } from '../combat/timeline/timeline';
 import { giveHitboxes } from '../combat/hits/components';
@@ -89,7 +92,8 @@ import {
   type EntityLocator,
   type FacingRule,
 } from '../combat/melee/facing';
-import { blockSystem, locomotionScale } from '../combat/melee/guard';
+import { bashRedirect, firstRedirect } from '../combat/melee/bash';
+import { blockSystem, DEFAULT_BLOCK_BUTTON, locomotionScale } from '../combat/melee/guard';
 import { riposteRedirect } from '../combat/parry/parry';
 import { placeEntity } from '../stimulus/placement';
 import { defineComponent, type EntityId } from '../core/component';
@@ -309,10 +313,19 @@ export const KNIGHT_RIPOSTE = 'sword-riposte';
  */
 export const DEFAULT_PARRY_BUTTON: ButtonAction = 'ability3';
 
+/** The knight's shield bash (mw-e04.14): attack while blocking. */
+export const KNIGHT_SHIELD_BASH = 'shield-bash';
+
+/** What the knight does on block + attack without a shield (mw-e04.14; the kick is mw-e04.18). */
+export const KNIGHT_KICK = 'kick';
+
 /** The knight's sword and shield (mw-e04.6). */
 export interface PlayerMeleeOptions {
-  /** The shield the block button raises (content `shield`, e.g. the wood shield). */
-  readonly shield: RuntimeShield;
+  /**
+   * The shield the block button raises (content `shield`, e.g. the wood shield); absent = no shield
+   * equipped: no block, and block + attack starts `bashFallback` instead of the bash.
+   */
+  readonly shield?: RuntimeShield;
   /** The move the attack button starts; defaults to KNIGHT_LIGHT_ATTACK. */
   readonly lightAttack?: string;
   /** The lock-on target to face during startup (lock-on, e02.16); none by default. */
@@ -335,6 +348,13 @@ export interface PlayerMeleeOptions {
    * reach (e.g. KNIGHT_RIPOSTE, `riposteRedirect`); absent = no riposte.
    */
   readonly riposte?: string;
+  /**
+   * The move attack starts while the block button is held (e.g. KNIGHT_SHIELD_BASH, mw-e04.14);
+   * absent = attack while blocking is a plain attack.
+   */
+  readonly bash?: string;
+  /** What starts instead of the bash with no shield (e.g. KNIGHT_KICK); absent = the bash itself. */
+  readonly bashFallback?: string;
 }
 
 /**
@@ -486,6 +506,12 @@ function meleeBindings(melee: PlayerMeleeOptions): Partial<Record<ButtonAction, 
   return bindings;
 }
 
+/** The knight's chords: attack while blocking bashes (mw-e04.14), when it has a bash. */
+function meleeChords(melee: PlayerMeleeOptions): ActionChord[] {
+  if (melee.bash === undefined) return [];
+  return [{ held: DEFAULT_BLOCK_BUTTON, press: 'primaryAttack', move: melee.bash }];
+}
+
 /**
  * Drains every climbing character's stamina pool at the climb tuning's rate (mw-e02.13): the climb
  * hook lets go when it reaches 0. Runs after the controller, so the regen pause restarts every tick
@@ -575,10 +601,16 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     }
     const riposte = melee?.riposte;
     const trigger = melee?.lightAttack ?? KNIGHT_LIGHT_ATTACK;
+    const bash = melee?.bash;
+    const fallback = melee?.bashFallback;
+    const redirects = [
+      riposte === undefined ? undefined : riposteRedirect({ trigger, riposte }),
+      bash === undefined || fallback === undefined ? undefined : bashRedirect({ bash, fallback }),
+    ];
     world.addSystem(
       actionTimelineSystem({
         moves,
-        ...(riposte !== undefined && { redirect: riposteRedirect({ trigger, riposte }) }),
+        ...(redirects.some((r) => r !== undefined) && { redirect: firstRedirect(...redirects) }),
       }),
     );
     if (melee !== undefined) {
@@ -676,13 +708,14 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
   if (combat !== undefined) {
     giveStamina(world, id, combat.stamina ?? DEFAULT_STAMINA_PROFILE);
     giveActionTimeline(world, id);
-    giveActionInput(world, id, melee === undefined ? {} : meleeBindings(melee));
+    if (melee === undefined) giveActionInput(world, id, {});
+    else giveActionInput(world, id, meleeBindings(melee), meleeChords(melee));
     giveDodge(world, id, combat.dodge ?? KNIGHT_DODGE);
     if (combat.bow !== undefined) giveBow(world, id, combat.bow.loadout);
   }
   if (melee !== undefined) {
     giveFacing(world, id, yawForward(spawnYaw(start)));
-    giveGuard(world, id, melee.shield);
+    if (melee.shield !== undefined) giveGuard(world, id, melee.shield);
     giveHitboxes(world, id);
     placeEntity(world, id, { x, y: y + SKIN, z }, options.tuning.capsule.radius);
     world.addSystem(playerPlacementSystem(id, options.tuning.capsule.radius));

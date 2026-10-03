@@ -15,6 +15,7 @@ import { ActionRejected, type ActionRejection } from '../actions';
 import { giveStamina, StaminaComponent, staminaOf, staminaSystem } from '../stamina';
 import {
   ACTION_TIMELINE_COMPONENTS,
+  ActionInputComponent,
   ActionTimelineComponent,
   giveActionInput,
   giveActionTimeline,
@@ -706,6 +707,45 @@ describe('action timeline: ActionFrame input', () => {
     const s = setup();
     s.steps(1, press('primaryAttack'));
     expect(s.started).toEqual([]);
+  });
+
+  it('mw-e04.14: a chord turns a press into its move while its other button is held', () => {
+    const s = setup();
+    const chord = { held: 'secondaryAttack', press: 'primaryAttack', move: 'heavy' } as const;
+    giveActionInput(s.world, s.knight, { primaryAttack: 'light-1' }, [chord]);
+    const chorded = actionFrame({
+      move: actionVector(0, 0),
+      look: actionVector(0, 0),
+      buttons: (b) =>
+        actionButton(
+          b === 'primaryAttack',
+          b === 'primaryAttack' || b === 'secondaryAttack',
+          false,
+        ),
+    });
+    s.steps(1, hold('secondaryAttack')); // holding alone requests nothing
+    s.steps(1, chorded);
+    s.stepTo(60);
+    s.steps(1, press('primaryAttack')); // without the hold: the plain binding
+    expect(s.started.map((e) => [e.tick, e.move])).toEqual([
+      [1, 'heavy'],
+      [60, 'light-1'],
+    ]);
+    expect(s.world.get(s.knight, ActionInputComponent)?.chords).toEqual([chord]);
+  });
+
+  it('mw-e04.14: a chord whose pressed button is unbound does nothing; no chords, no field', () => {
+    const s = setup();
+    const chord = { held: 'secondaryAttack', press: 'ability2', move: 'heavy' } as const;
+    giveActionInput(s.world, s.knight, { primaryAttack: 'light-1' }, [chord]);
+    s.steps(1, press('ability2', 'secondaryAttack'));
+    expect(s.started).toEqual([]);
+    const other = s.world.spawn();
+    giveActionInput(s.world, other, { primaryAttack: 'light-1' });
+    s.steps(1);
+    expect(s.world.get(other, ActionInputComponent)).toEqual({
+      bindings: { primaryAttack: 'light-1' },
+    });
   });
 });
 
