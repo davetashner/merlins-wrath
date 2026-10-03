@@ -272,14 +272,15 @@ export function createGameWorld<TInput>(
   const consumables = prepareConsumables(content, items);
   startConsumables(world, consumables, player);
   // Mechanisms (mw-e03.18) in scenes that have them, as src/main.ts starts them: door leaves collide
-  // in the physics port and keys come off the player's keyring (mw-e17.5). Headless, nothing
-  // reads the light occluders.
+  // in the physics port, keys come off the player's keyring (mw-e17.5) and player-filtered trigger
+  // volumes count the player (mw-e01.4). Headless, nothing reads the light occluders.
   const mechanisms = hasMechanisms(scene.layout)
     ? startMechanisms(world, scene, {
         content,
         materials: materialPresets(content.all('material')),
         colliders: physics,
         occluders: new InMemoryColliderSink(),
+        player,
       })
     : undefined;
   // Containers (mw-e18.3) in scenes that have them, after mechanisms (which unlock a locked chest).

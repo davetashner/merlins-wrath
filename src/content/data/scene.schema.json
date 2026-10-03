@@ -1403,6 +1403,15 @@
               "type": "string",
               "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
             }
+          },
+          "checkpoints": {
+            "default": [],
+            "description": "Volume nodes of the graph that are checkpoints: entering one requests an autosave (mw-e30.5).",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            }
           }
         },
         "required": [

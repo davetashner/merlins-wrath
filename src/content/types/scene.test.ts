@@ -43,7 +43,7 @@ describe('scene mechanisms (mw-e03.18)', () => {
     });
     expect(scene.spawns[1]?.switch).toEqual({ kind: 'lever', initial: 0 });
     expect(scene.signals).toEqual([
-      { graph: new ContentRef('signal-graph', 'gate'), bindings: {} },
+      { graph: new ContentRef('signal-graph', 'gate'), bindings: {}, checkpoints: [] },
     ]);
   });
 
@@ -154,6 +154,19 @@ describe('scene containers (mw-e18.3)', () => {
     const chest = content.get('scene', 'testbed').spawns.find((s) => s.id === 'supply-chest');
     expect(chest?.container?.loot?.id).toBe('testbed-supply-crate');
     expect(chest?.container?.lock).toBeUndefined();
+  });
+});
+
+describe('scene checkpoints (mw-e01.4)', () => {
+  it('marks volume nodes of a placed graph as checkpoints, each once', () => {
+    const scene = sceneSchema.parse({
+      ...room,
+      signals: [{ graph: 'gate', checkpoints: ['cp-1'] }],
+    });
+    expect(scene.signals[0]?.checkpoints).toEqual(['cp-1']);
+    expect(
+      problems({ ...room, signals: [{ graph: 'gate', checkpoints: ['cp-1', 'cp-2', 'cp-1'] }] }),
+    ).toEqual(['signals.0.checkpoints.2: checkpoint "cp-1" is listed twice']);
   });
 });
 
@@ -406,7 +419,7 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room and the mechanism room', () => {
+  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room and the slice', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
@@ -416,6 +429,7 @@ describe('scene content', () => {
       'kit-gallery',
       'lighting-room',
       'mechanism-room',
+      'slice',
       'testbed',
       'weak-wall-room',
     ]);

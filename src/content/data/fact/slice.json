@@ -1,0 +1,15 @@
+{
+  "$schema": "../fact.schema.json",
+  "id": "slice",
+  "name": "Vertical slice facts",
+  "notes": "Facts of the m1 vertical slice (docs/design/vertical-slice.md §5). The slice save points (mw-e01.7) add theirs here.",
+  "facts": [
+    {
+      "key": "slice.complete",
+      "type": "bool",
+      "default": false,
+      "description": "The slice is done: the player walked into the vestibule behind the locked exit door. Written once, only by the slice signal graph's fact receiver (mw-e01.4); the slice e2e (mw-e01.9) passes when it reads true.",
+      "owner": "signals"
+    }
+  ]
+}

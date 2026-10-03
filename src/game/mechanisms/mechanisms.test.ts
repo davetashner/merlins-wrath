@@ -9,6 +9,7 @@ import {
   loadScene,
   registerSceneComponents,
   registerWorldProperties,
+  hasTag,
   SceneSpawnComponent,
   signalSystem,
   stimulusSystem,
@@ -23,14 +24,20 @@ import {
   hasMechanisms,
   lockSpecs,
   MechanismWatch,
+  PLAYER_TAG,
   readDoorLeaf,
+  sceneCheckpoints,
   startMechanisms,
 } from './index';
 
 const content = loadGameContent();
 const kit: KitLookup = (id) => (content.has('kit', id) ? content.get('kit', id) : undefined);
 
-function room(preSignals = false) {
+function room(
+  preSignals = false,
+  sceneId = 'mechanism-room',
+  player?: (world: World<never>) => EntityId,
+) {
   const world = installStimuli(
     registerWorldProperties(registerSceneComponents(new World<never>({ seed: 9 }))),
   );
@@ -42,19 +49,21 @@ function room(preSignals = false) {
   }
   const colliders = new InMemoryColliderSink();
   const occluders = new InMemoryColliderSink();
-  const loaded = loadScene(world, content.get('scene', 'mechanism-room'), kit, colliders);
+  const loaded = loadScene(world, content.get('scene', sceneId), kit, colliders);
+  const hero = player?.(world);
   const made = startMechanisms(world, loaded, {
     content,
     materials: materialPresets(content.all('material')),
     colliders,
     occluders,
+    player: hero,
   });
   const spawn = (id: string): EntityId => {
     const found = loaded.spawns.find((s) => s.spawn.id === id);
     if (found === undefined) throw new Error(`no spawn ${id}`);
     return found.entity;
   };
-  return { world, loaded, made, spawn, occluders };
+  return { world, loaded, made, spawn, occluders, hero };
 }
 
 describe('mechanisms in the game (mw-e03.18)', () => {
@@ -88,7 +97,10 @@ describe('mechanisms in the game (mw-e03.18)', () => {
     );
     expect(hasMechanisms(testbed.layout)).toBe(false);
     expect(
-      hasMechanisms({ ...testbed.layout, signals: [{ graph: 'mechanism-room', bindings: {} }] }),
+      hasMechanisms({
+        ...testbed.layout,
+        signals: [{ graph: 'mechanism-room', bindings: {}, checkpoints: [] }],
+      }),
     ).toBe(true);
     // A locked chest (mw-e18.3) needs mechanisms to unlock it; an unlocked one does not.
     const spawn = (container: object) => ({ ...testbed.layout.spawns[0], container }) as never;
@@ -162,5 +174,35 @@ describe('mechanisms in the game (mw-e03.18)', () => {
       graphs: [],
     });
     expect(watch.readout().switches).toEqual({ [String(spawn('east-button'))]: 0 });
+  });
+});
+
+describe('slice triggers in the game (mw-e01.4)', () => {
+  it('tags the player for player-filtered volumes in scenes that place signal graphs', () => {
+    const slice = room(false, 'slice', (world) => world.spawn());
+    expect(slice.hero).toBeDefined();
+    expect(hasTag(slice.world, slice.hero ?? 0, PLAYER_TAG)).toBe(true);
+    // Without a player, or in a scene with no graphs, nothing is tagged.
+    expect(room(false, 'slice').made.graphs).toHaveLength(1);
+    const testbed = room(false, 'testbed', (world) => world.spawn());
+    expect(testbed.made.graphs).toHaveLength(0);
+    expect(hasTag(testbed.world, testbed.hero ?? 0, PLAYER_TAG)).toBe(false);
+  });
+
+  it('knows which volume crossings are the scene’s checkpoints', () => {
+    const { loaded } = room(false, 'slice');
+    const isCheckpoint = sceneCheckpoints(loaded.layout);
+    const crossing = (graphId: string, node: string) => ({
+      graph: 1,
+      graphId,
+      node,
+      entity: 2,
+      tick: 0,
+    });
+    expect(isCheckpoint(crossing('slice', 'cp-1'))).toBe(true);
+    expect(isCheckpoint(crossing('slice', 'cp-2'))).toBe(true);
+    expect(isCheckpoint(crossing('slice', 'slice-complete'))).toBe(false);
+    expect(isCheckpoint(crossing('other', 'cp-1'))).toBe(false);
+    expect(sceneCheckpoints(room().loaded.layout)(crossing('mechanism-room', 'cp-1'))).toBe(false);
   });
 });

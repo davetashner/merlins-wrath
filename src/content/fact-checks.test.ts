@@ -158,6 +158,7 @@ describe('fact checks', () => {
     expect(usages.map((u) => u.key).sort()).toEqual([
       'chapel-of-echoes.portcullis-dropped',
       'kestrel-lock.gate-open',
+      'slice.complete',
     ]);
   });
 

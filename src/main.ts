@@ -60,6 +60,7 @@ import {
   hasMechanisms,
   MechanismWatch,
   readDoorLeaf,
+  sceneCheckpoints,
   startMechanisms,
 } from '@game/mechanisms/index';
 import { createCapabilityRegistry } from '@game/capabilities';
@@ -151,6 +152,7 @@ import {
   AttackerDummyComponent,
   classOf,
   equipChanged,
+  factChanged,
   goldChanged,
   itemAdded,
   itemRemoved,
@@ -177,6 +179,7 @@ import {
   SpilledComponent,
   testPropSpawners,
   tuneCommand,
+  volumeEntered,
   World,
   WorldPersistence,
   worldItemSpawner,
@@ -1004,6 +1007,7 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
           materials: materialPresets(content.all('material')),
           colliders: physics,
           occluders: light.field.statics,
+          player: player?.entity,
         });
         const watch = new MechanismWatch(world, made);
         const leaves = doorLeafLooks(world, made, content).map(
@@ -1025,6 +1029,15 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
         };
         drawMechanisms();
         afterStep.push(drawMechanisms);
+        // Checkpoints (mw-e01.4): the e2e reads the checkpoint volumes the player has entered,
+        // oldest first, from #app[data-checkpoints]. The autosave each requests is mw-e01.7's.
+        const isCheckpoint = sceneCheckpoints(loaded.layout);
+        const reached: string[] = [];
+        world.events.on(volumeEntered, (crossing) => {
+          if (!isCheckpoint(crossing)) return;
+          reached.push(crossing.node);
+          root.dataset['checkpoints'] = JSON.stringify(reached);
+        });
       }
       // Containers (mw-e18.3): only in scenes that have them, after world items (they share the
       // inventory rules) and mechanisms (which unlock a locked chest). Interact on one takes
@@ -1045,6 +1058,13 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
         drawContainers();
         afterStep.push(drawContainers);
       }
+      // World facts (mw-e01.4): the e2e reads the set facts, e.g. the slice's pass slice.complete
+      // (docs/design/vertical-slice.md §5), from #app[data-facts], rewritten when one changes.
+      const publishFacts = (): void => {
+        root.dataset['facts'] = JSON.stringify(world.facts.snapshot());
+      };
+      publishFacts();
+      world.events.on(factChanged, publishFacts);
       // The scene's creature spawns (mw-e12.4), after combat so they are hittable and lockable. A
       // spawn naming a creature or faction that does not exist is reported, not fatal.
       const sceneCreatures = startCreatures(world, creatures, combat, loaded.layout.spawns);

@@ -11,6 +11,9 @@
 // - `MechanismWatch` publishes what the doors and switches are doing, for the e2e
 //   (#app[data-mechanisms]).
 //
+// - `sceneCheckpoints` reads which of a scene's trigger volumes are checkpoints (mw-e01.4), the
+//   predicate the autosave's `autosaveAtCheckpoints` (mw-e30.5) takes.
+//
 // No mechanisms, no cost: the game only starts them in scenes that have some (`hasMechanisms`).
 
 import type { GameContent } from '@content/index';
@@ -27,6 +30,7 @@ import {
   SignalGraphComponent,
   signalSystem,
   SwitchComponent,
+  tagEntity,
   type DoorProfile,
   type DoorProfileLookup,
   type DoorStatus,
@@ -39,6 +43,7 @@ import {
   type SignalGraphDef,
   type StaticColliderSink,
   type Vec3,
+  type VolumeCrossing,
   type World,
 } from '@sim/index';
 import type { SimView, Transform } from '../loop/render-sync';
@@ -94,7 +99,15 @@ export interface StartMechanismsOptions {
   readonly colliders: StaticColliderSink;
   /** Where closed doors occlude light: the light field's statics. */
   readonly occluders: StaticColliderSink;
+  /**
+   * The player, tagged `player` when the scene places signal graphs, so player-filtered trigger
+   * volumes (checkpoints, the slice-complete volume) count it.
+   */
+  readonly player?: EntityId | undefined;
 }
+
+/** The tag player-filtered trigger volumes test for. */
+export const PLAYER_TAG = 'player';
 
 /**
  * Installs signals (unless installed) and mechanisms in `world` and makes `loaded`'s doors, switches
@@ -111,6 +124,9 @@ export function startMechanisms<T>(
     installSignals(sim);
     world.addSystem(signalSystem());
   }
+  if (options.player !== undefined && loaded.layout.signals.length > 0) {
+    tagEntity(sim, options.player, PLAYER_TAG);
+  }
   installMechanisms(world, {
     colliders: options.colliders,
     occluders: options.occluders,
@@ -124,6 +140,19 @@ export function startMechanisms<T>(
     doorMaterial: (id) => content.get('door', id).material.id,
     materials: options.materials,
   });
+}
+
+/**
+ * Whether a volume crossing is a checkpoint of `layout`: the scene marks the volume node as one in
+ * the graph it places (`signals[].checkpoints`). Pass it to `autosaveAtCheckpoints`.
+ */
+export function sceneCheckpoints(layout: SceneLayout): (crossing: VolumeCrossing) => boolean {
+  const marked = new Set(
+    layout.signals.flatMap(({ graph, checkpoints }) =>
+      checkpoints.map((node) => `${graph}/${node}`),
+    ),
+  );
+  return (crossing) => marked.has(`${crossing.graphId}/${crossing.node}`);
 }
 
 /** What a door's leaf object looks like: its box about its pivot, and its material. */

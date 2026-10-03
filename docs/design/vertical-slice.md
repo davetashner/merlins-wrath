@@ -368,6 +368,16 @@ at the left edge to +10 at the right. Rows with nothing new are left out.
 | `exit-door`        | door, hinged, iron                 | (0, 0, 37)          | Lock `slice-exit`, key `rusted-gallery-key` |
 | `slice-complete`   | trigger volume, player tag         | x −1…1, z 38.5…40   | Signal graph → fact receiver `slice.complete` |
 
+As built (mw-e01.4): the scene places one signal graph, `src/content/data/signal-graph/slice.json`,
+holding the three player-filtered volumes; the scene marks `cp-1` and `cp-2` as checkpoints with
+`signals[].checkpoints`, which the game reads through `sceneCheckpoints` and hands to the autosave's
+`autosaveAtCheckpoints` (that wiring is mw-e01.7). The player carries the `player` tag in every scene
+that places a signal graph. The running build publishes the checkpoints entered on
+`#app[data-checkpoints]` and the set world facts on `#app[data-facts]`. The loot alcove's walls stand
+4.5 m from the arena floor (3 m above the alcove floor), and its 1.4 m sill is above every creature's
+nav jump, so only the knight's mantle gets in. The committed navmesh is
+`src/content/data/navmesh/slice.json` (`pnpm nav:bake slice`).
+
 Distances that matter: doorway to the skeleton's post is 7.9 m (inside the 10 m lit-sight range in
 mw-e13.1 AC-4); CP-2 is 9–11 m from the post and mostly hidden by the doorway frame, and the save is
 taken on entry, before awareness can build to Combat (about 2 s, mw-e01.5 AC-1); the leash edge (25 m from the post) crosses the corridor near
@@ -377,8 +387,8 @@ z = 7.5, so the spawn room is beyond it.
 
 **The slice is complete when, and only when, the world fact `slice.complete` is `true`.**
 
-- **Declared** in a new fact file `src/content/data/fact/slice.json` (registered by mw-e01.7 with the
-  other slice facts): `{ "key": "slice.complete", "type": "bool", "default": false, "owner": "signals" }`.
+- **Declared** in the fact file `src/content/data/fact/slice.json` (added by mw-e01.4; mw-e01.7 adds
+  the other slice facts there): `{ "key": "slice.complete", "type": "bool", "default": false, "owner": "signals" }`.
 - **Written once**, only by the `fact` receiver of the `slice-complete` volume's signal graph
   (mw-e01.4). Nothing else may write it; the fact-registry check (`e27-fact-registry`) makes an
   undeclared write fail in dev and test builds.

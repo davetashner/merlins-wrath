@@ -1,6 +1,7 @@
 // Load-time mechanism checks (mw-e03.18): what a scene file can't check alone. Every signal graph a
 // scene places must find its entities among the scene's spawns: each name a graph node binds (a
 // lever's, a receiver's, a sensor's `entity`) is a spawn id, or the scene's `bindings` map it to one.
+// Every checkpoint a scene marks (mw-e01.4) is a volume node of its graph.
 // A typo fails in CI, not when the scene loads in play. A missing graph is already reported by the
 // loader's reference check. Issues name the scene file, the JSON pointer and the unbound name.
 
@@ -40,6 +41,17 @@ export const checkSceneSignals: ContentCheck = (entries) => {
           message: `scene:${scene.id} places signal graph "${graph.id}", whose "${name}" binds spawn "${id}", which the scene does not have`,
         });
       }
+      const volumes = new Set(
+        graph.nodes.filter((node) => node.kind === 'volume').map((node) => node.id),
+      );
+      signal.checkpoints.forEach((node, at) => {
+        if (volumes.has(node)) return;
+        issues.push({
+          file,
+          pointer: `/signals/${String(index)}/checkpoints/${String(at)}`,
+          message: `scene:${scene.id} marks "${node}" of signal graph "${graph.id}" as a checkpoint, but the graph has no volume "${node}"`,
+        });
+      });
     });
   }
   return issues;

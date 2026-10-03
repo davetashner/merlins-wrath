@@ -165,6 +165,12 @@ export const sceneSignalSchema = z.strictObject({
     .record(contentId, contentId)
     .default({})
     .describe('Binding name → spawn id, for names that are not themselves spawn ids.'),
+  checkpoints: z
+    .array(contentId)
+    .default([])
+    .describe(
+      'Volume nodes of the graph that are checkpoints: entering one requests an autosave (mw-e30.5).',
+    ),
 });
 
 export const scenePlacementSchema = z.strictObject({
@@ -400,6 +406,14 @@ export const sceneSchema = z
       }
     });
     scene.signals.forEach((signal, index) => {
+      signal.checkpoints.forEach((node, at) => {
+        if (signal.checkpoints.indexOf(node) === at) return;
+        ctx.addIssue({
+          code: 'custom',
+          path: ['signals', index, 'checkpoints', at],
+          message: `checkpoint "${node}" is listed twice`,
+        });
+      });
       for (const [name, id] of Object.entries(signal.bindings)) {
         if (seen.has(id)) continue;
         ctx.addIssue({

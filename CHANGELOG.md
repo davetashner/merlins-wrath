@@ -13,6 +13,12 @@ check enforces this).
 
 ### Added
 
+- The vertical slice has a level to play through, in grey box (`?scene=slice`). Open the wooden door
+  out of the spawn room and walk a dim corridor, where ivy in a side alcove climbs to a torchlit
+  ledge. The corridor opens into a pillared arena lit by torches and a brazier, with a loot alcove
+  raised off one side. The way out is an iron door, and without its key it stays locked ("Locked.").
+  Two checkpoints mark your progress on the way in, and stepping through the exit door finishes the
+  slice. The skeleton, the key and the loot arrive next.
 - Chests can be looted. Search one to open it and take everything inside. What a chest holds is
   decided the first time anyone opens it and never changes after that, so reloading a save will not
   reroll it, and a looted chest stays empty. A locked chest needs its key or your lockpicks first,
