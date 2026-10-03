@@ -27,7 +27,7 @@ import {
 const at = (x: number, y: number, z: number): Vec3 => ({ x, y, z });
 
 /** The game's wiring (src/main.ts) with the lighting room loaded and stand-in render objects. */
-function lightingRoom() {
+function lightingRoom(scene = 'lighting-room') {
   const content = loadGameContent();
   const physics = new RapierPhysics(RAPIER);
   const light = createGameLight(physics);
@@ -49,7 +49,7 @@ function lightingRoom() {
     physics: {},
     light: light.field,
   });
-  const loaded = loader.load('lighting-room');
+  const loaded = loader.load(scene);
   world.step();
   const spawn = (id: string): EntityId =>
     loaded.spawns.find((s) => s.spawn.id === id)?.entity ?? -1;
@@ -91,6 +91,15 @@ describe('game light wiring (mw-e03.37)', () => {
     loader.unload();
     expect(field.statics.count()).toBe(0);
     expect(field.environment.directional).toEqual([]);
+  });
+
+  it('mw-e32.1: only light sources are watched, not other spawns with world properties', () => {
+    const { loaded, field } = lightingRoom('perf-baseline');
+    // 64 pushable crates set world properties too; only the eight lamps are light sources.
+    expect(lightSpawns(loaded).map((s) => s.id)).toEqual(
+      Array.from({ length: 8 }, (_, i) => `lamp-${String(i)}`),
+    );
+    expect(field.lights().length).toBe(8);
   });
 
   it('AC-3: a torch that stops burning goes out in the sim on the same tick', () => {

@@ -160,6 +160,66 @@ jobs:
       - name: Every e2e shard passed
         run: test "${{ needs.e2e-shard.result }}" = success
 
+  # The perf budget suite in CI mode (mw-e32.1; budgets in perf/perf-budgets.json, all from contract
+  # §1): initial transfer and bundle size, load-to-playable and warm reload at 50 Mbps, JS heap after
+  # 5 minutes idle, long tasks over 200 ms, plus software-rendered frame time in the perf-baseline
+  # scene, compared with main's last report as a warning only (AC-5). Not a required check yet.
+  perf-budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # Every budget cites the hardware baseline verbatim (AC-6).
+      - run: pnpm perf:budgets
+      - id: playwright
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        id: browsers
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
+      - if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+      # Writes test-results/perf-report.json and the job summary (e2e/perf/reporter.ts).
+      - run: pnpm perf
+      # On main this report is the baseline that PRs compare their frame time with.
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: perf-report
+          path: test-results/perf-report.json
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Download main's latest perf report
+        if: always() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --event push \
+            --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [ -n "$run_id" ]; then
+            gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name perf-report --dir perf-baseline \
+              || echo "Could not download the perf report from main run $run_id."
+          fi
+      # Warning annotations only, never a failure: runner hardware varies between runs.
+      - name: Frame time vs main
+        if: always() && github.event_name == 'pull_request'
+        run: node scripts/perf/compare-cli.ts --current test-results/perf-report.json --baseline perf-baseline/perf-report.json
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: perf-traces
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10

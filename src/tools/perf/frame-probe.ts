@@ -3,11 +3,22 @@
 // player feels; capped by vsync unless the browser runs with vsync off) and the frame's own work (sim
 // steps + render submission on the main thread). The official AC-6 measurement is headed Chrome on
 // the reference machine (see e2e/perf.spec.ts); headless numbers are only indicative.
+//
+// The perf budget suite (mw-e32.1, e2e/perf) asks for a frame count instead of a time: with
+// `?perf&perfFrames=1800&perfWarmup=3` sampling ends after 1,800 frame intervals that follow a 3 s
+// warm-up (or when the sampling time runs out first), and the report carries the raw intervals and
+// the sampling window so the suite can compute its own percentiles and count long tasks in it.
+
+import { percentiles, type Percentiles } from './percentiles';
+
+export { percentiles, type Percentiles };
 
 export interface PerfOptions {
   /** Frames in the first `warmupMs` are not sampled (shader compiles, JIT, first uploads). */
   readonly warmupMs: number;
   readonly sampleMs: number;
+  /** Stop after this many frame intervals (sampleMs then only caps the time); none: time only. */
+  readonly frames?: number;
 }
 
 export const DEFAULT_PERF_OPTIONS: PerfOptions = Object.freeze({
@@ -15,38 +26,30 @@ export const DEFAULT_PERF_OPTIONS: PerfOptions = Object.freeze({
   sampleMs: 10_000,
 });
 
-/** `?perf` → default options; `?perf=20` → sample for 20 s; no parameter → undefined (probe off). */
+/** A positive number from a query parameter, or undefined when absent or not positive. */
+function positive(value: string | null): number | undefined {
+  if (value === null || value === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : undefined;
+}
+
+/**
+ * `?perf` → default options; `?perf=20` → sample for 20 s; no parameter → undefined (probe off).
+ * `&perfFrames=1800` stops after that many frame intervals; `&perfWarmup=3` sets the warm-up in
+ * seconds (mw-e32.1).
+ */
 export function parsePerfParam(search: string): PerfOptions | undefined {
-  const value = new URLSearchParams(search).get('perf');
+  const params = new URLSearchParams(search);
+  const value = params.get('perf');
   if (value === null) return undefined;
-  const seconds = Number(value);
-  return value !== '' && Number.isFinite(seconds) && seconds > 0
-    ? { ...DEFAULT_PERF_OPTIONS, sampleMs: seconds * 1_000 }
-    : DEFAULT_PERF_OPTIONS;
-}
-
-export interface Percentiles {
-  readonly count: number;
-  readonly p50: number;
-  readonly p95: number;
-  readonly p99: number;
-  readonly max: number;
-  readonly mean: number;
-}
-
-/** Nearest-rank percentiles of `samples` (all zero for no samples). */
-export function percentiles(samples: readonly number[]): Percentiles {
-  const sorted = [...samples].sort((a, b) => a - b);
-  const count = sorted.length;
-  const rank = (p: number): number => sorted[Math.max(0, Math.ceil((p / 100) * count) - 1)] ?? 0;
-  const sum = sorted.reduce((total, n) => total + n, 0);
+  const seconds = positive(value);
+  const frames = positive(params.get('perfFrames'));
+  const warmup = positive(params.get('perfWarmup'));
   return {
-    count,
-    p50: rank(50),
-    p95: rank(95),
-    p99: rank(99),
-    max: sorted.at(-1) ?? 0,
-    mean: count === 0 ? 0 : sum / count,
+    ...DEFAULT_PERF_OPTIONS,
+    ...(seconds !== undefined && { sampleMs: seconds * 1_000 }),
+    ...(warmup !== undefined && { warmupMs: warmup * 1_000 }),
+    ...(frames !== undefined && { frames: Math.ceil(frames) }),
   };
 }
 
@@ -55,12 +58,16 @@ export interface PerfReport {
   readonly frame: Percentiles;
   /** Main-thread work per frame (sim + render submit), ms. */
   readonly work: Percentiles;
+  /** Every sampled frame interval in order, ms (rounded to 0.001 ms). */
+  readonly samples: readonly number[];
+  /** The sampling window on the page's performance clock, ms: after the warm-up to the end. */
+  readonly window: { readonly startMs: number; readonly endMs: number };
 }
 
 const ms = (n: number): string => n.toFixed(2);
 
 /** One line for the console, e.g. `[perf] 600 frames · frame p50 8.33 / p95 8.40 … ms`. */
-export function formatPerfReport({ frame, work }: PerfReport): string {
+export function formatPerfReport({ frame, work }: Pick<PerfReport, 'frame' | 'work'>): string {
   return (
     `[perf] ${String(frame.count)} frames · frame p50 ${ms(frame.p50)} / p95 ${ms(frame.p95)} / ` +
     `p99 ${ms(frame.p99)} / max ${ms(frame.max)} ms · work p50 ${ms(work.p50)} / ` +
@@ -71,6 +78,7 @@ export function formatPerfReport({ frame, work }: PerfReport): string {
 export class FramePerfProbe {
   private start: number | undefined;
   private previous: number | undefined;
+  private windowStart: number | undefined;
   private readonly frames: number[] = [];
   private readonly work: number[] = [];
   private done = false;
@@ -85,10 +93,18 @@ export class FramePerfProbe {
     if (this.done) return undefined;
     this.start ??= nowMs;
     const elapsed = nowMs - this.start;
-    if (elapsed >= this.options.warmupMs) {
-      if (elapsed >= this.options.warmupMs + this.options.sampleMs) {
+    const { warmupMs, sampleMs, frames } = this.options;
+    if (elapsed >= warmupMs) {
+      this.windowStart ??= nowMs;
+      const enough = frames !== undefined && this.frames.length >= frames;
+      if (enough || elapsed >= warmupMs + sampleMs) {
         this.done = true;
-        return { frame: percentiles(this.frames), work: percentiles(this.work) };
+        return {
+          frame: percentiles(this.frames),
+          work: percentiles(this.work),
+          samples: this.frames.map((n) => Math.round(n * 1_000) / 1_000),
+          window: { startMs: this.windowStart, endMs: nowMs },
+        };
       }
       if (this.previous !== undefined) this.frames.push(nowMs - this.previous);
       this.work.push(workMs);

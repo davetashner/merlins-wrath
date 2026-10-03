@@ -231,6 +231,7 @@ import {
 } from '@tools/anim-demo/setup';
 import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
+import { sceneAgitator } from '@tools/perf/agitator';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
 import { formatVfxStats, parseVfxParam, VfxDemo } from '@tools/vfx-demo/index';
 import {
@@ -869,6 +870,15 @@ function startRenderer(
       camera.position.set(...scene.camera.position);
       camera.lookAt(...scene.camera.target);
       watchedLights = lightSpawns(loaded);
+      // The perf-baseline stress scene (mw-e32.1): blasts at its perf-agitator markers keep its props
+      // moving; scenes without markers have no agitator.
+      const agitator = sceneAgitator(loaded.layout.spawns, world.clock.hz);
+      if (agitator !== undefined) {
+        afterStep.push(() => {
+          const blast = agitator.commandFor(world.tick);
+          if (blast !== undefined) commands.push(blast);
+        });
+      }
       const floor = loaded.layout.pieces[0];
       if (probeLight && floor !== undefined) probePoints = probeGrid(floor.min, floor.max, 0.02);
       // A controllable player (mw-e02.23) in scenes with a player start; it collides with the

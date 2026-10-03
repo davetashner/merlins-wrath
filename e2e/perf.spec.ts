@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-// mw-e00.21 AC-6 (and mw-e01.4 AC-4, below): frame time of a scene through the ?perf probe. Opt-in, because the
+// mw-e00.21 AC-6 (and mw-e01.4 AC-4, below): frame time of a scene through the ?perf probe. The perf
+// budget suite (mw-e32.1, e2e/perf, pnpm perf:ref) measures the perf-baseline scene the same way.
+// Opt-in, because the
 // number only means something headed on the reference machine (MacBook Pro M1 Pro, Chrome, High):
 //
 //   VESPER_PERF=1 pnpm exec playwright test e2e/perf.spec.ts --headed

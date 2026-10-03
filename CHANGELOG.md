@@ -39,6 +39,8 @@ check enforces this).
   shut doors and stone, and walks its patrol through doorways and around pillars on the level's
   real paths instead of straight through walls. A guard that spots you shouts, and other guards
   nearby hear it.
+- A perf stress room, `?scene=perf-baseline`: 64 crates kept tumbling by bursts of force under eight
+  lamps, the scene every build's frame rate is measured in.
 - Saves keep each creature's state of mind: how alert it is, how long it has been searching, where
   it last saw you, what it just heard, its morale and whether it is knocked out. A reload picks up
   exactly where you left off, so a guard hunting for you is still hunting the same spot with the

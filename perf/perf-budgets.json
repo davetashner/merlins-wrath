@@ -1,0 +1,78 @@
+{
+  "$comment": "Perf budgets enforced by pnpm perf (mode ci, GitHub runners) and pnpm perf:ref (mode reference, the M1 Pro reference machine). mw-e32.1. Every number comes from the hardware baseline in docs/backlog-contract.md §1, and each source quotes it verbatim (pnpm perf:budgets checks the quote). Sizes are decimal (1 MB = 1,000,000 bytes).",
+  "budgets": [
+    {
+      "id": "initial-transfer",
+      "metric": "initialTransferBytes",
+      "mode": "ci",
+      "max": 50000000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: initial download ≤ 50 MB",
+      "scene": "testbed",
+      "note": "Cold load with the cache disabled, everything fetched until playable and the network is quiet."
+    },
+    {
+      "id": "bundle-size",
+      "metric": "bundleBytes",
+      "mode": "ci",
+      "max": 50000000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: initial download ≤ 50 MB",
+      "note": "The whole production build (dist/, source maps excluded): a build larger than the initial download cap cannot ship."
+    },
+    {
+      "id": "load-to-playable",
+      "metric": "loadToPlayableMs",
+      "mode": "ci",
+      "max": 10000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: Initial load to playable ≤ 10 s on a 50 Mbps connection",
+      "scene": "testbed",
+      "note": "Network throttled to 50 Mbps down through the Chrome DevTools Protocol, cache disabled."
+    },
+    {
+      "id": "warm-reload",
+      "metric": "warmReloadMs",
+      "mode": "ci",
+      "max": 3000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: warm reload ≤ 3 s",
+      "scene": "testbed",
+      "note": "A reload right after the cold load, still at 50 Mbps, with the HTTP cache warm."
+    },
+    {
+      "id": "heap-after-idle",
+      "metric": "heapBytesAfterIdle",
+      "mode": "ci",
+      "max": 1500000000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: JS heap ≤ 1.5 GB",
+      "scene": "testbed",
+      "note": "Allocated JS heap (CDP Runtime.getHeapUsage totalSize) after 5 minutes idle in the testbed."
+    },
+    {
+      "id": "long-tasks",
+      "metric": "longTasksOver200ms",
+      "mode": "ci",
+      "max": 0,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: steady 60 fps",
+      "scene": "perf-baseline",
+      "note": "A 200 ms main-thread task drops 12 frames at 60 fps, which no steady 60 fps run has. Counted after the warm-up while frames are sampled."
+    },
+    {
+      "id": "frame-p50-high",
+      "metric": "frameP50Ms",
+      "mode": "reference",
+      "max": 16.7,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: steady 60 fps on the reference machine at a 1440p-equivalent render resolution",
+      "scene": "perf-baseline",
+      "preset": "high",
+      "note": "60 fps is a 16.7 ms frame interval. 1,800 frames after a 3 s warm-up, uncapped (vsync and frame-rate limit off), 2560×1440 drawing buffer."
+    },
+    {
+      "id": "frame-p95-high",
+      "metric": "frameP95Ms",
+      "mode": "reference",
+      "max": 16.7,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: steady 60 fps on the reference machine at a 1440p-equivalent render resolution",
+      "scene": "perf-baseline",
+      "preset": "high",
+      "note": "mw-e32.1 AC-1. Same run as frame-p50-high."
+    }
+  ]
+}

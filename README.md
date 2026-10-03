@@ -30,6 +30,9 @@ pnpm dev                 # Vite dev server
 | `pnpm test:coverage` | Vitest with v8 coverage into `coverage/` (text, json-summary, lcov) |
 | `pnpm e2e`           | Playwright smoke tests against the production build              |
 | `pnpm bench`         | Vitest benchmarks (`*.bench.ts`) that assert sim perf budgets    |
+| `pnpm perf`          | Perf budget suite, CI mode (see [Perf budgets](#perf-budgets)); `PERF_HEAP_IDLE_S=30` shortens the 5-minute heap idle |
+| `pnpm perf:ref`      | Perf budget suite, reference mode: absolute frame-time budgets on the reference machine only |
+| `pnpm perf:budgets`  | Validates `perf/perf-budgets.json`: every budget quotes the contract's hardware baseline |
 | `pnpm content:coverage` | After `pnpm test`: fails listing content entries no passing test exercised |
 | `pnpm content:schemas`  | Regenerates `src/content/data/<type>.schema.json` for editor autocompletion |
 | `pnpm content:docs`     | Regenerates the field reference `docs/content/<type>-schema.md` for each content type |
@@ -46,6 +49,26 @@ First e2e run: `pnpm exec playwright install chromium`.
 selection, and confirming starts the run at the start scene's spawn point. Any of `?scene=<id>`,
 `?newgame`, `?class=<id>` or `?menu=title|load|save` skips the title for development and the e2e:
 **`/?scene=testbed`** is the grey-box testbed, `/?scene=slice` the slice without the menus.
+
+## Perf budgets
+
+`perf/perf-budgets.json` holds every perf budget, each quoting the hardware baseline in
+`docs/backlog-contract.md` §1 (mw-e32.1). The suite (`e2e/perf/`, its own `playwright.perf.config.ts`)
+has two modes:
+
+- **CI mode** (`pnpm perf`, the `perf-budget` CI job): initial transfer and build size ≤ 50 MB,
+  load-to-playable ≤ 10 s and warm reload ≤ 3 s at 50 Mbps (CDP throttling), JS heap ≤ 1.5 GB after
+  5 minutes idle in the testbed, no long task ≥ 200 ms while frames are sampled. Frame time is
+  software-rendered there (no GPU), so it has no absolute budget: CI compares it with main's last
+  report and only warns when p50 or p95 is more than 15 % slower.
+- **Reference mode** (`pnpm perf:ref`, by hand on the reference machine — MacBook Pro M1 Pro, Chrome):
+  headed Chrome, uncapped, 2560×1440 drawing buffer, 1,800 frames after a 3 s warm-up in the
+  `perf-baseline` scene; fails unless frame time p50 and p95 are ≤ 16.7 ms. Writes
+  `perf/results/<date>-<sha>.json`; commit it so results build a trend. Close other apps first.
+
+Every run writes `test-results/perf-report.json` and prints a per-budget table. `perf-baseline`
+(`/?scene=perf-baseline`) is the stress scene: 64 crates kept tumbling by force blasts at its
+`perf-agitator` markers, eight lamps and moonlight, fixed camera.
 
 ## Combat sandbox
 
