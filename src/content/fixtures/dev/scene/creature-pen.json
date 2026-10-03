@@ -2,7 +2,7 @@
   "$schema": "../../../data/scene.schema.json",
   "id": "creature-pen",
   "name": "Creature pen",
-  "description": "A walled 12 m pen for spawning creatures from data (mw-e12.4), in debug builds only: two fixture hounds, a fixture guard with a patrol route and a fixture sentinel at its corner post (mw-e11.9) stand at their spawn points (no AI yet). The debug console spawns more (spawn fixture-hound 3 at-cursor) and removes them (despawn all).",
+  "description": "A walled 12 m pen for spawning creatures from data (mw-e12.4), in debug builds only: two fixture hounds, a fixture guard with a patrol route and a fixture sentinel at its corner post (mw-e11.9) stand at their spawn points; the guard, the only one with a behaviour, patrols its route and notices the player (mw-e11.21, mw-e11.23). The debug console spawns more (spawn fixture-hound 3 at-cursor) and removes them (despawn all).",
   "grid": 1,
   "camera": {
     "position": [0, 8, -12],

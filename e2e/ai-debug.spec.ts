@@ -51,7 +51,7 @@ async function typeCommand(page: Page, line: string): Promise<void> {
 test('AC-2: three guards in the testbed, `ai.debug on`: overlay cones and labels for all 3, no console errors', async ({
   page,
 }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   const problems = collectProblems(page);
   await page.goto('/?scene=testbed&debug=1');
   const app = page.locator('#app');
@@ -59,6 +59,9 @@ test('AC-2: three guards in the testbed, `ai.debug on`: overlay cones and labels
   await expect.poll(async () => (await readouts(page)).ai?.on, { timeout: 10_000 }).toBe(false);
   await page.keyboard.press('Backquote');
   await expect(page.getByTestId('debug-console-input')).toBeFocused();
+  // The guards run AI in the game loop (mw-e11.21, mw-e11.23) and face the player: god mode keeps
+  // the player standing while they fight it.
+  await typeCommand(page, 'god on');
   await typeCommand(page, 'spawn fixture-guard 3');
   await expect.poll(async () => (await readouts(page)).creatures, { timeout: 15_000 }).toBe(3);
   await typeCommand(page, 'ai.debug on');
@@ -69,6 +72,13 @@ test('AC-2: three guards in the testbed, `ai.debug on`: overlay cones and labels
   await expect(page.locator('[data-testid="ai-debug-label"]:visible')).toHaveCount(3);
   await expect(page.locator('[data-testid="ai-debug-label"]').first()).toContainText(
     'fixture-guard',
+  );
+  // Real brains: each label shows its alert state, not "no brain (AI not running)".
+  await expect(page.locator('[data-testid="ai-debug-label"]').first()).toContainText(
+    /unaware|suspicious|investigating|searching|alerted|combat/,
+  );
+  await expect(page.locator('[data-testid="ai-debug-label"]', { hasText: 'no brain' })).toHaveCount(
+    0,
   );
   await expect(page.getByTestId('ai-debug-status')).toContainText('3 agents');
 

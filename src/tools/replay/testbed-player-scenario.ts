@@ -30,7 +30,17 @@ import {
   type TestbedCombat,
   type TestbedCombatants,
 } from '@game/combat/index';
-import { prepareCreatures, startCreatures, type GameCreatures } from '@game/creatures/index';
+import {
+  prepareCreatures,
+  SceneNavigation,
+  startCreatures,
+  startSceneNoise,
+  type AiWatch,
+  type CreatureAi,
+  type GameCreatures,
+  type SceneNoise,
+  watchCreatureAi,
+} from '@game/creatures/index';
 import { ActionSampler } from '@game/input/index';
 import {
   prepareConsumables,
@@ -41,11 +51,11 @@ import {
 import { hasContainers, prepareContainers, startContainers } from '@game/items/containers';
 import { hasMechanisms, startMechanisms } from '@game/mechanisms/index';
 import { RenderSync, type SceneBinding } from '@game/loop/index';
+import { createGameLight, installGameLight, type GameLight } from '@game/light/index';
 import { installGamePhysics, playerFocus } from '@game/physics-objects';
 import { setupTestbedPlayer, type TransformReader } from '@game/player/index';
 import { SceneLoader } from '@game/scene/index';
 import {
-  InMemoryColliderSink,
   LineOfSight,
   physicsBodiesOf,
   DAMAGE_COMPONENTS,
@@ -63,6 +73,7 @@ import {
   type ActionFrame,
   type RapierModule,
   type ReplayScenario,
+  type LoadedScene,
   type SceneCreatures,
   type SceneMechanisms,
   type Consumables,
@@ -174,6 +185,18 @@ export interface HeadlessGame<TInput> {
   readonly sceneCreatures: SceneCreatures;
   /** Render sync with headless objects (nothing draws them). */
   readonly sync: RenderSync;
+  /** The loaded scene. */
+  readonly scene: LoadedScene;
+  /** The light field (mw-e03.37), as the game installs it. */
+  readonly light: GameLight;
+  /** The scene's noise propagation (mw-e09.22). */
+  readonly noise: SceneNoise;
+  /** How AI travels: the scene's navmesh, when it has one (mw-e11.21). */
+  readonly navigation: SceneNavigation;
+  /** Creature perception, awareness and AI (mw-e11.23), when content has creatures. */
+  readonly ai: CreatureAi | undefined;
+  /** Watches the AI after each step (#app[data-ai] in the game); undefined without AI. */
+  readonly aiWatch: AiWatch | undefined;
 }
 
 /** The testbed with the player, wired as src/main.ts wires it, minus the renderer. */
@@ -186,8 +209,10 @@ export function createTestbedWorld(
 
 /**
  * Scene `scene` (default the testbed) with the player, wired as src/main.ts wires it — debug
- * commands with the sandbox's and creatures' spawners, the combat sandbox rules, physics, the
- * player, combat, world items, mechanisms, containers and creatures — minus the renderer. The combat sandbox's and creatures' e2e-free
+ * commands with the sandbox's and creatures' spawners, the combat sandbox rules, physics, the light
+ * field, noise propagation (mw-e09.22), the player, combat, world items, mechanisms, containers and
+ * creatures with perception and AI on the scene's navmesh (mw-e11.21, mw-e11.23) — minus the
+ * renderer. The combat sandbox's and creatures' e2e-free
  * tests (tests/integration) run on it. `content` defaults to the game's; debug builds pass the dev
  * content (src/content/dev-content.ts), which has the fixture creatures.
  */
@@ -222,18 +247,27 @@ export function createGameWorld<TInput>(
   installSandboxRules(world, combat);
   world.register(...HIT_VOLUME_COMPONENTS, ...DAMAGE_COMPONENTS);
   const focus = playerFocus(world);
-  installGamePhysics(world, { focus: focus.read });
+  // The light field (mw-e03.37), as src/main.ts builds it: level geometry feeds physics and the
+  // field's occluders through one sink; creatures see the player by it (mw-e11.23).
+  const light = createGameLight(physics);
+  installGamePhysics(world, { focus: focus.read, levelColliders: light.colliders });
+  installGameLight(world, light.field);
   const sync = new RenderSync(world);
   const scenes = new SceneLoader({
     world,
     sync,
-    colliders: physics,
+    colliders: light.colliders,
     content,
     objects: { staticGeometry: () => ({}), spawn: () => ({}) },
     binding: headless,
     physics: {},
+    light: light.field,
   });
   const scene = scenes.load(sceneId);
+  // Noise propagation through the scene's rooms and doors (mw-e09.22).
+  const noise = startSceneNoise(world, content, scene);
+  const navigation = new SceneNavigation();
+  navigation.load(world, content, scene);
   const collision = new RapierCollisionWorld(physics);
   const player = setupTestbedPlayer({
     world,
@@ -273,13 +307,13 @@ export function createGameWorld<TInput>(
   startConsumables(world, consumables, player);
   // Mechanisms (mw-e03.18) in scenes that have them, as src/main.ts starts them: door leaves collide
   // in the physics port, keys come off the player's keyring (mw-e17.5) and player-filtered trigger
-  // volumes count the player (mw-e01.4). Headless, nothing reads the light occluders.
+  // volumes count the player (mw-e01.4); closed leaves occlude the light field.
   const mechanisms = hasMechanisms(scene.layout)
     ? startMechanisms(world, scene, {
         content,
         materials: materialPresets(content.all('material')),
         colliders: physics,
-        occluders: new InMemoryColliderSink(),
+        occluders: light.field.statics,
         player,
       })
     : undefined;
@@ -287,7 +321,16 @@ export function createGameWorld<TInput>(
   const containers = hasContainers(scene.layout)
     ? startContainers(world, prepareContainers(content, items.inventory), scene, content)
     : [];
-  const sceneCreatures = startCreatures(world, creatures, combat, scene.layout.spawns);
+  // Creatures (mw-e12.4) with senses and AI (mw-e11.21, mw-e11.23): perception sees the player by
+  // the light field over the sim's Rapier world; AI walks the scene's navmesh.
+  const sceneCreatures = startCreatures(world, creatures, combat, scene.layout.spawns, {
+    content,
+    player,
+    light: light.field,
+    sight: new RapierSightWorld(physics),
+    navigation,
+  });
+  const aiWatch = watchCreatureAi(world, sceneCreatures.ai, navigation);
   return {
     world,
     player,
@@ -300,6 +343,12 @@ export function createGameWorld<TInput>(
     creatures,
     sceneCreatures,
     sync,
+    scene,
+    light,
+    noise,
+    navigation,
+    ai: sceneCreatures.ai,
+    aiWatch,
   };
 }
 

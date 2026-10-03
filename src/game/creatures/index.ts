@@ -3,11 +3,14 @@
 //
 // 1. `prepareCreatures` (before the debug commands are installed): compiles every creature in
 //    content (senses and locomotion resolved), the faction table and the creature attack table, and
-//    makes the debug console's spawners, one per creature id (`spawn fixture-hound 3`).
+//    makes the debug console's spawners, one per creature id (`spawn fixture-hound 3`, or walking a
+//    route: `spawn fixture-guard --patrol 0,0,12;0,0,20`).
 // 2. `startCreatures` (after startTestbedCombat, so the hit volumes, reactions and lock-on are in):
 //    registers the creature components, installs factions and the creature attack executor (with
-//    the shared invulnerability rule, mw-e04.28) and spawns the scene's creature spawns. Creatures
-//    have no AI yet (e11): they stand where they spawned and take hits.
+//    the shared invulnerability rule, mw-e04.28) and spawns the scene's creature spawns. Given
+//    `ai` (the game and the headless game world always give it), perception, awareness and AI are
+//    installed first (./ai.ts, mw-e11.21, mw-e11.23), so every creature whose behaviour content has
+//    spawns with a brain and runs it; without `ai` creatures stand where they spawned and take hits.
 //
 // With no creature in content there is nothing to install: the world, its entity ids and its state
 // hashes stay exactly as before. The game's own content has the bestiary's creatures (E13; the first
@@ -58,7 +61,10 @@ import {
   type World,
 } from '@sim/index';
 import type { TestbedCombat } from '../combat/testbed-combat';
+import { installCreatureAi, type CreatureAi, type CreatureAiOptions } from './ai';
 import type { RenderSync, SceneBinding } from '../loop/render-sync';
+
+export * from './ai';
 
 /** The first half of the creature wiring (see the file header). */
 export interface GameCreatures {
@@ -94,17 +100,25 @@ export function startCreatures<TInput>(
   creatures: GameCreatures,
   combat: TestbedCombat,
   spawns: readonly SceneSpawnPlacement[],
-): SceneCreatures {
-  if (creatures.table.size === 0) return { entities: [], errors: [] };
+  ai?: CreatureAiOptions,
+): StartedCreatures {
+  if (creatures.table.size === 0) return { entities: [], errors: [], ai: undefined };
   const w: World<never> = world;
   // Once per world: nothing else installs the creature attack executor or factions yet.
   installFactions(registerCreatureComponents(w).register(...ATTACK_COMPONENTS));
+  // Senses and AI before the attack executor (a think's attack starts that tick) and the spawns.
+  const installed = ai === undefined ? undefined : installCreatureAi(world, creatures.attacks, ai);
   installAttacks(world, {
     attacks: creatures.attacks,
     damage: combat.damage,
     invulnerable: invulnerabilityRule(combat.moves),
   });
-  return spawnSceneCreatures(w, creatures.spawn, spawns);
+  return { ...spawnSceneCreatures(w, creatures.spawn, spawns), ai: installed };
+}
+
+/** What `startCreatures` spawned, and the creature AI it installed (undefined without `ai`). */
+export interface StartedCreatures extends SceneCreatures {
+  readonly ai: CreatureAi | undefined;
 }
 
 /** One line per failed scene spawn, for the browser console. */

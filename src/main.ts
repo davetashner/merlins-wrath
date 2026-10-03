@@ -39,10 +39,14 @@ import {
   bindCreatures,
   creatureReadout,
   CreatureTelegraphs,
+  formatPerceptionStats,
   prepareCreatures,
+  SceneNavigation,
   sceneCreatureErrors,
   startCreatures,
+  startSceneNoise,
   viewCentrePoint,
+  watchCreatureAi,
   type GameCreatures,
 } from '@game/creatures/index';
 import { bindBreakLeftovers, BreakWatch, hasBreakables } from '@game/breakables/index';
@@ -173,6 +177,7 @@ import {
   goldChanged,
   itemAdded,
   itemRemoved,
+  checkCreatureSpawn,
   checkSandboxCommand,
   checkSandboxSpawn,
   DAMAGE_COMPONENTS,
@@ -836,10 +841,16 @@ function startRenderer(
       physics: {},
       light: light.field,
     });
+    // How creature AI travels (mw-e11.21): the loaded scene's navmesh, when it has one.
+    const navigation = new SceneNavigation();
     const request = resolveSceneRequest(location.search, scenes.available());
     if (request.kind === 'scene') {
       const scene = content.get('scene', request.id);
       const loaded = scenes.load(scene.id);
+      // Noise propagation through the scene's rooms and doors (mw-e09.22): footsteps, breaks and
+      // creatures' noises reach listeners muffled by shut doors and walls.
+      startSceneNoise(world, content, loaded);
+      navigation.load(world, content, loaded);
       camera.position.set(...scene.camera.position);
       camera.lookAt(...scene.camera.target);
       watchedLights = lightSpawns(loaded);
@@ -1235,9 +1246,36 @@ function startRenderer(
       publishFacts();
       world.events.on(factChanged, publishFacts);
       // The scene's creature spawns (mw-e12.4), after combat so they are hittable and lockable. A
-      // spawn naming a creature or faction that does not exist is reported, not fatal.
-      const sceneCreatures = startCreatures(world, creatures, combat, loaded.layout.spawns);
+      // spawn naming a creature or faction that does not exist is reported, not fatal. Creatures
+      // perceive the player by the light field over the sim's Rapier world (mw-e11.23) and think and
+      // walk the scene's navmesh (mw-e11.21); the e2e reads them from #app[data-ai], and ?perf shows
+      // perception's spend against its budget.
+      const sceneCreatures = startCreatures(world, creatures, combat, loaded.layout.spawns, {
+        content,
+        player: player?.entity,
+        light: light.field,
+        sight: sightWorld,
+        navigation,
+      });
       for (const line of sceneCreatureErrors(sceneCreatures)) console.error(line);
+      const watch = watchCreatureAi(world, sceneCreatures.ai, navigation);
+      if (watch !== undefined) {
+        let publishedAi = '';
+        let perfLine: HTMLElement | undefined;
+        if (perf !== undefined) {
+          perfLine = document.createElement('pre');
+          perfLine.dataset['testid'] = 'perf-overlay';
+          hud.append(perfLine);
+        }
+        afterStep.push(() => {
+          watch.step();
+          const readout = watch.readout();
+          const json = JSON.stringify(readout);
+          if (json === publishedAi) return;
+          root.dataset['ai'] = publishedAi = json;
+          if (perfLine !== undefined) perfLine.textContent = formatPerceptionStats(readout);
+        });
+      }
       // Every creature — the scene's, the console's, respawned ones — gets a placeholder capsule
       // (with bones for the Forgotten's placeholder-capsule-bones mesh, mw-e13.1).
       // Its body glows while it winds up a telegraphed move (mw-e04.20); the telegraph watch exists
@@ -1521,12 +1559,15 @@ function startRenderer(
             controller: content.get('controller', PLAYER_CONTROLLER_ID),
             spawnables: [...spawners.keys()].sort(),
             // Sandbox dummies take options (mw-e04.9: `spawn dummy --poise 60`); props take none.
+            // Creatures take a route (mw-e11.21: `spawn fixture-guard --patrol 0,0,12;0,0,20`).
             checkSpawn: (content, options) =>
               combat.spawners.has(content)
                 ? checkSandboxSpawn(combat.sandbox, content, options, world.clock.hz)
-                : Object.keys(options).length === 0
-                  ? undefined
-                  : `${content} takes no options`,
+                : creatures.spawners.has(content)
+                  ? checkCreatureSpawn(options)
+                  : Object.keys(options).length === 0
+                    ? undefined
+                    : `${content} takes no options`,
             sandbox: (command) => checkSandboxCommand(combat.sandbox, command, world.clock.hz),
             bookmarks: () => bookmarks,
             // `spawn … at-cursor` (mw-e12.4): where the centre of the view meets the level.
