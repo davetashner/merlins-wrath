@@ -5,4 +5,5 @@ export * from './hearing';
 export * from './percept';
 export * from './sight';
 export * from './system';
+export * from './touch';
 export * from './tuning';

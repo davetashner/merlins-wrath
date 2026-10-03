@@ -3,13 +3,15 @@
 // hashes carry an agent mid-thought. The runtime mutates the brain in place (it is the AI system's
 // own state; nothing else holds a reference across ticks), and the default snapshot hook copies it.
 //
-// The blackboard holds what the agent believes about the world, with typed keys. Perception
-// (mw-e11.5) and awareness (mw-e11.6) write it with `writeBlackboard`; primitives read and clear it.
+// The blackboard holds what the agent believes about the world, with typed keys. Awareness
+// (mw-e11.6) writes it from perception's percepts with `writeBlackboard`; primitives read and clear
+// it. The brain also keeps awareness's per-source records.
 
 import type { AlertState, BehaviourEvent } from '@content/index';
 import { defineComponent, type EntityId } from '../core/component';
 import { defineEvent } from '../core/events';
 import type { Vec3 } from '../stimulus/shapes';
+import type { AwarenessRecord } from './awareness';
 
 /** What an agent believes about the world (typed keys; perception writes them). */
 export interface Blackboard {
@@ -66,6 +68,8 @@ export interface Brain {
   /** Speed per gait, m/s. */
   gaits: { sneak: number; walk: number; run: number };
   blackboard: Blackboard;
+  /** What it is aware of, one record per perceived source, by source (awareness.ts). */
+  awareness: AwarenessRecord[];
 }
 
 /** The brain component. */

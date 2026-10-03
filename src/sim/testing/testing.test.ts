@@ -1,5 +1,5 @@
 // The AI scenario harness (mw-e11.3): layout and script validation, the DSL, the headless run and its
-// report, hash recording, and the scenario senses (real perception, stand-in awareness). Content is written tersely here (sim tests may not
+// report, hash recording, and the scenario senses (real perception and awareness). Content is written tersely here (sim tests may not
 // load content); the fixture guard's own content runs in tests/integration/ai-scenarios.test.ts.
 
 import type {
@@ -11,6 +11,7 @@ import type {
 } from '@content/index';
 import { describe, expect, it } from 'vitest';
 import { compileBehaviours } from '../ai/behaviour';
+import { awarenessOf } from '../ai/awareness';
 import { brainOf, installAi } from '../ai/runtime';
 import { CharacterController } from '../character/system';
 import { World } from '../core/world';
@@ -501,6 +502,13 @@ describe('scenario senses', () => {
       stimulus: { x: 4, y: 0, z: 0 },
     });
     expect(brainOf(world, agents[1] ?? -1)?.blackboard.awareness).toBe(0);
+    // Awareness (mw-e11.6) keeps a record of the noise; after its grace it decays and is forgotten.
+    const heard = agents[2] ?? -1;
+    expect(awarenessOf(world, heard)).toMatchObject([{ source: 'sound:test' }]);
+    expect(brainOf(world, heard)?.blackboard.awareness).toBeGreaterThan(0.6);
+    for (let i = 0; i < 13 * 60; i++) world.step();
+    expect(awarenessOf(world, heard)).toEqual([]);
+    expect(brainOf(world, heard)?.blackboard.awareness).toBe(0);
   });
 
   it('can be replaced by a scenario’s own senses', () => {

@@ -17,8 +17,8 @@
 // regression test. A failed run's report lists every expectation and a timeline of every alert state
 // change, what each agent saw and heard, and each step of the player's script, with times.
 //
-// Agents perceive through the real perception system (mw-e11.5) with a stand-in awareness until
-// mw-e11.6 exists (./senses.ts); `deps.senses` swaps them. Noises are propagated in the open (the
+// Agents perceive through the real perception system (mw-e11.5) and awareness (mw-e11.6)
+// (./senses.ts); `deps.senses` swaps them. Noises are propagated in the open (the
 // layout has no rooms); walls block sight and light.
 
 import type { AlertState, ControllerTuning, CreatureTable, Frozen } from '@content/index';

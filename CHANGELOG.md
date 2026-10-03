@@ -19,6 +19,12 @@ check enforces this).
   raised off one side. The way out is an iron door, and without its key it stays locked ("Locked.").
   Two checkpoints mark your progress on the way in, and stepping through the exit door finishes the
   slice. The skeleton, the key and the loot arrive next.
+- Creatures notice you gradually instead of all at once. A glimpse of you at the edge of a guard's
+  vision builds its suspicion slowly, while standing in torchlight right in front of it gives you
+  away fast, so you have time to back off into the dark. A loud noise puts a guard on edge at once.
+  Once nothing more catches its attention, a guard stays wary for a couple of seconds and then slowly
+  calms down. Bumping into a guard gives you away instantly, even in pitch darkness. Each creature
+  remembers what caught its eye or ear, ready for future on-screen hints about why you were spotted.
 - Chests can be looted. Search one to open it and take everything inside. What a chest holds is
   decided the first time anyone opens it and never changes after that, so reloading a save will not
   reroll it, and a looted chest stays empty. A locked chest needs its key or your lockpicks first,

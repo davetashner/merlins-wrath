@@ -309,6 +309,7 @@ export function giveBrain(world: World<never>, entity: EntityId, spec: BrainSpec
       targetSeenTick: -1,
       waypoint: 0,
     },
+    awareness: [],
   });
 }
 
@@ -323,7 +324,7 @@ export type BlackboardPatch = Partial<Readonly<Omit<Blackboard, 'stimulus'>>> & 
 };
 
 /**
- * Writes `patch` into `entity`'s blackboard (perception and awareness call this). Seeing the target
+ * Writes `patch` into `entity`'s blackboard (awareness calls this). Seeing the target
  * (`targetVisible: true`) also records the tick. Returns false when `entity` has no brain.
  */
 export function writeBlackboard(

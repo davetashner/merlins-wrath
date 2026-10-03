@@ -36,6 +36,15 @@ export interface PerceptionTuning {
     /** Horizontal speed, m/s, at or above which a target counts as moving. */
     readonly movingSpeed: number;
   };
+  readonly touch: {
+    /**
+     * Metres beyond the agent's own radius within which a target's feet count as touching it, on the
+     * ground plane (about a character capsule's radius plus a little skin).
+     */
+    readonly reach: number;
+    /** Most metres between the agent's and the target's feet, vertically, for a touch. */
+    readonly height: number;
+  };
 }
 
 /** The shipped perception tuning (PLACEHOLDER). */
@@ -56,4 +65,5 @@ export const DEFAULT_PERCEPTION_TUNING: PerceptionTuning = Object.freeze({
     muffledCertainty: 0.4,
   }),
   special: Object.freeze({ movingSpeed: 0.2 }),
+  touch: Object.freeze({ reach: 0.5, height: 1 }),
 });
