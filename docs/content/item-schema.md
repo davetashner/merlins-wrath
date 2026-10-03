@@ -84,6 +84,68 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `use[].amount` | `10` | required | Always +10 (ADR-0004 P5). |
 | `use[].op` | `"learn"` | required |  |
 | `use[].capability` | string | required | Capability id declared in src/content/data/capability/, e.g. "spell.mage-hand". |
+| `use[].op` | `"status"` | required |  |
+| `use[].status` | id | required | Status id, e.g. "warded" (the condition DSL reads it, mw-e22). |
+| `use[].seconds` | number > 0 ≤ 3600 | required | How long it lasts, seconds. |
+| `use[].op` | `"coat"` | required |  |
+| `use[].properties` | object | required | World properties the weapon’s strikes carry, e.g. { "flammable": true } for oil. |
+| `use[].properties.material` | ref → material | — | Material preset id (a material content entry). |
+| `use[].properties.temperature` | number -273.15–10000 | — | Current temperature, °C. |
+| `use[].properties.flammable` | boolean | — | Fire can ignite it. |
+| `use[].properties.ignitionPoint` | number -273.15–10000 | — | Temperature at which it ignites, °C. |
+| `use[].properties.fuel` | number 0–86400 | — | Seconds of burning left. |
+| `use[].properties.burning` | boolean | — | On fire right now. |
+| `use[].properties.wetness` | number 0–1 | — | How soaked it is (dry … saturated), 0 … 1. |
+| `use[].properties.frozen` | boolean | — | Frozen solid. |
+| `use[].properties.freezePoint` | number -273.15–10000 | — | Temperature at or below which it freezes, °C. |
+| `use[].properties.conductive` | boolean | — | Conducts electric charge. |
+| `use[].properties.charge` | number 0–1000000 | — | Stored electric charge. |
+| `use[].properties.weight` | number 0–1000000 | — | Mass, kg. |
+| `use[].properties.fragile` | number 0–1000000000 | — | Impact energy that breaks it, J. |
+| `use[].properties.hp` | number 0–1000000 | — | Structural hit points. |
+| `use[].properties.density` | number 0.01–100000 | — | Density, kg/m³; below 1000 it floats in water. |
+| `use[].properties.climbable` | `"none"` \| `"ladder"` \| `"rope"` \| `"ivy"` \| `"rough"` \| `"sheer"` | — | Climbing grade: none, ladder, rope, ivy (easy), rough (needs a climber), sheer (needs a tool). |
+| `use[].properties.liftable` | boolean | — | Can be picked up and carried. |
+| `use[].properties.pushable` | boolean | — | Can be pushed or dragged. |
+| `use[].properties.hideable` | boolean | — | An actor can hide in or behind it. |
+| `use[].properties.reflective` | boolean | — | Reflects light beams and bolts. |
+| `use[].properties.transparent` | boolean | — | Light and sight pass through it. |
+| `use[].properties.opaque` | boolean | — | Fully blocks light and sight. |
+| `use[].properties.lightEmitter` | object | — | Emits light. |
+| `use[].properties.lightEmitter.intensity` | number 0–100000 | required | Light output (a torch is about 100). |
+| `use[].properties.lightEmitter.radius` | number 0–100 | required | Reach, m. |
+| `use[].properties.soundDamping` | number 0–1 | — | Fraction of sound it absorbs, 0 … 1. |
+| `use[].properties.friction` | number 0–2 | — | Surface friction coefficient. |
+| `use[].properties.impactAbsorb` | number 0–1 | — | Fraction of impact energy it absorbs, 0 … 1. |
+| `use[].properties.owner` | id | — | Ownership tag (faction or owner id). |
+| `use[].properties.liquid` | boolean | — | A liquid: it pours, puddles and can have a water surface. |
+| `use[].properties.flammableGas` | boolean | — | A gas that ignites (flares or explodes) when fire reaches it. |
+| `use[].properties.extinguishable` | boolean | — | A fire or light source that water, force or an interaction puts out. |
+| `use[].properties.waterSurface` | boolean | — | Top surface of a body of liquid: cold freezes it into walkable ice (needs a liquid material). |
+| `use[].properties.unstable` | number 0–1000000000 | — | Force of one push, blast or quake that topples it, J. |
+| `use[].properties.suspended` | boolean | — | Hangs from its support; falls when the support breaks, burns or is cut. |
+| `use[].properties.support` | integer ≥ 0 | — | Entity a suspended object hangs from (0 = none); set when the level spawns. |
+| `use[].properties.breakable` | boolean | — | A single hit at or above its toughness for that kind of hit breaks it. |
+| `use[].properties.toughness` | object | — | Per kind of hit, the single-hit energy that breaks a breakable object; a kind left out never does. |
+| `use[].properties.toughness.blunt` | number 0–1000000000 | — | Blunt hit energy that breaks it, J. |
+| `use[].properties.toughness.slash` | number 0–1000000000 | — | Slash hit energy that breaks it, J. |
+| `use[].properties.toughness.pierce` | number 0–1000000000 | — | Pierce hit energy that breaks it, J. |
+| `use[].properties.toughness.force` | number 0–1000000000 | — | Force (blast, quake, boulder) energy that breaks it, J. |
+| `use[].properties.bashable` | boolean | — | A shield bash or kick shoves it (or breaks it when breakable). |
+| `use[].properties.cuttable` | boolean | — | Slash or pierce damage severs it. |
+| `use[].properties.shootable` | number 0–1000000 | — | Projectile impulse that fires its signal, N·s. |
+| `use[].properties.softAnchor` | boolean | — | Rope arrows and hooks embed in it. |
+| `use[].properties.surfaceHardness` | `"soft"` \| `"medium"` \| `"hard"` | — | Footstep loudness and whether arrows stick (soft, medium) or ricochet (hard). |
+| `use[].properties.chargeActivated` | number 0–1000000000 | — | Stored charge at which the mechanism fires. |
+| `use[].properties.lightActivated` | number 0–1000000000 | — | Light level on it at which the mechanism fires. |
+| `use[].properties.hidden` | boolean | — | Not perceivable or targetable until revealed. |
+| `use[].properties.trapped` | boolean | — | Interacting with it triggers its trap unless disarmed first (needs a trap). |
+| `use[].properties.trap` | id | — | Trap definition id a trapped object triggers. |
+| `use[].properties.container` | boolean | — | Holds items (contents live in the e18 container component). |
+| `use[].properties.remains` | boolean | — | Inert skeletal or corpse remains that summoning can raise. |
+| `use[].properties.noiseMultiplier` | number 0.2–3 | — | Multiplier on its wearer's noise; an actor's is the product of its equipment's. |
+| `use[].seconds` | number > 0 ≤ 3600 | required | How long the coating lasts, seconds. |
+| `use[].op` | `"throw"` | required |  |
 | `flags` | object | — | Item rules; omitted flags take their defaults (quest items: noSell, noDrop). |
 | `flags.unique` | boolean | — | At most one; never stacks. Default false. |
 | `flags.questItem` | boolean | — | Needed by a quest. Default true for category quest, else false. |

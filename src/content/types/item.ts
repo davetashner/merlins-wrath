@@ -23,7 +23,10 @@
 // (an `equipment:<id>` source) or, for tools on the belt, while it is carried. Books list what they
 // can teach. Every capability id an item names is checked against the registry at load
 // (`checkItems`). `use` effects are a minimal union until the shared effect vocabulary
-// (mw-e22 condition-effect DSL) lands and they migrate to it.
+// (mw-e22 condition-effect DSL) lands and they migrate to it: restore a pool, raise one, learn, put
+// on a status, coat the weapon with world properties, or throw the item (it flies carrying its own
+// `worldProperties`, so a thrown oil flask is flammable where it lands: properties, not pairings).
+// Using a consumable (src/sim/items/consumables.ts, mw-e17.6) applies them and spends one unit.
 //
 // Icons are UI asset ids (`icon-item-…`, style bible §15.1); whether each exists in the icon manifest
 // (placeholder allowed) is checked by `itemIconProblems`, run against src/ui/icons/icon-manifest.json.
@@ -164,6 +167,12 @@ const grantSchema = z.strictObject({
     ),
 });
 
+/** Longest timed use effect (a status or a coating), seconds. */
+export const MAX_USE_SECONDS = 3600;
+
+const useSeconds = (doc: string) =>
+  z.number().positive().max(MAX_USE_SECONDS).describe(`${doc}, seconds.`);
+
 /** The minimal use-effect union (migrates to the mw-e22 effect vocabulary). */
 const useEffectSchema = z.discriminatedUnion('op', [
   z
@@ -186,6 +195,28 @@ const useEffectSchema = z.discriminatedUnion('op', [
       capability: capabilityId,
     })
     .describe('Learn a capability permanently, e.g. a schematic or a scroll.'),
+  z
+    .strictObject({
+      op: z.literal('status'),
+      status: contentId.describe('Status id, e.g. "warded" (the condition DSL reads it, mw-e22).'),
+      seconds: useSeconds('How long it lasts'),
+    })
+    .describe('Put a timed status on the user (a tonic, a ward); using another refreshes it.'),
+  z
+    .strictObject({
+      op: z.literal('coat'),
+      properties: worldPropertiesSchema.describe(
+        'World properties the weapon’s strikes carry, e.g. { "flammable": true } for oil.',
+      ),
+      seconds: useSeconds('How long the coating lasts'),
+    })
+    .describe('Coat the user’s main-hand weapon: its strikes carry these world properties.'),
+  z
+    .strictObject({ op: z.literal('throw') })
+    .describe(
+      'Throw one unit along the user’s look: it flies as a physics object carrying the item’s ' +
+        'worldProperties (an oil flask is flammable and liquid), mw-e17.6.',
+    ),
 ]);
 
 const flagsSchema = z
@@ -367,6 +398,11 @@ function checkItem(item: ParsedItem, ctx: z.core.$RefinementCtx<ParsedItem>): vo
   if (item.category === 'consumable' && (item.use ?? []).length === 0) {
     issue(['use'], 'a consumable needs at least one use effect');
   }
+  (item.use ?? []).forEach((effect, i) => {
+    if (effect.op === 'throw' && item.worldProperties === undefined) {
+      issue(['use', i], 'a thrown item needs worldProperties (what it does where it lands)');
+    }
+  });
   if (item.category === 'quest' && item.flags?.questItem === false) {
     issue(['flags', 'questItem'], 'an item of category quest is a quest item');
   }

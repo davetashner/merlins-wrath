@@ -62,6 +62,11 @@ dropped (a whole stack, in front of you) and T throws one of it along your look;
 be dropped or thrown. The pad gets drop and throw from the inventory screen, so they have no pad
 button yet.
 
+**Quick slots.** Four quick slots use consumables without a menu (mw-e17.6): drink a draught, throw
+an oil flask. They have no default buttons yet: 1–4 and the d-pad are the
+abilities', so the bindings wait on the owner's layout decision (the inventory screen, mw-e17.10,
+assigns items to them). Until then the sim's `useQuickSlotCommand` uses a slot.
+
 **Slow walk.** The quietest way to move (mw-e02.10): hold X to walk at 1.2 m/s, or push the left
 stick 30% or less. It works standing or crouched. Sprint while crouched stands you up (not under a
 low ceiling, where the sprint is ignored). How loud and visible each stance and gait is lives in the

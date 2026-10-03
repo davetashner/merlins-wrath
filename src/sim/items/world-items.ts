@@ -21,7 +21,9 @@
 //
 // Everything a world item does physically comes from properties, never from its type: its body's
 // mass is its `weight` (from the weight class unless its world properties say otherwise), its
-// friction and bounce come from its material, and its shape is a box sized by category, the
+// friction and bounce come from its material, it has a `temperature` (the property's 20 °C default
+// unless its data says otherwise) so heat stimuli and the element field reach it (a thrown oil flask
+// catches fire from a torch, mw-e17.6), and its shape is a box sized by category, the
 // placeholder the renderer also draws. The drop and throw buttons act on the selected item: until the
 // inventory screen (mw-e17.10) lets the player choose, that is the most recently acquired item that
 // may be dropped.
@@ -52,6 +54,7 @@ import {
   type MaterialPresets,
 } from '../properties/materials';
 import type { WorldPropertyInit } from '../properties/components';
+import { WORLD_PROPERTY_SPECS } from '../properties/spec';
 import type { Quat } from '../scene/layout';
 import type { Vec3 } from '../stimulus/shapes';
 
@@ -259,6 +262,54 @@ export interface WorldItemsOptions {
   readonly name?: (def: WorldItemDef) => string;
 }
 
+/** Where a released item starts: its box centre, rotation and (for a throw) velocity. */
+export interface ItemLaunch {
+  readonly position: Vec3;
+  readonly rotation: Quat;
+  readonly velocity?: Vec3;
+}
+
+/** The unit vector ahead of `view` on the ground plane. */
+const aheadOf = (view: ItemHandlerView) => ({ x: -sin(view.yaw), z: -cos(view.yaw) });
+
+/** A drop in front of `view`: DROP_DISTANCE ahead of the feet, falling from DROP_HEIGHT, at rest. */
+export function dropPlacement(view: ItemHandlerView): ItemLaunch {
+  const ahead = aheadOf(view);
+  const { feet } = view;
+  return {
+    position: {
+      x: feet.x + ahead.x * DROP_DISTANCE,
+      y: feet.y + DROP_HEIGHT,
+      z: feet.z + ahead.z * DROP_DISTANCE,
+    },
+    rotation: rotationOf(view.yaw),
+  };
+}
+
+/**
+ * A throw along `view`'s look: from THROW_HEIGHT, THROW_REACH ahead, lofted by THROW_LOFT, at the
+ * speed of `weightClass`. The drop and throw buttons and thrown consumables (mw-e17.6) share it.
+ */
+export function throwLaunch(
+  view: ItemHandlerView,
+  weightClass: WeightClass,
+): ItemLaunch & { readonly velocity: Vec3 } {
+  const ahead = aheadOf(view);
+  const { feet } = view;
+  const pitch = view.pitch + THROW_LOFT;
+  const speed = THROW_SPEED[weightClass];
+  const flat = cos(pitch) * speed;
+  return {
+    position: {
+      x: feet.x + ahead.x * THROW_REACH,
+      y: feet.y + THROW_HEIGHT,
+      z: feet.z + ahead.z * THROW_REACH,
+    },
+    rotation: rotationOf(view.yaw),
+    velocity: { x: ahead.x * flat, y: sin(pitch) * speed, z: ahead.z * flat },
+  };
+}
+
 /** The world-item rules over a set of item definitions (see the file header). */
 export class WorldItems {
   readonly inventory: InventoryRules;
@@ -312,6 +363,7 @@ export class WorldItems {
     }
     const init: WorldPropertyInit = {
       weight: WEIGHT_CLASS_KG[def.weightClass],
+      temperature: WORLD_PROPERTY_SPECS.temperature.default,
       ...def.worldProperties,
     };
     const { weight, friction, impactAbsorb } = resolveProperties(this.#materials, init);
@@ -432,27 +484,15 @@ export class WorldItems {
       count: units,
       ...(def.flags.questItem && { force: true }),
     });
-    const ahead = { x: -sin(view.yaw), z: -cos(view.yaw) };
-    const { feet } = view;
-    const reach = thrown ? THROW_REACH : DROP_DISTANCE;
-    const position = {
-      x: feet.x + ahead.x * reach,
-      y: feet.y + (thrown ? THROW_HEIGHT : DROP_HEIGHT),
-      z: feet.z + ahead.z * reach,
-    };
-    let velocity: Vec3 | undefined;
-    if (thrown) {
-      const pitch = view.pitch + THROW_LOFT;
-      const speed = THROW_SPEED[def.weightClass];
-      const flat = cos(pitch) * speed;
-      velocity = { x: ahead.x * flat, y: sin(pitch) * speed, z: ahead.z * flat };
-    }
+    const { position, rotation, velocity } = thrown
+      ? throwLaunch(view, def.weightClass)
+      : dropPlacement(view);
     const entity = this.spawn(world, {
       defId: def.id,
       count: units,
       flags: instance.flags,
       position,
-      rotation: rotationOf(view.yaw),
+      rotation,
       ...(velocity !== undefined && { velocity }),
       by: actor,
     });
