@@ -54,7 +54,16 @@ function padTestbed() {
     const device = sampler.lastDevice;
     const bindings = { keyboardMouse: sampler.bindings, gamepad: sampler.padBindings };
     const glyph = (
-      action: 'move' | 'jump' | 'sprint' | 'crouch' | 'dodge' | 'primaryAttack' | 'secondaryAttack',
+      action:
+        | 'move'
+        | 'jump'
+        | 'sprint'
+        | 'crouch'
+        | 'dodge'
+        | 'primaryAttack'
+        | 'secondaryAttack'
+        | 'ability1'
+        | 'ability3',
     ) => inputGlyph(action, device, bindings);
     return playerControlsHint(device, {
       move: glyph('move'),
@@ -63,6 +72,8 @@ function padTestbed() {
       crouch: glyph('crouch'),
       dodge: glyph('dodge'),
       attack: glyph('primaryAttack'),
+      strongAttack: glyph('ability1'),
+      leftHand: glyph('ability3'),
       block: glyph('secondaryAttack'),
     });
   };
@@ -96,6 +107,17 @@ describe('a virtual Xbox pad in the testbed (mw-e02.9)', () => {
     expect(t.state().position.y).toBeGreaterThan(0.3);
   });
 
+  it('R3 toggles crouch, and jumping stands the player before takeoff', () => {
+    const t = padTestbed();
+    t.run(30);
+    t.run(1, { pressed: ['PadRS'] });
+    t.run(1, {});
+    expect(t.state().crouched).toBe(true);
+    t.run(1, { pressed: ['PadA'] });
+    expect(t.state().crouched).toBe(false);
+    expect(t.state().grounded).toBe(false);
+  });
+
   it('AC-4: the pad disconnecting mid-sprint releases sprint on the next frame and taps pause', () => {
     const t = padTestbed();
     t.run(30);
@@ -116,7 +138,7 @@ describe('a virtual Xbox pad in the testbed (mw-e02.9)', () => {
     t.run(1, { pressed: ['PadA'] });
     expect(t.sampler.lastDevice).toBe('gamepad');
     expect(t.hint()).toBe(
-      'Controller: Left stick move, right stick look, A jump, LS sprint (toggle), D-pad Down crouch, B dodge, RT attack, LT block',
+      'Controller: Left stick move, right stick look, A jump, LS sprint (toggle), RS crouch (toggle), B dodge, RB right-hand attack, RT strong attack, LB left-hand action, LT block',
     );
     t.sampler.down('KeyW');
     t.run(1, {});

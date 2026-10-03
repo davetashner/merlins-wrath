@@ -63,6 +63,7 @@ import {
   interacted,
   interactionPrompt,
   LockOnComponent,
+  PLAYER_FALL_RESET_MARGIN,
   PlayerLook,
   ViewAnchor,
   sceneLedges,
@@ -396,6 +397,11 @@ export function setupTestbedPlayer<TObject, TCommand>(
     spawns: scene.layout.spawns,
     collision,
     tuning,
+    fallResetY:
+      Math.min(
+        ...scene.layout.pieces.map((piece) => piece.min.y),
+        ...scene.layout.spawns.map((spawn) => spawn.position.y),
+      ) - PLAYER_FALL_RESET_MARGIN,
     look: {
       ...look,
       ...(options.sensitivity !== undefined && { sensitivity: options.sensitivity }),

@@ -165,6 +165,8 @@ describe('combat HUD (mw-e04.10)', () => {
     });
     expect(big.element.dataset['scale']).toBe('1.5');
     const bounds = combatHudBounds(big.layout, { width: 1280, height: 720 });
+    expect(bounds.top).toBe(big.layout.margin);
+    expect(bounds.right).toBe(1280 - big.layout.margin);
     expect(bounds.left).toBeGreaterThanOrEqual(0);
     expect(bounds.top).toBeGreaterThanOrEqual(0);
     expect(bounds.right).toBeLessThanOrEqual(1280);
@@ -181,7 +183,8 @@ describe('combat HUD (mw-e04.10)', () => {
     hud.setScale(2);
     expect(hud.health.element.style.width).toBe(`${String(COMBAT_HUD_BASE.health.width * 2)}px`);
     const bars = hud.element.querySelector<HTMLElement>('.vb-combat-bars');
-    expect(bars?.style.left).toBe(`${String(COMBAT_HUD_BASE.margin * 2)}px`);
+    expect(bars?.style.right).toBe(`${String(COMBAT_HUD_BASE.margin * 2)}px`);
+    expect(bars?.style.top).toBe(`${String(COMBAT_HUD_BASE.margin * 2)}px`);
     expect(hud.indicator.element.style.width).toBe(`${String(COMBAT_HUD_BASE.ring * 2)}px`);
     hud.setScale(9);
     expect(hud.layout.scale).toBe(2);

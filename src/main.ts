@@ -490,7 +490,16 @@ function startRenderer(
     root.dataset['inputDevice'] = device;
     const bindings = { keyboardMouse: sampler.bindings, gamepad: sampler.padBindings };
     const glyph = (
-      action: 'move' | 'jump' | 'sprint' | 'crouch' | 'dodge' | 'primaryAttack' | 'secondaryAttack',
+      action:
+        | 'move'
+        | 'jump'
+        | 'sprint'
+        | 'crouch'
+        | 'dodge'
+        | 'primaryAttack'
+        | 'secondaryAttack'
+        | 'ability1'
+        | 'ability3',
     ) => inputGlyph(action, device, bindings);
     controls.textContent = gone
       ? GAMEPAD_DISCONNECTED_HINT
@@ -501,6 +510,8 @@ function startRenderer(
           crouch: glyph('crouch'),
           dodge: glyph('dodge'),
           attack: glyph('primaryAttack'),
+          strongAttack: glyph('ability1'),
+          leftHand: glyph('ability3'),
           block: glyph('secondaryAttack'),
         });
   };
@@ -1085,7 +1096,7 @@ function startRenderer(
       );
       drawArrows();
       afterStep.push(drawArrows);
-      // The combat HUD (mw-e04.10): bars bottom-left, sized by the HUD scale setting, fed by the
+      // The combat HUD (mw-e04.10): bars top-right, sized by the HUD scale setting, fed by the
       // player's sim state and events; arcs point at off-screen attackers relative to the camera.
       if (player !== undefined) {
         const bars = new CombatHud({

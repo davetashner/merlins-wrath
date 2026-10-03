@@ -101,7 +101,7 @@ binding.frame(latestSnapshot, frame.timeMs);
 - `Meter` options: `trailDrainMs` drains the trail over a fixed time whatever its size, `flash(nowMs)`
   sets `data-flash` for `flashMs`, and `lowBelow` sets `data-low` below that fraction of max. Every
   timer runs on the `nowMs` passed to `update`, so tests step it without wall time.
-- `CombatHud` (`src/ui/combat-hud.ts`, mw-e04.10) is the player's health and stamina bars, bottom-left.
+- `CombatHud` (`src/ui/combat-hud.ts`, mw-e04.10) is the player's health and stamina bars, top-right.
   Health has a chip that holds 500 ms and drains over the next 500 ms, and it pulses below 25 %.
   Stamina flashes for 300 ms on `staminaRejected(nowMs)`. `damageFrom(bearing, nowMs)` shows an arc
   on a ring around the screen centre (0° ahead, clockwise) that fades over 1.5 s. Bar sizes are inline

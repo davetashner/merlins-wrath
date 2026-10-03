@@ -31,6 +31,7 @@ import {
   PLAYER_LOOK_SENSITIVITY,
   PlayerLook,
   playerLookSystem,
+  PLAYER_FALL_RESET_MARGIN,
   ViewAnchor,
   playerStart,
   spawnYaw,
@@ -160,6 +161,26 @@ describe('player spawn (mw-e02.23)', () => {
     expect(state().position.z).toBe(start.z);
     expect(state().position.y).toBeCloseTo(start.y, 9);
     expect(state().grounded).toBe(true);
+  });
+
+  it('resets a player who falls below the level to the authored start', () => {
+    const resetY = -PLAYER_FALL_RESET_MARGIN;
+    const { world, player, state, yaw, pitch } = setup(undefined, { fallResetY: resetY });
+    world.set(player, CharacterController, {
+      ...state(),
+      position: { x: 40, y: resetY - 1, z: 30 },
+      velocity: { x: 3, y: -40, z: 2 },
+      crouched: true,
+    });
+    world.set(player, PlayerLook, { yaw: 0, pitch: 0.5 });
+    world.step([IDLE_ACTION_FRAME]);
+    expect(state()).toMatchObject({
+      position: { x: 0, y: SKIN, z: -2 },
+      velocity: { x: 0, y: 0, z: 0 },
+      crouched: false,
+    });
+    expect(yaw()).toBe(Math.PI);
+    expect(pitch()).toBe(0);
   });
 });
 

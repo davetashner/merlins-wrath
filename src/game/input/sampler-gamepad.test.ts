@@ -17,7 +17,7 @@ const pad = (options: FakePadOptions = {}) => readPad(fakePad(options));
 describe('ActionSampler with a gamepad (mw-e02.9)', () => {
   it('pad buttons press, hold and release actions through the default Xbox layout', () => {
     const sampler = new ActionSampler();
-    sampler.gamepad(pad({ pressed: ['PadA'], rt: 1 }));
+    sampler.gamepad(pad({ pressed: ['PadA', 'PadRB'] }));
     const first = sampler.sample();
     expect(first.jump).toEqual(button(true, true, false));
     expect(first.primaryAttack).toEqual(button(true, true, false));
@@ -26,6 +26,43 @@ describe('ActionSampler with a gamepad (mw-e02.9)', () => {
     expect(second.jump).toEqual(button(false, true, false));
     expect(second.primaryAttack).toEqual(button(false, false, true));
     expect(sampler.isBound('PadMenu')).toBe(true);
+  });
+
+  it('mw-e04.39 maps the shoulder combat cluster and R3 crouch', () => {
+    const sampler = new ActionSampler();
+    sampler.gamepad(pad({ pressed: ['PadRB', 'PadLB', 'PadLT', 'PadRT', 'PadRS'] }));
+    const frame = sampler.sample();
+    expect(frame.primaryAttack.held).toBe(true); // R1: right hand
+    expect(frame.ability1.held).toBe(true); // R2: strong attack
+    expect(frame.ability3.held).toBe(true); // L1: left hand
+    expect(frame.secondaryAttack.held).toBe(true); // L2: hold shield
+    expect(frame.crouch.held).toBe(true); // R3
+  });
+
+  it('mw-e02.36 toggles R3 crouch and exits it on R3, jump, sprint or disconnect', () => {
+    const sampler = new ActionSampler();
+    const click = (code: 'PadRS' | 'PadA' | 'PadLS', left: readonly [number, number] = [0, 0]) => {
+      sampler.gamepad(pad({ pressed: [code], left }));
+      const down = sampler.sample();
+      sampler.gamepad(pad({ left }));
+      const released = sampler.sample();
+      return { down, released };
+    };
+
+    const entered = click('PadRS');
+    expect(entered.down.crouch).toEqual(button(true, true, false));
+    expect(entered.released.crouch).toEqual(button(false, true, false));
+    const left = click('PadRS');
+    expect(left.down.crouch).toEqual(button(false, false, true));
+
+    click('PadRS');
+    expect(click('PadA').down.crouch).toEqual(button(false, false, true));
+    click('PadRS');
+    expect(click('PadLS', [0, 1]).down.crouch).toEqual(button(false, false, true));
+
+    click('PadRS');
+    sampler.gamepad(undefined);
+    expect(sampler.sample().crouch).toEqual(button(false, false, true));
   });
 
   it('the left stick moves with the rescaled deadzone; the right stick is lookStick, raw', () => {
@@ -151,8 +188,8 @@ describe('ActionSampler with a gamepad (mw-e02.9)', () => {
 
   it('pad bindings remap like keys: after rebinding Jump to Y, Y jumps and A does not', () => {
     const result = rebind(DEFAULT_PAD_BINDINGS, 'jump', 'PadY');
-    expect(result.ok).toBe(false); // Y is ability 1 by default: a conflict, as on the keyboard
-    const freed = rebind({ ...DEFAULT_PAD_BINDINGS, ability1: ['PadUp'] }, 'jump', 'PadY');
+    expect(result.ok).toBe(false); // Y is lock-on by default: a conflict, as on the keyboard
+    const freed = rebind({ ...DEFAULT_PAD_BINDINGS, lockOn: [] }, 'jump', 'PadY');
     if (!freed.ok) throw new Error('conflict');
     const sampler = new ActionSampler();
     sampler.setPadBindings(freed.bindings);
