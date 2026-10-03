@@ -5,7 +5,7 @@ import manifest from './data/sound-manifest.json';
 import { SoundRegistry, type SoundDefInput } from './manifest.ts';
 
 /** The committed manifest's entries. */
-export const SOUND_MANIFEST: readonly SoundDefInput[] = manifest as SoundDefInput[];
+export const SOUND_MANIFEST: readonly SoundDefInput[] = manifest as unknown as SoundDefInput[];
 
 /** A registry of the game's sounds (validated; throws on a bad manifest). */
 export function gameSoundRegistry(): SoundRegistry {

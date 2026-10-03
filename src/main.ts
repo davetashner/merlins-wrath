@@ -88,6 +88,7 @@ import {
   playableClasses,
 } from '@game/classes';
 import { attachGameAudio, attachGameVfx, soundPositions } from '@game/cues/index';
+import { bindVolumes, SliceMusic } from '@game/music/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
 import { debugConsoleEnabled } from '@game/debug-console-gate';
@@ -901,6 +902,17 @@ function startRenderer(
     if (request.kind === 'scene') {
       const scene = content.get('scene', request.id);
       const loaded = scenes.load(scene.id);
+      // Volume sliders drive the buses; the slice's ambience and music beds play from the first
+      // gesture on (mw-0j5), a stand-in for the adaptive controller (mw-e28.11).
+      const volumes = bindVolumes(audio, settings);
+      const music =
+        scene.id === 'slice'
+          ? new SliceMusic({ world, engine: audio, now: () => performance.now() })
+          : undefined;
+      afterStep.push(() => {
+        volumes.update();
+        music?.update();
+      });
       // Noise propagation through the scene's rooms and doors (mw-e09.22): footsteps, breaks and
       // creatures' noises reach listeners muffled by shut doors and walls.
       startSceneNoise(world, content, loaded);
