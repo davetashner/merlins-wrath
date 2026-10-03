@@ -129,12 +129,18 @@ export interface SceneContainer {
 export interface SceneSignalSpec {
   readonly graph: { readonly id: string };
   readonly bindings?: Readonly<Record<string, string>> | undefined;
+  /** Volume node ids of the graph that are checkpoints (autosave triggers, mw-e30.5). */
+  readonly checkpoints?: readonly string[] | undefined;
 }
 
-/** A placed signal graph as laid out: binding name → spawn id, for names that are not spawn ids. */
+/**
+ * A placed signal graph as laid out: binding name → spawn id, for names that are not spawn ids, and
+ * the graph's volume nodes that are checkpoints.
+ */
 export interface SceneSignal {
   readonly graph: string;
   readonly bindings: Readonly<Record<string, string>>;
+  readonly checkpoints: readonly string[];
 }
 
 export interface ScenePlacementSpec {
@@ -504,6 +510,7 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
         Object.freeze({
           graph: signal.graph.id,
           bindings: Object.freeze({ ...signal.bindings }),
+          checkpoints: Object.freeze([...(signal.checkpoints ?? [])]),
         }),
       ),
     ),

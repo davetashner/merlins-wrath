@@ -1,0 +1,46 @@
+{
+  "$schema": "../signal-graph.schema.json",
+  "id": "slice",
+  "name": "Vertical slice triggers",
+  "notes": "The m1 slice's trigger volumes (scene slice, mw-e01.4; docs/design/vertical-slice.md §4–5), in world metres. CP-1, just past the spawn-room door, and CP-2, at the corridor's end before the arena, are player-filtered checkpoint volumes: the scene marks them as checkpoints, so entering one requests an autosave (mw-e30.5, wired by mw-e01.7). The slice-complete volume fills the vestibule behind the locked iron exit door; the first time the player walks into it, the latch writes slice.complete = true and keeps it, so stepping back out never undoes the pass.",
+  "nodes": [
+    {
+      "id": "cp-1",
+      "kind": "volume",
+      "observed": true,
+      "shape": {
+        "kind": "box",
+        "center": { "x": 0, "y": 1, "z": 6.25 },
+        "halfExtents": { "x": 1, "y": 1.5, "z": 0.75 }
+      },
+      "filter": [{ "test": "tag", "tag": "player" }]
+    },
+    {
+      "id": "cp-2",
+      "kind": "volume",
+      "observed": true,
+      "shape": {
+        "kind": "box",
+        "center": { "x": 0, "y": 1, "z": 23 },
+        "halfExtents": { "x": 1, "y": 1.5, "z": 1 }
+      },
+      "filter": [{ "test": "tag", "tag": "player" }]
+    },
+    {
+      "id": "slice-complete",
+      "kind": "volume",
+      "shape": {
+        "kind": "box",
+        "center": { "x": 0, "y": 1, "z": 39.25 },
+        "halfExtents": { "x": 1, "y": 1.5, "z": 0.75 }
+      },
+      "filter": [{ "test": "tag", "tag": "player" }]
+    },
+    { "id": "completed", "kind": "latch" },
+    { "id": "complete-fact", "kind": "receiver", "receiver": "fact", "key": "slice.complete" }
+  ],
+  "wires": [
+    { "from": "slice-complete.enter", "to": "completed.set" },
+    { "from": "completed", "to": "complete-fact" }
+  ]
+}

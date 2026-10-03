@@ -202,6 +202,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `signals` | list of object | — | Signal graphs wiring its switches, volumes and doors (mw-e03.18). |
 | `signals[].graph` | ref → signal-graph | required | The graph to place. |
 | `signals[].bindings` | map of id → id | `{}` | Binding name → spawn id, for names that are not themselves spawn ids. |
+| `signals[].checkpoints` | list of id | `[]` | Volume nodes of the graph that are checkpoints: entering one requests an autosave (mw-e30.5). |
 | `acoustics` | object | — | Rooms, portals and partitions for sound propagation (mw-e09.3). |
 | `acoustics.rooms` | list of object | `[]` | Rooms; they must not overlap. |
 | `acoustics.rooms[].id` | id | required | Name of the room, unique in the scene, e.g. guard-room. |

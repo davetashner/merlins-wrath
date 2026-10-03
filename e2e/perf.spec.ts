@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-// mw-e00.21 AC-6: frame time of the testbed scene through the ?perf probe. Opt-in, because the
+// mw-e00.21 AC-6 (and mw-e01.4 AC-4, below): frame time of a scene through the ?perf probe. Opt-in, because the
 // number only means something headed on the reference machine (MacBook Pro M1 Pro, Chrome, High):
 //
 //   VESPER_PERF=1 pnpm exec playwright test e2e/perf.spec.ts --headed
@@ -38,4 +38,21 @@ test('AC-6: testbed frame time p95 ≤ 8 ms', async ({ page }) => {
   console.log(`[perf] ${summary}`);
   test.info().annotations.push({ type: 'perf', description: summary });
   expect(report.frame.p95).toBeLessThanOrEqual(BUDGET_MS);
+});
+
+// mw-e01.4 AC-4: the vertical slice idling at spawn holds a steady 60 fps on the same reference
+// setup (frame interval p95 ≤ 16.7 ms), with the knight standing at player-start.
+const SLICE_BUDGET_MS = 16.7;
+
+test('mw-e01.4 AC-4: slice frame time idling at spawn p95 ≤ 16.7 ms', async ({ page }) => {
+  test.setTimeout((SECONDS + 30) * 1_000);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`/?scene=slice&perf=${String(SECONDS)}`);
+  const app = page.locator('#app');
+  await expect(app).toHaveAttribute('data-perf', /frame/, { timeout: (SECONDS + 20) * 1_000 });
+  const report = JSON.parse((await app.getAttribute('data-perf')) ?? '{}') as Report;
+  const summary = `frame p50/p95/p99 ${report.frame.p50.toFixed(2)}/${report.frame.p95.toFixed(2)}/${report.frame.p99.toFixed(2)} ms; work p50/p95/p99 ${report.work.p50.toFixed(2)}/${report.work.p95.toFixed(2)}/${report.work.p99.toFixed(2)} ms over ${String(report.frame.count)} frames`;
+  console.log(`[perf] slice: ${summary}`);
+  test.info().annotations.push({ type: 'perf', description: `slice: ${summary}` });
+  expect(report.frame.p95).toBeLessThanOrEqual(SLICE_BUDGET_MS);
 });

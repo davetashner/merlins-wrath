@@ -1,0 +1,374 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "slice",
+  "name": "Vertical slice",
+  "description": "The m1 vertical slice in grey box (docs/design/vertical-slice.md \u00a74, mw-e01.4): a 10 \u00d7 10 m spawn room behind a wooden door, a dim 20 m corridor with an ivy-faced ledge in its side alcove, a 12 \u00d7 12 m arena with two pillars, a floor brazier and a loot alcove 1.4 m up off its east side, and an iron exit door locked by the slice-exit lock. Checkpoint volumes CP-1 (past the spawn door) and CP-2 (before the arena) request autosaves; walking into the vestibule behind the exit door sets slice.complete.",
+  "grid": 1,
+  "camera": {
+    "position": [-14, 22, -10],
+    "target": [0, 0, 17]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 0],
+      "scale": [5, 1, 5]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, -5],
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-5, 0, 0],
+      "yaw": 90,
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [5, 0, 0],
+      "yaw": 90,
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-3, 0, 5],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [0, 0, 5]
+    },
+    {
+      "piece": "wall",
+      "at": [3, 0, 5],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "floor",
+      "at": [0, 0, 15],
+      "scale": [1, 1, 10]
+    },
+    {
+      "piece": "wall",
+      "at": [-1, 0, 15],
+      "yaw": 90,
+      "scale": [10, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [1, 0, 9],
+      "yaw": 90,
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [1, 0, 21],
+      "yaw": 90,
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "floor",
+      "at": [2.5, 0, 15],
+      "scale": [1.5, 1, 2]
+    },
+    {
+      "piece": "wall",
+      "at": [2.5, 0, 13],
+      "scale": [1.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [2.5, 0, 17],
+      "scale": [1.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [4, 0, 15],
+      "yaw": 90,
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "platform",
+      "at": [3.5, 0, 15],
+      "scale": [0.5, 2, 2]
+    },
+    {
+      "piece": "platform",
+      "at": [2.75, 0, 15],
+      "scale": [0.2, 2, 1],
+      "purpose": "climbable",
+      "properties": {
+        "material": "ivy"
+      }
+    },
+    {
+      "piece": "floor",
+      "at": [0, 0, 31],
+      "scale": [6, 1, 6]
+    },
+    {
+      "piece": "wall",
+      "at": [-3.5, 0, 25],
+      "scale": [2.5, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [0, 0, 25]
+    },
+    {
+      "piece": "wall",
+      "at": [3.5, 0, 25],
+      "scale": [2.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-6, 0, 31],
+      "yaw": 90,
+      "scale": [6, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [6, 0, 29],
+      "yaw": 90,
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-3.5, 0, 37],
+      "scale": [2.5, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [0, 0, 37]
+    },
+    {
+      "piece": "wall",
+      "at": [3.5, 0, 37],
+      "scale": [2.5, 1, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-2.5, 0, 29.5]
+    },
+    {
+      "piece": "pillar",
+      "at": [2.5, 0, 33.5]
+    },
+    {
+      "piece": "platform",
+      "at": [7.5, 0, 35],
+      "scale": [1.5, 1.4, 2]
+    },
+    {
+      "piece": "wall",
+      "at": [7.5, 0, 33],
+      "scale": [1.5, 1.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [7.5, 0, 37],
+      "scale": [1.5, 1.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [9, 0, 35],
+      "yaw": 90,
+      "scale": [2, 1.5, 1]
+    },
+    {
+      "piece": "floor",
+      "at": [0, 0, 38.5],
+      "scale": [1, 1, 1.5]
+    },
+    {
+      "piece": "wall",
+      "at": [-1, 0, 38.5],
+      "yaw": 90,
+      "scale": [1.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [1, 0, 38.5],
+      "yaw": 90,
+      "scale": [1.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 40]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, -2],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "torch-spawn",
+      "at": [-4.75, 2.25, 0],
+      "tags": ["torch"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 3600
+      }
+    },
+    {
+      "id": "spawn-door",
+      "at": [0, 0, 5],
+      "door": {
+        "profile": "wooden-door"
+      }
+    },
+    {
+      "id": "torch-ledge",
+      "at": [3.5, 2.25, 16.5],
+      "tags": ["torch"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 3600
+      }
+    },
+    {
+      "id": "torch-corridor",
+      "at": [0.75, 2.25, 21],
+      "tags": ["torch"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 3600
+      }
+    },
+    {
+      "id": "torch-arena-west",
+      "at": [-5.75, 2.25, 31],
+      "tags": ["torch"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 3600
+      }
+    },
+    {
+      "id": "torch-arena-east",
+      "at": [5.75, 2.25, 29],
+      "tags": ["torch"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 3600
+      }
+    },
+    {
+      "id": "arena-brazier",
+      "at": [-4.5, 0, 35.5],
+      "tags": ["brazier"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 3600
+      }
+    },
+    {
+      "id": "step-crate",
+      "at": [5.5, 0, 34],
+      "prop": "crate"
+    },
+    {
+      "id": "exit-door",
+      "at": [0, 0, 37],
+      "door": {
+        "profile": "iron-door",
+        "lock": "slice-exit"
+      }
+    },
+    {
+      "id": "exit",
+      "at": [0, 0, 39],
+      "tags": ["goal"]
+    }
+  ],
+  "signals": [
+    {
+      "graph": "slice",
+      "checkpoints": ["cp-1", "cp-2"]
+    }
+  ],
+  "light": {
+    "ambient": 0.2,
+    "ambientZones": [
+      {
+        "id": "corridor",
+        "min": [-1, 0, 5],
+        "max": [1, 3, 25],
+        "level": 0.06
+      }
+    ]
+  },
+  "acoustics": {
+    "rooms": [
+      {
+        "id": "spawn-room",
+        "min": [-5, 0, -5],
+        "max": [5, 3, 5]
+      },
+      {
+        "id": "corridor",
+        "min": [-1, 0, 5],
+        "max": [1, 3, 25]
+      },
+      {
+        "id": "side-alcove",
+        "min": [1, 0, 13],
+        "max": [4, 3, 17]
+      },
+      {
+        "id": "arena",
+        "min": [-6, 0, 25],
+        "max": [6, 3, 37]
+      },
+      {
+        "id": "loot-alcove",
+        "min": [6, 0, 33],
+        "max": [9, 3, 37]
+      },
+      {
+        "id": "vestibule",
+        "min": [-1, 0, 37],
+        "max": [1, 3, 40]
+      }
+    ],
+    "portals": [
+      {
+        "id": "spawn-doorway",
+        "rooms": ["spawn-room", "corridor"],
+        "at": [0, 1, 5],
+        "door": "spawn-door"
+      },
+      {
+        "id": "side-alcove-mouth",
+        "rooms": ["corridor", "side-alcove"],
+        "at": [1, 1, 15]
+      },
+      {
+        "id": "arena-doorway",
+        "rooms": ["corridor", "arena"],
+        "at": [0, 1, 25]
+      },
+      {
+        "id": "alcove-sill",
+        "rooms": ["arena", "loot-alcove"],
+        "at": [6, 2, 35]
+      },
+      {
+        "id": "exit-doorway",
+        "rooms": ["arena", "vestibule"],
+        "at": [0, 1, 37],
+        "door": "exit-door"
+      }
+    ]
+  }
+}

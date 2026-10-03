@@ -200,6 +200,23 @@ describe('scene layout (mw-e00.21)', () => {
     );
   });
 
+  it('lays out placed signal graphs with their bindings and checkpoints (mw-e01.4)', () => {
+    const scene: SceneSpec = {
+      ...TEST_SCENE,
+      signals: [
+        { graph: { id: 'gate' }, bindings: { lever: 'gate-lever' }, checkpoints: ['cp-1'] },
+        { graph: { id: 'plain' } },
+      ],
+    };
+    const { signals } = layoutScene(scene, testKit);
+    expect(signals).toEqual([
+      { graph: 'gate', bindings: { lever: 'gate-lever' }, checkpoints: ['cp-1'] },
+      { graph: 'plain', bindings: {}, checkpoints: [] },
+    ]);
+    expect(Object.isFrozen(signals[0]?.checkpoints)).toBe(true);
+    expect(layoutScene(TEST_SCENE, testKit).signals).toEqual([]);
+  });
+
   it('is deterministic and frozen', () => {
     const a = layoutScene(TEST_SCENE, testKit);
     expect(layoutScene(TEST_SCENE, testKit)).toEqual(a);
