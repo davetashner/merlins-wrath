@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- Loot tables: chests and creatures can now be given handcrafted loot, with items that always
+  drop plus weighted random finds, finds only some classes get, and unique treasures that never
+  turn up twice. Nothing in the world uses them yet; containers and creature drops come next.
 - Consumables and four quick slots: drink a draught or throw an oil flask without opening a menu.
   A slot refills from your next stack of the same item and shows as empty when you run out. A
   thrown oil flask lands as flammable oil that a flame sets alight, and the fire spreads from it

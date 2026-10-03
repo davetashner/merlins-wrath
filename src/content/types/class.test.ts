@@ -150,6 +150,8 @@ describe('class data (mw-e19.4)', () => {
     ]);
     expect(loadIssues(thief({ unlockChannels: [] }))).toEqual([
       `${THIEF_FILE}#/unlockChannels: a class needs at least one unlock channel: every class must be able to progress (at unlockChannels)`,
+      // The broken class file loads as missing, so a loot entry conditioned on it fails too.
+      'src/content/data/loot-table/testbed-supply-crate.json#/entries/1/conditions/class/0: loot-table:testbed-supply-crate references missing class:thief',
     ]);
     expect(CLASS_CHANNELS).toEqual(['book', 'trainer', 'schematic', 'trick', 'deed', 'tool']);
   });

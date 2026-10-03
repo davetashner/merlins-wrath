@@ -39,6 +39,7 @@ import { hitStopSchema } from './types/hit-stop.ts';
 import { kitSchema } from './types/kit.ts';
 import { lockSchema } from './types/lock.ts';
 import { lockOnSchema } from './types/lock-on.ts';
+import { lootTableSchema } from './types/loot-table.ts';
 import { locomotionSchema } from './types/locomotion.ts';
 import { materialSchema } from './types/material.ts';
 import { moveSchema } from './types/move.ts';
@@ -81,6 +82,7 @@ export const contentTypes = {
   kit: kitSchema,
   lock: lockSchema,
   'lock-on': lockOnSchema,
+  'loot-table': lootTableSchema,
   locomotion: locomotionSchema,
   material: materialSchema,
   move: moveSchema,

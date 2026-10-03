@@ -1,0 +1,10 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "testbed-sundries",
+  "notes": "Grey-box example nested table (mw-e18.1): one small consumable, rolled by testbed-supply-crate's sundries entry. Oil flasks are commoner than mana draughts. Not tuned.",
+  "rolls": { "min": 1, "max": 1 },
+  "entries": [
+    { "item": "oil-flask", "weight": 3, "count": { "min": 1, "max": 2 } },
+    { "item": "mana-draught", "weight": 1 }
+  ]
+}

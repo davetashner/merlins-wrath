@@ -1,0 +1,13 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "testbed-supply-crate",
+  "notes": "Grey-box example table (mw-e18.1) for a supply crate in the testbed: always a healing draught, then one or two picks. Arrows are the common find; a thief alone may find a spare set of lockpicks; the sundries entry rolls the nested testbed-sundries table. Not tuned; the slice's alcove chest is mw-e01.6.",
+  "guaranteed": [{ "item": "healing-draught", "count": 1 }],
+  "rolls": { "min": 1, "max": 2 },
+  "entries": [
+    { "item": "standard-arrow", "weight": 6, "count": { "min": 5, "max": 12 } },
+    { "item": "lockpicks", "weight": 2, "conditions": { "class": ["thief"] } },
+    { "table": "testbed-sundries", "weight": 2 }
+  ],
+  "noDuplicates": true
+}
