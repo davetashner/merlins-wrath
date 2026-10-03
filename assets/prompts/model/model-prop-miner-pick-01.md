@@ -15,8 +15,9 @@
 
 1. `gltf-transform optimize … --texture-size 512` → `public/assets/model/model-prop-miner-pick-01.glb`
    (39 KB, held weapon budget 300 to 1.5 k triangles).
-2. At load (`MINER_PICK_PLACEMENT`): +17.9° about x so the haft stands upright with the head swinging fore
-   and aft, scaled to 0.95 m, butt 0.12 m below the miner's right hand. Rigid, in the miner's space.
+2. At load (`pickPlacement` in `src/render/creatures/forgotten-model.ts`): +17.9° about x so the haft stands
+   upright with the head swinging fore and aft, scaled to 0.85 m, butt 0.12 m below that skeleton's right
+   hand (`rightHandPoint` finds the hand from each of the four miner meshes). Rigid, in the miner's space.
 
 ## Licence (checked 2026-10-03, mw-qov; open item mw-uuk)
 

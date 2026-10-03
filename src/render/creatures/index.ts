@@ -51,6 +51,7 @@ export function createCreatureProxy({
   height,
   armed,
   mesh,
+  variant,
 }: {
   readonly id: string;
   readonly radius: number;
@@ -58,6 +59,8 @@ export function createCreatureProxy({
   readonly armed: boolean;
   /** CreatureDef.presentation.mesh; absent = the plain capsule. */
   readonly mesh?: string | undefined;
+  /** Which of the miner's looks to wear (0 to 3; see variant.ts); absent = the first. */
+  readonly variant?: number | undefined;
 }): Object3D {
   const group = new Group();
   group.name = `creature:${id}`;
@@ -78,7 +81,7 @@ export function createCreatureProxy({
     group.add(part);
   }
   if (mesh === CAPSULE_BONES_MESH) {
-    void loadForgottenMiner().then(
+    void loadForgottenMiner(variant).then(
       (assets) => {
         // The model takes the capsule's place; its body is the one the telegraph glow finds.
         for (const part of parts) part.visible = false;
