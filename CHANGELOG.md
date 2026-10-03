@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- The slice's chest, crate, pillars and ivy ledge look the part too: an iron-banded wooden chest in the
+  alcove, a braced and bracketed crate, weathered stone block pillars in the arena, and ivy over the climbable
+  ledge. They are placeholders until approved.
 - The slice's torches, brazier and doors look the part: iron-and-wood torches on the walls, an iron brazier
   full of coals (its flame now burns in the bowl), a painted plank door with iron hinges in the first room,
   and a heavy riveted iron door at the exit. They are placeholders until approved.
