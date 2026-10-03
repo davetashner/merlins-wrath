@@ -33,6 +33,21 @@
           "fingerprint": "sha256:189da40834cb8897c29d12322457a629388f1363536b78601fe6a6f88ca4f1dc"
         }
       }
+    },
+    {
+      "revision": 4,
+      "formatVersion": 1,
+      "saveSchemaVersion": 1,
+      "sections": {
+        "inventory": {
+          "version": 1,
+          "fingerprint": "sha256:cf95c1be53add37cb3c76b6fff830dae72b1536b8c19ff9aeba8c36a0fd52c79"
+        },
+        "world": {
+          "version": 3,
+          "fingerprint": "sha256:189da40834cb8897c29d12322457a629388f1363536b78601fe6a6f88ca4f1dc"
+        }
+      }
     }
   ]
 }

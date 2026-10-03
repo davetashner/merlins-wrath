@@ -4,8 +4,14 @@
 // schema keeps loading. Fixtures are deterministic — fixed seeds, tick counts, build info and wall
 // clock — so regenerating one on any machine gives the same bytes.
 
+import { loadGameContent } from '@content/index';
 import {
+  addEquipment,
+  addInventory,
+  EquipmentRules,
   hashWorld,
+  InventoryRules,
+  QuickSlotsComponent,
   replayScenarios,
   Rng,
   type DifficultyOverrides,
@@ -30,6 +36,45 @@ export interface FixtureWorld {
   readonly difficulty?: DifficultyOverrides;
   /** World facts set before saving, to cover the optional `facts` field. */
   readonly facts?: Readonly<Record<string, FactValue>>;
+  /**
+   * Adds saved state the scenario does not reach (an actor's inventory…), after the facts. Loading
+   * needs only the scenario: the save restores what this added.
+   */
+  readonly prepare?: (world: World) => void;
+}
+
+/**
+ * Gives a new actor a knight's pack (mw-e17.8): split and stolen stacks, gold, a key, equipped sword,
+ * shield, hauberk and arrows, and a quick slot on the draughts. Uses the game's item content.
+ */
+export function packAnActor(world: World): void {
+  const content = loadGameContent();
+  const items = content.all('item');
+  const inventory = new InventoryRules(items);
+  const equipment = new EquipmentRules(items, content.all('class'));
+  const actor = world.spawn();
+  addInventory(world, actor, 125);
+  addEquipment(world, actor, 'knight');
+  const equipAll = (defId: string): void => {
+    for (const { instanceId } of inventory.query(world, actor, { defId })) {
+      equipment.equip(world, actor, instanceId);
+    }
+  };
+  for (const defId of ['arming-sword', 'wooden-shield', 'mail-hauberk']) {
+    inventory.add(world, actor, defId, 1);
+    equipAll(defId);
+  }
+  inventory.add(world, actor, 'standard-arrow', 30);
+  equipAll('standard-arrow');
+  // Instances 5 and 6: 13 draughts split at maxStack 10.
+  inventory.add(world, actor, 'healing-draught', 13);
+  inventory.add(world, actor, 'healing-draught', 2, { stolen: true, ownerId: 'miller' });
+  inventory.add(world, actor, 'testbed-closet-key', 1);
+  world.register(QuickSlotsComponent);
+  world.add(actor, QuickSlotsComponent, {
+    slots: [{ defId: 'healing-draught', instanceId: 5 }, null, null, null],
+    busyUntil: 0,
+  });
 }
 
 /**
@@ -70,6 +115,14 @@ export const FIXTURE_WORLDS: readonly FixtureWorld[] = [
       'quest.missing-miller.stage': 3,
       'entity:mine/chest-3.looted-by': 'player',
     },
+  },
+  {
+    name: 'core-inventory',
+    description: 'core scenario after 1 s plus an actor with a pack, equipment and quick slots',
+    scenario: 'core',
+    seed: 17,
+    ticks: 60,
+    prepare: packAnActor,
   },
 ];
 
@@ -139,6 +192,7 @@ export function buildFixtureWorld(
     world.step(scenario.drive({ tick, world, rng }));
   }
   for (const [key, value] of Object.entries(spec.facts ?? {})) world.facts.set(key, value);
+  spec.prepare?.(world);
   if (spec.difficulty !== undefined) {
     world.restore({ ...world.snapshot(), difficulty: spec.difficulty });
   }

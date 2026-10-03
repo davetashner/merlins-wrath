@@ -1043,7 +1043,13 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
           ui,
           world,
           store,
-          registry: createGameSaveRegistry(),
+          // Items no longer in content are dropped from a loaded save with a warning (mw-e17.8).
+          registry: createGameSaveRegistry({
+            knownItem: (id) => content.has('item', id),
+            warn: (message) => {
+              console.warn(message);
+            },
+          }),
           build: { gameVersion: GAME_VERSION, buildSha: __BUILD_SHA__, contentHash: 'unversioned' },
           now: () => Date.now(),
           session,

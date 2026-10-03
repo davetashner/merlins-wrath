@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- Saves keep your pack, gold, equipped gear and quick slots exactly as you left them, stolen goods
+  still marked as stolen. If an update removes an item, a save holding it still loads; only that item
+  is gone.
 - Loot tables: chests and creatures can now be given handcrafted loot, with items that always
   drop plus weighted random finds, finds only some classes get, and unique treasures that never
   turn up twice. Nothing in the world uses them yet; containers and creature drops come next.
