@@ -1,7 +1,7 @@
 {
   "$schema": "../move.schema.json",
   "id": "sword-heavy-charged",
-  "notes": "Knight charged heavy at full charge (mw-e04.13): the heavy's frames and hyperarmor; damage 1.8x the heavy (57.6 slash), poise 3.5x light 1's (52.5), stamina 25 + 10. Holding under 12 ticks releases a normal heavy, the charge is full at 60 ticks and releases itself at 90; values lerp from sword-heavy by hold time. impactForce 2500 N and staminaDamage 45 are placeholders. World impact (mw-e03.11): 220 J blunt, the charged overhead (placeholder like the heavy's 150 J).",
+  "notes": "Knight charged heavy at full charge (mw-e04.13): the heavy's frames and hyperarmor; damage 1.8x the heavy (57.6 slash), poise 3.5x light 1's (52.5), stamina 25 + 10. Holding under 12 ticks releases a normal heavy, the charge is full at 60 ticks and releases itself at 90; values (damage, poise, impact, stamina) lerp from sword-heavy by hold time between 12 and 60 ticks. While held the windup holds on tick 18 (the top of the swing, inside the 10-29 hyperarmor), so the charge is armored; the extra 10 stamina drains as the charge builds. impactForce 2500 N and staminaDamage 45 are placeholders. World impact (mw-e03.11): 220 J blunt, the charged overhead (placeholder like the heavy's 150 J).",
   "verb": "attack",
   "frames": {
     "startup": 24,
@@ -54,7 +54,8 @@
     "from": "sword-heavy",
     "minHoldTicks": 12,
     "fullHoldTicks": 60,
-    "autoReleaseTicks": 90
+    "autoReleaseTicks": 90,
+    "holdTick": 18
   },
   "worldImpact": {
     "blunt": 220

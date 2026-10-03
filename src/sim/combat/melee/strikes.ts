@@ -14,7 +14,9 @@
 //   (guard.ts) and the parry rule (combat/parry) meet it — then reported as MoveStruck with its result
 //   (the creature attack executor adds an attack's extra packets from there, mw-e04.20).
 //
-// Hitbox ids are move ids, so the knight's `sword-light-2` is also the hitbox that struck.
+// Hitbox ids are move ids, so the knight's `sword-light-2` is also the hitbox that struck. A charged
+// move released part-way (mw-e04.13) strikes with its damage and world impact lerped by its charge
+// level (`effectiveMove`), so a half-charged heavy hits between a heavy and a full charge.
 //
 // World impact (mw-e03.11): a move with a `worldImpact` also strikes the world through the one
 // stimulus API when it enters its active phase: its hitbox, placed at the middle of the swing, applies
@@ -45,6 +47,7 @@ import {
   moveTrack,
   type SocketTrackLookup,
 } from '../hits/system';
+import { effectiveMove } from '../timeline/charge';
 import { ActionEnded, ActionPhaseChanged } from '../timeline/events';
 import { facingOf } from './components';
 import { MoveStruck } from './events';
@@ -78,7 +81,7 @@ export function installMeleeStrikes<TInput>(
       const track = moveTrack(move, tracks);
       const facing = facingOf(w, entity);
       openHitbox(w, entity, hitboxFromMove(move, track, facing));
-      strikeWorld(w, entity, move, track, facing);
+      strikeWorld(w, entity, effectiveMove(w, moves, entity, move), track, facing);
     }),
     world.events.on(ActionEnded, ({ entity, move, reason }) => {
       if (reason !== 'completed' && w.has(entity, HitboxComponent)) {
@@ -86,9 +89,12 @@ export function installMeleeStrikes<TInput>(
       }
     }),
     world.events.on(HitboxHit, (hit) => {
-      const move = moves.get(hit.hitbox);
-      const template = move?.damage;
-      if (move === undefined || template == null) return;
+      const listed = moves.get(hit.hitbox);
+      if (listed === undefined) return;
+      // A released charge (mw-e04.13) hits with its numbers lerped by its charge level.
+      const move = effectiveMove(w, moves, hit.attacker, listed);
+      const template = move.damage;
+      if (template === null) return;
       const tags = [
         ...template.tags,
         ...(move.unblockable ? [DAMAGE_TAGS.unblockable] : []),

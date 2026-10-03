@@ -3,7 +3,7 @@
   "snapshotEncoding": 1,
   "scenario": "testbed-player",
   "buildSha": "local",
-  "contentHash": "03e3319ec6643ced",
+  "contentHash": "da0617490ac4fd6d",
   "seed": 1,
   "stepHz": 60,
   "ticks": 784,
@@ -46,21 +46,21 @@
     [39,[{"kind":"input.actions","move":{"x":0,"y":1},"look":{"x":0,"y":0},"lookStick":{"x":0,"y":0},"jump":{"pressed":false,"held":false,"released":false},"sprint":{"pressed":false,"held":false,"released":false},"crouch":{"pressed":false,"held":false,"released":false},"slowWalk":{"pressed":false,"held":false,"released":false},"dodge":{"pressed":false,"held":false,"released":false},"interact":{"pressed":false,"held":false,"released":false},"lockOn":{"pressed":false,"held":false,"released":false},"cycleTarget":{"pressed":false,"held":false,"released":false},"primaryAttack":{"pressed":false,"held":false,"released":false},"secondaryAttack":{"pressed":false,"held":true,"released":false},"ability1":{"pressed":false,"held":false,"released":false},"ability2":{"pressed":false,"held":false,"released":false},"ability3":{"pressed":false,"held":false,"released":false},"ability4":{"pressed":false,"held":false,"released":false},"inventory":{"pressed":false,"held":false,"released":false},"drop":{"pressed":false,"held":false,"released":false},"throw":{"pressed":false,"held":false,"released":false},"pause":{"pressed":false,"held":false,"released":false}}]]
   ],
   "checkpoints": [
-    {"tick":0,"hash":"fee10cfe"},
-    {"tick":60,"hash":"2dabdd83"},
-    {"tick":120,"hash":"7b4ea2e2"},
-    {"tick":180,"hash":"660524ea"},
-    {"tick":240,"hash":"fff95f93"},
-    {"tick":300,"hash":"ce85f9bf"},
-    {"tick":360,"hash":"1ec7a855"},
-    {"tick":420,"hash":"badfb493"},
-    {"tick":480,"hash":"6ded9aa2"},
-    {"tick":540,"hash":"2e4bf466"},
-    {"tick":600,"hash":"61c43145"},
-    {"tick":660,"hash":"209909a5"},
-    {"tick":720,"hash":"89778280"},
-    {"tick":780,"hash":"72aeae7b"},
-    {"tick":784,"hash":"19f81cb6"}
+    {"tick":0,"hash":"f6018250"},
+    {"tick":60,"hash":"8388f8bc"},
+    {"tick":120,"hash":"49e9ad99"},
+    {"tick":180,"hash":"83e336ce"},
+    {"tick":240,"hash":"47be36e3"},
+    {"tick":300,"hash":"0e08c7da"},
+    {"tick":360,"hash":"dacd78c8"},
+    {"tick":420,"hash":"22ba6d51"},
+    {"tick":480,"hash":"20f6d7ab"},
+    {"tick":540,"hash":"df236a16"},
+    {"tick":600,"hash":"84538272"},
+    {"tick":660,"hash":"eee5e88b"},
+    {"tick":720,"hash":"4d2eb996"},
+    {"tick":780,"hash":"78fc69c6"},
+    {"tick":784,"hash":"60762eac"}
   ],
-  "finalHash": "19f81cb6"
+  "finalHash": "60762eac"
 }

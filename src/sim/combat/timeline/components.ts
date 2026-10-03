@@ -8,6 +8,14 @@ import { defineComponent, type EntityId } from '../../core/component';
 import type { World } from '../../core/world';
 import type { ButtonAction } from '../../input/action-frame';
 
+/** A chargeable move's button held down (mw-e04.13, charge.ts). */
+export interface ChargeHold {
+  /** Local ticks the button has been down since the move started: 1 on its first tick. */
+  readonly held: number;
+  /** Still held; false once let go (`releaseCharge`), so the next timeline step releases. */
+  readonly holding: boolean;
+}
+
 /** The move an entity is performing. */
 export interface RunningAction {
   /** Move id (its RuntimeMove in the timeline's move table). */
@@ -16,6 +24,10 @@ export interface RunningAction {
   readonly tick: number;
   /** The world tick it started on. */
   readonly startedAt: number;
+  /** While a chargeable move is being held (its windup holds); absent otherwise. */
+  readonly hold?: ChargeHold;
+  /** Charge level 0–1 of a released charged move (its numbers lerp by it); absent otherwise. */
+  readonly charge?: number;
 }
 
 /** A request waiting to become legal (the input buffer holds at most one: the most recent). */
@@ -24,6 +36,8 @@ export interface BufferedAction {
   readonly move: string;
   /** Local ticks it has waited: 0 on the tick it was made. */
   readonly age: number;
+  /** The request's button is held, so a chargeable move starts charging (mw-e04.13). */
+  readonly hold?: true;
 }
 
 /**

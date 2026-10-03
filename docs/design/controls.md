@@ -25,7 +25,7 @@ B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT
 | Cycle target     | RS flick left/right (while locked) | Tab (right); fast mouse swipe left/right |
 | Primary attack   | RT                                 | Left click               |
 | Secondary / block | LT                                | Right click              |
-| Ability 1        | Y, D-pad Up                        | 1                        |
+| Ability 1 / heavy attack (knight) | Y, D-pad Up               | 1                        |
 | Ability 2        | RB, D-pad Right                    | 2                        |
 | Ability 3 / parry (knight) | LB                       | 3                        |
 | Ability 4        | D-pad Left                         | 4                        |
@@ -48,6 +48,14 @@ while locked on cycles instead (see Lock-on below), the usual convention.
 (`DEFAULT_PARRY_BUTTON`, mw-e04.12); block stays on LT / right click. Attack while a parried foe
 reels within 2 m in front of you and the light attack becomes a riposte. Timing and numbers:
 `src/content/data/move/shield-parry.json` and `sword-riposte.json`; the rules: `src/sim/combat/parry`.
+
+**Heavy attack.** The knight's heavy attack is on ability 1 (Y, D-pad Up, 1) while the owner settles
+the knight's layout (`DEFAULT_HEAVY_BUTTON`, mw-e04.13). Tap it for a heavy; hold it to charge: the
+windup holds, the charge is full after 1 s (ChargeReady) and swings itself at 1.5 s. Let go before
+12 ticks (0.2 s) and it is a plain heavy. While it winds up and charges the knight has hyperarmor (it
+shrugs off up to 40 poise; a harder hit staggers it and the charge is lost). Timing and numbers:
+`src/content/data/move/sword-heavy.json` and `sword-heavy-charged.json`; the rules:
+`src/sim/combat/timeline/charge.ts`.
 
 **Bow (testbed).** Until class kits bind the archer's buttons (mw-e02.3), the testbed knight also
 carries the shortbow (mw-e05.21): ability 4 (4, D-pad Left) takes it out or puts it away; while it is

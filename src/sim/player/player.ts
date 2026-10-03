@@ -9,8 +9,8 @@
 // whose root-motion velocity the controller travels at while a roll or backstep runs.
 //
 // With `combat.melee` (mw-e04.6) the player is also a knight: the attack button starts the light
-// chain (or, with a riposte, the riposte while a Parried foe is in reach: mw-e04.12), the parry
-// button its parry, the block button holds its shield up, and it has a combat facing, hitboxes and a placement
+// chain (or, with a riposte, the riposte while a Parried foe is in reach: mw-e04.12), the heavy
+// button its heavy attack (held, it charges: mw-e04.13), the parry button its parry, the block button holds its shield up, and it has a combat facing, hitboxes and a placement
 // at its feet (the frame its swings are placed in). Three more systems join: block (just before the
 // timeline), facing (after it: idle the knight faces where it looks — or its lock-on target — and a
 // move's startup turns at 360°/s, then locks) and, after the controller, placement. While it swings
@@ -288,6 +288,15 @@ export const KNIGHT_DODGE: DodgeMoves = Object.freeze({ roll: 'dodge-roll', back
 /** The move the knight's attack button starts: the root of its light chain (mw-e04.6). */
 export const KNIGHT_LIGHT_ATTACK = 'sword-light-1';
 
+/** The knight's heavy attack (mw-e04.13): hold its button to charge it (sword-heavy-charged). */
+export const KNIGHT_HEAVY_ATTACK = 'sword-heavy';
+
+/**
+ * The button that starts the heavy attack for entities driven by the ActionFrame: ability 1 (Y,
+ * D-pad Up, 1) until the owner settles the knight's layout, as with the parry.
+ */
+export const DEFAULT_HEAVY_BUTTON: ButtonAction = 'ability1';
+
 /** The knight's parry (mw-e04.12). */
 export const KNIGHT_PARRY = 'shield-parry';
 
@@ -310,6 +319,13 @@ export interface PlayerMeleeOptions {
   readonly target?: (world: World<never>, entity: EntityId) => EntityId | undefined;
   /** Where the target is (lock-on's locator, mw-e02.31); defaults to its placement. */
   readonly locate?: EntityLocator;
+  /**
+   * The move the heavy button starts (e.g. KNIGHT_HEAVY_ATTACK, mw-e04.13); held, it charges when
+   * the move table has its charged variant. Absent = no heavy attack.
+   */
+  readonly heavyAttack?: string;
+  /** The button that starts the heavy attack; defaults to DEFAULT_HEAVY_BUTTON. */
+  readonly heavyButton?: ButtonAction;
   /** The move the parry button starts (e.g. KNIGHT_PARRY, mw-e04.12); absent = no parry. */
   readonly parry?: string;
   /** The button that parries; defaults to DEFAULT_PARRY_BUTTON. */
@@ -458,11 +474,14 @@ function playerPlacementSystem<TInput>(entity: EntityId, radius: number): System
   };
 }
 
-/** The knight's button bindings: the light attack and, with a parry, the parry button. */
+/** The knight's button bindings: the light attack and, when given, the heavy and parry buttons. */
 function meleeBindings(melee: PlayerMeleeOptions): Partial<Record<ButtonAction, string>> {
   const bindings: Partial<Record<ButtonAction, string>> = {
     primaryAttack: melee.lightAttack ?? KNIGHT_LIGHT_ATTACK,
   };
+  if (melee.heavyAttack !== undefined) {
+    bindings[melee.heavyButton ?? DEFAULT_HEAVY_BUTTON] = melee.heavyAttack;
+  }
   if (melee.parry !== undefined) bindings[melee.parryButton ?? DEFAULT_PARRY_BUTTON] = melee.parry;
   return bindings;
 }

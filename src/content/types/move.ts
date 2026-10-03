@@ -227,10 +227,14 @@ const chargeSchema = z
       .positive()
       .describe('Hold ticks at which the charge is full; values lerp from the uncharged move.'),
     autoReleaseTicks: z.int().positive().describe('Hold ticks at which it releases on its own.'),
+    holdTick: ticks.describe(
+      'Move tick of `from`’s startup the windup holds on while the button stays down (the top of ' +
+        'the swing); before the first active tick. Released, the swing plays on from there.',
+    ),
   })
   .describe(
     'A charged move: its damage and stamina cost are the full-charge values, lerped from `from` ' +
-      'by hold time (e04.13).',
+      'by hold time (e04.13). It has the same frames as `from`: the charge only holds the windup.',
   );
 
 /** Kinds of hit a swing can deliver to the world (the sim's BREAK_TYPES). */
@@ -411,6 +415,13 @@ export const moveSchema = z
       if (charge.fullHoldTicks > charge.autoReleaseTicks) {
         fail(['charge', 'fullHoldTicks'], 'must be at most autoReleaseTicks');
       }
+      if (charge.holdTick >= startup) {
+        fail(
+          ['charge', 'holdTick'],
+          `holdTick (${String(charge.holdTick)}) must come before the first active tick ` +
+            `(${String(startup)})`,
+        );
+      }
     }
   });
 
@@ -548,6 +559,7 @@ export interface RuntimeMove {
     readonly minHoldTicks: number;
     readonly fullHoldTicks: number;
     readonly autoReleaseTicks: number;
+    readonly holdTick: number;
   } | null;
   /** Root motion (a dodge's travel), or null. */
   readonly motion: RuntimeMotion | null;
@@ -599,6 +611,7 @@ export function compileMove(move: MoveEntry): RuntimeMove {
             minHoldTicks: charge.minHoldTicks,
             fullHoldTicks: charge.fullHoldTicks,
             autoReleaseTicks: charge.autoReleaseTicks,
+            holdTick: charge.holdTick,
           }),
     motion:
       move.motion === undefined
