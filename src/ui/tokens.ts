@@ -349,6 +349,34 @@ ${tokens}
   transform-origin: left center;
   transform: scaleX(0);
 }
+.vb-panel.vb-class-select { width: min(64rem, 100%); max-width: 100%; }
+.vb-class-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13em, 1fr));
+  gap: var(--ui-space-3);
+}
+.vb-class-card {
+  gap: var(--ui-space-1);
+  padding: var(--ui-space-3);
+  background: var(--ui-color-panel-raised);
+  border: 2px solid var(--ui-color-text-muted);
+  border-radius: var(--ui-radius);
+  cursor: pointer;
+}
+.vb-class-card p, .vb-class-card ul { margin: 0; }
+.vb-class-card ul { padding-left: 1.2em; }
+.vb-class-card[aria-checked='true'] { border-color: var(--ui-color-text); background: var(--ui-color-accent); }
+.vb-kit {
+  position: absolute;
+  right: var(--ui-space-3);
+  top: var(--ui-space-3);
+  max-width: 18em;
+  font-size: ${size(0.875)};
+}
+.vb-kit[hidden] { display: none; }
+.vb-kit p, .vb-kit ul { margin: 0; }
+.vb-kit ul { padding-left: 1.2em; }
+.vb-kit-title { font-weight: 700; }
 `;
 }
 

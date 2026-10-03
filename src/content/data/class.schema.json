@@ -26,6 +26,23 @@
       "minLength": 1,
       "description": "The class fantasy and where its data comes from."
     },
+    "pitch": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120,
+      "description": "The class card pitch on the new-game screen (mw-e19.5), until descKey text lands."
+    },
+    "verbs": {
+      "minItems": 3,
+      "maxItems": 3,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 24
+      },
+      "description": "The three signature verbs the class card lists, e.g. \"Parry\" (mw-e19.5)."
+    },
     "nameKey": {
       "description": "Localisation key of the display name; absent = \"class.<id>.name\".",
       "type": "string",
@@ -184,6 +201,8 @@
     "id",
     "name",
     "notes",
+    "pitch",
+    "verbs",
     "dialogueTag",
     "iconId",
     "portraitId",

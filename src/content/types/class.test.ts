@@ -5,7 +5,10 @@ import { contentChecks, contentTypes } from '../registry.ts';
 import { serializeContent } from '../schema.ts';
 import { describeContent, markExercised } from '../testing.ts';
 import {
+  CLASS_CARD_VERBS,
   CLASS_CHANNELS,
+  CLASS_PITCH_MAX,
+  CLASS_VERB_MAX,
   checkClasses,
   classKeys,
   classSchema,
@@ -21,6 +24,8 @@ const thief = (over: Partial<ClassDefInput> = {}): ClassDefInput => ({
   id: 'thief',
   name: 'Thief',
   notes: 'Test.',
+  pitch: 'A test thief.',
+  verbs: ['Pick locks', 'Pickpocket', 'Climb'],
   dialogueTag: 'thief',
   iconId: 'ui-emblem-class-thief-01',
   portraitId: 'keyart-class-card-thief-01',
@@ -206,6 +211,22 @@ describe('class schema (mw-e19.4)', () => {
       'startingKit.items.1.item: "lockpicks" is listed twice: raise its count instead',
     ]);
     expect(problems(thief({ id: 'bard' as 'thief' }))[0]).toMatch(/^id: Invalid option/);
+  });
+
+  it('needs a short card pitch and exactly three card verbs (mw-e19.5)', () => {
+    expect(
+      problems(
+        thief({
+          pitch: 'x'.repeat(CLASS_PITCH_MAX + 1),
+          verbs: ['Pick locks', 'x'.repeat(CLASS_VERB_MAX + 1)],
+        }),
+      ),
+    ).toEqual([
+      `pitch: Too big: expected string to have <=${String(CLASS_PITCH_MAX)} characters`,
+      `verbs.1: Too big: expected string to have <=${String(CLASS_VERB_MAX)} characters`,
+      `verbs: Too small: expected array to have exactly ${String(CLASS_CARD_VERBS)} items`,
+    ]);
+    for (const def of content.all('class')) expect(def.verbs).toHaveLength(CLASS_CARD_VERBS);
   });
 
   it('names its localisation keys by convention unless set', () => {

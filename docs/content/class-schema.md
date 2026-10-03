@@ -10,6 +10,8 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `id` | `"knight"` \| `"archer"` \| `"sorcerer"` \| `"thief"` | required | The class: knight, archer, sorcerer or thief. |
 | `name` | string | required | Display name, e.g. "Thief" (docs and debug tools). |
 | `notes` | string | required | The class fantasy and where its data comes from. |
+| `pitch` | string | required | The class card pitch on the new-game screen (mw-e19.5), until descKey text lands. |
+| `verbs` | list of string (at least 3) | required | The three signature verbs the class card lists, e.g. "Parry" (mw-e19.5). |
 | `nameKey` | string | — | Localisation key of the display name; absent = "class.<id>.name". |
 | `descKey` | string | — | Localisation key of the class card pitch; absent = "class.<id>.desc". |
 | `dialogueTag` | id | required | Tag on class-gated dialogue options, shown as e.g. [Thief] (mw-e22.6). Unique per class. |

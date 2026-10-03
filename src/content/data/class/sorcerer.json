@@ -3,6 +3,8 @@
   "id": "sorcerer",
   "name": "Sorcerer",
   "notes": "Discovers magic through spellbooks and experiment (CONSTITUTION §4): Ember and Mage Hand at the start, every later spell from a book, a forbidden teacher or a deed (ADR-0004). The fire chain past Ember is the sorcerer's own. Grey-box kit: staff, robe and two mana draughts.",
+  "pitch": "A reader of forbidden books. Every spell is learned, and fire is only the first.",
+  "verbs": ["Ember", "Mage Hand", "Learn from spellbooks"],
   "dialogueTag": "sorcerer",
   "iconId": "ui-emblem-class-sorcerer-01",
   "portraitId": "keyart-class-card-sorcerer-01",

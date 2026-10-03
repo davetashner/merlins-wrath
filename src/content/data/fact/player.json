@@ -1,0 +1,16 @@
+{
+  "$schema": "../fact.schema.json",
+  "id": "player",
+  "name": "Player facts",
+  "notes": "Facts about the player character that dialogue, quests and level variants gate on through conditions (mw-e27.5).",
+  "facts": [
+    {
+      "key": "player.class",
+      "type": "enum",
+      "values": ["none", "knight", "archer", "sorcerer", "thief"],
+      "default": "none",
+      "description": "The class the player chose at new game (mw-e19.5). Written once by apply-class; \"none\" only before the choice. Class-gated dialogue options and quest branches read it, e.g. { \"fact\": \"player.class\", \"eq\": \"thief\" }.",
+      "owner": "progression"
+    }
+  ]
+}

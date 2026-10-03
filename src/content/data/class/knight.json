@@ -3,6 +3,8 @@
   "id": "knight",
   "name": "Knight",
   "notes": "Weight, impact and mastery (CONSTITUTION): timing, blocking, parrying, weapons and armor. Grows through trainers and deeds (ADR-0004); the only class with room for a shield over mail or plate (armor capacity 30 kg, ADR-0003). Grey-box kit: sword, wooden shield and mail, a Medium load at 11 kg (37% of 30 kg).",
+  "pitch": "A sworn blade for hire. Meet every blow with steel, shield and timing.",
+  "verbs": ["Parry", "Shield bash", "Wear heavy armor"],
   "dialogueTag": "knight",
   "iconId": "ui-emblem-class-knight-01",
   "portraitId": "keyart-class-card-knight-01",

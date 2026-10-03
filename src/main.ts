@@ -10,8 +10,10 @@ import {
   materialPresets,
   PLAYER_CAMERA_ID,
   PLAYER_CONTROLLER_ID,
+  PLAYER_CLASSES,
   PLAYER_LOCK_ON_ID,
   type GameContent,
+  type PlayerClass,
 } from '@content/index';
 import {
   arrowReadout,
@@ -55,6 +57,14 @@ import {
   startMechanisms,
 } from '@game/mechanisms/index';
 import { createCapabilityRegistry } from '@game/capabilities';
+import {
+  applyClass,
+  classCards,
+  createClassRules,
+  isPlayerClass,
+  kitModel,
+  newGameRequest,
+} from '@game/classes';
 import { attachGameAudio, attachGameVfx, soundPositions } from '@game/cues/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
@@ -131,6 +141,11 @@ import { createVfxRenderer } from '@render/vfx/index';
 import {
   addCapabilities,
   AttackerDummyComponent,
+  classOf,
+  equipChanged,
+  goldChanged,
+  itemAdded,
+  itemRemoved,
   checkSandboxCommand,
   checkSandboxSpawn,
   DAMAGE_COMPONENTS,
@@ -171,7 +186,7 @@ import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
 import { formatVfxStats, parseVfxParam, VfxDemo } from '@tools/vfx-demo/index';
-import { InteractPrompt, LockMarker, UiRoot } from '@ui/index';
+import { InteractPrompt, KitPanel, LockMarker, openClassSelect, UiRoot } from '@ui/index';
 import {
   DEBUG_CAMERA_HINT,
   GAMEPAD_DISCONNECTED_HINT,
@@ -722,6 +737,9 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
       // which queries the same world read-only to stay out of walls.
       // The controller, the camera and arrows (mw-e05.21) all collide with the sim's Rapier world.
       const collision = new RapierCollisionWorld(physics);
+      // New game (mw-e19.5): ?newgame opens class selection, ?class=<id> applies that class.
+      const newGame = newGameRequest(location.search);
+      const capabilities = createCapabilityRegistry(content);
       if (playerStart(loaded.layout.spawns) !== undefined) {
         // No class is chosen yet (mw-e19.5), so the player moves on the base profile.
         const tuning = controllerTuningFor(content.get('controller', PLAYER_CONTROLLER_ID));
@@ -808,15 +826,12 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
           },
         });
         focus.entity = player.entity; // bodies near the player never get forced to sleep
-        // The player's capabilities (mw-e19.2): ledge hangs come from the registry as a class grant
-        // until class kits (mw-e19.4, mw-e19.5) grant each class its own.
+        // The player's capabilities (mw-e19.2). A new game grants the chosen class's own (mw-e19.5,
+        // below); the testbed's default boot has no class, so ledge hangs come as a class grant.
         addCapabilities(world, player.entity);
-        createCapabilityRegistry(content).grant(
-          world,
-          player.entity,
-          LEDGE_HANG_CAPABILITY,
-          'class',
-        );
+        if (newGame.kind === 'none') {
+          capabilities.grant(world, player.entity, LEDGE_HANG_CAPABILITY, 'class');
+        }
         // Dev hot reload (mw-e02.3): a saved player controller file retunes the player from the
         // next tick, through the same recorded command as the console's ctl.set; no page reload.
         const tuned = player.entity;
@@ -876,6 +891,48 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
       // consumable flies as a world item carrying its world properties. No buttons use the slots
       // yet (keys 1–4 are the abilities').
       startConsumables(world, prepareConsumables(content, worldItems), player?.entity);
+      // Class selection (mw-e19.5): the chosen class's capabilities, kit and stats go onto the player
+      // once its inventory exists, and the player then moves on the class's controller tuning. The
+      // kit panel shows the class and the pack; #app[data-player-class] is the sim's player.class
+      // (the e2e reads both).
+      if (player !== undefined && newGame.kind !== 'none') {
+        const hero = player.entity;
+        const classRules = createClassRules(content, capabilities);
+        const profile = content.get('controller', PLAYER_CONTROLLER_ID);
+        const kitPanel = new KitPanel();
+        ui.hud.append(kitPanel.element);
+        let kitDirty = false;
+        const markKit = (): void => {
+          kitDirty = true;
+        };
+        world.events.on(itemAdded, markKit);
+        world.events.on(itemRemoved, markKit);
+        world.events.on(goldChanged, markKit);
+        world.events.on(equipChanged, markKit);
+        const drawKit = (): void => {
+          kitDirty = false;
+          kitPanel.update(kitModel(world, hero, content));
+        };
+        afterStep.push(() => {
+          if (kitDirty) drawKit();
+        });
+        const choose = (classId: PlayerClass): void => {
+          applyClass(world, hero, classId, classRules);
+          commands.push(tuneCommand(hero, controllerTuningFor(profile, classId)));
+          root.dataset['playerClass'] = classOf(world, hero) ?? '';
+          drawKit();
+        };
+        if (newGame.kind === 'class') choose(newGame.classId);
+        else if (newGame.kind === 'select') {
+          openClassSelect(ui, {
+            cards: classCards(content),
+            onConfirm: (id) => {
+              if (isPlayerClass(id)) choose(id);
+            },
+          });
+        } else
+          console.warn(`?class=${newGame.classId}: not a class (${PLAYER_CLASSES.join(', ')})`);
+      }
       const itemWatch = new ItemWatch(world, player?.entity);
       let publishedItems = -1;
       const drawItems = (): void => {

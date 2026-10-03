@@ -5,7 +5,8 @@
 //
 // A class file holds:
 // - `startingCapabilities`: registry ids granted at new game with the permanent `class` source
-//   (ADR-0004). Applying them, the kit and the stats to a fresh player is mw-e19.5.
+//   (ADR-0004). Applying them, the kit and the stats to a fresh player is mw-e19.5
+//   (src/sim/progression/classes.ts).
 // - `signature`: the capabilities that define the class fantasy and are never shared (ADR-0004's
 //   "simple" rule, point 4): the knight's Parry, the archer's Rope Arrow, the thief's Lockpicks and
 //   Pickpocket, the sorcerer's chains past their roots. Each must carry this class's affinity and
@@ -38,6 +39,13 @@ import { UNLOCK_CHANNELS } from './unlock.ts';
 /** The progression channels a class may grow through: the unlock channels plus carried tools. */
 export const CLASS_CHANNELS = [...UNLOCK_CHANNELS, 'tool'] as const;
 export type ClassChannel = (typeof CLASS_CHANNELS)[number];
+
+/** Longest class card pitch, characters (it must fit the card at 2× text scale). */
+export const CLASS_PITCH_MAX = 120;
+/** How many signature verbs a class card lists (mw-e19.5). */
+export const CLASS_CARD_VERBS = 3;
+/** Longest class card verb, characters. */
+export const CLASS_VERB_MAX = 24;
 
 /** Hard cap of every supporting stat (ADR-0004). */
 export const STAT_CAP = 200;
@@ -99,6 +107,17 @@ export const classSchema = z
     id: z.enum(PLAYER_CLASSES).describe('The class: knight, archer, sorcerer or thief.'),
     name: z.string().min(1).describe('Display name, e.g. "Thief" (docs and debug tools).'),
     notes: z.string().min(1).describe('The class fantasy and where its data comes from.'),
+    pitch: z
+      .string()
+      .min(1)
+      .max(CLASS_PITCH_MAX)
+      .describe(
+        'The class card pitch on the new-game screen (mw-e19.5), until descKey text lands.',
+      ),
+    verbs: z
+      .array(z.string().min(1).max(CLASS_VERB_MAX))
+      .length(CLASS_CARD_VERBS)
+      .describe('The three signature verbs the class card lists, e.g. "Parry" (mw-e19.5).'),
     nameKey: localisationKey
       .optional()
       .describe('Localisation key of the display name; absent = "class.<id>.name".'),

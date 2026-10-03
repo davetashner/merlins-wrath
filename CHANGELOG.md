@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Choose your class when you start a new game: Knight, Archer, Sorcerer or Thief, each card showing a
+  short pitch, three signature verbs and the starting kit. Highlight a class and confirm, by mouse,
+  keyboard or gamepad; you start with that class's abilities, gear (worn where it belongs) and gold,
+  and a panel in the corner shows what you carry. For now the screen opens in the testbed with
+  `?newgame`; the title screen leads to it later.
 - Creatures can now find their way around a level. They go through doorways, up ramps and stairs,
   and down ledges. Climbers go up ivy and ladders, but a walker has to take the long way round. A
   locked door keeps them out until it is unlocked and opened, and a wolf cannot open a door at all.

@@ -3,6 +3,7 @@
 // view models, screens report `pausesSim` / `capturesInput`, and src/game wires both to the loop.
 export const layer = 'ui' as const;
 
+export * from './class-select';
 export * from './comfort';
 export * from './components/controls';
 export * from './components/list';
@@ -15,6 +16,7 @@ export * from './gallery';
 export * from './hud';
 export * from './input';
 export * from './interact-prompt';
+export * from './kit-panel';
 export * from './lock-marker';
 export * from './screens';
 export * from './testing/overflow';
