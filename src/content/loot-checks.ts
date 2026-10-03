@@ -3,15 +3,17 @@
 // count ranges (min ≤ max) are the schema's (src/content/types/loot-table.ts); across tables this
 // checks that:
 //
-// - every item and nested table an entry names exists, and every creature's `loot` names a table
-//   (the loader also checks `ref`s, so the first two only fire when the validator runs on its own);
+// - every item and nested table an entry names exists, and every creature's and scene container's
+//   `loot` names a table (the loader also checks `ref`s, so these only fire when the validator runs
+//   on its own);
 // - a table that rolls (`rolls.max` > 0) has entries to roll;
 // - nested tables never form a cycle ("a > b > a") nor nest deeper than LOOT_MAX_DEPTH, which the
 //   sim would otherwise only catch mid-roll with `loot.depthExceeded`;
 // - a unique item is guaranteed in at most one placement across the world, one unit at a time. A
-//   placement is a creature dropping a table that guarantees it, or the table itself while nothing
-//   places it yet (containers in scenes join the placers when they land);
-// - every table is referenced by a creature or another table; an unreferenced one is a warning only.
+//   placement is a creature or scene container (mw-e18.3) rolling a table that guarantees it, the
+//   table itself while nothing places it yet, or a container holding it from the start;
+// - every table is referenced by a creature, a scene container or another table; an unreferenced
+//   one is a warning only.
 //
 // `lootTableProblems` returns errors and warnings; `checkLootTables` is the errors as a ContentCheck
 // on every load, and `pnpm content:loot` (scripts/loot-check.ts) prints both in CI.
@@ -20,6 +22,7 @@ import type { ContentCheck, ContentIssue, LoadedEntry } from './loader.ts';
 import type { CreatureDef } from './types/creature.ts';
 import type { ItemDef } from './types/item.ts';
 import { LOOT_MAX_DEPTH, type LootTable } from './types/loot-table.ts';
+import type { SceneDef } from './types/scene.ts';
 
 /** What `lootTableProblems` found: errors fail validation, warnings never do. */
 export interface LootProblems {
@@ -112,10 +115,12 @@ export function lootTableProblems(entries: readonly LoadedEntry[]): LootProblems
   const warnings: ContentIssue[] = [];
   const items = new Map<string, ItemDef>();
   const creatures: { file: string; creature: CreatureDef }[] = [];
+  const scenes: { file: string; scene: SceneDef }[] = [];
   const sorted: TableFile[] = [];
   for (const { type, file, value } of entries) {
     if (type === 'item') items.set(value.id, value as ItemDef);
     if (type === 'creature') creatures.push({ file, creature: value as CreatureDef });
+    if (type === 'scene') scenes.push({ file, scene: value as SceneDef });
     if (type === 'loot-table') sorted.push({ file, table: value as LootTable });
   }
   sorted.sort((a, b) => a.table.id.localeCompare(b.table.id));
@@ -123,21 +128,36 @@ export function lootTableProblems(entries: readonly LoadedEntry[]): LootProblems
 
   const referenced = new Set<string>();
   const placers = new Map<string, string[]>();
-  for (const { file, creature } of creatures) {
-    if (creature.loot === undefined) continue;
-    if (tables.has(creature.loot)) {
-      referenced.add(creature.loot);
-      placers.set(creature.loot, [
-        ...(placers.get(creature.loot) ?? []),
-        `creature:${creature.id}`,
-      ]);
+  /** A creature or container (`placer`) that rolls table `loot`. */
+  const placedBy = (placer: string, loot: string, file: string, pointer: string) => {
+    if (tables.has(loot)) {
+      referenced.add(loot);
+      placers.set(loot, [...(placers.get(loot) ?? []), placer]);
     } else {
-      errors.push({
-        file,
-        pointer: '/loot',
-        message: `creature:${creature.id} loot names missing loot-table "${creature.loot}"`,
-      });
+      errors.push({ file, pointer, message: `${placer} loot names missing loot-table "${loot}"` });
     }
+  };
+  for (const { file, creature } of creatures) {
+    if (creature.loot !== undefined) {
+      placedBy(`creature:${creature.id}`, creature.loot, file, '/loot');
+    }
+  }
+  // Unique items a scene container holds from the start: each is a placement of its own.
+  const held: { item: string; count: number; placement: Placement }[] = [];
+  for (const { file, scene } of scenes) {
+    scene.spawns.forEach(({ id, container }, i) => {
+      if (container === undefined) return;
+      const placer = `scene:${scene.id}/${id}`;
+      const pointer = `/spawns/${String(i)}/container`;
+      if (container.loot !== undefined) {
+        placedBy(placer, container.loot.id, file, `${pointer}/loot`);
+      }
+      container.contents.forEach(({ item, count }, j) => {
+        const name = `${placer} contents[${String(j)}]`;
+        const at = `${pointer}/contents/${String(j)}`;
+        held.push({ item: item.id, count, placement: { name, file, pointer: at } });
+      });
+    });
   }
 
   for (const { file, table } of sorted) {
@@ -198,6 +218,17 @@ export function lootTableProblems(entries: readonly LoadedEntry[]): LootProblems
       placements.set(item.id, [...(placements.get(item.id) ?? []), ...found]);
     });
   }
+  for (const { item, count, placement } of held) {
+    if (items.get(item)?.flags.unique !== true) continue;
+    if (count > 1) {
+      errors.push({
+        file: placement.file,
+        pointer: `${placement.pointer}/count`,
+        message: `${placement.name} holds ${String(count)} of unique item "${item}"; a unique item drops once`,
+      });
+    }
+    placements.set(item, [...(placements.get(item) ?? []), placement]);
+  }
   for (const [item, found] of [...placements].sort(([a], [b]) => a.localeCompare(b))) {
     if (found.length < 2) continue;
     const [first] = found as [Placement];
@@ -215,7 +246,7 @@ export function lootTableProblems(entries: readonly LoadedEntry[]): LootProblems
     warnings.push({
       file,
       pointer: '',
-      message: `loot-table:${table.id} is not referenced by any creature or loot table`,
+      message: `loot-table:${table.id} is not referenced by any creature, container or loot table`,
     });
   }
   return { errors, warnings };

@@ -108,6 +108,23 @@ export interface SceneSwitchSpec {
   readonly initial?: number | undefined;
 }
 
+/** A container spawn as written in data (mw-e18.3): its loot table, contents and lock. */
+export interface SceneContainerSpec {
+  readonly loot?: { readonly id: string } | undefined;
+  readonly contents?:
+    readonly { readonly item: { readonly id: string }; readonly count: number }[] | undefined;
+  readonly lock?: { readonly id: string } | undefined;
+  readonly locked?: boolean | undefined;
+}
+
+/** A container as laid out: plain ids. */
+export interface SceneContainer {
+  readonly loot?: string;
+  readonly contents: readonly { readonly item: string; readonly count: number }[];
+  readonly lock?: string;
+  readonly locked?: boolean;
+}
+
 /** A signal graph placed in a scene (mw-e03.18): its id and binding renames. */
 export interface SceneSignalSpec {
   readonly graph: { readonly id: string };
@@ -162,6 +179,8 @@ export interface SceneSpawnSpec {
   readonly door?: SceneDoorSpec | undefined;
   /** Makes the spawned entity a switch (mw-e03.18). */
   readonly switch?: SceneSwitchSpec | undefined;
+  /** Makes the spawned entity a lootable container (mw-e18.3). */
+  readonly container?: SceneContainerSpec | undefined;
 }
 
 /** A box with its own ambient level, in grid cells (mw-e03.37). */
@@ -269,6 +288,8 @@ export interface SceneSpawnPlacement {
   readonly door?: SceneDoor;
   /** Its switch data, when it is a switch (mw-e03.18). */
   readonly switch?: SceneSwitchSpec;
+  /** Its container data, when it is a container (mw-e18.3). */
+  readonly container?: SceneContainer;
 }
 
 export interface SceneLayout {
@@ -399,6 +420,18 @@ function switchOf(spec: SceneSwitchSpec): SceneSwitchSpec {
   });
 }
 
+/** A container's data-file form as plain ids. */
+function containerOf(spec: SceneContainerSpec): SceneContainer {
+  return Object.freeze({
+    ...(spec.loot !== undefined && { loot: spec.loot.id }),
+    contents: Object.freeze(
+      (spec.contents ?? []).map(({ item, count }) => Object.freeze({ item: item.id, count })),
+    ),
+    ...(spec.lock !== undefined && { lock: spec.lock.id }),
+    ...(spec.locked !== undefined && { locked: spec.locked }),
+  });
+}
+
 /**
  * Lays out every placement and spawn of `scene` in world space, in scene order.
  * @throws SceneLayoutError when a placement names a piece `kit` does not have.
@@ -457,6 +490,7 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       ...(spawn.breakable !== undefined && { breakable: breakableOf(spawn.breakable) }),
       ...(spawn.door !== undefined && { door: doorOf(spawn.door) }),
       ...(spawn.switch !== undefined && { switch: switchOf(spawn.switch) }),
+      ...(spawn.container !== undefined && { container: containerOf(spawn.container) }),
     }),
   );
   return Object.freeze({

@@ -128,6 +128,34 @@ export const sceneSwitchSchema = z.strictObject({
 });
 
 /**
+ * Makes a spawn a lootable container (mw-e18.3): a chest, barrel, bookshelf or corpse. What it holds
+ * from the start, plus its loot table rolled once on the first open; both persist with the level.
+ */
+export const sceneContainerSchema = z.strictObject({
+  loot: ref('loot-table')
+    .optional()
+    .describe(
+      'Loot table rolled into it the first time it is opened (once; saves keep the result).',
+    ),
+  contents: z
+    .array(
+      z.strictObject({
+        item: ref('item').describe('An item it holds from the start.'),
+        count: z.int().min(1).max(ITEM_STACK_GUARD).default(1).describe('Units of it; default 1.'),
+      }),
+    )
+    .default([])
+    .describe('What it holds from the start, before any roll.'),
+  lock: ref('lock')
+    .optional()
+    .describe('The lock it carries: unlocked and picked like a door’s (mw-e03.18).'),
+  locked: z
+    .boolean()
+    .optional()
+    .describe('Starts locked; defaults to true when it has a lock (needs one).'),
+});
+
+/**
  * Places a signal graph in the scene (mw-e03.18, mw-e03.21). A node's entity name is a spawn id
  * unless `bindings` maps it to another.
  */
@@ -217,6 +245,11 @@ export const sceneSpawnSchema = z.strictObject({
   switch: sceneSwitchSchema
     .optional()
     .describe('Makes the spawned entity a lever, button, crank or wheel (mw-e03.18).'),
+  container: sceneContainerSchema
+    .optional()
+    .describe(
+      'Makes the spawned entity a lootable container: loot table, contents and lock (mw-e18.3).',
+    ),
 });
 
 const lightLevel = z.number().min(0).max(1);
@@ -443,6 +476,24 @@ function checkMechanism(spawn: SpawnDef, index: number, ctx: z.RefinementCtx): v
     if (door.locked === true && door.lock === undefined)
       issue('door', 'starts locked but has no lock');
   }
+  const { container } = spawn;
+  if (container !== undefined) {
+    const others = [
+      ['door', 'a door'],
+      ['switch', 'a switch'],
+      ['item', 'an item'],
+      ['creature', 'a creature'],
+    ] as const;
+    for (const [key, what] of others) {
+      if (spawn[key] !== undefined) issue(key, `cannot be both a container and ${what}`);
+    }
+    if (spawn.interact !== undefined) {
+      issue('interact', 'is a container: its affordances follow its lock, so it declares none');
+    }
+    if (container.locked === true && container.lock === undefined) {
+      issue('container', 'starts locked but has no lock');
+    }
+  }
   const own = spawn.switch;
   if (own === undefined) return;
   const positions = own.positions ?? (own.kind === 'button' ? 1 : 2);
@@ -462,4 +513,5 @@ export type SceneLightDef = z.output<typeof sceneLightSchema>;
 export type SceneDoorDef = z.output<typeof sceneDoorSchema>;
 export type SceneSwitchDef = z.output<typeof sceneSwitchSchema>;
 export type SceneSignalDef = z.output<typeof sceneSignalSchema>;
+export type SceneContainerDef = z.output<typeof sceneContainerSchema>;
 export type SceneAcousticsDef = z.output<typeof sceneAcousticsSchema>;

@@ -21,10 +21,12 @@ import {
   installConsumables,
   installWorldItems,
   inventoryOf,
+  itemAdded,
   itemDropped,
   itemDropRefused,
   itemPickedUp,
   itemPickupRefused,
+  itemRemoved,
   PhysicsObjectComponent,
   quickSlotsOf,
   WorldItemComponent,
@@ -150,7 +152,10 @@ export class ItemWatch {
   private thrown = 0;
   private readonly refused: string[] = [];
   private readonly offs: (() => void)[];
-  /** Bumped by every take, drop, throw and refusal: publish the readout only when it moves. */
+  /**
+   * Bumped by every take, drop, throw and refusal, and every change to the player's pack: publish the
+   * readout only when it moves.
+   */
   version = 0;
 
   constructor(
@@ -175,8 +180,15 @@ export class ItemWatch {
         this.refused.push(`${thrown ? 'throw' : 'drop'}:${reason}`);
         this.version += 1;
       }),
+      // The pack also changes without a take or a drop: looting a chest (mw-e18.3), using an item.
+      world.events.on(itemAdded, this.#packChanged),
+      world.events.on(itemRemoved, this.#packChanged),
     ];
   }
+
+  readonly #packChanged = ({ actor }: { readonly actor: EntityId }): void => {
+    if (actor === this.player) this.version += 1;
+  };
 
   /** The readout now. */
   readout(): ItemReadout {

@@ -167,6 +167,39 @@ describe('scene layout (mw-e00.21)', () => {
     expect(layoutScene(TEST_SCENE, testKit).spawns.every((s) => s.item === undefined)).toBe(true);
   });
 
+  it('lays out a container spawn with its loot table, contents and lock as plain ids (mw-e18.3)', () => {
+    const scene: SceneSpec = {
+      ...TEST_SCENE,
+      spawns: [
+        {
+          id: 'chest',
+          at: [1, 0, 1],
+          yaw: 0,
+          tags: [],
+          container: {
+            loot: { id: 'supplies' },
+            contents: [{ item: { id: 'bread' }, count: 2 }],
+            lock: { id: 'chest-lock' },
+            locked: false,
+          },
+        },
+        { id: 'barrel', at: [2, 0, 1], yaw: 0, tags: [], container: {} },
+      ],
+    };
+    const [chest, barrel] = layoutScene(scene, testKit).spawns;
+    expect(chest?.container).toEqual({
+      loot: 'supplies',
+      contents: [{ item: 'bread', count: 2 }],
+      lock: 'chest-lock',
+      locked: false,
+    });
+    expect(Object.isFrozen(chest?.container?.contents[0])).toBe(true);
+    expect(barrel?.container).toEqual({ contents: [] });
+    expect(layoutScene(TEST_SCENE, testKit).spawns.every((s) => s.container === undefined)).toBe(
+      true,
+    );
+  });
+
   it('is deterministic and frozen', () => {
     const a = layoutScene(TEST_SCENE, testKit);
     expect(layoutScene(TEST_SCENE, testKit)).toEqual(a);

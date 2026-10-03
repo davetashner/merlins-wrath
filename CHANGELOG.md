@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- Chests can be looted. Search one to open it and take everything inside. What a chest holds is
+  decided the first time anyone opens it and never changes after that, so reloading a save will not
+  reroll it, and a looted chest stays empty. A locked chest needs its key or your lockpicks first,
+  like a locked door. The testbed has a supply chest to try.
 - The class select screen still shows all four classes, but in this build only the Knight can be
   chosen. Archer, Sorcerer and Thief are marked locked with "Not playable in this build yet", so you
   can see what's coming; they unlock in a later build. The Knight is selected first when the screen

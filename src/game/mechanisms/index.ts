@@ -74,11 +74,16 @@ export function lockSpecs(content: Content): LockLookup {
   };
 }
 
-/** Whether a scene has doors, switches or signal graphs. */
+/** Whether a scene has doors, switches, signal graphs or locked containers (mw-e18.3). */
 export function hasMechanisms(layout: SceneLayout): boolean {
   return (
     layout.signals.length > 0 ||
-    layout.spawns.some((spawn) => spawn.door !== undefined || spawn.switch !== undefined)
+    layout.spawns.some(
+      (spawn) =>
+        spawn.door !== undefined ||
+        spawn.switch !== undefined ||
+        spawn.container?.lock !== undefined,
+    )
   );
 }
 

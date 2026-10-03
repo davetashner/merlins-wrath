@@ -1193,6 +1193,55 @@
               "kind"
             ],
             "additionalProperties": false
+          },
+          "container": {
+            "description": "Makes the spawned entity a lootable container: loot table, contents and lock (mw-e18.3).",
+            "type": "object",
+            "properties": {
+              "loot": {
+                "description": "Loot table rolled into it the first time it is opened (once; saves keep the result).",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "loot-table"
+              },
+              "contents": {
+                "description": "What it holds from the start, before any roll.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "item": {
+                      "description": "An item it holds from the start.",
+                      "type": "string",
+                      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                      "x-contentRef": "item"
+                    },
+                    "count": {
+                      "default": 1,
+                      "description": "Units of it; default 1.",
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9999
+                    }
+                  },
+                  "required": [
+                    "item"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "lock": {
+                "description": "The lock it carries: unlocked and picked like a door’s (mw-e03.18).",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "lock"
+              },
+              "locked": {
+                "description": "Starts locked; defaults to true when it has a lock (needs one).",
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
           }
         },
         "required": [

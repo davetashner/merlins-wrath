@@ -142,7 +142,14 @@ describe('world items in the game (mw-e17.7)', () => {
     items.inventory.add(world, must(player), 'healing-draught', 9999);
     items.pickUp(world, must(player), must(world.query(WorldItemComponent).ids()[0]));
     world.events.flush();
-    expect(watch.version).toBe(6);
+    // Six takes, drops, throws and refusals, and five changes to the pack (mw-e18.3).
+    expect(watch.version).toBe(11);
+    // Another actor's pack changing does not move it.
+    const stranger = world.spawn();
+    addInventory(world, stranger);
+    items.inventory.add(world, stranger, 'healing-draught', 1);
+    world.events.flush();
+    expect(watch.version).toBe(11);
     const readout = watch.readout();
     expect(readout).toMatchObject({
       taken: 1,
@@ -155,7 +162,7 @@ describe('world items in the game (mw-e17.7)', () => {
     watch.dispose();
     items.drop(world, must(player), view, { instanceId: 99 });
     world.events.flush();
-    expect(watch.version).toBe(6);
+    expect(watch.version).toBe(11);
     expect(new ItemWatch(world, undefined).readout().pack).toEqual([]);
     expect(new ItemWatch(world, world.spawn()).readout().pack).toEqual([]);
   });

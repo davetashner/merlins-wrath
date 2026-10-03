@@ -14,10 +14,11 @@
 // - `transform`: a physics object's pose, kept only when it moved more than TRANSFORM_EPSILON metres
 //   (or turned more than about 1°) from where the level put it and is at rest: a crate nudged 1 mm or
 //   still tumbling records nothing. It goes back as a teleport: in place, stopped and awake.
-// - `door`, `lock`, `switch`: a door's openness, heading, jam and broken state; a lock's state; a
-//   switch's position. A door's collider and light occluder follow on the first tick (the
+// - `door`, `lock`, `switch`: a door's openness, heading, jam and broken state; a lock's state (on a
+//   door or a chest, whose prompt follows it); a switch's position. A door's collider and light occluder follow on the first tick (the
 //   mechanisms system syncs them); a switch's bound lever nodes follow at once.
-// - `container`: an entity's whole pack (`inventory.pack`): a looted chest stays empty.
+// - `container`: an entity's whole pack (`inventory.pack`): a looted chest stays empty, and what was
+//   put in one stays inside (mw-e18.3; that its loot table was rolled is a world fact, saved apart).
 // - `actor.life`, `actor.disposition`: an actor's current hit points (0: dead, and it stays dead)
 //   and its faction membership, the hooks actor persistence builds on (AI state is mw-e11's).
 //
@@ -29,6 +30,7 @@ import type { ComponentType, EntityId } from '../core/component';
 import type { World } from '../core/world';
 import { FactionMemberComponent } from '../factions/runtime';
 import { InventoryComponent } from '../inventory/inventory';
+import { refreshContainerAffordances } from '../loot/containers';
 import { hypot } from '../math';
 import { DoorComponent, LockComponent, SwitchComponent } from '../mechanisms/components';
 import { refreshAffordances, syncSwitchNodes } from '../mechanisms/system';
@@ -290,6 +292,7 @@ export const lockPersistence = componentPersistence('lock', LockComponent, {
   restore: (world, entity, lock, delta) => {
     world.set(entity, LockComponent, { ...lock, locked: delta.locked });
     refreshAffordances(world, entity);
+    refreshContainerAffordances(world, entity);
   },
 });
 

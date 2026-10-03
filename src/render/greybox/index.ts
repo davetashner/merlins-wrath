@@ -284,6 +284,10 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
         mesh = new Mesh(mergeGeometries([post, arms]), gridMaterial(PURPOSE_COLOURS.interactive));
         post.dispose();
         arms.dispose();
+      } else if (spawn.container !== undefined && spawn.prop === undefined) {
+        // A container (mw-e18.3): a chest-sized box standing on the spawn point.
+        mesh = new Mesh(new BoxGeometry(0.9, 0.6, 0.6), gridMaterial(PURPOSE_COLOURS.interactive));
+        mesh.position.y = 0.3;
       } else if (spawn.prop === undefined && spawn.properties !== undefined) {
         // A placed light (a torch): a small bracket under where its flame burns. The flame and
         // its light come from the light rig, which mirrors the sim (src/render/light).
@@ -303,7 +307,7 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
         mesh = new Mesh(new BoxGeometry(0.7, 0.7, 0.7), gridMaterial(PURPOSE_COLOURS.interactive));
         mesh.position.y = 0.35;
       }
-      mesh.name = spawn.prop ?? 'marker';
+      mesh.name = spawn.prop ?? (spawn.container === undefined ? 'marker' : 'container');
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);

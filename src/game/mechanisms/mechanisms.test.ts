@@ -90,6 +90,14 @@ describe('mechanisms in the game (mw-e03.18)', () => {
     expect(
       hasMechanisms({ ...testbed.layout, signals: [{ graph: 'mechanism-room', bindings: {} }] }),
     ).toBe(true);
+    // A locked chest (mw-e18.3) needs mechanisms to unlock it; an unlocked one does not.
+    const spawn = (container: object) => ({ ...testbed.layout.spawns[0], container }) as never;
+    const chest = (lock?: string) => ({
+      ...testbed.layout,
+      spawns: [spawn({ contents: [], ...(lock !== undefined && { lock }) })],
+    });
+    expect(hasMechanisms(chest('testbed-closet'))).toBe(true);
+    expect(hasMechanisms(chest())).toBe(false);
   });
 
   it('starts the room: doors of every kind, its switches, and the lever raises the portcullis', () => {

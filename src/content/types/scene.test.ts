@@ -97,6 +97,66 @@ describe('scene mechanisms (mw-e03.18)', () => {
   });
 });
 
+describe('scene containers (mw-e18.3)', () => {
+  const spawn = (id: string, extra: object) => ({ id, at: [0, 0, 0], ...extra });
+
+  it('takes a loot table, contents (1 unit by default) and a lock, all optional', () => {
+    const scene = sceneSchema.parse({
+      ...room,
+      spawns: [
+        spawn('chest', {
+          container: {
+            loot: 'testbed-supply-crate',
+            contents: [{ item: 'healing-draught' }],
+            lock: 'testbed-closet',
+          },
+        }),
+        spawn('barrel', { container: {} }),
+      ],
+    });
+    expect(scene.spawns[0]?.container).toEqual({
+      loot: new ContentRef('loot-table', 'testbed-supply-crate'),
+      contents: [{ item: new ContentRef('item', 'healing-draught'), count: 1 }],
+      lock: new ContentRef('lock', 'testbed-closet'),
+    });
+    expect(scene.spawns[1]?.container).toEqual({ contents: [] });
+  });
+
+  it('rejects a container that is also a door, switch, item or creature, declares a prompt or is locked without a lock', () => {
+    expect(
+      problems({
+        ...room,
+        spawns: [
+          spawn('mimic', {
+            container: { locked: true },
+            door: { profile: 'wooden-door' },
+            switch: { kind: 'lever' },
+            item: { id: 'healing-draught' },
+            creature: 'forgotten-miner',
+            interact: { affordances: [{ verb: 'search' }] },
+          }),
+        ],
+      }),
+    ).toEqual([
+      'spawns.0.switch: spawn "mimic" cannot be both a door and a switch',
+      'spawns.0.interact: spawn "mimic" is a door: its affordances follow its state, so it declares none',
+      'spawns.0.door: spawn "mimic" cannot be both a container and a door',
+      'spawns.0.switch: spawn "mimic" cannot be both a container and a switch',
+      'spawns.0.item: spawn "mimic" cannot be both a container and an item',
+      'spawns.0.creature: spawn "mimic" cannot be both a container and a creature',
+      'spawns.0.interact: spawn "mimic" is a container: its affordances follow its lock, so it declares none',
+      'spawns.0.container: spawn "mimic" starts locked but has no lock',
+    ]);
+  });
+
+  it('places the testbed’s supply chest, rolling the supply-crate table', () => {
+    const content = loadContent(contentTypes, gameContentSources(), contentChecks);
+    const chest = content.get('scene', 'testbed').spawns.find((s) => s.id === 'supply-chest');
+    expect(chest?.container?.loot?.id).toBe('testbed-supply-crate');
+    expect(chest?.container?.lock).toBeUndefined();
+  });
+});
+
 describe('scene acoustics (mw-e09.3)', () => {
   const door = { id: 'door', at: [0, 0, 5], door: { profile: 'wooden-door' } };
   const hall = { id: 'hall', min: [-5, 0, -5], max: [5, 3, 5] };
