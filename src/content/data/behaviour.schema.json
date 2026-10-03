@@ -152,7 +152,7 @@
                       "properties": {
                         "input": {
                           "type": "string",
-                          "description": "An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, trait.<trait> or need.<need>."
+                          "description": "An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, trait.<trait> or need.<need>."
                         },
                         "gte": {
                           "description": "True when the input is at least this.",
@@ -318,7 +318,7 @@
               "properties": {
                 "input": {
                   "type": "string",
-                  "description": "An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, trait.<trait> or need.<need>."
+                  "description": "An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, trait.<trait> or need.<need>."
                 },
                 "curve": {
                   "oneOf": [
@@ -743,6 +743,143 @@
                   ],
                   "additionalProperties": false,
                   "description": "Drops its stimulus and awareness (it calls it off)."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "strike"
+                    },
+                    "gait": {
+                      "default": "walk",
+                      "description": "Gait (its speed comes from the creature).",
+                      "type": "string",
+                      "enum": [
+                        "sneak",
+                        "walk",
+                        "run"
+                      ]
+                    },
+                    "giveUpS": {
+                      "default": 8,
+                      "description": "Seconds it waits as close as it can get to a target it cannot reach before failing.",
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tuning": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Tuning key."
+                            }
+                          },
+                          "required": [
+                            "tuning"
+                          ],
+                          "additionalProperties": false,
+                          "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "do"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Closes in on its target and performs one of its attacks: those whose preconditions hold at the distance (range, cooldown, health) are weighed by their weights and its aggression, while it holds one of the target’s attack tokens (mw-e11.13). Waits at the closest point to a target it cannot reach; fails without a target, attack or token, with every attack cooling down, or after giveUpS unreachable."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "circle"
+                    },
+                    "range": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "exclusiveMinimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tuning": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Tuning key."
+                            }
+                          },
+                          "required": [
+                            "tuning"
+                          ],
+                          "additionalProperties": false,
+                          "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                        }
+                      ],
+                      "description": "Distance it keeps from its target, metres (its preferred range)."
+                    },
+                    "seconds": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tuning": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Tuning key."
+                            }
+                          },
+                          "required": [
+                            "tuning"
+                          ],
+                          "additionalProperties": false,
+                          "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                        }
+                      ],
+                      "description": "Longest it strafes before the step ends."
+                    },
+                    "gait": {
+                      "default": "walk",
+                      "description": "Gait (its speed comes from the creature).",
+                      "type": "string",
+                      "enum": [
+                        "sneak",
+                        "walk",
+                        "run"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "range",
+                    "seconds"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Strafes an eighth of a turn around its target, a seeded-random way, at its preferred range, facing it; succeeds on arrival or after `seconds`, fails without a target or when the spot is unreachable."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
+                      "const": "share-target"
+                    }
+                  },
+                  "required": [
+                    "do"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Tells allies near it where it believes its target is (AiTargetShared; they hear it as a second-hand report) and succeeds; with no target memory it says nothing."
                 }
               ]
             },

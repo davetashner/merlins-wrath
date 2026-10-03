@@ -18,13 +18,14 @@
 // change, what each agent saw and heard, and each step of the player's script, with times.
 //
 // Agents perceive through the real perception system (mw-e11.5) and awareness (mw-e11.6)
-// (./senses.ts); `deps.senses` swaps them. Noises are propagated in the open (the
+// (./senses.ts); `deps.senses` swaps them. `deps.ai` and `deps.install` add what a fight needs
+// (mw-e11.13): the attack table AI strikes from, and knight combat and the attack executor. Noises are propagated in the open (the
 // layout has no rooms); walls block sight and light.
 
 import type { AlertState, ControllerTuning, CreatureTable, Frozen } from '@content/index';
 import type { BehaviourTable } from '../ai/behaviour';
 import { AlertStateChanged, type Brain } from '../ai/components';
-import { brainOf, installAi } from '../ai/runtime';
+import { brainOf, installAi, type AiOptions } from '../ai/runtime';
 import { at, got } from '../ai/util';
 import { box } from '../character/greybox';
 import { FakeCollisionWorld } from '../character/fake-collision-world';
@@ -83,6 +84,13 @@ export interface ScenarioDeps {
   readonly controller: Frozen<ControllerTuning>;
   /** How agents perceive; defaults to `perceptionSenses`. */
   readonly senses?: ScenarioSenses;
+  /** AI options besides the behaviours (its attack table, attack tokens…); none by default. */
+  readonly ai?: Omit<AiOptions, 'behaviours'>;
+  /**
+   * Installs more of the world once AI is in and before the fixtures spawn (knight combat and the
+   * creature attack executor, for the fight scenarios of mw-e11.13), given the player's entity.
+   */
+  readonly install?: (world: World<never>, context: { readonly player: EntityId }) => void;
 }
 
 /** A scenario: its layout and player script as parsed JSON, and how long it runs. */
@@ -514,7 +522,8 @@ export class AiScenario {
         },
       }),
     );
-    installAi(w, { behaviours: deps.behaviours });
+    installAi(w, { ...deps.ai, behaviours: deps.behaviours });
+    deps.install?.(w, { player });
 
     const agents = new Map<string, EntityId>();
     const issues: string[] = [];

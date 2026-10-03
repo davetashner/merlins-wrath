@@ -23,7 +23,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `states.<key>.transitions` | list of object | `[]` | Checked in order after the timeout; at most one is taken per think. |
 | `states.<key>.transitions[].to` | `"unaware"` \| `"suspicious"` \| `"investigating"` \| `"searching"` \| `"alerted"` \| `"combat"` | required | State it moves to (defined in this behaviour). |
 | `states.<key>.transitions[].when` | object | required | Transition condition. |
-| `states.<key>.transitions[].when.input` | string | required | An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, trait.<trait> or need.<need>. |
+| `states.<key>.transitions[].when.input` | string | required | An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, trait.<trait> or need.<need>. |
 | `states.<key>.transitions[].when.gte` | number or object | — | True when the input is at least this. |
 | `states.<key>.transitions[].when.gte.tuning` | string | required | Tuning key. |
 | `states.<key>.transitions[].when.lt` | number or object | — | True when the input is below this. |
@@ -37,7 +37,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `activities.<key>.interruptible` | boolean | `true` | false holds the activity until it ends or the state changes. |
 | `activities.<key>.retryAfterS` | number ≥ 0 | `2` | Seconds a failed activity is excluded from scoring. |
 | `activities.<key>.considerations` | list of object | `[]` | Input × curve factors; none = always its weight. |
-| `activities.<key>.considerations[].input` | string | required | An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, trait.<trait> or need.<need>. |
+| `activities.<key>.considerations[].input` | string | required | An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, trait.<trait> or need.<need>. |
 | `activities.<key>.considerations[].curve` | object | required | Response curve. |
 | `activities.<key>.considerations[].curve.kind` | `"linear"` | required |  |
 | `activities.<key>.considerations[].curve.slope` | number | required |  |
@@ -73,3 +73,11 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `activities.<key>.steps[].do` | `"attack"` | required |  |
 | `activities.<key>.steps[].attack` | ref → attack | required | Attack id. |
 | `activities.<key>.steps[].do` | `"forget-stimulus"` | required |  |
+| `activities.<key>.steps[].do` | `"strike"` | required |  |
+| `activities.<key>.steps[].giveUpS` | number > 0 or object | `8` | Seconds it waits as close as it can get to a target it cannot reach before failing. |
+| `activities.<key>.steps[].giveUpS.tuning` | string | required | Tuning key. |
+| `activities.<key>.steps[].do` | `"circle"` | required |  |
+| `activities.<key>.steps[].range` | number > 0 or object | required | Distance it keeps from its target, metres (its preferred range). |
+| `activities.<key>.steps[].range.tuning` | string | required | Tuning key. |
+| `activities.<key>.steps[].seconds` | number ≥ 0 or object | required | Longest it strafes before the step ends. |
+| `activities.<key>.steps[].do` | `"share-target"` | required |  |

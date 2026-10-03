@@ -3,3 +3,4 @@ export * from './components';
 export * from './condition';
 export * from './persistence';
 export * from './spawn';
+export * from './target-sharing';

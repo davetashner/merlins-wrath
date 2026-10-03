@@ -42,6 +42,7 @@ import {
   CreatureNavComponent,
   factionSpecFromDef,
   installAttacks,
+  installTargetSharing,
   installFactions,
   invulnerabilityRule,
   PlacementComponent,
@@ -108,6 +109,8 @@ export function startCreatures<TInput>(
   installFactions(registerCreatureComponents(w).register(...ATTACK_COMPONENTS));
   // Senses and AI before the attack executor (a think's attack starts that tick) and the spawns.
   const installed = ai === undefined ? undefined : installCreatureAi(world, creatures.attacks, ai);
+  // Allies in a fight hear where each other's target is (mw-e11.13).
+  if (installed !== undefined) installTargetSharing(w, { factions: creatures.spawn.factions });
   installAttacks(world, {
     attacks: creatures.attacks,
     damage: combat.damage,
