@@ -134,6 +134,12 @@ import {
   type PendingLoad,
   type PendingLoadStorage,
 } from '@game/save/death/index';
+import {
+  SaveMenus,
+  saveMenuRequest,
+  searchWithoutMenu,
+  type SaveMenuReadout,
+} from '@game/save/menus/index';
 import { createGameSaveRegistry } from '@game/save/sections';
 import { openSaveStore, type OpenedSaveStore } from '@game/save/storage/index';
 import { missingFeatures } from '@game/support';
@@ -155,6 +161,7 @@ import { createLightRig } from '@render/light/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
 import { createPlayerBody, projectToNdc } from '@render/player/index';
 import { createVfxRenderer } from '@render/vfx/index';
+import { captureCanvasThumbnail, type CapturedThumbnail } from '@render/thumbnail';
 import {
   addCapabilities,
   announceRespawn,
@@ -251,6 +258,17 @@ const GAME_VERSION = '0.0.0';
 
 /** Where each death → reload readout is published on #app (the e2e reads them). */
 const READOUT_ATTRIBUTE = { death: 'death', saved: 'savedGame', loaded: 'loadedSave' } as const;
+
+/** Where each save menu readout is published on #app (the e2e reads them). */
+const SAVE_MENU_ATTRIBUTE = {
+  title: 'saveMenuTitle',
+  list: 'saveMenuList',
+  saved: 'saveMenuSaved',
+  deleted: 'saveMenuDeleted',
+} as const;
+
+/** How long a save waits for a drawn frame to take its thumbnail from. */
+const THUMBNAIL_WAIT_MS = 5000;
 
 /** Placeholder world seed until new-game/save flows choose one. */
 const BOOT_SEED = 1;
@@ -717,6 +735,7 @@ function startRenderer(
     // The death beat (mw-e01.8): the camera pull-back and fade between the player's death and the
     // death screen. Set up once the player and the death screen exist (below).
     let deathBeat: DeathBeat | undefined;
+    let captureAfterRender: ((capture: Promise<CapturedThumbnail>) => void) | undefined;
     let lastFrameMs: number | undefined;
     const interactions: { tick: number; verb: string; spawn: string | null }[] = [];
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
@@ -789,6 +808,11 @@ function startRenderer(
         drawLights();
         aiDebug?.frame();
         view.renderFrame(timeMs);
+        // A save's thumbnail (mw-e30.11) is read straight after a render, while the frame is still
+        // in the drawing buffer.
+        const capture = captureAfterRender;
+        captureAfterRender = undefined;
+        capture?.(captureCanvasThumbnail(view.canvas));
       },
     });
 
@@ -1289,30 +1313,43 @@ function startRenderer(
     // restarting the area reloads the page, which tears the whole world down and builds it again.
     const areaId = request.kind === 'scene' ? request.id : undefined;
     const session = sessionStore();
+    // Items no longer in content are dropped from a loaded save with a warning (mw-e17.8).
+    const saveRegistry = createGameSaveRegistry({
+      knownItem: (id) => content.has('item', id),
+      warn: (message) => {
+        console.warn(message);
+      },
+    });
+    const saveBuild = {
+      gameVersion: GAME_VERSION,
+      buildSha: __BUILD_SHA__,
+      contentHash: 'unversioned',
+    };
+    // Class selection (mw-e19) names the character and class; the knight until then.
+    const describeSave = () => ({
+      characterName: 'Knight',
+      classId: 'knight',
+      areaId: areaId ?? '',
+    });
     const deathReload = saves.then(
       ({ store }) =>
         new DeathReload({
           ui,
           world,
           store,
-          // Items no longer in content are dropped from a loaded save with a warning (mw-e17.8).
-          registry: createGameSaveRegistry({
-            knownItem: (id) => content.has('item', id),
-            warn: (message) => {
-              console.warn(message);
-            },
-          }),
-          build: { gameVersion: GAME_VERSION, buildSha: __BUILD_SHA__, contentHash: 'unversioned' },
+          registry: saveRegistry,
+          build: saveBuild,
           now: () => Date.now(),
           session,
           areaId,
+          // A reload leaves the menus (?menu=) behind.
           navigate: (area) => {
-            const params = new URLSearchParams(location.search);
-            if (area !== undefined) params.set('scene', area);
-            location.search = params.toString();
+            location.search = searchWithoutMenu(
+              location.search,
+              area === undefined ? {} : { scene: area },
+            );
           },
-          // Class selection (mw-e19) names the character and class; the knight until then.
-          describe: () => ({ characterName: 'Knight', classId: 'knight', areaId: areaId ?? '' }),
+          describe: describeSave,
           publish: (readout) => {
             root.dataset[READOUT_ATTRIBUTE[readout.kind]] = JSON.stringify(readout);
             // A death's reload has loaded its save: the player is back in play (mw-e01.8).
@@ -1336,6 +1373,52 @@ function startRenderer(
           },
         }),
     );
+    // The title menu and the Load / Save screens (mw-e30.11): Continue and Load reload into the
+    // save's area through the death screen's hand-off; while saves live only in memory every slot
+    // screen warns. `?menu=title|load|save` opens one at boot (the title screen as the front door is
+    // mw-e01.2, the pause menu's Save and Load mw-e01.3). The e2e reads #app[data-save-menu-*].
+    const saveMenus = Promise.all([saves, deathReload]).then(
+      ([{ store, warning }, reload]) =>
+        new SaveMenus({
+          ui,
+          world,
+          store,
+          registry: saveRegistry,
+          build: saveBuild,
+          now: () => Date.now(),
+          describe: describeSave,
+          captureThumbnail: () =>
+            new Promise<CapturedThumbnail>((resolve, reject) => {
+              captureAfterRender = (capture) => {
+                capture.then(resolve, reject);
+              };
+              // No frame drawn (a hidden tab): the save goes ahead with the placeholder.
+              setTimeout(() => {
+                reject(new Error('no frame was drawn for the thumbnail'));
+              }, THUMBNAIL_WAIT_MS);
+            }),
+          warning,
+          load: (load) => {
+            reload.reload(load);
+          },
+          newGame: () => {
+            location.search = searchWithoutMenu(location.search, { newgame: '' });
+          },
+          publish: (readout: SaveMenuReadout) => {
+            root.dataset[SAVE_MENU_ATTRIBUTE[readout.kind]] = JSON.stringify(readout);
+          },
+          warn: (message) => {
+            console.warn(message);
+          },
+        }),
+    );
+    const openRequestedMenu = (): void => {
+      const menu = saveMenuRequest(location.search);
+      if (menu.kind === 'unknown')
+        console.warn(`?menu=${menu.value}: not a menu (title, load, save)`);
+      if (menu.kind !== 'open') return;
+      void saveMenus.then((menus) => menus.open(menu.menu));
+    };
     // The player's death (mw-e01.8): its Died freezes its input and starts the death beat (the sim
     // counts it in ticks; the content says how long); when the beat ends, the respawn rule for the
     // scene decides what follows, which in m1 is always the death screen. The e2e reads the death
@@ -1490,8 +1573,10 @@ function startRenderer(
     writeCameraData();
     // A save chosen on the death screen (mw-e30.7) reloaded the page into its area; it loads into the
     // freshly built world before the first sim step.
-    if (pending === undefined) loop.start();
-    else
+    if (pending === undefined) {
+      loop.start();
+      openRequestedMenu();
+    } else
       void deathReload
         .then((reload) => reload.resume(pending))
         .finally(() => {
