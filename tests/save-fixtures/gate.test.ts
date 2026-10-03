@@ -7,9 +7,21 @@ import { describe, expect, it } from 'vitest';
 import { loadGameContent } from '@content/index';
 import { decodeSave } from '@game/save/format';
 import { createGameSaveRegistry } from '@game/save/sections';
-import { captureInventories, levelDeltasOf, replayScenarios, type WorldSnapshot } from '@sim/index';
+import {
+  brainOf,
+  captureCreatures,
+  captureInventories,
+  conditionOf,
+  CreatureComponent,
+  isUnconscious,
+  levelDeltasOf,
+  replayScenarios,
+  type World,
+  type WorldSnapshot,
+} from '@sim/index';
 import { checkSaveFixtures, listFixtures, loadFixtureFile } from '@tools/save-fixtures/files';
 import { parseFixture } from '@tools/save-fixtures/fixtures';
+import { FIXTURE_SCENARIOS } from '@tools/save-fixtures/scenarios';
 
 const root = process.cwd();
 const fixtures = Object.values(listFixtures(root)).flat();
@@ -85,5 +97,44 @@ describe('world state fixtures (mw-e27.4)', () => {
       'spawn:testbed-draught',
       'spawn:loose-crate',
     ]);
+  });
+});
+
+describe('creature fixtures (mw-e12.14)', () => {
+  const previous = fixtures.filter((path) => path.includes('/5/'));
+
+  it.each(previous)(
+    '%s, written before the creatures section, loads in the current build without warnings',
+    (path) => {
+      const fixture = parseFixture(JSON.parse(readFileSync(path, 'utf8')));
+      const world = FIXTURE_SCENARIOS[fixture.scenario]?.create({ seed: fixture.seed, hz: 60 });
+      if (world === undefined) throw new Error(`no scenario ${fixture.scenario}`);
+      const result = createGameSaveRegistry().read(world, Buffer.from(fixture.save, 'base64'));
+      if (!result.ok) throw result.error;
+      expect(result.warnings).toEqual([]);
+      expect(captureCreatures(world as World<never>)).toEqual({ creatures: [] });
+    },
+  );
+
+  it('the creature-guards save brings back the searching guard and the knocked-out sleeper', () => {
+    const { world } = loadFixtureFile(
+      root,
+      'tests/save-fixtures/6/creature-guards.json',
+      createGameSaveRegistry(),
+    );
+    const w = world as World<never>;
+    const byPoint = new Map(
+      w
+        .query(CreatureComponent)
+        .ids()
+        .map((entity) => [w.get(entity, CreatureComponent)?.origin.point, entity]),
+    );
+    const guard = brainOf(w, byPoint.get('guard') ?? 0);
+    expect(guard?.state).toBe('searching');
+    expect(guard?.blackboard.lkp).not.toBeNull();
+    expect(guard?.awareness.length).toBeGreaterThan(0);
+    const sleeper = byPoint.get('sleeper') ?? 0;
+    expect(conditionOf(w, sleeper)?.morale).toBe(100);
+    expect(isUnconscious(w, sleeper)).toBe(true);
   });
 });

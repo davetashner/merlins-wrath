@@ -1,13 +1,26 @@
 // The game's save sections (mw-e30.3): the one list of everything the current build saves. Saving,
 // loading and the save-schema gate (pnpm save:check, tests/save-fixtures) all build their registry
 // here, so a system that adds a section registers it in exactly one place and the gate fingerprints
-// it automatically. Sections: the built-in world section, then inventory (mw-e17.8), world facts and
-// level deltas (mw-e27.4).
+// it automatically. Sections: the built-in world section, then inventory (mw-e17.8), creatures
+// (mw-e12.14), world facts and level deltas (mw-e27.4).
 
+import { CapabilitiesComponent, PlayerClassComponent, StatsComponent } from '@sim/index';
+import { creaturesSaveSection } from './creatures';
 import { SaveRegistry } from './format';
 import { inventorySaveSection, type InventorySectionOptions } from './inventory';
 import { levelDeltasSaveSection } from './level-deltas';
 import { worldFactsSaveSection } from './world-facts';
+
+/**
+ * Components the game registers only on first use: class selection (mw-e19.5) adds the player's
+ * class, stats and capabilities. A save holding them loads into a fresh world that has not chosen a
+ * class yet (Continue from the title, mw-e01.7).
+ */
+export const ON_DEMAND_COMPONENTS = Object.freeze([
+  PlayerClassComponent,
+  StatsComponent,
+  CapabilitiesComponent,
+]);
 
 /** What the game's sections need from the running build. */
 export type GameSaveOptions = InventorySectionOptions;
@@ -20,8 +33,9 @@ export type GameSaveOptions = InventorySectionOptions;
  */
 export function createGameSaveRegistry(options: GameSaveOptions = {}): SaveRegistry {
   const { warn } = options;
-  return new SaveRegistry()
+  return new SaveRegistry({ onDemand: ON_DEMAND_COMPONENTS })
     .register(inventorySaveSection(options))
+    .register(creaturesSaveSection())
     .register(worldFactsSaveSection({ ...(warn && { warn }) }))
     .register(levelDeltasSaveSection({ ...(warn && { warn }) }));
 }

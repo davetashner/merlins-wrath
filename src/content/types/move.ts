@@ -227,10 +227,14 @@ const chargeSchema = z
       .positive()
       .describe('Hold ticks at which the charge is full; values lerp from the uncharged move.'),
     autoReleaseTicks: z.int().positive().describe('Hold ticks at which it releases on its own.'),
+    holdTick: ticks.describe(
+      'Move tick of `from`’s startup the windup holds on while the button stays down (the top of ' +
+        'the swing); before the first active tick. Released, the swing plays on from there.',
+    ),
   })
   .describe(
     'A charged move: its damage and stamina cost are the full-charge values, lerped from `from` ' +
-      'by hold time (e04.13).',
+      'by hold time (e04.13). It has the same frames as `from`: the charge only holds the windup.',
   );
 
 /** Kinds of hit a swing can deliver to the world (the sim's BREAK_TYPES). */
@@ -246,6 +250,15 @@ const worldImpactSchema = z
     slash: joules.optional().describe('Slash impact energy, J.'),
     pierce: joules.optional().describe('Pierce impact energy, J.'),
     force: joules.optional().describe('Shove, N·s (pushes and strains whatever it reaches).'),
+    maxWeight: z
+      .number()
+      .positive()
+      .max(100_000)
+      .optional()
+      .describe(
+        'Heaviest thing the shove moves, kg: anything heavier resists it (ImpactResisted) and stays ' +
+          'put, e.g. the shield bash’s 60 kg (mw-e04.14). Only with `force`; absent = no limit.',
+      ),
   })
   .describe(
     'What the swing does to the world (mw-e03.11): on its first active tick its hitbox, at the ' +
@@ -398,6 +411,9 @@ export const moveSchema = z
     if (move.worldImpact !== undefined && move.hitbox === undefined) {
       fail(['worldImpact'], 'only a move with a hitbox strikes the world');
     }
+    if (move.worldImpact?.maxWeight !== undefined && move.worldImpact.force === undefined) {
+      fail(['worldImpact', 'maxWeight'], 'a weight limit needs a force to limit');
+    }
     if (move.motion !== undefined && move.motion.distance > 0 && active === 0) {
       fail(['motion'], 'a move with motion needs at least one active tick to travel on');
     }
@@ -410,6 +426,13 @@ export const moveSchema = z
       }
       if (charge.fullHoldTicks > charge.autoReleaseTicks) {
         fail(['charge', 'fullHoldTicks'], 'must be at most autoReleaseTicks');
+      }
+      if (charge.holdTick >= startup) {
+        fail(
+          ['charge', 'holdTick'],
+          `holdTick (${String(charge.holdTick)}) must come before the first active tick ` +
+            `(${String(startup)})`,
+        );
       }
     }
   });
@@ -548,13 +571,19 @@ export interface RuntimeMove {
     readonly minHoldTicks: number;
     readonly fullHoldTicks: number;
     readonly autoReleaseTicks: number;
+    readonly holdTick: number;
   } | null;
   /** Root motion (a dodge's travel), or null. */
   readonly motion: RuntimeMotion | null;
   /** Hit-stop tier of its hits (light unless the move names one), or null for a move that cannot hit. */
   readonly hitStop: HitStopTier | null;
   /** Energy per kind of hit its swing delivers to the world (mw-e03.11); absent: none. */
-  readonly worldImpact?: Readonly<Partial<Record<WorldImpactKind, number | undefined>>>;
+  readonly worldImpact?: Readonly<
+    Partial<Record<WorldImpactKind, number | undefined>> & {
+      /** Heaviest thing its shove moves, kg (mw-e04.14); absent: no limit. */
+      readonly maxWeight?: number | undefined;
+    }
+  >;
   readonly presentation: MoveEntry['presentation'];
 }
 
@@ -599,6 +628,7 @@ export function compileMove(move: MoveEntry): RuntimeMove {
             minHoldTicks: charge.minHoldTicks,
             fullHoldTicks: charge.fullHoldTicks,
             autoReleaseTicks: charge.autoReleaseTicks,
+            holdTick: charge.holdTick,
           }),
     motion:
       move.motion === undefined

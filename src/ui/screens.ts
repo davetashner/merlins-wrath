@@ -264,7 +264,7 @@ export class UiRoot implements UiState {
       target?.click();
     } else if (intent === 'back') {
       if (top.options.onBack?.() !== true) this.#close(top);
-    } else {
+    } else if (intent !== 'secondary') {
       // tabPrev / tabNext from outside a tab strip: the screen's first tab strip takes it.
       scope.querySelector('[data-ui-tabs]')?.dispatchEvent(uiIntentEvent(intent, device));
     }

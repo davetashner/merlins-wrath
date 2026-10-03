@@ -64,4 +64,38 @@ describe('?perf frame probe (mw-e00.21 AC-6)', () => {
     expect(probe.frame(0, 1)).toBeUndefined();
     expect(probe.frame(12_000, 1)).toBeDefined();
   });
+
+  it('mw-e32.1: parses the frame count and warm-up the perf suite asks for', () => {
+    expect(parsePerfParam('?perf&perfFrames=1800&perfWarmup=3')).toEqual({
+      warmupMs: 3_000,
+      sampleMs: 10_000,
+      frames: 1800,
+    });
+    expect(parsePerfParam('?perf=120&perfFrames=10.2&perfWarmup=0')).toEqual({
+      warmupMs: 2_000,
+      sampleMs: 120_000,
+      frames: 11,
+    });
+    expect(parsePerfParam('?perf&perfFrames=&perfWarmup=x')).toEqual(DEFAULT_PERF_OPTIONS);
+  });
+
+  it('mw-e32.1: stops after the frame count, reporting the raw intervals and the window', () => {
+    const probe = new FramePerfProbe({ warmupMs: 30, sampleMs: 10_000, frames: 3 });
+    const reports = [];
+    for (let t = 0; t <= 200; t += 10) {
+      const report = probe.frame(t + 0.0004, 1);
+      if (report !== undefined) reports.push(report);
+    }
+    expect(reports).toHaveLength(1);
+    expect(reports[0]?.samples).toEqual([10, 10, 10]);
+    expect(reports[0]?.frame.count).toBe(3);
+    expect(reports[0]?.window).toEqual({ startMs: 30.0004, endMs: 60.0004 });
+  });
+
+  it('mw-e32.1: the sampling time still caps a frame-count run', () => {
+    const probe = new FramePerfProbe({ warmupMs: 0, sampleMs: 25, frames: 1_000 });
+    let report;
+    for (let t = 0; t <= 40 && report === undefined; t += 10) report = probe.frame(t, 1);
+    expect(report?.samples).toEqual([10, 10]);
+  });
 });

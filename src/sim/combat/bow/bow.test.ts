@@ -136,6 +136,7 @@ const START: SceneSpawnPlacement = {
 
 const WOOD: RuntimeShield = {
   id: 'wood-shield',
+  kind: 'shield',
   absorption: { slash: 85 },
   stability: 60,
   raiseTicks: 6,
@@ -682,7 +683,8 @@ describe('the bow system on its own (mw-e05.3)', () => {
 
   it('an unknown bow throws', () => {
     const world = new World<ActionFrame>({ seed: 1 });
-    installBow(world, { bows: BOWS, arrows: ARROWS, aim: straight });
+    const aim: BowAim = () => ({ origin: { x: 0, y: 1, z: 0 }, direction: { x: 0, y: 0, z: -1 } });
+    installBow(world, { bows: BOWS, arrows: ARROWS, aim });
     const e = world.spawn();
     giveBow(world, e, { bow: 'longbow', quiver: QUIVER, equipped: true });
     expect(() => {
@@ -717,6 +719,31 @@ describe('the bow system on its own (mw-e05.3)', () => {
     world.step([frame(['jump'])]);
     expect(world.get(e, BowComponent)).toMatchObject({ equipped: true, selected: 'blunt' });
     expect(world.get(e, BowComponent)?.draw).toBeNull(); // blunt: none left
+  });
+});
+
+describe('the bow and chords (mw-e04.14)', () => {
+  it('taking the bow out stows the attack with its chords inert; putting it away restores both', () => {
+    const world = new World<ActionFrame>({ seed: 1 });
+    world.register(...ACTION_TIMELINE_COMPONENTS);
+    const aim: BowAim = () => ({ origin: { x: 0, y: 1, z: 0 }, direction: { x: 0, y: 0, z: -1 } });
+    installBow(world, { bows: BOWS, arrows: ARROWS, aim });
+    installArrows(world.register(...HIT_VOLUME_COMPONENTS, PlacementComponent), {
+      arrows: ARROWS,
+      damage: new DamageModel(),
+    });
+    const e = world.spawn();
+    giveActionTimeline(world, e);
+    const chord = { held: 'secondaryAttack', press: 'primaryAttack', move: 'bash' } as const;
+    giveActionInput(world, e, { primaryAttack: 'sword-light-1' }, [chord]);
+    giveBow(world, e, { bow: 'shortbow', quiver: QUIVER });
+    world.step([frame(['ability4'])]);
+    expect(world.get(e, ActionInputComponent)).toEqual({ bindings: {}, chords: [chord] });
+    world.step([frame(['ability4'])]);
+    expect(world.get(e, ActionInputComponent)).toEqual({
+      bindings: { primaryAttack: 'sword-light-1' },
+      chords: [chord],
+    });
   });
 });
 

@@ -523,16 +523,23 @@
           "exclusiveMinimum": 0,
           "maximum": 9007199254740991,
           "description": "Hold ticks at which it releases on its own."
+        },
+        "holdTick": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Move tick of `from`’s startup the windup holds on while the button stays down (the top of the swing); before the first active tick. Released, the swing plays on from there."
         }
       },
       "required": [
         "from",
         "minHoldTicks",
         "fullHoldTicks",
-        "autoReleaseTicks"
+        "autoReleaseTicks",
+        "holdTick"
       ],
       "additionalProperties": false,
-      "description": "A charged move: its damage and stamina cost are the full-charge values, lerped from `from` by hold time (e04.13)."
+      "description": "A charged move: its damage and stamina cost are the full-charge values, lerped from `from` by hold time (e04.13). It has the same frames as `from`: the charge only holds the windup."
     },
     "motion": {
       "type": "object",
@@ -584,6 +591,12 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000
+        },
+        "maxWeight": {
+          "description": "Heaviest thing the shove moves, kg: anything heavier resists it (ImpactResisted) and stays put, e.g. the shield bash’s 60 kg (mw-e04.14). Only with `force`; absent = no limit.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 100000
         }
       },
       "additionalProperties": false,

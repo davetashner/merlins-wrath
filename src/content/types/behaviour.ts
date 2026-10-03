@@ -69,6 +69,11 @@ export const ALERT_TUNING_DEFAULTS: Readonly<Record<string, number>> = Object.fr
   postAlertS: 300,
   /** Awareness accumulation multiplier during the heightened baseline. */
   postAlertAwarenessRate: 1.5,
+  /**
+   * Seconds a leashed creature searches at its leash edge before walking home (mw-e01.17), in place
+   * of `searchingTimeoutS`.
+   */
+  leashSearchS: 3,
 });
 
 /** Tuning keys that are durations and so must be positive, wherever they are used. */
@@ -79,6 +84,7 @@ export const ALERT_TIMER_KEYS = [
   'alertedTimeoutS',
   'combatLostS',
   'postAlertS',
+  'leashSearchS',
 ] as const;
 
 /** What a state's timeout counts from: entering it, or its last stimulus (whichever is later). */
@@ -87,6 +93,10 @@ export const ALERT_TIMEOUT_FROM = ['entered', 'stimulus'] as const;
 /**
  * Inputs every agent has, read by considerations and transition conditions (ADR-0005 §5), besides
  * `trait.<trait>` (personality, 0–1) and `need.<need>` (need level / 100, 0 when it has no such need).
+ * The combat inputs (mw-e11.13): `targetDistance` is metres to where it believes its target is
+ * (1000 with none); `attackToken` is 1 while it holds, or could take, one of its target's attack
+ * tokens; `targetUnreachableS` is seconds its target has stood where it cannot path (0 when it can).
+ * `fromPost` is metres, on the level, from its leash post (mw-e01.17; 0 without a leash).
  */
 export const BEHAVIOUR_INPUTS = [
   'awareness',
@@ -96,6 +106,10 @@ export const BEHAVIOUR_INPUTS = [
   'healthFraction',
   'timeInState',
   'offRoute',
+  'targetDistance',
+  'attackToken',
+  'targetUnreachableS',
+  'fromPost',
 ] as const;
 
 /** A fixed input name. */
@@ -109,7 +123,8 @@ export type BehaviourEvent = (typeof BEHAVIOUR_EVENTS)[number];
 
 /**
  * Where a step moves or looks: the stimulus, the target, the target's last-known position, the
- * waypoint of its route nearest by path (mw-e11.9), the spawn.
+ * waypoint of its route nearest by path (mw-e11.9), the spawn, its leash post (mw-e01.17: the spawn
+ * without a leash; a `move-to` that arrives there turns it the way it was placed).
  */
 export const BEHAVIOUR_TARGETS = [
   'stimulus',
@@ -117,6 +132,7 @@ export const BEHAVIOUR_TARGETS = [
   'lkp',
   'nearest-waypoint',
   'origin',
+  'post',
 ] as const;
 
 /** A step target. */
@@ -133,6 +149,9 @@ export const BEHAVIOUR_PRIMITIVES = [
   'emit-noise',
   'attack',
   'forget-stimulus',
+  'strike',
+  'circle',
+  'share-target',
 ] as const;
 
 /** An action primitive name. */
@@ -249,6 +268,36 @@ const stepSchema = z.discriminatedUnion(
     z
       .strictObject({ do: z.literal('forget-stimulus') })
       .describe('Drops its stimulus and awareness (it calls it off).'),
+    z
+      .strictObject({
+        do: z.literal('strike'),
+        gait,
+        giveUpS: tunable(z.number().positive())
+          .default(8)
+          .describe(
+            'Seconds it waits as close as it can get to a target it cannot reach before failing.',
+          ),
+      })
+      .describe(
+        'Closes in on its target and performs one of its attacks: those whose preconditions hold at the distance (range, cooldown, health) are weighed by their weights and its aggression, while it holds one of the target’s attack tokens (mw-e11.13). Waits at the closest point to a target it cannot reach; fails without a target, attack or token, with every attack cooling down, or after giveUpS unreachable.',
+      ),
+    z
+      .strictObject({
+        do: z.literal('circle'),
+        range: tunable(z.number().positive()).describe(
+          'Distance it keeps from its target, metres (its preferred range).',
+        ),
+        seconds: seconds.describe('Longest it strafes before the step ends.'),
+        gait,
+      })
+      .describe(
+        'Strafes an eighth of a turn around its target, a seeded-random way, at its preferred range, facing it; succeeds on arrival or after `seconds`, fails without a target or when the spot is unreachable.',
+      ),
+    z
+      .strictObject({ do: z.literal('share-target') })
+      .describe(
+        'Tells allies near it where it believes its target is (AiTargetShared; they hear it as a second-hand report) and succeeds; with no target memory it says nothing.',
+      ),
   ],
   {
     error: (issue) =>

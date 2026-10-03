@@ -147,6 +147,7 @@ export const UI_INTENT_GLYPHS: Readonly<Record<UiDevice, Readonly<Record<UiInten
       tabNext: 'E',
       next: 'Tab',
       prev: 'Shift+Tab',
+      secondary: 'R',
     },
     gamepad: {
       up: 'D-pad Up',
@@ -159,6 +160,7 @@ export const UI_INTENT_GLYPHS: Readonly<Record<UiDevice, Readonly<Record<UiInten
       tabNext: 'RB',
       next: 'D-pad Down',
       prev: 'D-pad Up',
+      secondary: 'X',
     },
   });
 

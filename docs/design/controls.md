@@ -25,7 +25,8 @@ B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT
 | Cycle target     | RS flick left/right (while locked) | Tab (right); fast mouse swipe left/right |
 | Primary attack   | RT                                 | Left click               |
 | Secondary / block | LT                                | Right click              |
-| Ability 1        | Y, D-pad Up                        | 1                        |
+| Shield bash (knight) | Hold LT, press RT              | Hold right click, left click |
+| Ability 1 / heavy attack (knight) | Y, D-pad Up               | 1                        |
 | Ability 2        | RB, D-pad Right                    | 2                        |
 | Ability 3 / parry (knight) | LB                       | 3                        |
 | Ability 4        | D-pad Left                         | 4                        |
@@ -49,6 +50,23 @@ while locked on cycles instead (see Lock-on below), the usual convention.
 reels within 2 m in front of you and the light attack becomes a riposte. Timing and numbers:
 `src/content/data/move/shield-parry.json` and `sword-riposte.json`; the rules: `src/sim/combat/parry`.
 
+**Heavy attack.** The knight's heavy attack is on ability 1 (Y, D-pad Up, 1) while the owner settles
+the knight's layout (`DEFAULT_HEAVY_BUTTON`, mw-e04.13). Tap it for a heavy; hold it to charge: the
+windup holds, the charge is full after 1 s (ChargeReady) and swings itself at 1.5 s. Let go before
+12 ticks (0.2 s) and it is a plain heavy. While it winds up and charges the knight has hyperarmor (it
+shrugs off up to 40 poise; a harder hit staggers it and the charge is lost). Timing and numbers:
+`src/content/data/move/sword-heavy.json` and `sword-heavy-charged.json`; the rules:
+`src/sim/combat/timeline/charge.ts`.
+
+**Shield bash.** Attack while blocking bashes with the shield (mw-e04.14): hold block (LT, right
+click) and press attack (RT, left click). It is a chord on the knight's existing buttons, not a
+button of its own, so it costs no slot while the owner settles the knight's layout (the chord is
+`meleeChords` in `src/sim/player/player.ts`). The bash interrupts a foe's interruptible move (spell
+windups), breaks a shieldless guard outright, shoves things up to 60 kg and knocks breakables. With
+no shield equipped the same chord kicks instead. With the testbed bow out the attack button draws,
+so there is no bash. Timing and numbers: `src/content/data/move/shield-bash.json`; the rules:
+`src/sim/combat/melee/bash.ts`.
+
 **Bow (testbed).** Until class kits bind the archer's buttons (mw-e02.3), the testbed knight also
 carries the shortbow (mw-e05.21): ability 4 (4, D-pad Left) takes it out or puts it away; while it is
 out the attack button (left click, RT) draws instead of swinging (hold to draw, let go to loose) and
@@ -62,6 +80,14 @@ along your look; quest items cannot be dropped or thrown. To drop or throw a par
 the inventory (I, View; mw-e17.10), pick the item and choose Drop or Throw. That is also how the pad
 drops and throws, so those actions have no pad button. The inventory screen pauses the game; I or
 View closes it again, as do Esc and B.
+
+**Pause.** Esc or P (Menu on the pad) opens the pause menu while you play (mw-e01.3): Resume,
+Settings, Save, Load and Quit to Title, with the game stopped behind it. The browser also ends
+pointer lock on Esc, and losing the lock while playing pauses too (alt-tab does the same). Menus
+stack: with another screen open (the inventory, a chest, the options) Esc and B close that screen
+first, and only with nothing open does Esc pause. In the menu, P or Menu resumes, as do Esc, B and
+Resume. Up and down (arrows, d-pad, left stick) move between the options and Enter or A picks one.
+After resuming, click the game to take the mouse again; the pad plays at once.
 
 **Quick slots.** Four quick slots use consumables without a menu (mw-e17.6): drink a draught, throw
 an oil flask. They have no default buttons yet: 1–4 and the d-pad are the
@@ -124,8 +150,8 @@ Keyboard movement is not quantised (its values are the exact constants 0, ±1 an
 The pad is polled once per sim tick (`src/game/input/gamepad-dom.ts`); the first connected pad with the
 standard mapping is used. It needs no click or pointer lock, only page focus; without focus it reads
 idle. When the pad being read disconnects, the next frame releases every action the pad held and, per
-`GamepadSettings.pauseOnDisconnect` (default on), taps the `pause` action. The pause screen that
-answers it is mw-e01.3; until then the testbed says "Controller disconnected".
+`GamepadSettings.pauseOnDisconnect` (default on), taps the `pause` action, which opens the pause
+menu (mw-e01.3) while the player is in play; the controls hint also says "Controller disconnected".
 
 ## Persisting bindings
 

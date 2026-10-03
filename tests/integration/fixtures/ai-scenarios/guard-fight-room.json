@@ -1,0 +1,34 @@
+{
+  "id": "guard-fight-room",
+  "description": "The grey-box fight room (mw-e11.13 AC-4): a lit 12 × 12 m room. The player stands in the middle; two fixture guards stand at their posts 4 m off to either side of the far wall, facing the player, close enough to see the player at once in the torchlight.",
+  "walls": [
+    { "min": [-6.5, 0, -6.5], "max": [6.5, 3, -6] },
+    { "min": [-6.5, 0, 6], "max": [6.5, 3, 6.5] },
+    { "min": [-6.5, 0, -6], "max": [-6, 3, 6] },
+    { "min": [6, 0, -6], "max": [6.5, 3, 6] }
+  ],
+  "light": {
+    "ambient": 0.3,
+    "lights": [
+      { "id": "torch-north", "at": [0, 2.5, 5.5], "intensity": 250, "radius": 14 },
+      { "id": "torch-south", "at": [0, 2.5, -5.5], "intensity": 250, "radius": 14 }
+    ]
+  },
+  "player": { "at": [0, 0, 0], "yaw": 0 },
+  "fixtures": [
+    {
+      "id": "west",
+      "creature": "fixture-guard",
+      "at": [-3, 0, 4],
+      "yaw": 143,
+      "patrol": [[-3, 0, 4]]
+    },
+    {
+      "id": "east",
+      "creature": "fixture-guard",
+      "at": [3, 0, 4],
+      "yaw": 217,
+      "patrol": [[3, 0, 4]]
+    }
+  ]
+}

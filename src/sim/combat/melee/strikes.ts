@@ -14,14 +14,17 @@
 //   (guard.ts) and the parry rule (combat/parry) meet it — then reported as MoveStruck with its result
 //   (the creature attack executor adds an attack's extra packets from there, mw-e04.20).
 //
-// Hitbox ids are move ids, so the knight's `sword-light-2` is also the hitbox that struck.
+// Hitbox ids are move ids, so the knight's `sword-light-2` is also the hitbox that struck. A charged
+// move released part-way (mw-e04.13) strikes with its damage and world impact lerped by its charge
+// level (`effectiveMove`), so a half-charged heavy hits between a heavy and a full charge.
 //
 // World impact (mw-e03.11): a move with a `worldImpact` also strikes the world through the one
 // stimulus API when it enters its active phase: its hitbox, placed at the middle of the swing, applies
 // one stimulus per kind of hit it lists (blunt, slash, pierce J; force N·s along the swing's facing),
-// attributed to the attacker, with no falloff. Whatever the shape reaches reacts by its own
-// properties — an old wall weak to blunt crumbles under the knight's heavy overhead — and no code
-// here knows what a wall is.
+// attributed to the attacker, with no falloff, sparing the attacker itself. Whatever the shape reaches
+// reacts by its own properties — an old wall weak to blunt crumbles under the knight's heavy overhead
+// — and no code here knows what a wall is. A shove with a `maxWeight` (the shield bash's 60 kg,
+// mw-e04.14) moves only things that light; heavier ones resist it (the stimulus's ImpactResisted).
 
 import type { MoveTable, RuntimeMove } from '@content/index';
 import type { EntityId } from '../../core/component';
@@ -45,6 +48,7 @@ import {
   moveTrack,
   type SocketTrackLookup,
 } from '../hits/system';
+import { effectiveMove } from '../timeline/charge';
 import { ActionEnded, ActionPhaseChanged } from '../timeline/events';
 import { facingOf } from './components';
 import { MoveStruck } from './events';
@@ -78,7 +82,7 @@ export function installMeleeStrikes<TInput>(
       const track = moveTrack(move, tracks);
       const facing = facingOf(w, entity);
       openHitbox(w, entity, hitboxFromMove(move, track, facing));
-      strikeWorld(w, entity, move, track, facing);
+      strikeWorld(w, entity, effectiveMove(w, moves, entity, move), track, facing);
     }),
     world.events.on(ActionEnded, ({ entity, move, reason }) => {
       if (reason !== 'completed' && w.has(entity, HitboxComponent)) {
@@ -86,9 +90,12 @@ export function installMeleeStrikes<TInput>(
       }
     }),
     world.events.on(HitboxHit, (hit) => {
-      const move = moves.get(hit.hitbox);
-      const template = move?.damage;
-      if (move === undefined || template == null) return;
+      const listed = moves.get(hit.hitbox);
+      if (listed === undefined) return;
+      // A released charge (mw-e04.13) hits with its numbers lerped by its charge level.
+      const move = effectiveMove(w, moves, hit.attacker, listed);
+      const template = move.damage;
+      if (template === null) return;
       const tags = [
         ...template.tags,
         ...(move.unblockable ? [DAMAGE_TAGS.unblockable] : []),
@@ -143,7 +150,9 @@ export function strikeWorld(
       intensity,
       falloff: 'none',
       source: attacker,
+      sparesSource: true,
       ...(element === 'force' && { direction: facing }),
+      ...(element === 'force' && impact.maxWeight !== undefined && { maxWeight: impact.maxWeight }),
     });
     if (applied) queued += 1;
   }

@@ -26,12 +26,19 @@
         "x-contentRef": "class"
       },
       "description": "The classes the class select screen lets the player confirm; the rest show locked (mw-e01.15)."
+    },
+    "startScene": {
+      "description": "The scene a new game starts in and the title screen shows behind it (mw-e01.2).",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "x-contentRef": "scene"
     }
   },
   "required": [
     "id",
     "notes",
-    "playableClasses"
+    "playableClasses",
+    "startScene"
   ],
   "additionalProperties": false
 }

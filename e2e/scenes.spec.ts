@@ -117,9 +117,18 @@ test('mw-e03.39 AC-6: the testbed spawns its movable props as physics objects wi
   expect(problems).toEqual([]);
 });
 
-test('the default scene (no ?scene=) is the testbed', async ({ page }) => {
+test('no ?scene= boots the start scene (game.startScene: the slice) behind the title (mw-e01.2)', async ({
+  page,
+}) => {
   await page.goto('/');
-  await expect(page.locator('#app')).toHaveAttribute('data-scene', 'testbed');
+  await expect(page.locator('#app')).toHaveAttribute('data-scene', 'slice', { timeout: 30_000 });
+  await expect(page.locator('[data-screen="title"]')).toBeVisible();
+});
+
+test('?scene=testbed still boots the testbed, with no title', async ({ page }) => {
+  await page.goto('/?scene=testbed');
+  await expect(page.locator('#app')).toHaveAttribute('data-scene', 'testbed', { timeout: 30_000 });
+  await expect(page.locator('[data-screen]')).toHaveCount(0);
 });
 
 for (const scene of SCENES) {

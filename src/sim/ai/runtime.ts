@@ -21,6 +21,16 @@
 // `postAlertAwarenessRate` times faster, awareness.ts); standing down from a calmer state leaves a
 // running window alone. The window is cleared by the first think after it ends.
 //
+// Staggered (mw-e11.13, combat.ts `isStaggered`): an agent whose action timeline is locked by a hit
+// reaction, guard break or Parried stun, or that plays a stagger or worse, does nothing. Its alert
+// machine still moves, but it chooses no activity, and its running activity is dropped (its swing,
+// if any, the stagger has already broken off). Once the stagger ends its next think chooses afresh.
+//
+// Leashes (mw-e01.17, leash.ts): before anyone thinks, every tick, a leashed agent in Combat beyond
+// its radius drops its target and moves to Searching (cause `leash`), whether or not it is due to
+// think; it searches for its `leashSearchS` and then takes Searching's timeout. A leashed agent
+// takes no transition into Combat while it believes its target is beyond its leash.
+//
 // All brain state is plain data in `ai.brain`. A despawned agent's brain leaves with it at the end
 // of the tick, so from then on nothing runs for it; an agent whose behaviour this world does not
 // know is skipped.
@@ -30,6 +40,7 @@ import type { AttackLookup } from '../combat/attacks/executor';
 import type { EntityId } from '../core/component';
 import type { System, World } from '../core/world';
 import { CreatureComponent } from '../creatures/components';
+import { PlacementComponent } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import {
   scoreActivity,
@@ -38,7 +49,10 @@ import {
   type CompiledBehaviour,
   type CompiledState,
 } from './behaviour';
+import { DEFAULT_ATTACK_TOKENS, isStaggered } from './combat';
 import { AlertStateChanged, BrainComponent, type Blackboard, type Brain } from './components';
+import { leashAllows, leashBroken } from './leash';
+import { DEFAULT_MEMORY_TUNING, type MemoryTuning } from './memory';
 import { straightLineNavigation, type AiNavigation } from './navigation';
 import type { StepRunner } from './primitives';
 import { at, getIf, got } from './util';
@@ -59,6 +73,13 @@ export interface AiOptions {
    * without it windows are not read and every creature walks the first route of its routine.
    */
   readonly hourOfDay?: (world: World<never>) => number;
+  /** How target memory decays and predicts (mw-e11.8); defaults to `DEFAULT_MEMORY_TUNING`. */
+  readonly memory?: MemoryTuning;
+  /**
+   * How many creatures may attack one target at once (mw-e11.13, a whole number ≥ 1); defaults to
+   * `DEFAULT_ATTACK_TOKENS` (2).
+   */
+  readonly attackTokens?: number;
 }
 
 interface AiRuntime {
@@ -110,6 +131,7 @@ function enter(view: AgentView, from: CompiledState, to: AlertState, cause: stri
   brain.step = 0;
   brain.stepData = [];
   brain.retry = [];
+  delete brain.leashSearchUntil;
   view.world.events.emit(AlertStateChanged, {
     tick: view.tick,
     entity: view.entity,
@@ -130,11 +152,16 @@ function think(view: AgentView, behaviour: CompiledBehaviour): void {
   const state = got(behaviour.states, brain.state);
   let next: AlertState | null = null;
   let cause = '';
-  if (state.timeout !== null && timeoutClock(view, state) >= ticks(state.timeout(view), view.hz)) {
+  const leashSearch = brain.leashSearchUntil;
+  if (
+    (state.timeout !== null && timeoutClock(view, state) >= ticks(state.timeout(view), view.hz)) ||
+    (leashSearch !== undefined && state.onTimeout !== null && tick >= leashSearch)
+  ) {
     next = state.onTimeout;
     cause = 'timeout';
   } else {
     for (const t of state.transitions) {
+      if (t.to === 'combat' && !leashAllows(view)) continue;
       if (t.test(view)) {
         next = t.to;
         cause = t.cause;
@@ -145,6 +172,7 @@ function think(view: AgentView, behaviour: CompiledBehaviour): void {
   brain.ended = null;
   brain.events = [];
   if (next !== null) enter(view, state, next, cause);
+  if (isStaggered(view.world, view.entity)) return;
 
   const current = brain.activity === null ? undefined : behaviour.activities.get(brain.activity);
   if (current !== undefined && !current.interruptible) return;
@@ -170,10 +198,37 @@ function think(view: AgentView, behaviour: CompiledBehaviour): void {
   begin(view, best);
 }
 
+/**
+ * Breaks the agent's leash when it should (leash.ts): it drops its target, forgets its awareness of
+ * it, takes the leash edge as its last-known position and enters Searching for `leashSearchS`.
+ */
+function checkLeash(view: AgentView, behaviour: CompiledBehaviour): void {
+  if (!leashBroken(view, behaviour)) return;
+  const brain = view.brain;
+  const board = brain.blackboard;
+  const source = board.targetSource;
+  if (source !== null) brain.awareness = brain.awareness.filter((r) => r.source !== source);
+  const here = getIf(view.world, view.entity, PlacementComponent) as Vec3; // measured just now
+  board.target = null;
+  board.targetSource = null;
+  board.targetVisible = false;
+  board.stimulus = null;
+  board.awareness = brain.awareness.reduce((top, r) => Math.max(top, r.level), 0);
+  board.lkp = { x: here.x, y: here.y, z: here.z };
+  enter(view, got(behaviour.states, 'combat'), 'searching', 'leash');
+  brain.leashSearchUntil = view.tick + ticks(behaviour.leashSearch(view), view.hz);
+}
+
 /** Phase 2 for one agent (see the file header). */
 function act(view: AgentView, behaviour: CompiledBehaviour): void {
   const brain = view.brain;
   if (brain.activity === null) return;
+  if (isStaggered(view.world, view.entity)) {
+    brain.activity = null;
+    brain.step = 0;
+    brain.stepData = [];
+    return;
+  }
   const activity = got(behaviour.activities, brain.activity);
   for (;;) {
     const status = at(activity.steps, brain.step).update(view);
@@ -225,6 +280,10 @@ function aiSystem<TInput>(runtime: AiRuntime): System<TInput> {
       const due = (entity: EntityId, behaviour: CompiledBehaviour): boolean =>
         (ctx.tick + entity) % thinkPeriod(behaviour, hz) === 0;
 
+      brains.forEach((entity, brain) => {
+        const behaviour = focus(entity, brain);
+        if (behaviour !== undefined) checkLeash(view, behaviour);
+      });
       let budget = runtime.maxThinks;
       // Owed thinks first (only a budget creates them), longest-waiting first, then agents due now.
       if (budget !== Infinity) {
@@ -270,6 +329,10 @@ export function installAi<TInput>(world: World<TInput>, options: AiOptions): voi
   if (runtimes.has(w)) throw new Error('AI is already installed in this world');
   const maxThinks = options.maxThinksPerTick ?? Infinity;
   if (!(maxThinks >= 1)) throw new RangeError('maxThinksPerTick must be at least 1');
+  const attackTokens = options.attackTokens ?? DEFAULT_ATTACK_TOKENS;
+  if (!(Number.isInteger(attackTokens) && attackTokens >= 1)) {
+    throw new RangeError('attackTokens must be a whole number of at least 1');
+  }
   if (!world.isRegistered(BrainComponent)) world.register(BrainComponent);
   const runtime: AiRuntime = {
     behaviours: options.behaviours,
@@ -277,6 +340,8 @@ export function installAi<TInput>(world: World<TInput>, options: AiOptions): voi
       navigation: options.navigation ?? straightLineNavigation,
       attacks: options.attacks,
       hourOfDay: options.hourOfDay,
+      memory: options.memory ?? DEFAULT_MEMORY_TUNING,
+      attackTokens,
     },
     maxThinks,
   };
@@ -292,6 +357,11 @@ export function aiBehaviour(world: World<never>, id: string): CompiledBehaviour 
 /** The ports of `world`'s AI (AI must be installed). */
 export function aiPorts(world: World<never>): AiPorts {
   return got(runtimes, world).ports;
+}
+
+/** The memory tuning of `world`'s AI (the default when AI is not installed). */
+export function memoryTuning(world: World<never>): MemoryTuning {
+  return runtimes.get(world)?.ports.memory ?? DEFAULT_MEMORY_TUNING;
 }
 
 /** What an agent's brain starts from. */
@@ -336,12 +406,14 @@ export function giveBrain(world: World<never>, entity: EntityId, spec: BrainSpec
       stimulus: null,
       stimulusTick: -1,
       target: null,
+      targetSource: null,
       targetVisible: false,
       targetSeenTick: -1,
       lkp: null,
       waypoint: 0,
     },
     awareness: [],
+    memory: [],
     postAlertUntil: -1,
     postAlertRate: 1,
     routeDir: 1,

@@ -5,11 +5,25 @@
 //   behaviour profile and tuning (read by AI, e11) and its current need levels (e12.12).
 // - `creature.senses`: its resolved sense profile (perception, e11).
 // - `creature.nav`: its nav agent, derived from its locomotion (navigation, e12.6).
+// - `creature.condition`: its morale and whether it is knocked out (./condition.ts, mw-e12.14).
 
 import type { Frozen, NavAgent, SenseProfile } from '@content/index';
 import { defineComponent } from '../core/component';
 import type { PatrolRoutine } from '../ai/routes';
 import type { Vec3 } from '../stimulus/shapes';
+import { CreatureConditionComponent } from './condition';
+
+/**
+ * How far a creature may chase from its post (mw-e01.17, src/sim/ai/leash.ts): in Combat, past
+ * `radius` metres from `post` (measured on the level) it drops its target, searches at the leash edge
+ * and walks home.
+ */
+export interface CreatureLeash {
+  /** Metres. */
+  readonly radius: number;
+  /** World metres. */
+  readonly post: Vec3;
+}
 
 /** Where and how a creature was spawned: enough to spawn it again (`respawnCreature`). */
 export interface CreatureOrigin {
@@ -27,6 +41,8 @@ export interface CreatureOrigin {
   readonly patrol?: readonly Vec3[];
   /** The routes it walks, each in its window of hours (mw-e11.9); absent = none. */
   readonly routine?: readonly PatrolRoutine[];
+  /** Its leash (mw-e01.17); absent = it chases as far as it likes. */
+  readonly leash?: CreatureLeash;
 }
 
 /** A spawned creature. */
@@ -54,4 +70,5 @@ export const CREATURE_COMPONENTS = Object.freeze([
   CreatureComponent,
   CreatureSensesComponent,
   CreatureNavComponent,
+  CreatureConditionComponent,
 ] as const);

@@ -237,6 +237,36 @@ describe('scene layout (mw-e00.21)', () => {
     );
   });
 
+  it('mw-e01.17: lays out a creature’s leash in metres, its post defaulting to the spawn point', () => {
+    const scene: SceneSpec = {
+      ...TEST_SCENE,
+      grid: 2,
+      spawns: [
+        {
+          id: 'skeleton',
+          at: [1, 0, 3],
+          yaw: 180,
+          tags: [],
+          creature: { id: 'forgotten-miner' },
+          leash: { radius: 25 },
+        },
+        {
+          id: 'warden',
+          at: [0, 0, 0],
+          yaw: 0,
+          tags: [],
+          creature: { id: 'forgotten-miner' },
+          leash: { radius: 8, post: [2, 0, 1] },
+        },
+      ],
+    };
+    const [skeleton, warden] = layoutScene(scene, testKit).spawns;
+    expect(skeleton?.leash).toEqual({ radius: 25, post: { x: 2, y: 0, z: 6 } });
+    expect(warden?.leash).toEqual({ radius: 8, post: { x: 4, y: 0, z: 2 } });
+    expect(Object.isFrozen(skeleton?.leash)).toBe(true);
+    expect(layoutScene(TEST_SCENE, testKit).spawns.every((s) => s.leash === undefined)).toBe(true);
+  });
+
   it('mw-e11.9: throws for a route naming an unknown waypoint, a link off the route or an unknown route', () => {
     const base: SceneSpec = {
       ...TEST_SCENE,

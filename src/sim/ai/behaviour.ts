@@ -14,6 +14,7 @@ import type {
   Tunable,
 } from '@content/index';
 import { resolveInput, type InputFn } from './inputs';
+import { DEFAULT_LEASH_SEARCH_S } from './leash';
 import { compileStep, isPrimitive, type StepRunner } from './primitives';
 import { at } from './util';
 import type { AgentView, Num } from './view';
@@ -25,6 +26,9 @@ export class BehaviourError extends Error {
 
 /** A response curve as a function (output 0–1). */
 export type Curve = (x: number) => number;
+
+/** The tuning key of how long a leashed agent searches at its leash edge (mw-e01.17). */
+const LEASH_SEARCH_KEY = 'leashSearchS';
 
 const clamp01 = (x: number): number => (x <= 0 ? 0 : x >= 1 ? 1 : x);
 
@@ -101,6 +105,10 @@ export interface CompiledBehaviour {
   readonly tuning: Readonly<Record<string, number>>;
   readonly states: ReadonlyMap<AlertState, CompiledState>;
   readonly activities: ReadonlyMap<string, CompiledActivity>;
+  /** Its table lists Combat → Searching, the move a leash takes (mw-e01.17, leash.ts). */
+  readonly leashMove: boolean;
+  /** Seconds a leashed agent searches at its leash edge (tuning `leashSearchS`). */
+  readonly leashSearch: Num;
 }
 
 /** One move of the alert machine, `from>to`. */
@@ -223,6 +231,8 @@ export function compileBehaviour(def: Frozen<BehaviourDef>): CompiledBehaviour {
       activities: s.activities.map((a) => activity(where, a)),
     });
   }
+  const combat = states.get('combat');
+  const leashFallback = def.tuning[LEASH_SEARCH_KEY] ?? DEFAULT_LEASH_SEARCH_S;
   return {
     id: def.id,
     thinkHz: def.thinkHz,
@@ -231,6 +241,10 @@ export function compileBehaviour(def: Frozen<BehaviourDef>): CompiledBehaviour {
     tuning: def.tuning,
     states,
     activities,
+    leashMove:
+      combat !== undefined &&
+      (combat.onTimeout === 'searching' || combat.transitions.some((t) => t.to === 'searching')),
+    leashSearch: (v) => v.creature?.tuning[LEASH_SEARCH_KEY] ?? leashFallback,
   };
 }
 

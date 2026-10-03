@@ -42,3 +42,11 @@ export function createUiGameBridge<TCommand>(
     },
   };
 }
+
+export {
+  PAUSE_QUIT_TEXT,
+  PauseController,
+  SaveProgress,
+  type PauseControllerOptions,
+  type PauseKey,
+} from './pause';

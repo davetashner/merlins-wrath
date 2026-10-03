@@ -5,6 +5,9 @@
 // facing to the direction of travel. A navmesh-backed port replaces it without touching behaviours.
 // A port may also measure how far away a point is by its paths (`distance`), which patrol routines
 // use to pick the nearest waypoint (mw-e11.9); without it the straight line is the measure.
+// A port may also approach (mw-e11.13): travel that, for a goal it cannot reach, walks to the
+// reachable point closest to it and says `unreachable` instead of failing, so a fighter whose target
+// stands on a ledge waits below it; without it travel stands in, and its failure means unreachable.
 
 import type { EntityId } from '../core/component';
 import type { World } from '../core/world';
@@ -15,6 +18,9 @@ import { getIf } from './util';
 
 /** A step's progress (ADR-0005 §4). */
 export type AiStatus = 'running' | 'success' | 'failure';
+
+/** How an approach is going: as travel, or `unreachable` (as close as it can get, or on its way). */
+export type ApproachStatus = AiStatus | 'unreachable';
 
 /** One tick of travel toward a goal. */
 export interface TravelRequest {
@@ -39,6 +45,28 @@ export interface AiNavigation {
    * the straight-line distance stands in.
    */
   readonly distance?: (world: World<never>, entity: EntityId, goal: Vec3) => number;
+  /**
+   * Like `travel`, but a goal it cannot reach is no failure: `entity` walks toward the reachable
+   * point closest to it, answering `unreachable` on the way and once there. Failure means it cannot
+   * move at all. Optional (see the file header).
+   */
+  readonly approach?: (
+    world: World<never>,
+    entity: EntityId,
+    request: TravelRequest,
+  ) => ApproachStatus;
+}
+
+/** One tick of `navigation`'s approach toward `request.goal` (travel when it has no approach). */
+export function approach(
+  navigation: AiNavigation,
+  world: World<never>,
+  entity: EntityId,
+  request: TravelRequest,
+): ApproachStatus {
+  if (navigation.approach !== undefined) return navigation.approach(world, entity, request);
+  const status = navigation.travel(world, entity, request);
+  return status === 'failure' ? 'unreachable' : status;
 }
 
 /** Horizontal straight-line metres from `entity` to `goal` (Infinity without a placement). */

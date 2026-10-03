@@ -52,3 +52,35 @@ export interface ActionEndInfo extends ActionEventBase {
 
 /** A move finished its recovery, was cancelled into another move, or was interrupted. */
 export const ActionEnded = defineEvent<ActionEndInfo>('ActionEnded');
+
+/** Payload of ChargeReady. */
+export interface ChargeReadyInfo extends ActionEventBase {
+  /** The charged move a release would swing at full charge. */
+  readonly charged: string;
+  /** Ticks held (the charged move's fullHoldTicks). */
+  readonly held: number;
+}
+
+/**
+ * A held charge reached full charge (mw-e04.13): emitted once per charge, on the tick the hold reaches
+ * the charged move's fullHoldTicks. `move` is the move being held (the uncharged heavy).
+ */
+export const ChargeReady = defineEvent<ChargeReadyInfo>('ChargeReady');
+
+/** Payload of ChargeReleased. */
+export interface ChargeReleaseInfo extends ActionEventBase {
+  /** The move the swing plays on as: the charged move, or the uncharged one for a short hold. */
+  readonly released: string;
+  /** Ticks held. */
+  readonly held: number;
+  /** Charge level 0–1, or null when the hold was too short to charge (a normal heavy). */
+  readonly charge: number | null;
+  /** Released by itself at autoReleaseTicks rather than let go. */
+  readonly auto: boolean;
+}
+
+/**
+ * A held charge was let go, or released itself (mw-e04.13): the windup plays on from this tick as
+ * `released`. `move` is the move that was held.
+ */
+export const ChargeReleased = defineEvent<ChargeReleaseInfo>('ChargeReleased');

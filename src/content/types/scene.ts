@@ -11,7 +11,8 @@
 // a look direction, a scan arc and an idle cue) and its `routes` over them (loop, ping-pong,
 // random-weighted graph, or a guard post), and a creature spawn's `routine` lists the routes it
 // walks, each in an optional window of hours. Every name is checked within the scene, like signal
-// bindings: a route naming a waypoint the scene does not have fails validation.
+// bindings: a route naming a waypoint the scene does not have fails validation. A creature spawn's
+// `leash` (mw-e01.17) ties it to a post: a radius in metres around a point (default its spawn).
 
 import { z } from 'zod';
 import { contentId, ref } from '../schema.ts';
@@ -287,6 +288,20 @@ export const scenePlacementSchema = z.strictObject({
     .describe('Makes the piece breakable, e.g. a cracked wall the knight can smash (mw-e03.11).'),
 });
 
+/**
+ * A creature's leash (mw-e01.17): how far from its post it may chase in Combat. Past the radius it
+ * drops its target, searches at the leash edge and walks back to the post, keeping its wounds.
+ */
+export const sceneLeashSchema = z
+  .strictObject({
+    radius: z
+      .number()
+      .positive()
+      .describe('Metres from the post, measured on the level, past which a chase ends.'),
+    post: gridPosition.optional().describe('The post, grid cells; absent = the spawn point.'),
+  })
+  .describe('Leash: radius in metres around a post (default the spawn point).');
+
 export const sceneSpawnSchema = z.strictObject({
   id: contentId.describe('Name of the spawn, unique in the scene (e.g. player-start).'),
   at: gridPosition,
@@ -332,6 +347,11 @@ export const sceneSpawnSchema = z.strictObject({
     .optional()
     .describe(
       'Routes the spawned creature walks (mw-e11.9): the first whose window holds the hour runs (needs creature; not with patrol).',
+    ),
+  leash: sceneLeashSchema
+    .optional()
+    .describe(
+      'Ties the spawned creature to a post (mw-e01.17): in Combat it chases only this far from the post, then searches and walks home (needs creature).',
     ),
   properties: worldPropertiesSchema
     .optional()
@@ -502,7 +522,7 @@ export const sceneSchema = z
       seen.add(spawn.id);
       checkMechanism(spawn, index, ctx);
       if (spawn.creature !== undefined) return;
-      for (const key of ['faction', 'patrol', 'routine'] as const) {
+      for (const key of ['faction', 'patrol', 'routine', 'leash'] as const) {
         if (spawn[key] === undefined) continue;
         ctx.addIssue({
           code: 'custom',

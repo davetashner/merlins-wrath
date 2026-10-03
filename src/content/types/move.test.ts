@@ -95,7 +95,10 @@ describeContent('move', 'AC-1: passes the schema and has a runtime form', (move,
   expect(runtime.totalTicks).toBe(move.frames.startup + move.frames.active + move.frames.recovery);
   if (move.chainNext !== undefined) expect(content.resolve(move.chainNext).verb).toBe(move.verb);
   if (move.charge !== undefined) {
-    expect(content.resolve(move.charge.from).staminaCost).toBeLessThan(move.staminaCost);
+    const from = content.resolve(move.charge.from);
+    expect(from.staminaCost).toBeLessThan(move.staminaCost);
+    // The charge only holds the windup: the swing it releases has the uncharged move's frames.
+    expect(from.frames).toEqual(move.frames);
   }
 });
 
@@ -262,6 +265,15 @@ describe('move schema', () => {
     expect(problems({ ...swing, worldImpact: { fire: 10 } })).toEqual([
       'worldImpact: Unrecognized key: "fire"',
     ]);
+    // mw-e04.14: a shove may carry a weight limit; a limit needs a shove.
+    const bash = compileMove(
+      moveSchema.parse({ ...swing, worldImpact: { force: 150, maxWeight: 60 } }),
+    );
+    expect(bash.worldImpact).toEqual({ force: 150, maxWeight: 60 });
+    expect(problems({ ...swing, worldImpact: { blunt: 60, maxWeight: 60 } })).toEqual([
+      'worldImpact.maxWeight: move "fixture-swing": a weight limit needs a force to limit',
+    ]);
+    expect(problems({ ...swing, worldImpact: { force: 150, maxWeight: 0 } })).toHaveLength(1);
     const heavy = compileMoves(loadGameContent().all('move')).get('sword-heavy');
     expect(heavy?.worldImpact).toEqual({ blunt: 150 });
   });
@@ -272,6 +284,7 @@ describe('move schema', () => {
       minHoldTicks: 12,
       fullHoldTicks: 60,
       autoReleaseTicks: 90,
+      holdTick: 10,
     };
     const runtime = compileMove(entry({ ...swing, id: 'charged', charge }));
     expect(runtime.charge).toEqual(charge);
@@ -336,7 +349,13 @@ describe('move schema', () => {
       {
         ...swing,
         id: 'charged',
-        charge: { from: 'no-such-heavy', minHoldTicks: 0, fullHoldTicks: 1, autoReleaseTicks: 1 },
+        charge: {
+          from: 'no-such-heavy',
+          minHoldTicks: 0,
+          fullHoldTicks: 1,
+          autoReleaseTicks: 1,
+          holdTick: 0,
+        },
       },
     );
     expect(issues).toEqual([
@@ -503,11 +522,13 @@ describe('move schema', () => {
       minHoldTicks: 61,
       fullHoldTicks: 60,
       autoReleaseTicks: 59,
+      holdTick: 12,
     };
     expect(problems({ ...swing, charge })).toEqual([
       'charge.from: move "fixture-swing": cannot be the move itself',
       'charge.minHoldTicks: move "fixture-swing": must be at most fullHoldTicks',
       'charge.fullHoldTicks: move "fixture-swing": must be at most autoReleaseTicks',
+      'charge.holdTick: move "fixture-swing": holdTick (12) must come before the first active tick (12)',
     ]);
   });
 

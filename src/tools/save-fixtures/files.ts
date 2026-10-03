@@ -5,7 +5,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { SaveRegistry } from '@game/save/format';
-import { replayScenarios } from '@sim/index';
 import {
   createFixture,
   FIXTURE_WORLDS,
@@ -16,6 +15,7 @@ import {
   type LoadedFixture,
   type ScenarioRegistry,
 } from './fixtures';
+import { FIXTURE_SCENARIOS } from './scenarios';
 import {
   checkSchemaLock,
   matchesLatest,
@@ -74,7 +74,7 @@ export function loadFixtureFile(
   root: string,
   path: string,
   registry: SaveRegistry,
-  scenarios: ScenarioRegistry = replayScenarios,
+  scenarios: ScenarioRegistry = FIXTURE_SCENARIOS,
 ): LoadedFixture {
   let fixture;
   try {
@@ -107,7 +107,7 @@ export function generateSaveFixtures(
   root: string,
   registry: SaveRegistry,
   worlds: readonly FixtureWorld[] = FIXTURE_WORLDS,
-  scenarios: ScenarioRegistry = replayScenarios,
+  scenarios: ScenarioRegistry = FIXTURE_SCENARIOS,
 ): GenerateOutcome {
   const problems = checkSaveFixtures(root, registry);
   const blocking = problems.filter((problem) => REFUSE.has(problem.kind));

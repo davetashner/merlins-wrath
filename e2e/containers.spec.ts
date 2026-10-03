@@ -3,7 +3,8 @@ import { stubPointerLock, takeControl, turnTo } from './helpers/player';
 
 // mw-e18.3 AC-5: the testbed's supply chest, looted, saved and reloaded against the production build
 // (Chromium). The player walks up to the chest and Interacts: its loot table is rolled on this first
-// open and everything in it goes into the pack (there is no container window yet, mw-e18.4). The game
+// open, and the container window's Take All (focused when it opens, mw-e18.4) puts everything in the
+// pack. The game
 // saves with the debug console and the tab closes; a new tab opens the testbed, where the chest is as
 // built (never opened), the player dies (`kill`) and loads the save from the death screen. The chest
 // comes back opened and empty: its Search is greyed "Empty", and Interact rolls nothing more.
@@ -90,10 +91,12 @@ test('AC-5: loot the testbed chest, save, close the tab, load the save: the ches
   await takeControl(first);
   await walkUpToTheChest(first);
 
-  // One Interact opens the chest (rolling its table) and takes everything.
+  // Interact opens the chest (rolling its table); Enter presses the window's Take All.
   const prompt = first.getByTestId('interact-prompt');
   await expect(prompt).toContainText('Search');
   await first.keyboard.press('KeyE');
+  await expect(first.locator('#app')).toHaveAttribute('data-container-window', 'open');
+  await first.keyboard.press('Enter');
   await expect.poll(() => chest(first)).toEqual({ opened: true, items: [], gold: 0 });
   // The supply crate always holds a healing draught.
   await expect

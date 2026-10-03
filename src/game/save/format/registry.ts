@@ -6,7 +6,13 @@
 // rolled back to exactly its prior state. Sections from a newer build that this build does not know
 // are kept verbatim so re-saving never destroys them.
 
-import { DIFFICULTY_KEYS, type FactSnapshot, type World, type WorldSnapshot } from '@sim/index';
+import {
+  DIFFICULTY_KEYS,
+  type ComponentType,
+  type FactSnapshot,
+  type World,
+  type WorldSnapshot,
+} from '@sim/index';
 import { z } from 'zod';
 import { decodeSave, encodeSave, type BuildInfo, type SaveEnvelope } from './envelope';
 import { SaveApplyError, SaveCorruptError, type SaveLoadError } from './errors';
@@ -30,9 +36,12 @@ export const WORLD_SECTION_ID = 'world';
  * (mw-e27.4): when a section owns facts (`ownsFacts`), the world section no longer holds them. The
  * shape is unchanged, so the migration is the identity: an older save's facts stay here and the
  * owning section reads them (`SectionLoadContext.worldFacts`); the bump keeps older builds from
- * loading a save whose facts they would not find.
+ * loading a save whose facts they would not find. v5 (mw-e12.14): the same for creatures, whose
+ * runtime state (creature, condition, brain and perception components) the `creatures` section now
+ * holds; an older save's creatures stay here (identity migration) and that section's `missing` hook
+ * upgrades them.
  */
-export const WORLD_SECTION_VERSION = 4;
+export const WORLD_SECTION_VERSION = 5;
 
 const worldSnapshotSchema = z.strictObject({
   seed: z.number(),
@@ -101,6 +110,16 @@ export interface WriteSaveOptions {
   readonly preserve?: Readonly<Record<string, SectionRecord>>;
 }
 
+/** How a registry treats worlds. */
+export interface SaveRegistryOptions {
+  /**
+   * Component types a world registers only on first use (a class applied mid-game registers the
+   * player's class and stats then). A save holding rows of one registers it before the world is
+   * restored, so the save loads into a freshly built world that has not used it yet (mw-e01.7).
+   */
+  readonly onDemand?: readonly ComponentType<unknown>[];
+}
+
 /** Sections that make up a save, in apply order (the world section first). */
 export class SaveRegistry {
   private readonly ordered: SaveSection[];
@@ -110,13 +129,14 @@ export class SaveRegistry {
   /** Id of the section that saves the world's facts, if any. */
   private factsOwner: string | undefined;
 
-  constructor() {
+  constructor(options: SaveRegistryOptions = {}) {
+    const onDemand = options.onDemand ?? [];
     this.ordered = [
       defineSaveSection<WorldSnapshot>({
         id: WORLD_SECTION_ID,
         version: WORLD_SECTION_VERSION,
         schema: worldSnapshotSchema,
-        migrations: { 1: (data) => data, 2: (data) => data, 3: (data) => data },
+        migrations: { 1: (data) => data, 2: (data) => data, 3: (data) => data, 4: (data) => data },
         serialize: (world) => {
           const { facts, ...snapshot } = world.snapshot();
           const components = Object.fromEntries(
@@ -126,6 +146,9 @@ export class SaveRegistry {
           return { ...snapshot, ...kept, components };
         },
         deserialize: (world, { facts, ...data }) => {
+          for (const type of onDemand) {
+            if (type.name in data.components && !world.isRegistered(type)) world.register(type);
+          }
           world.restore(
             this.factsOwner === undefined && facts !== undefined ? { ...data, facts } : data,
           );

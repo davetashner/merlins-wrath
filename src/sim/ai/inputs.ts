@@ -5,8 +5,17 @@
 
 import type { BehaviourInput } from '@content/index';
 import { HealthComponent } from '../combat/damage/components';
+import { fromPost } from './leash';
 import { offRoute } from './routes';
 import { getIf } from './util';
+import {
+  believedTarget,
+  distance3,
+  hasAttackToken,
+  NO_TARGET_DISTANCE,
+  unreachableSeconds,
+} from './combat';
+import { PlacementComponent } from '../stimulus/placement';
 import type { AgentView } from './view';
 
 /** Reads one input for one agent. */
@@ -31,6 +40,18 @@ const FIXED: Readonly<Record<BehaviourInput, InputFn>> = {
   timeInState: secondsInState,
   /** Metres off the ways its route walks (routes.ts). */
   offRoute,
+  /** Metres to where it believes its target is (NO_TARGET_DISTANCE with none, combat.ts). */
+  targetDistance: (v) => {
+    const goal = believedTarget(v);
+    const here = getIf(v.world, v.entity, PlacementComponent);
+    return goal === undefined || here === undefined ? NO_TARGET_DISTANCE : distance3(here, goal);
+  },
+  /** 1 while it holds, or could take, one of its target's attack tokens (combat.ts). */
+  attackToken: (v) => (hasAttackToken(v) ? 1 : 0),
+  /** Seconds its target has been out of its reach (combat.ts). */
+  targetUnreachableS: unreachableSeconds,
+  /** Metres on the level from its leash post (0 without a leash, leash.ts). */
+  fromPost,
 };
 
 /** The accessor of input `name`, or undefined when there is no such input. */

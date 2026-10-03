@@ -38,6 +38,12 @@
 // a knockdown's wake-up i-frames — one tick later, so a stagger struck with a 5-tick hit-stop ends,
 // and its lock runs out, on T+length+6.
 //
+// Interrupts (mw-e04.14). A hit tagged `interrupt` (the shield bash) on an entity whose move is flagged
+// interruptible (a spell windup) cancels that move whatever its phase, and whatever its hyperarmor
+// absorbed: the reaction is at least a flinch, it interrupts even a committed move, and a reaction
+// already playing does not suppress it. Blocked, parried and invulnerable hits interrupt nothing; on
+// a move that is not interruptible the tag does nothing.
+//
 // Other rules call `applyHitReaction` to force a reaction, which replaces whatever is playing.
 //
 // Blocks and guard breaks (mw-e04.31). A hit the shield blocked (tagged `blocked`, e04.6) causes no
@@ -210,6 +216,12 @@ function committed(world: World<never>, entity: EntityId, moves: MoveTable): boo
   return move !== undefined && phaseAt(move, current.tick) !== 'startup';
 }
 
+/** Whether `entity` is performing a move flagged interruptible (mw-e04.14). */
+function interruptible(world: World<never>, entity: EntityId, moves: MoveTable): boolean {
+  const current = world.get(entity, ActionTimelineComponent)?.current ?? null;
+  return current !== null && moves.get(current.move)?.interruptible === true;
+}
+
 const ZERO: Vec3 = Object.freeze({ x: 0, y: 0, z: 0 });
 const isZero = (v: Vec3): boolean => v.x === 0 && v.y === 0 && v.z === 0;
 
@@ -257,6 +269,8 @@ interface Start {
   readonly source: EntityId | null;
   /** The timeline is already locked for it (ReactionRequest.locked). */
   readonly locked: boolean;
+  /** It interrupts the entity's move even when committed (an interrupt hit, mw-e04.14). */
+  readonly interrupts?: boolean;
 }
 
 function start(
@@ -288,7 +302,9 @@ function start(
   }
   const { kind, ticks } = s;
   const hasTimeline = world.get(entity, ActionTimelineComponent) !== undefined;
-  const locked = hasTimeline && (kind !== 'flinch' || !committed(world, entity, options.moves));
+  const locked =
+    hasTimeline &&
+    (kind !== 'flinch' || s.interrupts === true || !committed(world, entity, options.moves));
   const interrupted = locked && !s.locked && interruptAction(world, entity, ticks);
   const pushes = (kind === 'knockback' || kind === 'knockdown') && !isZero(s.impulse);
   const displaced =
@@ -368,12 +384,19 @@ export function resolveHitReaction(
   };
   let { kind, suppressed } = chooseReaction(factors, state.profile);
   const playing = state.current;
+  const interrupts =
+    tags.includes(DAMAGE_TAGS.interrupt) &&
+    !factors.invulnerable &&
+    interruptible(world, entity, options.moves);
   if (tags.includes(DAMAGE_TAGS.blocked)) {
     kind = 'none';
     suppressed = 'blocked';
   } else if (tags.includes(DAMAGE_TAGS.parried)) {
     kind = 'none';
     suppressed = 'parried';
+  } else if (interrupts) {
+    if (kind === 'none') kind = 'flinch';
+    suppressed = null;
   } else if (kind !== 'none' && playing !== null && !outlasts(world, kind, playing)) {
     kind = 'none';
     suppressed = 'weaker';
@@ -387,6 +410,7 @@ export function resolveHitReaction(
     instigator: packet.instigator,
     source: packet.source,
     locked: false,
+    interrupts,
   });
 }
 

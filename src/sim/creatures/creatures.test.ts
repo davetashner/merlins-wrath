@@ -26,7 +26,10 @@ import { CreatureComponent, CreatureNavComponent, CreatureSensesComponent } from
 import {
   creatureEntities,
   creatureLockProfile,
+  checkCreatureSpawn,
   creatureSpawners,
+  MAX_PATROL_POINTS,
+  parsePatrolParam,
   creaturesInstalled,
   despawnAllCreatures,
   despawnCreature,
@@ -390,6 +393,7 @@ describe('creature spawner (mw-e12.4)', () => {
       spawn({ id: 'gate', creature: 'guard', yaw: 180, faction: 'bandits', patrol: route }),
       spawn({ id: 'nest', creature: 'wyvern' }),
       spawn({ id: 'yard', creature: 'hound', routine }),
+      spawn({ id: 'post', creature: 'hound', leash: { radius: 25, post: { x: 2, y: 0, z: 6 } } }),
     ]);
     expect(result.errors).toEqual([
       { point: 'nest', error: { kind: 'unknown-creature', creature: 'wyvern' } },
@@ -415,6 +419,29 @@ describe('creature spawner (mw-e12.4)', () => {
     const again = respawnCreature(w, options, yard);
     if (!again.ok) throw new Error('respawn failed');
     expect(w.get(again.entity, CreatureComponent)?.origin.routine).toBe(routine);
+    // mw-e01.17: so does a leash.
+    const post = result.entities[3];
+    if (post === undefined) throw new Error('missing creature');
+    const leash = { radius: 25, post: { x: 2, y: 0, z: 6 } };
+    expect(w.get(post, CreatureComponent)?.origin.leash).toEqual(leash);
+    const back = respawnCreature(w, options, post);
+    if (!back.ok) throw new Error('respawn failed');
+    expect(w.get(back.entity, CreatureComponent)?.origin.leash).toEqual(leash);
+  });
+
+  it('mw-e01.17: a leash without a post is tied to where the creature spawns', () => {
+    const w = world();
+    const spawned = spawnCreature(w, options, {
+      creature: 'hound',
+      at: { x: 1, y: 0, z: 2 },
+      leash: { radius: 10 },
+    });
+    if (!spawned.ok) throw new Error('spawn failed');
+    w.step();
+    expect(w.get(spawned.entity, CreatureComponent)?.origin.leash).toEqual({
+      radius: 10,
+      post: { x: 1, y: 0, z: 2 },
+    });
   });
 
   it('the debug console spawns creatures by id, facing the player, and `despawn all` removes them', () => {
@@ -437,6 +464,37 @@ describe('creature spawner (mw-e12.4)', () => {
     w.step([despawnCreaturesCommand()]);
     expect(creatureEntities(w)).toEqual([]);
     expect(w.isAlive(player)).toBe(true);
+  });
+
+  it('mw-e11.21: `--patrol` spawns a creature at the first waypoint, facing the second, walking that route', () => {
+    const w = world(3, { attacks: true });
+    installDebugCommands(w, { spawners: creatureSpawners(options) });
+    w.step([spawnCommand('guard', 1, origin, { patrol: '0,0,12;0,0,20.5' })]);
+    const [guard] = creatureEntities(w);
+    if (guard === undefined) throw new Error('missing creature');
+    expect(w.get(guard, PlacementComponent)).toMatchObject({ x: 0, y: 0, z: 12 });
+    expect(w.get(guard, CombatFacingComponent)?.facing).toEqual({ x: 0, y: 0, z: 1 });
+    expect(w.get(guard, CreatureComponent)?.origin.patrol).toEqual([
+      { x: 0, y: 0, z: 12 },
+      { x: 0, y: 0, z: 20.5 },
+    ]);
+    // One waypoint: it faces the player (none here, so +z). Bad options are skipped, not thrown.
+    w.step([spawnCommand('guard', 1, origin, { patrol: '-1,0,-2' })]);
+    expect(creatureEntities(w)).toHaveLength(2);
+    w.step([spawnCommand('guard', 1, origin, { patrol: '1,2' })]);
+    w.step([spawnCommand('guard', 1, origin, { speed: '3' })]);
+    expect(creatureEntities(w)).toHaveLength(2);
+  });
+
+  it('mw-e11.21: checkCreatureSpawn accepts only --patrol with x,y,z waypoints', () => {
+    expect(checkCreatureSpawn({})).toBeUndefined();
+    expect(checkCreatureSpawn({ patrol: '0,0,1;2.5,0,-3' })).toBeUndefined();
+    expect(checkCreatureSpawn({ speed: '3' })).toMatch(/unknown option --speed/);
+    expect(checkCreatureSpawn({ patrol: '0,0' })).toMatch(/is not x,y,z/);
+    expect(checkCreatureSpawn({ patrol: 'a,b,c' })).toMatch(/is not x,y,z/);
+    const many = Array.from({ length: MAX_PATROL_POINTS + 1 }, () => '0,0,0').join(';');
+    expect(checkCreatureSpawn({ patrol: many })).toMatch(/at most/);
+    expect(parsePatrolParam('1,-2,3.25')).toEqual([{ x: 1, y: -2, z: 3.25 }]);
   });
 
   it('console spawners refuse (skip) when the world has no creatures installed', () => {

@@ -122,3 +122,48 @@ describe('knight light chain in the testbed (mw-e04.6)', () => {
     expect(breaks).toEqual([]);
   });
 });
+
+describe('knight heavy and charged attacks in the testbed (mw-e04.13)', () => {
+  /** Holds the heavy button (1) for `ticks` ticks from a settled start; returns the stamina it cost. */
+  function heavy(t: ReturnType<typeof testbed>, ticks: number): number {
+    t.run(30);
+    const before = staminaOf(t.world, t.player)?.current ?? 0;
+    t.sampler.down('Digit1');
+    t.run(ticks);
+    t.sampler.up('Digit1');
+    t.run(1);
+    const spent = before - (staminaOf(t.world, t.player)?.current ?? 0);
+    t.run(80);
+    return spent;
+  }
+
+  it('AC-1 (content): held 60 ticks, the charged heavy deals 1.8× the heavy and 3.5× light 1’s poise for 35 stamina', ({
+    task,
+  }) => {
+    markExercised(task, 'move', 'sword-heavy-charged');
+    const content = loadGameContent();
+    const base = content.get('move', 'sword-heavy');
+    const light = content.get('move', 'sword-light-1');
+    const t = testbed();
+    expect(heavy(t, 60)).toBe(35);
+    expect(t.started.map((e) => e.move)).toEqual(['sword-heavy']);
+    const [hit] = t.applied;
+    expect(hit?.target).toBe(t.dummy);
+    expect(hit?.amounts.slash).toBeCloseTo(1.8 * (base.damage?.amounts.slash ?? 0), 9);
+    expect(hit?.poiseDamage).toBeCloseTo(3.5 * (light.damage?.poiseDamage ?? 0), 9);
+    expect(hit?.packet.impactForce).toBe(2500);
+  });
+
+  it('AC-2 (content): let go after 8 ticks, it is an uncharged heavy: 1.6× light 1’s damage, 2.2× its poise', ({
+    task,
+  }) => {
+    markExercised(task, 'move', 'sword-heavy');
+    const light = loadGameContent().get('move', 'sword-light-1');
+    const t = testbed();
+    expect(heavy(t, 8)).toBe(25);
+    const [hit] = t.applied;
+    expect(hit?.amounts.slash).toBeCloseTo(1.6 * (light.damage?.amounts.slash ?? 0), 9);
+    expect(hit?.poiseDamage).toBeCloseTo(2.2 * (light.damage?.poiseDamage ?? 0), 9);
+    expect(hit?.packet.impactForce).toBe(1500);
+  });
+});

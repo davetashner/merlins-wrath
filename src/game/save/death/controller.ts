@@ -89,7 +89,14 @@ export function deathSaveEntry(save: SaveChoice, now: number): DeathSaveEntry {
   const parts =
     details === undefined
       ? [age]
-      : [details.areaId, `${formatPlaytime(details.playtimeSeconds)} played`, age];
+      : [
+          // The character (mw-e30.14): its class's display name; saves made before a class was
+          // chosen have none.
+          ...(details.characterName === '' ? [] : [details.characterName]),
+          details.areaId,
+          `${formatPlaytime(details.playtimeSeconds)} played`,
+          age,
+        ];
   if (save.damaged) parts.push('damaged: loads its backup');
   return { id: save.slot, title: details?.label ?? slotName(save.slot), detail: parts.join(' · ') };
 }

@@ -7,7 +7,8 @@
 //   Combat: content validation forbids that, since the attacker is unknown). It does not learn who
 //   shot it or from where: its last-known position becomes a guess `unseenAttackerM` metres back
 //   along the direction the blow travelled (on the level, at its own height), from where it stands.
-//   A hit without a horizontal direction leaves the last-known position alone.
+//   A hit without a horizontal direction leaves the last-known position alone. The guess replaces
+//   any target memory as what `lkp` behaviour targets aim at (mw-e11.8): it unsets `targetSource`.
 // - The heightened baseline (`isPostAlert`): whether an agent that stood down from a `postAlert`
 //   state is still on edge; awareness builds faster meanwhile (awareness.ts).
 //
@@ -43,20 +44,21 @@ export function installAlertTriggers(
   options: AlertTriggerOptions = {},
 ): () => void {
   const back = options.unseenAttackerM ?? DEFAULT_UNSEEN_ATTACKER_M;
-  return world.events.on(DamageApplied, ({ target, packet, died }) => {
-    const brain = getIf(world, target, BrainComponent);
+  return world.events.on(DamageApplied, ({ target: agent, packet, died }) => {
+    const brain = getIf(world, agent, BrainComponent);
     if (brain === undefined || died) return;
     const board = brain.blackboard;
     const seen =
       board.targetVisible && packet.instigator !== null && packet.instigator === board.target;
     if (seen) return;
-    queueAiEvent(world, target, 'damaged-by-unseen');
-    const here = getIf(world, target, PlacementComponent);
+    queueAiEvent(world, agent, 'damaged-by-unseen');
+    const here = getIf(world, agent, PlacementComponent);
     const d = packet.direction;
     const flat = d === undefined ? 0 : Math.sqrt(d.x * d.x + d.z * d.z);
     if (here === undefined || d === undefined || flat === 0) return;
     const k = back / flat;
-    writeBlackboard(world, target, {
+    writeBlackboard(world, agent, {
+      targetSource: null, // the guess, not an older memory, is where it now believes the attacker is
       lkp: { x: here.x - d.x * k, y: here.y, z: here.z - d.z * k },
     });
   });

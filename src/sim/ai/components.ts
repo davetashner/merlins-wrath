@@ -5,13 +5,16 @@
 //
 // The blackboard holds what the agent believes about the world, with typed keys. Awareness
 // (mw-e11.6) writes it from perception's percepts with `writeBlackboard`; primitives read and clear
-// it. The brain also keeps awareness's per-source records.
+// it. The brain also keeps awareness's per-source records and target memory's (mw-e11.8).
 
 import type { AlertState, BehaviourEvent } from '@content/index';
 import { defineComponent, type EntityId } from '../core/component';
 import { defineEvent } from '../core/events';
+import type { PerceptSource } from '../perception/percept';
 import type { Vec3 } from '../stimulus/shapes';
 import type { AwarenessRecord } from './awareness';
+import type { CombatMemory } from './combat';
+import type { MemoryRecord } from './memory';
 
 /** What an agent believes about the world (typed keys; perception writes them). */
 export interface Blackboard {
@@ -23,13 +26,19 @@ export interface Blackboard {
   stimulusTick: number;
   /** The entity it is after, or null. */
   target: EntityId | null;
+  /**
+   * Which memory is its target's (mw-e11.8), or null: the source it saw as its target. Primitives
+   * aim at that memory's prediction, never at the target entity itself.
+   */
+  targetSource: PerceptSource | null;
   /** Whether it sees its target now. */
   targetVisible: boolean;
   /** The tick it last saw its target, -1 = never. */
   targetSeenTick: number;
   /**
-   * Where it believes its target is (last-known position), or null: where it last saw it, or, struck
-   * from the unseen, a guess back along the blow's direction (mw-e11.7; target memory is mw-e11.8).
+   * Where it believes its target is (last-known position), or null: its target memory's last-known
+   * position (mw-e11.8), or, struck from the unseen, a guess back along the blow's direction
+   * (mw-e11.7).
    */
   lkp: Vec3 | null;
   /** The patrol waypoint it walks toward next. */
@@ -77,6 +86,8 @@ export interface Brain {
   blackboard: Blackboard;
   /** What it is aware of, one record per perceived source, by source (awareness.ts). */
   awareness: AwarenessRecord[];
+  /** What it remembers, one record per perceived or reported source, by source (memory.ts). */
+  memory: MemoryRecord[];
   /**
    * The tick its heightened baseline ends, -1 = none (mw-e11.7): standing down from a `postAlert`
    * state, it stays on edge for a while (`isPostAlert`).
@@ -86,6 +97,16 @@ export interface Brain {
   postAlertRate: number;
   /** Which way it walks a ping-pong route: 1 forward, -1 back (mw-e11.9; kept across alerts). */
   routeDir: number;
+  /**
+   * What it remembers about its fight (mw-e11.13: the attack token it holds, since when its target
+   * is out of reach); absent until it first fights, and in brains saved before it existed.
+   */
+  combat?: CombatMemory;
+  /**
+   * The tick its search at its leash edge ends (mw-e01.17, leash.ts): set when its leash breaks,
+   * gone once it leaves Searching; absent otherwise, and in brains saved before leashes existed.
+   */
+  leashSearchUntil?: number;
 }
 
 /** The brain component. */
@@ -97,7 +118,10 @@ export interface AlertStateChange {
   readonly entity: EntityId;
   readonly from: AlertState;
   readonly to: AlertState;
-  /** `timeout`, `input:<input>`, `event:<event>`, `done:<activity>` or `failed:<activity>`. */
+  /**
+   * `timeout`, `input:<input>`, `event:<event>`, `done:<activity>`, `failed:<activity>`, or `leash`
+   * (its leash broke: mw-e01.17).
+   */
   readonly cause: string;
 }
 
@@ -114,17 +138,23 @@ export interface AiCue {
 /** An agent played a cue. */
 export const AiCuePlayed = defineEvent<AiCue>('aiCuePlayed');
 
-/** An `emit-noise` step: a noise at the agent's position (sound propagation, mw-e09). */
-export interface AiNoise {
+/** A `share-target` step: where an agent believes its target is, for allies near it. */
+export interface AiTargetShare {
   readonly tick: number;
   readonly entity: EntityId;
-  readonly at: Vec3;
-  /** Loudness at the source, dB. */
-  readonly db: number;
+  /** Its target memory's source (opaque: never an entity id). */
+  readonly source: PerceptSource;
+  /** Where it believes the target is (its memory's prediction). */
+  readonly position: Vec3;
+  /** How sure it is, 0–1. */
+  readonly confidence: number;
 }
 
-/** An agent made a noise. */
-export const AiNoiseEmitted = defineEvent<AiNoise>('aiNoiseEmitted');
+/**
+ * An agent told its allies where its target is (mw-e11.13). Who hears it is the world's business
+ * (`installTargetSharing`, src/sim/creatures): agent code knows nothing of where its allies are.
+ */
+export const AiTargetShared = defineEvent<AiTargetShare>('aiTargetShared');
 
 /** A patrol waypoint the agent could not reach (mw-e11.9): it skipped to the next one. */
 export interface RouteBlock {

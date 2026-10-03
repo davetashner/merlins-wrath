@@ -134,6 +134,7 @@ describe('glyph prompt', () => {
         'next',
         'prev',
         'right',
+        'secondary',
         'tabNext',
         'tabPrev',
         'up',

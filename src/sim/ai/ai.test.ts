@@ -24,24 +24,33 @@ import { CombatFacingComponent } from '../combat/melee/components';
 import type { EntityId } from '../core/component';
 import { World, type WorldSnapshot } from '../core/world';
 import { CreatureComponent, type Creature } from '../creatures/components';
+import { noiseEmitted, type NoiseEvent } from '../noise/events';
+import { buildSoundGraph } from '../noise/graph';
+import {
+  installNoisePropagation,
+  NoiseListenerComponent,
+  noiseHeard,
+  type NoiseHeard,
+} from '../noise/system';
+import { entitySource, perceived, percept } from '../perception/percept';
 import { hashWorld } from '../snapshot';
 import { PlacementComponent, placeEntity } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import { BehaviourError, compileBehaviour, compileBehaviours, compileCurve } from './behaviour';
 import {
   AiCuePlayed,
-  AiNoiseEmitted,
   AlertStateChanged,
   BrainComponent,
   type AiCue,
-  type AiNoise,
   type AlertStateChange,
   type Brain,
 } from './components';
 import { resolveInput } from './inputs';
+import { installAwareness } from './awareness';
 import { introspectBrain } from './introspect';
 import { face, straightLineNavigation, type AiNavigation } from './navigation';
-import { isPrimitive } from './primitives';
+import { observePercepts } from './memory';
+import { AI_NOISE_KIND, isPrimitive } from './primitives';
 import {
   aiBehaviour,
   aiPorts,
@@ -188,6 +197,31 @@ const must = <T>(value: T | undefined): T => {
 
 const brain = (world: World<never>, entity: EntityId): Readonly<Brain> =>
   must(brainOf(world, entity));
+
+/**
+ * `hunter` sees `prey` where it stands now and makes it its target, as awareness does from a
+ * perception report (mw-e11.8: target primitives aim at that memory, not at the prey itself).
+ */
+function sees(world: World<never>, hunter: EntityId, prey: EntityId): void {
+  const at = must(world.get(prey, PlacementComponent));
+  const source = entitySource(prey);
+  const position = { x: at.x, y: at.y, z: at.z };
+  const seen = percept({
+    source,
+    kind: 'seen-target',
+    sense: 'sight',
+    position,
+    strength: 1,
+    certainty: 1,
+  });
+  observePercepts(
+    must(world.get(hunter, BrainComponent)).memory,
+    [seen],
+    world.tick,
+    world.clock.hz,
+  );
+  writeBlackboard(world, hunter, { target: prey, targetSource: source, lkp: position });
+}
 
 /** One activity that waits for a long time, in Unaware. */
 const idle = behaviour({
@@ -600,15 +634,21 @@ describe('steps and failure', () => {
     const world = aiWorld([def], { navigation });
     const hunter = agent(world);
     const prey = agent(world, { x: 0, y: 0, z: 30 });
-    writeBlackboard(world, hunter, { target: prey });
+    // Its memory of the prey forgets it once the prey is gone (awareness's `present` port).
+    installAwareness(world, { present: () => world.isAlive(prey) });
+    sees(world, hunter, prey);
     writeBlackboard(world, prey, { stimulus: { x: 0, y: 0, z: 90 } });
     run(world, 30);
     expect(calls.filter((e) => e === prey).length).toBeGreaterThan(20);
+    expect(calls.filter((e) => e === hunter).length).toBeGreaterThan(20); // chasing
     world.destroy(prey);
+    world.step();
     const before = calls.length;
     expect(() => {
+      world.events.emit(perceived, { tick: world.tick, agent: hunter, seconds: 0.1, percepts: [] });
       run(world, 60);
     }).not.toThrow();
+    expect(brain(world, hunter).blackboard).toMatchObject({ target: null, targetSource: null });
     expect(calls.slice(before)).not.toContain(prey);
     expect(brain(world, hunter).retry.map(([a]) => a)).toContain('chase');
   });
@@ -658,14 +698,25 @@ describe('steps and failure', () => {
     });
     const world = aiWorld([def]);
     const cues: AiCue[] = [];
-    const noises: AiNoise[] = [];
+    const noises: NoiseEvent[] = [];
     world.events.on(AiCuePlayed, (c) => cues.push(c));
-    world.events.on(AiNoiseEmitted, (n) => noises.push(n));
+    world.events.on(noiseEmitted, (n) => noises.push(n));
     const dog = agent(world, { x: 1, y: 2, z: 3 });
     writeBlackboard(world, dog, { stimulus: { x: 5, y: 0, z: 5 }, awareness: 0.7 });
     run(world, 6);
     expect(cues).toEqual([{ tick: 5, entity: dog, cue: 'woof' }]);
-    expect(noises).toEqual([{ tick: 5, entity: dog, at: { x: 1, y: 2, z: 3 }, db: 60 }]);
+    // mw-e09.22 AC-2: on the shared channel, with the agent as its source.
+    expect(noises).toEqual([
+      {
+        tick: 5,
+        position: { x: 1, y: 2, z: 3 },
+        loudness: 60,
+        kind: 'ai',
+        entity: dog,
+        source: dog,
+        tags: [],
+      },
+    ]);
     expect(brain(world, dog)).toMatchObject({
       activity: null,
       ended: { activity: 'bark', ok: true },
@@ -725,9 +776,14 @@ describe('primitives', () => {
     const chase = to('target', { x: 0, y: 0, z: 0 });
     const prey = chase.w.spawn();
     placeEntity(chase.w, prey, { x: 0, y: 0, z: -3 });
-    writeBlackboard(chase.w, chase.e, { target: prey });
+    sees(chase.w, chase.e, prey);
+    placeEntity(chase.w, prey, { x: 0, y: 0, z: 30 }); // unseen, it moves away: no leak (mw-e11.8)
     run(chase.w, 90);
-    expect(chase.w.get(chase.e, PlacementComponent)?.z).toBeCloseTo(-2, 1); // within 1 m
+    expect(chase.w.get(chase.e, PlacementComponent)?.z).toBeCloseTo(-2, 1); // within 1 m of where seen
+    const unremembered = to('target', { x: 0, y: 0, z: 0 });
+    writeBlackboard(unremembered.w, unremembered.e, { target: prey }); // a target, but no memory
+    run(unremembered.w, 2);
+    expect(brain(unremembered.w, unremembered.e).ended?.ok).toBe(false);
     const unset = to('target', { x: 0, y: 0, z: 0 });
     run(unset.w, 2);
     expect(brain(unset.w, unset.e).ended?.ok).toBe(false);
@@ -886,7 +942,7 @@ describe('primitives', () => {
       if (options.attacker !== false) giveAttacker(world, guard);
       const foe = world.spawn();
       placeEntity(world, foe, options.at ?? { x: 1, y: 0, z: 0 });
-      writeBlackboard(world, guard, { target: foe });
+      sees(world, guard, foe);
       return { world, guard };
     };
     const { world, guard } = setup();
@@ -1181,5 +1237,30 @@ describe('brain state is plain data', () => {
     script(loaded.world, loaded.guards, 300, 600);
     expect(hashWorld(loaded.world)).toBe(hashWorld(straight.world));
     expect(brain(straight.world, must(straight.guards[1])).state).toBe('unaware');
+  });
+});
+
+describe('emit-noise on the shared noise channel (mw-e09.22)', () => {
+  it('AC-2: a behaviour’s emit-noise step raises noiseEmitted with the agent as its source, which propagation carries to listeners', () => {
+    const world = aiWorld([
+      only([
+        { do: 'emit-noise', db: 70 },
+        { do: 'wait', seconds: 10 },
+      ]),
+    ]);
+    installNoisePropagation(world, { graph: buildSoundGraph({ rooms: [], portals: [] }) });
+    const emitted: NoiseEvent[] = [];
+    const heard: NoiseHeard[] = [];
+    world.events.on(noiseEmitted, (n) => emitted.push(n));
+    world.events.on(noiseHeard, (h) => heard.push(h));
+    const guard = agent(world, { x: 2, y: 0, z: 0 });
+    const ear = world.spawn();
+    placeEntity(world, ear, { x: 6, y: 0, z: 0 }, 0.4);
+    world.add(ear, NoiseListenerComponent, { thresholdDb: 0, range: 40 });
+    run(world, 3);
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]).toMatchObject({ kind: AI_NOISE_KIND, entity: guard, source: guard });
+    // The agent does not hear itself (it is the source); the other listener does.
+    expect(heard.map((h) => [h.listener, h.noise.source])).toEqual([[ear, guard]]);
   });
 });

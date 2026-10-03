@@ -23,6 +23,7 @@ import { hitVolumeSystem, noAllies } from '../combat/hits/system';
 import { facingOf, guardOf } from '../combat/melee/components';
 import { shieldGuard } from '../combat/melee/guard';
 import { installMeleeStrikes } from '../combat/melee/strikes';
+import { DamageApplied, type DamageResult } from '../combat/damage/events';
 import { staminaOf } from '../combat/stamina';
 import { ActionStarted, type ActionStartInfo } from '../combat/timeline/events';
 import { World } from '../core/world';
@@ -43,11 +44,15 @@ import { LockOnComponent } from '../targeting/components';
 import { lockedTarget, placedTargetPosition } from '../targeting/lock-on';
 import { ParryComponent, updateParry } from '../combat/parry/components';
 import {
+  DEFAULT_HEAVY_BUTTON,
   DEFAULT_PARRY_BUTTON,
   installPlayer,
+  KNIGHT_HEAVY_ATTACK,
+  KNIGHT_KICK,
   KNIGHT_LIGHT_ATTACK,
   KNIGHT_PARRY,
   KNIGHT_RIPOSTE,
+  KNIGHT_SHIELD_BASH,
   PlayerLook,
   restrainMovement,
   type PlayerMeleeOptions,
@@ -80,6 +85,7 @@ const START: SceneSpawnPlacement = {
 
 const WOOD: RuntimeShield = {
   id: 'wood-shield',
+  kind: 'shield',
   absorption: { slash: 85, pierce: 85, blunt: 85, fire: 30 },
   stability: 60,
   raiseTicks: 6,
@@ -140,12 +146,53 @@ function light(
   };
 }
 
+// The heavy and its charge (mw-e04.13), as content has them: 24/5/26, 25 stamina, 32 slash and 33
+// poise; at full charge 35 stamina, 57.6 slash and 52.5 poise; hold on tick 18.
+const HEAVY: RuntimeMove = {
+  ...light('sword-heavy', [24, 5, 26], 25, 32, null),
+  damage: {
+    amounts: { slash: 32 },
+    poiseDamage: 33,
+    staminaDamage: 30,
+    impulse: { x: 0, y: 0, z: 0 },
+    impactForce: 1500,
+    tags: [],
+  },
+  hyperarmor: { from: 10, to: 29, poiseCap: 40 },
+  hitStop: 'heavy',
+};
+const CHARGED: RuntimeMove = {
+  ...HEAVY,
+  id: 'sword-heavy-charged',
+  staminaCost: 35,
+  damage: {
+    amounts: { slash: 57.6 },
+    poiseDamage: 52.5,
+    staminaDamage: 45,
+    impulse: { x: 0, y: 0, z: 0 },
+    impactForce: 2500,
+    tags: [],
+  },
+  hitStop: 'charged',
+  charge: {
+    from: 'sword-heavy',
+    minHoldTicks: 12,
+    fullHoldTicks: 60,
+    autoReleaseTicks: 90,
+    holdTick: 18,
+  },
+};
+
 const MOVES: MoveTable = new Map(
   [
+    HEAVY,
+    CHARGED,
     light('sword-light-1', [12, 4, 18], 12, 20, 'sword-light-2'),
     light('sword-light-2', [10, 4, 20], 14, 22, 'sword-light-3'),
     light('sword-light-3', [16, 5, 26], 18, 30, null),
     light('poke', [2, 2, 2], 0, 1, null),
+    light('bash', [14, 4, 20], 18, 5, null),
+    light('kick', [10, 3, 16], 8, 3, null),
     {
       ...light('guard-parry', [4, 10, 16], 10, 0, null),
       verb: 'parry' as const,
@@ -169,7 +216,8 @@ function frame(
   });
 }
 
-function knight(melee: Partial<PlayerMeleeOptions> = {}) {
+function knight(options: Partial<PlayerMeleeOptions> & { noShield?: true } = {}) {
+  const { noShield, ...melee } = options;
   const collision = new FakeCollisionWorld([
     box({ x: -20, y: -1, z: -20 }, { x: 20, y: 0, z: 20 }), // floor, top at y = 0
   ]);
@@ -182,7 +230,7 @@ function knight(melee: Partial<PlayerMeleeOptions> = {}) {
     spawns: [START],
     collision,
     tuning: TUNING,
-    combat: { moves: MOVES, melee: { shield: WOOD, ...melee } },
+    combat: { moves: MOVES, melee: noShield ? melee : { shield: WOOD, ...melee } },
   });
   world.addSystem(hitVolumeSystem({ isAlly: noAllies }));
   const damage = new DamageModel();
@@ -385,5 +433,81 @@ describe('the knight player (mw-e04.6)', () => {
     expect(() => {
       k.run(2);
     }).not.toThrow();
+  });
+});
+
+describe('the knight’s shield bash (mw-e04.14)', () => {
+  const blockAttack = frame(['primaryAttack'], ['secondaryAttack']);
+
+  it('attack while blocking bashes; without a bash it is the light attack', () => {
+    const k = knight({ bash: 'bash', bashFallback: 'kick' });
+    k.run(10, frame([], ['secondaryAttack']));
+    k.run(1, blockAttack);
+    k.run(60);
+    k.run(1, frame(['primaryAttack']));
+    expect(k.started.map((e) => e.move)).toEqual(['bash', 'sword-light-1']);
+    expect([KNIGHT_SHIELD_BASH, KNIGHT_KICK]).toEqual(['shield-bash', 'kick']);
+    const plain = knight();
+    plain.run(1, blockAttack);
+    expect(plain.started.map((e) => e.move)).toEqual(['sword-light-1']);
+  });
+
+  it('AC-4: with no shield equipped, block + attack kicks (and nothing blocks)', () => {
+    const k = knight({ noShield: true, bash: 'bash', bashFallback: 'kick' });
+    expect(guardOf(k.world, k.player)).toBeUndefined();
+    k.run(5, frame([], ['secondaryAttack']));
+    expect(staminaOf(k.world, k.player)?.blocking).toBe(false);
+    k.run(1, blockAttack);
+    expect(k.started.map((e) => e.move)).toEqual(['kick']);
+    // Without a fallback the bash itself plays, shield or not.
+    const bare = knight({ noShield: true, bash: 'bash' });
+    bare.run(1, blockAttack);
+    expect(bare.started.map((e) => e.move)).toEqual(['bash']);
+  });
+});
+
+describe('the knight’s heavy attack (mw-e04.13)', () => {
+  /** Holds the heavy button `ticks` ticks from a press, lets go and lets the swing land. */
+  function heavy(ticks: number, melee: Partial<PlayerMeleeOptions> = {}) {
+    const k = knight({ heavyAttack: KNIGHT_HEAVY_ATTACK, ...melee });
+    const button = melee.heavyButton ?? DEFAULT_HEAVY_BUTTON;
+    const applied: DamageResult[] = [];
+    k.world.events.on(DamageApplied, (e) => applied.push(e));
+    const before = staminaOf(k.world, k.player)?.current ?? 0;
+    k.run(1, frame([button]));
+    k.run(ticks - 1, frame([], [button]));
+    k.run(1);
+    const spent = before - (staminaOf(k.world, k.player)?.current ?? 0);
+    k.run(60);
+    return { ...k, applied, spent };
+  }
+
+  it('AC-1: held 60 ticks the heavy button swings the full charge: 1.8× the heavy, 3.5× light 1’s poise, 35 stamina', () => {
+    const k = heavy(60);
+    expect(k.started.map((e) => e.move)).toEqual(['sword-heavy']);
+    expect(k.spent).toBe(35);
+    expect(k.applied).toHaveLength(1);
+    const [hit] = k.applied;
+    expect(hit?.amounts.slash).toBeCloseTo(1.8 * 32, 9);
+    expect(hit?.poiseDamage).toBeCloseTo(3.5 * 15, 9);
+    expect(hit?.packet.impactForce).toBe(2500);
+  });
+
+  it('AC-2: let go after 8 ticks it is an uncharged heavy: 1.6× light 1’s damage and 2.2× its poise', () => {
+    const k = heavy(8);
+    expect(k.spent).toBe(25);
+    const [hit] = k.applied;
+    expect(hit?.amounts.slash).toBe(1.6 * 20);
+    expect(hit?.poiseDamage).toBeCloseTo(2.2 * 15, 9);
+    expect(hit?.packet.impactForce).toBe(1500);
+  });
+
+  it('the heavy binds to ability 1 by default, to its own button when given, and not at all without one', () => {
+    expect([KNIGHT_HEAVY_ATTACK, DEFAULT_HEAVY_BUTTON]).toEqual(['sword-heavy', 'ability1']);
+    const custom = heavy(8, { heavyButton: 'ability2' });
+    expect(custom.started.map((e) => e.move)).toEqual(['sword-heavy']);
+    const none = knight();
+    none.run(1, frame(['ability1']));
+    expect(none.started).toEqual([]);
   });
 });

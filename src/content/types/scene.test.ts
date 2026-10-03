@@ -350,6 +350,44 @@ describe('scene patrol routines (mw-e11.9)', () => {
   });
 });
 
+describe('scene creature leashes (mw-e01.17)', () => {
+  it('takes a radius and an optional post, needs a creature and a positive, on-grid leash', () => {
+    const spawns = [
+      { id: 'skeleton', at: [2.5, 0, 32.5], creature: 'forgotten-miner', leash: { radius: 25 } },
+      {
+        id: 'warden',
+        at: [0, 0, 0],
+        creature: 'forgotten-miner',
+        leash: { radius: 8, post: [1, 0, 1] },
+      },
+    ];
+    expect(problems({ ...room, spawns })).toEqual([]);
+    expect(sceneSchema.parse({ ...room, spawns }).spawns.map((s) => s.leash)).toEqual([
+      { radius: 25 },
+      { radius: 8, post: [1, 0, 1] },
+    ]);
+    expect(
+      problems({
+        ...room,
+        spawns: [
+          { id: 'marker', at: [0, 0, 0], leash: { radius: 5 } },
+          { id: 'a', at: [0, 0, 0], creature: 'forgotten-miner', leash: { radius: 0 } },
+          {
+            id: 'b',
+            at: [0, 0, 0],
+            creature: 'forgotten-miner',
+            leash: { radius: 5, post: [0.1, 0, 0] },
+          },
+        ],
+      }),
+    ).toEqual([
+      'spawns.1.leash.radius: Too small: expected number to be >0',
+      'spawns.2.leash.post: must snap to the grid: every coordinate a multiple of 0.25 cells',
+      'spawns.0.leash: spawn "marker" sets leash but spawns no creature',
+    ]);
+  });
+});
+
 describe('scene schema (mw-e00.21)', () => {
   it('fills defaults: 1 m grid, no yaw, unit scale, no spawns', () => {
     expect(sceneSchema.parse(room)).toEqual({
@@ -542,7 +580,7 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room and the slice', () => {
+  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room, the slice and the perf baseline', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
@@ -552,10 +590,24 @@ describe('scene content', () => {
       'kit-gallery',
       'lighting-room',
       'mechanism-room',
+      'perf-baseline',
       'slice',
       'testbed',
       'weak-wall-room',
     ]);
+  });
+
+  it('mw-e32.1: the perf baseline has 64 pushable crates, agitator markers and more lamps than the renderer draws', () => {
+    const scene = loadContent(contentTypes, gameContentSources(), contentChecks).get(
+      'scene',
+      'perf-baseline',
+    );
+    const crates = scene.spawns.filter((s) => s.prop?.id === 'crate');
+    expect(crates).toHaveLength(64);
+    expect(crates.every((s) => s.properties?.pushable === true)).toBe(true);
+    expect(scene.spawns.filter((s) => s.tags.includes('perf-agitator'))).toHaveLength(9);
+    expect(scene.spawns.filter((s) => s.properties?.lightEmitter !== undefined)).toHaveLength(8);
+    expect(scene.spawns.some((s) => s.tags.includes('player-start'))).toBe(false); // fixed camera
   });
 
   it('mw-e03.18: the mechanism room places a prefab of every door kind and wires its switches', () => {

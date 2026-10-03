@@ -203,7 +203,8 @@ export function refusalText(reason: InventoryActionRefusal, name: string): strin
   return REFUSALS[reason] ?? `${name}: that didn’t work.`;
 }
 
-const ICON_KIND: Readonly<Record<ItemCategory, ItemIconKind>> = Object.freeze({
+/** Category → placeholder icon. */
+export const ICON_KIND: Readonly<Record<ItemCategory, ItemIconKind>> = Object.freeze({
   weapon: 'weapon',
   armor: 'armor',
   shield: 'shield',

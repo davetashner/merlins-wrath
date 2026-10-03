@@ -6,7 +6,17 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 
 export type UiStep =
-  'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'tabPrev' | 'tabNext' | 'next' | 'prev';
+  | 'up'
+  | 'down'
+  | 'left'
+  | 'right'
+  | 'confirm'
+  | 'back'
+  | 'tabPrev'
+  | 'tabNext'
+  | 'next'
+  | 'prev'
+  | 'secondary';
 
 export type UiDevice = 'keyboard' | 'gamepad';
 
@@ -21,12 +31,14 @@ const KEYS: Record<UiStep, string> = {
   tabNext: 'e',
   next: 'Tab',
   prev: 'Shift+Tab',
+  secondary: 'r',
 };
 
 /** Standard-mapping button per step (Tab steps have no pad button). */
 const PAD_BUTTONS: Partial<Record<UiStep, number>> = {
   confirm: 0,
   back: 1,
+  secondary: 2,
   tabPrev: 4,
   tabNext: 5,
   up: 12,
@@ -44,6 +56,7 @@ interface UiHooks {
   topScreen(): string | null;
   clippedText(): { text: string; clippedBy: string }[];
   values(): Record<string, unknown>;
+  pickups(): void;
 }
 
 interface VirtualPad {

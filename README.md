@@ -157,6 +157,9 @@ Dying plays a death beat, then the death screen lets you reload a save or restar
 | `pnpm test:coverage` | Vitest with v8 coverage into `coverage/` (text, json-summary, lcov) |
 | `pnpm e2e`           | Playwright smoke tests against the production build              |
 | `pnpm bench`         | Vitest benchmarks (`*.bench.ts`) that assert sim perf budgets    |
+| `pnpm perf`          | Perf budget suite, CI mode (see [Perf budgets](#perf-budgets)); `PERF_HEAP_IDLE_S=30` shortens the 5-minute heap idle |
+| `pnpm perf:ref`      | Perf budget suite, reference mode: absolute frame-time budgets on the reference machine only |
+| `pnpm perf:budgets`  | Validates `perf/perf-budgets.json`: every budget quotes the contract's hardware baseline |
 | `pnpm content:coverage` | After `pnpm test`: fails listing content entries no passing test exercised |
 | `pnpm content:schemas`  | Regenerates `src/content/data/<type>.schema.json` for editor autocompletion |
 | `pnpm content:docs`     | Regenerates the field reference `docs/content/<type>-schema.md` for each content type |
@@ -165,6 +168,39 @@ Dying plays a death beat, then the death screen lets you reload a save or restar
 | `pnpm replay:rebless`   | Re-records golden replays after an intended sim/content change (review the diff) |
 
 First e2e run: `pnpm exec playwright install chromium`.
+
+## Opening the game
+
+`/` is the front door: the title screen (New Game, Continue, Load) over the game's start scene
+(`game.startScene` in `src/content/data/game/game.json`; the slice in m1). New Game opens class
+selection, and confirming starts the run at the start scene's spawn point. Any of `?scene=<id>`,
+`?newgame`, `?class=<id>` or `?menu=title|load|save` skips the title for development and the e2e:
+**`/?scene=testbed`** is the grey-box testbed, `/?scene=slice` the slice without the menus.
+
+## Perf budgets
+
+`perf/perf-budgets.json` holds every perf budget, each quoting the hardware baseline in
+`docs/backlog-contract.md` §1 (mw-e32.1). The suite (`e2e/perf/`, its own `playwright.perf.config.ts`)
+has two modes:
+
+- **CI mode** (`pnpm perf`, the `perf-budget` CI job): initial transfer and build size ≤ 50 MB,
+  load-to-playable ≤ 10 s and warm reload ≤ 3 s at 50 Mbps (CDP throttling), JS heap ≤ 1.5 GB after
+  5 minutes idle in the testbed. The runners have no GPU, so every frame is software-rendered and is
+  itself a 100–200 ms main-thread task. That gives frame time no absolute budget: CI compares it with
+  main's last report and only warns when p50 or p95 is more than 15 % slower. For the same reason,
+  long tasks that are frame renders (they overlap a `requestAnimationFrame` callback) are only
+  reported. The budget is on the other long tasks ≥ 200 ms (GC, parsing, timers), of which there must
+  be none during play: the `perf-baseline` sampling window and the testbed's idle minutes. Long tasks
+  while loading are reported only.
+- **Reference mode** (`pnpm perf:ref`, by hand on the reference machine — MacBook Pro M1 Pro, Chrome):
+  headed Chrome, uncapped, 2560×1440 drawing buffer, 1,800 frames after a 3 s warm-up in the
+  `perf-baseline` scene. It fails unless frame time p50 and p95 are ≤ 16.7 ms and no task of 200 ms or
+  more, frame renders included, runs while frames are sampled. Writes
+  `perf/results/<date>-<sha>.json`; commit it so results build a trend. Close other apps first.
+
+Every run writes `test-results/perf-report.json` and prints a per-budget table. `perf-baseline`
+(`/?scene=perf-baseline`) is the stress scene: 64 crates kept tumbling by force blasts at its
+`perf-agitator` markers, eight lamps and moonlight, fixed camera.
 
 ## Combat sandbox
 

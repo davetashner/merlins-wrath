@@ -17,12 +17,26 @@
 // to a point with one search run to completion, outside the queue's budget: it is asked rarely (when
 // a creature resumes its route), and a resume must not wait ticks for its answer.
 //
+// `approach` (mw-e11.13) is travel for a goal that may be out of reach: when the goal cannot be
+// reached, the search's answer still holds the path to the reachable point closest to it, and the
+// agent walks that, answering `unreachable` on the way and once there (a fighter waits below the
+// player's ledge). Such a route is `partial`, and an approach route replans for a moved goal at
+// most once per NAV_APPROACH_REPLAN_S, so a target pacing a ledge costs at most one path request a
+// second. A route planned by one call kind is reused by the other: travel answers failure for a
+// partial route, and an approach replans a route travel found unreachable.
+//
 // The queue's search progress is not saved: a save taken while a request waits resubmits it on load.
 
 import type { EntityId } from '../core/component';
 import { defineComponent } from '../core/component';
 import type { World } from '../core/world';
-import { face, type AiNavigation, type AiStatus, type TravelRequest } from '../ai/navigation';
+import {
+  face,
+  type AiNavigation,
+  type AiStatus,
+  type ApproachStatus,
+  type TravelRequest,
+} from '../ai/navigation';
 import { getIf } from '../ai/util';
 import { CreatureNavComponent } from '../creatures/components';
 import { PlacementComponent, type Placement } from '../stimulus/placement';
@@ -46,6 +60,10 @@ export interface NavRoute {
   readonly index: number;
   /** The door states it was planned with, one letter per door (o, c, l). */
   readonly doors: string;
+  /** Its path ends at the reachable point closest to the goal (an approach's; absent = no). */
+  readonly partial?: true;
+  /** The tick an approach planned it (absent: travel did). */
+  readonly planned?: number;
 }
 
 /** The route component (`nav.route`; a snapshot and save key, never renamed). */
@@ -53,6 +71,9 @@ export const NavRouteComponent = defineComponent<NavRoute>('nav.route');
 
 /** How far, metres, the goal may move before the route is planned again. */
 export const NAV_REPLAN_DISTANCE = 0.5;
+
+/** Seconds an approach waits at least before planning again for a goal that moved. */
+export const NAV_APPROACH_REPLAN_S = 1;
 
 /** How navmesh travel is set up. */
 export interface NavmeshNavigationOptions {
@@ -65,6 +86,7 @@ export interface NavmeshNavigationOptions {
 /** Navmesh travel for AI, with its request queue. */
 export interface NavmeshNavigation extends AiNavigation {
   readonly queue: NavPathQueue;
+  readonly approach: NonNullable<AiNavigation['approach']>;
 }
 
 const EPS = 1e-9;
@@ -169,6 +191,69 @@ export function navmeshNavigation(options: NavmeshNavigationOptions): NavmeshNav
     return { index, status: arrived ? 'success' : 'running' };
   };
 
+  /** One tick of travel (`closest` false) or approach (true); see the file header. */
+  const move = (
+    world: World<never>,
+    entity: EntityId,
+    request: TravelRequest,
+    closest: boolean,
+  ): ApproachStatus => {
+    const here = getIf(world, entity, PlacementComponent);
+    if (here === undefined) return 'failure';
+    if (horizontal(here, request.goal) <= request.within) return 'success';
+    if (!world.isRegistered(NavRouteComponent)) world.register(NavRouteComponent);
+    const doorStates = signature();
+    let route = world.get(entity, NavRouteComponent);
+    const lost =
+      route?.status === 'pending' &&
+      !queue.isPending(route.request) &&
+      queue.result(route.request) === undefined;
+    const moved = route !== undefined && horizontal(route.goal, request.goal) > NAV_REPLAN_DISTANCE;
+    // An approach's own route waits NAV_APPROACH_REPLAN_S before following a moved goal; a route
+    // travel planned and found unreachable has no closest point yet, so an approach replans it.
+    const settled =
+      closest &&
+      route?.planned !== undefined &&
+      world.tick - route.planned < Math.round(NAV_APPROACH_REPLAN_S * world.clock.hz);
+    const blind = closest && route?.planned === undefined && route?.status === 'failed';
+    if (route === undefined || lost || (moved && !settled) || blind || route.doors !== doorStates) {
+      if (route?.status === 'pending') queue.cancel(route.request);
+      const agent = getIf(world, entity, CreatureNavComponent) ?? DEFAULT_NAV_AGENT;
+      const id = queue.submit({ start: here, goal: request.goal, agent, doors });
+      route = {
+        goal: request.goal,
+        status: 'pending',
+        request: id,
+        points: [],
+        index: 0,
+        doors: doorStates,
+        ...(closest && { planned: world.tick }),
+      };
+    }
+    if (route.status === 'pending') {
+      pump(world);
+      const result = queue.take(route.request);
+      if (result === undefined) {
+        write(world, entity, route);
+        return 'running';
+      }
+      route =
+        result.status === 'found'
+          ? { ...route, status: 'ready', request: 0, points: result.points, index: 1 }
+          : result.status === 'unreachable' && closest
+            ? { ...route, status: 'ready', request: 0, points: result.points, index: 1 }
+            : { ...route, status: 'failed', request: 0, points: [], index: 0 };
+      if (result.status === 'unreachable' && closest) route = { ...route, partial: true };
+    }
+    if (route.status === 'failed' || (route.partial === true && !closest)) {
+      write(world, entity, route);
+      return 'failure';
+    }
+    const walked = follow(world, entity, here, route, request);
+    write(world, entity, { ...route, index: walked.index });
+    return route.partial === true && walked.status !== 'failure' ? 'unreachable' : walked.status;
+  };
+
   return Object.freeze({
     queue,
     distance(world: World<never>, entity: EntityId, goal: Vec3): number {
@@ -186,53 +271,11 @@ export function navmeshNavigation(options: NavmeshNavigationOptions): NavmeshNav
       return length;
     },
     travel(world: World<never>, entity: EntityId, request: TravelRequest): AiStatus {
-      const here = getIf(world, entity, PlacementComponent);
-      if (here === undefined) return 'failure';
-      if (horizontal(here, request.goal) <= request.within) return 'success';
-      if (!world.isRegistered(NavRouteComponent)) world.register(NavRouteComponent);
-      const doorStates = signature();
-      let route = world.get(entity, NavRouteComponent);
-      const lost =
-        route?.status === 'pending' &&
-        !queue.isPending(route.request) &&
-        queue.result(route.request) === undefined;
-      if (
-        route === undefined ||
-        lost ||
-        horizontal(route.goal, request.goal) > NAV_REPLAN_DISTANCE ||
-        route.doors !== doorStates
-      ) {
-        if (route?.status === 'pending') queue.cancel(route.request);
-        const agent = getIf(world, entity, CreatureNavComponent) ?? DEFAULT_NAV_AGENT;
-        const id = queue.submit({ start: here, goal: request.goal, agent, doors });
-        route = {
-          goal: request.goal,
-          status: 'pending',
-          request: id,
-          points: [],
-          index: 0,
-          doors: doorStates,
-        };
-      }
-      if (route.status === 'pending') {
-        pump(world);
-        const result = queue.take(route.request);
-        if (result === undefined) {
-          write(world, entity, route);
-          return 'running';
-        }
-        route =
-          result.status === 'found'
-            ? { ...route, status: 'ready', request: 0, points: result.points, index: 1 }
-            : { ...route, status: 'failed', request: 0, points: [], index: 0 };
-      }
-      if (route.status === 'failed') {
-        write(world, entity, route);
-        return 'failure';
-      }
-      const moved = follow(world, entity, here, route, request);
-      write(world, entity, { ...route, index: moved.index });
-      return moved.status;
+      // Only an approach walks a partial route, so travel never answers `unreachable`.
+      return move(world, entity, request, false) as AiStatus;
+    },
+    approach(world: World<never>, entity: EntityId, request: TravelRequest): ApproachStatus {
+      return move(world, entity, request, true);
     },
   });
 }

@@ -1,7 +1,7 @@
 {
   "$schema": "../../../data/behaviour.schema.json",
   "id": "fixture-guard",
-  "notes": "Frozen test fixture (mw-e11.2), not bestiary content: the ADR-0005 guard reduced to what the runtime's tests need. Patrols its route (or naps when sleepy and lax), turns toward a noise when Suspicious, walks to it and looks around when Investigating, and fights a visible target in Combat. Losing its target, it searches the last-known position, then stands down on edge; struck from the unseen or alarmed by an ally, it is Alerted and hunts toward where the trouble came from (mw-e11.7).",
+  "notes": "Frozen test fixture (mw-e11.2), not bestiary content: the ADR-0005 guard reduced to what the runtime's tests need. Patrols its route (or naps when sleepy and lax), turns toward a noise when Suspicious, walks to it and looks around when Investigating, and fights a visible target in Combat (mw-e11.13): it presses in for a strike while one of the target's attack tokens is free, circles at its preferred range while others attack or its strike cools down, tells allies near it where the target is, and taunts from below a target it cannot reach. Losing its target, it searches the last-known position, then stands down on edge; struck from the unseen or alarmed by an ally, it is Alerted and hunts toward where the trouble came from (mw-e11.7).",
   "tuning": {
     "suspiciousAt": 0.3,
     "investigateAt": 0.6,
@@ -11,7 +11,8 @@
     "searchingTimeoutS": 60,
     "alertedTimeoutS": 120,
     "postAlertS": 300,
-    "postAlertAwarenessRate": 1.5
+    "postAlertAwarenessRate": 1.5,
+    "preferredRange": 2.5
   },
   "thinkHz": 10,
   "inertia": 0.1,
@@ -76,7 +77,7 @@
           "when": { "input": "targetLostS", "gte": { "tuning": "combatLostS" } }
         }
       ],
-      "activities": ["engage"]
+      "activities": ["press", "circle", "taunt"]
     }
   },
   "activities": {
@@ -150,15 +151,50 @@
         { "do": "look-around", "seconds": 3 }
       ]
     },
-    "engage": {
+    "press": {
       "interruptible": false,
       "considerations": [
-        { "input": "healthFraction", "curve": { "kind": "linear", "slope": 1, "intercept": 0.2 } }
+        { "input": "attackToken", "curve": { "kind": "step", "at": 1, "below": 0, "above": 1 } },
+        {
+          "input": "targetUnreachableS",
+          "curve": { "kind": "step", "at": 8, "below": 1, "above": 0 }
+        },
+        {
+          "input": "trait.aggression",
+          "curve": { "kind": "linear", "slope": 0.5, "intercept": 0.75 }
+        }
       ],
       "steps": [
         { "do": "emit-noise", "db": 70 },
-        { "do": "move-to", "target": "target", "within": 1.6, "gait": "run" },
-        { "do": "attack", "attack": "fixture-guard-strike" }
+        { "do": "share-target" },
+        { "do": "strike", "gait": "run", "giveUpS": 8 }
+      ]
+    },
+    "circle": {
+      "weight": 0.5,
+      "considerations": [
+        {
+          "input": "targetUnreachableS",
+          "curve": { "kind": "step", "at": 8, "below": 1, "above": 0 }
+        }
+      ],
+      "steps": [
+        { "do": "share-target" },
+        { "do": "circle", "range": { "tuning": "preferredRange" }, "seconds": 2 }
+      ]
+    },
+    "taunt": {
+      "weight": 2,
+      "considerations": [
+        {
+          "input": "targetUnreachableS",
+          "curve": { "kind": "step", "at": 8, "below": 0, "above": 1 }
+        }
+      ],
+      "steps": [
+        { "do": "look-at", "target": "target", "seconds": 1 },
+        { "do": "play-cue", "cue": "guard-taunt" },
+        { "do": "wait", "seconds": 2 }
       ]
     }
   }

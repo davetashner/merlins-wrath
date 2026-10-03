@@ -21,6 +21,15 @@
       "minLength": 1,
       "description": "What the shield is for, and where its numbers come from."
     },
+    "kind": {
+      "default": "shield",
+      "description": "What blocks: \"shield\", or \"weapon\" for a shieldless guard (a blade or forearm), which a shield bash breaks outright (mw-e04.14). Defaults to \"shield\".",
+      "type": "string",
+      "enum": [
+        "shield",
+        "weapon"
+      ]
+    },
     "absorption": {
       "type": "object",
       "propertyNames": {

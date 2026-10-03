@@ -13,6 +13,64 @@ check enforces this).
 
 ### Added
 
+- You can pause. Esc, P or the controller's Menu button stops the game and opens the pause menu:
+  Resume, Settings, Save, Load and Quit to Title. Save is greyed out with "Can't save during combat"
+  while a fight is on. Quit to Title asks first if you have played on since your last save, then
+  takes you back to the title, where Continue picks up from that save. The menu works with the
+  keyboard, the mouse or a controller's d-pad.
+- The vertical slice saves itself. Walking through the first door and reaching the end of the
+  corridor each make an autosave, and so does finishing the slice. An autosave never happens
+  mid-fight: it waits until the skeleton's fight is over. Close the game, press Continue on the
+  title and you are back where you saved within moments, with a dead skeleton still dead and an
+  emptied chest still empty. Save slots now show your class (a thief's save says Thief).
+- The knight can bash with its shield: hold block and press attack (right click then left click, or
+  LT then RT). The bash cuts a spellcaster's windup short and makes them flinch, knocks aside a foe
+  guarding with only a blade so they reel for a second, shoves barrels and other light things across
+  the floor (anything too heavy just thuds and stays put) and batters flimsy barricades. Without a
+  shield the same buttons throw a kick.
+- The knight has a heavy attack you can charge (ability 1: 1, Y or D-pad Up). Tap it for a slow,
+  heavy overhead; hold it and the knight holds the blade high, building a charge that hits up to
+  1.8 times as hard and breaks far more poise, full after a second and swung on its own if you keep
+  holding. While it winds up and charges the knight shrugs off light blows, but a hard enough hit
+  staggers it and the charge is lost. A full charge costs a little more stamina than a plain heavy.
+- Creatures guarding a post chase you only so far. Run far enough from a leashed creature's post in
+  the middle of a fight and it gives up at the edge of its ground, looks around for a moment, then
+  lurches back to its post and stands guard again, still carrying every wound you gave it. Step
+  back into its ground and the fight picks up where you left it.
+- Loot in the vertical slice. The Rusted gallery key lies by the far pillar in the arena: take it
+  and the iron exit door unlocks and opens with one press of Interact, straight from your keyring,
+  so you can walk through and finish the slice. The key is a quest item and can't be dropped or
+  lost. Up in the raised alcove, a chest holds a healing draught, a few coins and a miner's tally
+  stick with a story of its own; once you have emptied it, it stays empty after a save and reload.
+- Enemies fight like a team instead of a mob. In a fight, at most two take a swing at you at a time
+  while the rest circle at their own striking distance, waiting their turn. Each picks a blow that
+  can actually reach you from where it stands, a bold one favouring its heavy swings, and calls out
+  where you are so the others keep up. Stagger one and it loses its swing and rethinks once it
+  recovers. Climb somewhere it cannot follow and it waits below, then jeers at you instead of
+  pacing back and forth.
+- The game now opens on its title screen. New Game takes you to class selection and, once you
+  confirm the Knight, straight into the vertical slice's spawn room with the knight's kit, no reload
+  in between. Continue loads your most recent save (it stays greyed out with "No saves yet" until
+  you have one) and Load lists every save. The build number shows under the menu, so playtest
+  reports can say which build they came from.
+- Creatures come alive in the grey-box levels. They now watch, listen and think while you play:
+  a guard sees you by the light you stand in and the walls in the way, hears noises muffled by
+  shut doors and stone, and walks its patrol through doorways and around pillars on the level's
+  real paths instead of straight through walls. A guard that spots you shouts, and other guards
+  nearby hear it.
+- A perf stress room, `?scene=perf-baseline`: 64 crates kept tumbling by bursts of force under eight
+  lamps, the scene every build's frame rate is measured in.
+- Saves keep each creature's state of mind: how alert it is, how long it has been searching, where
+  it last saw you, what it just heard, its morale and whether it is knocked out. A reload picks up
+  exactly where you left off, so a guard hunting for you is still hunting the same spot with the
+  same time left.
+- A container window. Searching a chest, barrel or corpse now opens a small window listing what is
+  inside, with icons. Take one thing, or press R (X on a controller) to Take All and close it in one
+  go; Take All also has focus when the window opens, so Interact then confirm loots a chest. An empty
+  container just says "Empty". Everything you pick up now shows a short note in the bottom-right
+  corner: up to four at a time, with repeats of the same item merged into one note with a count.
+  A unique artifact gets its own gold-edged "Discovery" note with its flavour line, which stays for
+  six seconds. The notes follow the HUD scale and Text size settings.
 - An inventory screen. Press I (View on a controller) to see everything you carry, sorted newest
   first, with tabs for Weapons & Armor, Tools, Consumables, Books, Keys and Quest & Artifacts. Each
   item has a card with its name, a line or two of flavour text, what it lets you do and what it's
@@ -21,11 +79,27 @@ check enforces this).
   the bottom of the screen showing what is in them and how many are left. The screen pauses the
   game, works fully with mouse, keyboard or controller, and follows the Text size setting, which
   now applies to the game's menus and HUD text.
+- Guards no longer know where you are once they lose sight of you. A guard hunts where it last saw
+  you, carried on a little way in the direction you were running, and not a step further, so
+  ducking round a corner, doubling back or climbing out of view really does shake it off. Given
+  long enough, it forgets you.
 - Guards keep routines you can watch and time. A guard can walk a loop, pace back and forth, wander
   between spots at random, or stand at a post sweeping its gaze across an arc. It pauses at each
   stop for a set time, faces a set way, and may lean on a wall or warm its hands while it waits.
   After a search, it heads for whichever stop it can reach soonest, not the next one in line. When a
   locked door cuts off a stop, it skips that stop and carries on.
+- A title menu with Continue, New Game and Load, plus Save and Load screens (for now reached with
+  `?menu=title`, `?menu=save` or `?menu=load`). Continue picks up your most recent save. With no
+  saves yet it is greyed out and says "No saves yet". Each slot shows a picture of where you saved,
+  your area, playtime and how long ago you saved. Saving over a slot or deleting a save asks you to
+  confirm first. Everything works with the keyboard or a gamepad alone, and if your browser is
+  blocking storage the screens warn you that saves will not last.
+- An AI debug overlay for debug builds (`ai.debug on` in the console). Each creature shows its sight
+  cone tinted by alert state, its hearing range, the route it walks and where it thinks its target
+  is, with a label giving its state and how long it has been in it, what it is doing and how aware
+  it is of each thing it noticed. Noises ring where they were made. `ai.freeze` holds the game and
+  `ai.step` advances it one tick; click a creature or type `ai.debug select` to see everything about
+  it. Release builds do not include it.
 - Health and stamina bars in the bottom-left corner. When you take a hit, the health you lost stays
   visible in a lighter colour for half a second before it drains away. The health bar pulses when
   you are below a quarter of your health, and the stamina bar flashes when you try something you

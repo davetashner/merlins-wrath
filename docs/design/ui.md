@@ -48,6 +48,7 @@ ui.subscribe(({ capturesInput, pausesSim }) => { /* … */ });
 | `confirm` | Enter, Space | A | `click()` the focused element |
 | `back` | Esc | B | `onBack`, else close the screen |
 | `tabPrev/tabNext` | Q/E, PageUp/PageDown | LB/RB | first tab strip on the screen |
+| `secondary` | R | X | none: the screen's own second action (the container window's Take All) |
 | `next/prev` | Tab / Shift+Tab | — | Tab order, wrapping inside the screen |
 
 An intent is routed in this order:
@@ -209,6 +210,44 @@ quickSlots.update(views.quickSlots(world, player)); // QuickSlotHud, bottom cent
   each slot's `{label, count}` or null. The UI testbed opens the screen over a demo pack with
   `openScreen('inventory')`.
 
+## Container window and pickup toasts (`src/ui/container-window.ts`, `src/ui/pickup-toasts.ts`, `src/game/items/container-window.ts`, mw-e18.4)
+
+```ts
+const window = openContainerWindow(ui, {
+  model,                        // LootViews.windowModel(world, chest): title, gold, stacks in pack order
+  onTake: (id) => submit(containerActionCommand(player, chest, { op: 'take', instanceId: id })),
+  onTakeGold: () => submit(containerActionCommand(player, chest, { op: 'take-gold' })),
+  onTakeAll: () => submit(containerActionCommand(player, chest, { op: 'take-all' })),
+});
+toasts.push(views.pickup(defId, count), nowMs); // PickupToasts in ui.hud, bottom-right
+toasts.frame(nowMs);                             // every drawn frame: expires toasts
+```
+
+- **Opening:** Interact's Search on an unlocked container opens it in the sim and fires
+  `container.searched`; `ContainerWindowController` opens the window after that step (never over
+  another screen). The window pauses the sim and captures input; Back (Esc, B) or Close shuts it.
+- **Rows:** one button per stack (icon, name, count) and one for the gold. Confirm or a click takes
+  that stack; the window stays open and refreshes after the paused step that ran the command
+  (`stepWhilePaused`), keeping focus on the same row or its neighbour. A refused take (a second
+  unique) is said on its status line.
+- **Take All:** focused when the window opens, so Interact then confirm loots a chest. R or X (the
+  UI's `secondary` intent, a fixed menu key like Q/E) presses it from anywhere in the window. It
+  closes the window at once, in the same frame, and the next step carries out the command.
+- **Empty:** a container with nothing in it says "Empty"; Take All is disabled and focus starts on
+  Close. (An opened, empty container's Search is greyed, so this is reached by taking the last
+  stack.)
+- **Sim:** every action is a `loot.containerAction` command (`src/sim/loot/containers.ts`), so
+  looting is in the replay. A take that moved something fires `container.taken`; every command fires
+  `container.action` with whether it worked and why not.
+- **Toasts:** the player's pickups (world items, `item.pickedUp`; container takes, `container.taken`)
+  become toasts: at most four, merged by definition with a count (a merge restarts its 3 s), the one
+  due to go first making way when full. A unique artifact gets a gold-edged "Discovery" toast with
+  its flavour line (item data's `description`) for 6 s; discoveries never make way, and a pickup with
+  no room waits. The corner is a polite live region, sized in em times the HUD scale.
+- **Readouts:** `#app[data-container-window]` is `open` or `closed`; `#app[data-pickups]` lists the
+  visible toasts (`{text, count, discovery}`). The UI testbed has `openScreen('container')`,
+  `openScreen('container-empty')` and `__ui.pickups()`.
+
 ## Class selection and the kit panel (`src/ui/class-select.ts`, `src/game/classes.ts`, mw-e19.5)
 
 ```ts
@@ -234,10 +273,89 @@ kitPanel.update(kitModel(world, player, content)); // HUD: class, gold, carried 
   `aria-describedby`) and the status line says "<Class>: Not playable in this build yet". The first
   playable card takes focus on open. A build with the debug console unlocks every class with
   `?allclasses` (mw-e19.5's per-class tests use it); `?class=<locked id>` is refused with a warning.
-- **In the game**: `?newgame` opens the screen over the testbed once the player has spawned;
-  `?class=<id>` applies a class at boot without it. Without either, the testbed boots with no class,
-  as before. `#app[data-player-class]` publishes the sim's `player.class`. The title screen flow is
-  mw-e01.2 and the card art is mw-e37.125.
+- **In the game**: the title screen's New Game opens the screen over the start scene (mw-e01.2,
+  below). `?newgame` opens it once the player has spawned in the `?scene=` scene; `?class=<id>`
+  applies a class at boot without it. A `?scene=` URL with neither boots with no class, as before.
+  `#app[data-player-class]` publishes the sim's `player.class`. The card art is mw-e37.125.
+
+## Title menu and save screens (`src/ui/save-menus.ts`, `src/game/save/menus`, mw-e30.11)
+
+```ts
+const menus = new SaveMenus({ ui, world, store, registry, build, now, describe, warning,
+  captureThumbnail, load: (pending) => deathReload.reload(pending), newGame });
+await menus.openTitle();  // Continue (most recent save), New Game, Load
+await menus.openSave();   // the ten manual slots
+await menus.openLoad();   // every save, most recent first
+```
+
+- **Title menu.** With a save, Continue takes focus and is described by "Last save: …". With none,
+  it stays in place, greyed and `aria-disabled`, and the tooltip "No saves yet" is its
+  `aria-describedby`. New Game takes focus instead. A save list that cannot be read disables
+  Continue with "Saves could not be read". Back never closes the title menu.
+- **Slot lists.** One row per slot: a thumbnail (or a placeholder), the title and details, and the
+  verb (Load or Save here) on the row's main button, with Delete to its right. Up and down move
+  between rows, right reaches Delete, Enter presses and Esc closes the list. An empty Load list says
+  so and focuses Back. A slot with no readable copy stays listed, disabled with its reason, so it
+  can still be deleted.
+- **Confirmations.** Saving over an occupied slot and deleting a save open `confirmDialog`, with
+  focus on Cancel. Results show in the list's status line ("Saved to …", "Overwrote …",
+  "Deleted …"), and storage failures show as an alert. After a redraw, focus stays on the same slot
+  and action.
+- **Memory fallback.** When saves live only in memory (`OpenedSaveStore.warning`), every slot screen
+  shows that warning as an alert.
+- **In the game.** `?menu=title|load|save` opens a menu at boot over the freshly built area, with
+  the sim paused. Continue and Load reload into the save's area through the death screen's hand-off
+  (`DeathReload.reload`). New Game closes the title and opens class selection over the same scene,
+  with no reload (a scene without a player reloads with `?newgame` instead). The title shows the
+  build SHA ("Build abc1234") under the menu. The thumbnail is read from the canvas straight after the
+  next render. The e2e reads `#app[data-save-menu-saved]` (tick and hash) and
+  `#app[data-save-menu-title|list|deleted]`. The pause menu (below) opens Save and Load too.
+- **The front door (mw-e01.2).** A page that names no `?scene=`, `?newgame`, `?class=` or `?menu=`
+  boots the game's start scene, `game.startScene` (`src/content/data/game/game.json`; the slice in
+  m1, the mountain road from m3), with the title menu over it (`bootMenuRequest`,
+  `src/game/save/menus/request.ts`). New Game → class select → Confirm leaves the player at the start
+  scene's `player-start` with the class kit. Any of those parameters skips the title, so dev and e2e
+  URLs (`?scene=testbed`, `?scene=slice&debug=1`, `?scene=testbed&newgame`) boot straight into a
+  scene as before. **Owner decision (2026-10-03):** the default boot changed from the testbed to the
+  title; the testbed stays one parameter away at `?scene=testbed`. Restarting the area after a death
+  reloads with the area's `?scene=`, so it restarts the scene rather than showing the title. The e2e
+  reads `#app[data-front-door]`: page-relative milliseconds when the title showed (`titleMs`), New Game
+  was pressed (`newGameMs`) and the class was applied (`playableMs`).
+
+## Pause menu (`src/ui/pause-menu.ts`, `src/game/ui/pause.ts`, mw-e01.3)
+
+```ts
+const pause = new PauseController({ ui, canPause, saveBlocked, unsavedProgress, pauseKeys,
+  openSettings, openSave, openLoad, quitToTitle, publish });
+window.addEventListener('keydown', (e) => { if (pause.keydown(e)) e.preventDefault(); });
+pause.pausePressed();          // the Pause action in a sampled gameplay frame (pad Menu, disconnect)
+pause.drained(frame.pause.pressed); // each frame drained while the sim is paused
+pause.pointerUnlocked();       // the player's pointer lock ended (Esc, alt-tab)
+```
+
+- **Opening.** Esc or P (the Pause binding), the pad's Menu, a pad disconnecting, or losing pointer
+  lock while playing opens the menu, but only with no other screen open and a living player in play
+  (not during the death beat or with the debug fly camera). The keydown listener runs after the UI's
+  own, so an Esc that closed another screen (it is that screen's Back) never also pauses: screens
+  stack, and Esc and B close the top one first.
+- **Options.** Resume (focused on open), Settings (the options menu), Save (the Save screen), Load
+  (the Load screen) and Quit to Title, one column: up and down reach each one and Enter or A
+  presses it. Settings, Save and Load open over the menu, and Back returns to it with focus on the
+  option that opened them. Resume, Back (Esc, B) and Pause again (P, Menu) resume. A Pause press
+  recorded before the menu opened (the key that opened it, under pointer lock) is dropped.
+- **Pausing.** The screen pauses the sim: the loop runs no steps while it is open, so the world
+  clock stops and replays never see how long the game sat paused.
+- **Save disabled.** While a safety veto objects (the autosave's, mw-e01.7: a creature in Combat),
+  Save stays in place but is `aria-disabled`, with the reason ("Can't save during combat") shown
+  under it as its `aria-describedby`. It is still focusable, so the d-pad reaches it, and pressing it
+  does nothing. The vetoes are the autosave's own `SafetyVetoes`.
+- **Quit to Title.** With progress since the last save or load (`SaveProgress`: the sim tick moved
+  on since then; a new game counts from its start), a `confirmDialog` asks "Quit to title?" ("Progress
+  since your last save will be lost.") with focus on Cancel. Confirming reloads into the front door
+  (`titleSearch` drops `?scene=`, `?newgame`, `?class=` and `?menu=`), which tears the world down; the
+  title's Continue then loads the latest save. The menu stays open, the sim paused, while the page
+  leaves.
+- **Readout.** `#app[data-pause]` is `open` or `closed`.
 
 ## Testing
 

@@ -7,6 +7,7 @@ import type { EntityId } from '../core/component';
 import type { World } from '../core/world';
 import type { Creature } from '../creatures/components';
 import type { Brain } from './components';
+import type { MemoryTuning } from './memory';
 import type { AiNavigation } from './navigation';
 
 /** The collaborators primitives use (see `installAi`). */
@@ -16,6 +17,10 @@ export interface AiPorts {
   readonly attacks: AttackLookup | undefined;
   /** The hour of the day, 0–24, for routine windows (mw-e11.9); absent = windows are not read. */
   readonly hourOfDay: ((world: World<never>) => number) | undefined;
+  /** How target memory decays and predicts (mw-e11.8). */
+  readonly memory: MemoryTuning;
+  /** How many creatures may attack one target at once (mw-e11.13). */
+  readonly attackTokens: number;
 }
 
 /** One agent as inputs and primitives see it. */

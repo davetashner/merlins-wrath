@@ -84,6 +84,7 @@ pnpm lint && pnpm typecheck && pnpm test   # quality gates
 pnpm test:coverage                        # coverage/ (json-summary + lcov)
 pnpm e2e                                  # Playwright smoke vs production build
 pnpm bench                                # sim perf budgets (vitest benchmarks)
+pnpm perf                                 # perf budget suite, CI mode (README: Perf budgets)
 pnpm build                                # dist/
 ```
 

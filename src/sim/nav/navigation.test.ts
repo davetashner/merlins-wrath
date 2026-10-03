@@ -6,8 +6,9 @@ import { CreatureNavComponent } from '../creatures/components';
 import { PlacementComponent, placeEntity, type Placement } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import type { NavDoorState } from './doors';
-import { CLIMBER, IN_A, IN_B, ON_PLATFORM, twoRooms } from './fixtures';
+import { CLIMBER, IN_A, IN_B, ON_PILLAR, ON_PLATFORM, twoRooms } from './fixtures';
 import {
+  NAV_APPROACH_REPLAN_S,
   NAV_REPLAN_DISTANCE,
   navmeshNavigation,
   NavRouteComponent,
@@ -34,7 +35,9 @@ function setup(options: Partial<NavmeshNavigationOptions> = {}) {
   };
   const travel = (entity: EntityId, goal: Vec3, speed = 3, within = 0.2) =>
     nav.travel(world, entity, { goal, within, speed, dt: DT });
-  return { world, nav, spawn, place, travel };
+  const approach = (entity: EntityId, goal: Vec3, speed = 3, within = 0.2) =>
+    nav.approach(world, entity, { goal, within, speed, dt: DT });
+  return { world, nav, spawn, place, travel, approach };
 }
 
 /** Travels until success or failure (at most `ticks`), stepping the world; returns the trail. */
@@ -235,5 +238,93 @@ describe('navmesh travel for AI (mw-e11.4)', () => {
     expect(distance(IN_B, back)).toBe(Infinity);
     const ghost = t.world.spawn();
     expect(distance(IN_B, ghost)).toBe(Infinity);
+  });
+
+  describe('approach (mw-e11.13)', () => {
+    /** Approaches until it stops answering running (at most `ticks`), stepping the world. */
+    function close(t: ReturnType<typeof setup>, entity: EntityId, goal: Vec3, ticks = 2000) {
+      let status = t.approach(entity, goal);
+      for (let n = 0; n < ticks && status === 'running'; n++) {
+        t.world.step();
+        status = t.approach(entity, goal);
+      }
+      return status;
+    }
+
+    it('walks to a reachable goal exactly as travel does', () => {
+      const t = setup();
+      const guard = t.spawn(IN_A);
+      expect(close(t, guard, IN_B)).toBe('success');
+      expect(t.world.get(guard, NavRouteComponent)?.partial).toBeUndefined();
+      expect(t.approach(guard, IN_B)).toBe('success');
+    });
+
+    it('walks toward the closest reachable point of an unreachable goal and waits there, answering unreachable', () => {
+      const t = setup();
+      const guard = t.spawn(IN_B);
+      t.approach(guard, ON_PILLAR);
+      const trail = [t.place(guard)];
+      for (let n = 0; n < 300; n++) {
+        t.world.step();
+        const status = t.approach(guard, ON_PILLAR);
+        trail.push(t.place(guard));
+        if (n > 0) expect(status).toBe('unreachable');
+      }
+      const end = t.place(guard);
+      // At the pillar's foot, not where it started, and standing still.
+      expect(Math.sqrt((end.x - ON_PILLAR.x) ** 2 + (end.z - ON_PILLAR.z) ** 2)).toBeLessThan(2);
+      expect(Math.sqrt((end.x - IN_B.x) ** 2 + (end.z - IN_B.z) ** 2)).toBeGreaterThan(0.5);
+      const late = trail[trail.length - 60];
+      expect(late).toEqual(end);
+      const route = t.world.get(guard, NavRouteComponent);
+      expect(route).toMatchObject({ status: 'ready', partial: true });
+      // Travel reads the same route as unreachable: a failure, without asking again.
+      const pending = t.nav.queue.pending;
+      expect(t.travel(guard, ON_PILLAR)).toBe('failure');
+      expect(t.nav.queue.pending).toBe(pending);
+      // It cannot walk at speed 0, partial path or not.
+      expect(t.approach(guard, ON_PILLAR, 0)).toBe('failure');
+    });
+
+    it('follows a goal that moved at most once per NAV_APPROACH_REPLAN_S', () => {
+      const t = setup();
+      const guard = t.spawn(IN_B);
+      const submits: number[] = [];
+      const submit = t.nav.queue.submit.bind(t.nav.queue);
+      t.nav.queue.submit = (request) => {
+        submits.push(t.world.tick);
+        return submit(request);
+      };
+      for (let n = 0; n < 150; n++) {
+        const x = Math.floor(n / 5) % 2 === 0 ? 10.2 : 10.8;
+        t.approach(guard, { ...ON_PILLAR, x });
+        t.world.step();
+      }
+      expect(submits.length).toBeGreaterThan(1);
+      for (let i = 1; i < submits.length; i++) {
+        expect((submits[i] ?? 0) - (submits[i - 1] ?? 0)).toBeGreaterThanOrEqual(
+          NAV_APPROACH_REPLAN_S * 60,
+        );
+      }
+    });
+
+    it('plans again for a route travel found unreachable, and fails off the mesh', () => {
+      const t = setup();
+      const guard = t.spawn(IN_B);
+      expect(walk(t, guard, ON_PILLAR).status).toBe('failure');
+      expect(t.world.get(guard, NavRouteComponent)?.status).toBe('failed');
+      expect(close(t, guard, ON_PILLAR)).toBe('unreachable');
+      expect(t.world.get(guard, NavRouteComponent)?.partial).toBe(true);
+      const lost = t.spawn({ x: 50, y: 0, z: 50 });
+      expect(close(t, lost, IN_B)).toBe('failure');
+      // Its failed route is its own: it does not ask again for the same goal.
+      const pending = t.nav.queue.pending;
+      expect(t.approach(lost, IN_B)).toBe('failure');
+      expect(t.nav.queue.pending).toBe(pending);
+      expect(
+        t.nav.approach(t.world, t.world.spawn(), { goal: IN_B, within: 0.2, speed: 3, dt: DT }),
+      ).toBe('failure');
+      expect(t.approach(guard, { x: t.place(guard).x, y: 0, z: t.place(guard).z })).toBe('success');
+    });
   });
 });

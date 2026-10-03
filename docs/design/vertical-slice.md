@@ -60,7 +60,9 @@ Each beat lists what the player does, then the systems it exercises with their o
 The game boots to a grey-box title: New Game, Continue, Load, and the build SHA. With no saves,
 Continue is **disabled with an accessible "no saves yet" reason** (mw-e01.2 AC-2). mw-e30.11 AC-2 says
 "hidden"; this spec picks disabled-with-reason for the same reason locked class cards stay visible
-(B1), and a note on mw-e30.11 asks for its AC to be reconciled.
+(B1), and a note on mw-e30.11 asks for its AC to be reconciled. **Owner decision, 2026-10-03:** `/`
+is the front door (the title over `game.startScene`); dev and e2e URLs with `?scene=` and friends
+skip it, and the testbed is `?scene=testbed` (docs/design/ui.md, "The front door").
 
 | System                                  | Bead                                           | Status |
 | --------------------------------------- | ---------------------------------------------- | ------ |
@@ -124,7 +126,7 @@ seconds in there is always a save to go back to.
 | Torch as a sim light source, render parity | `e03-light-field` (mw-e03.15), mw-e03.37                 | done   |
 | Health and stamina HUD                    | `e04-hud-vitals` (mw-e04.10)                              | open   |
 | Footsteps by surface and armour           | `e28-footsteps` (mw-e28.6)                                | done   |
-| CP-1 autosave                             | `e30-autosave` (mw-e30.5), `e01-slice-save-points` (mw-e01.7) | done / open |
+| CP-1 autosave                             | `e30-autosave` (mw-e30.5), `e01-slice-save-points` (mw-e01.7) | done   |
 
 ### B3 — Corridor (20 m × 2 m, side alcove)
 
@@ -147,7 +149,7 @@ skeleton's awareness can build to Combat.
 | Climbing drains stamina (5/s)             | `e04-stamina` (mw-e04.5)                                  | done   |
 | Load class from armour (climb, jump, noise) | `e04-armor-weight` (mw-e04.16), ADR-0003               | open   |
 | Safe 2 m drop (falls hurt above 4 m)      | `e04-environmental-damage` (mw-e04.19), `e02-external-impulses` (mw-e02.15) | done |
-| CP-2 autosave, combat veto                | `e30-autosave` (mw-e30.5), `e01-slice-save-points` (mw-e01.7) | done / open |
+| CP-2 autosave, combat veto                | `e30-autosave` (mw-e30.5), `e01-slice-save-points` (mw-e01.7) | done   |
 
 ### B4 — Skeleton fight room (arena, 12 × 12 m)
 
@@ -196,6 +198,8 @@ so luring it into the fire is a systemic option, not a scripted one.
 When the skeleton dies, its Died event drops the **Rusted gallery key** as a world item within 1 m of
 the body (mw-e01.5 AC-2). Interact ("Take Rusted gallery key") adds it to the keyring. The key is a
 quest item, so it cannot be dropped (mw-e17.7 AC-4) and can never be lost in the level.
+Until the encounter lands, the key (`rusted-gallery-key`) lies on the floor at the skeleton's post
+at (2.5, 0, 32.5) by pillar B (mw-e01.6); mw-e01.5 replaces that placement with the drop.
 
 | System                          | Bead                                                   | Status |
 | ------------------------------- | ------------------------------------------------------ | ------ |
@@ -248,7 +252,7 @@ a "Slice complete" card (run time, class, Return to title). The card is new bead
 | Trigger volume → fact receiver         | `e03-triggers` (mw-e03.21)                                  | done   |
 | Fact store and registry                | `e27-world-state-store` (mw-e27.1), `e27-fact-registry` (mw-e27.2) | done |
 | Volume and fact wiring in the scene    | `e01-slice-greybox-level` (mw-e01.4)                        | open   |
-| Completion autosave                    | `e01-slice-save-points` (mw-e01.7)                          | open   |
+| Completion autosave                    | `e01-slice-save-points` (mw-e01.7)                          | done   |
 | Completion card                        | `e01-slice-complete-card` (mw-e01.18)                       | open (new) |
 | End-to-end proof                       | `e01-slice-e2e-test` (mw-e01.9)                             | open   |
 
@@ -256,7 +260,7 @@ a "Slice complete" card (run time, class, Return to title). The card is new bead
 
 | System                                       | Bead                                                        | Status |
 | -------------------------------------------- | ----------------------------------------------------------- | ------ |
-| Pause: resume, settings, save, load, quit    | `e01-pause-menu` (mw-e01.3), `e31-settings-framework` (mw-e31.1) | open |
+| Pause: resume, settings, save, load, quit    | `e01-pause-menu` (mw-e01.3), `e31-settings-framework` (mw-e31.1) | done |
 | Death beat and respawn rule                  | `e01-death-respawn-loop` (mw-e01.8)                        | open   |
 | Death screen, Load last save                 | `e30-death-reload` (mw-e30.7)                              | open   |
 | Restart area with no save                    | `e01-slice-restart` (mw-e01.16)                            | open (new) |
@@ -371,7 +375,10 @@ at the left edge to +10 at the right. Rows with nothing new are left out.
 As built (mw-e01.4): the scene places one signal graph, `src/content/data/signal-graph/slice.json`,
 holding the three player-filtered volumes; the scene marks `cp-1` and `cp-2` as checkpoints with
 `signals[].checkpoints`, which the game reads through `sceneCheckpoints` and hands to the autosave's
-`autosaveAtCheckpoints` (that wiring is mw-e01.7). The player carries the `player` tag in every scene
+`autosaveAtCheckpoints` through the game's `GameAutosave` (mw-e01.7), with `slice.complete` as a
+milestone that autosaves too and the creatures' combat veto holding every autosave while a living
+creature is in Combat. Each attempt is published on `#app[data-autosave]`; a placed creature's death
+sets `entity:<level>/<spawn>.slain` (e.g. `entity:slice/skeleton.slain`). The player carries the `player` tag in every scene
 that places a signal graph. The running build publishes the checkpoints entered on
 `#app[data-checkpoints]` and the set world facts on `#app[data-facts]`. The loot alcove's walls stand
 4.5 m from the arena floor (3 m above the alcove floor), and its 1.4 m sill is above every creature's
@@ -492,7 +499,7 @@ Dependency changes:
 | `e00-ui-framework`               | mw-e00.23 | done   |
 | `e01-creature-leash`             | mw-e01.17 | open   |
 | `e01-death-respawn-loop`         | mw-e01.8  | open   |
-| `e01-pause-menu`                 | mw-e01.3  | open   |
+| `e01-pause-menu`                 | mw-e01.3  | done   |
 | `e01-playable-classes`           | mw-e01.15 | open   |
 | `e01-slice-complete-card`        | mw-e01.18 | open   |
 | `e01-slice-e2e-test`             | mw-e01.9  | open   |
@@ -500,7 +507,7 @@ Dependency changes:
 | `e01-slice-loot`                 | mw-e01.6  | open   |
 | `e01-slice-playtest`             | mw-e01.10 | open   |
 | `e01-slice-restart`              | mw-e01.16 | open   |
-| `e01-slice-save-points`          | mw-e01.7  | open   |
+| `e01-slice-save-points`          | mw-e01.7  | done   |
 | `e01-slice-skeleton-encounter`   | mw-e01.5  | open   |
 | `e01-title-new-game-flow`        | mw-e01.2  | open   |
 | `e02-climb-surfaces`             | mw-e02.13 | done   |

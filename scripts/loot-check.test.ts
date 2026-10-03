@@ -31,13 +31,14 @@ describe('loot-check main (mw-e18.2)', () => {
   });
 
   it('AC-5: the repository loot content passes, printing unreferenced tables as warnings', () => {
-    // The testbed's supply chest rolls testbed-supply-crate (mw-e18.3), so only the extra is unused.
+    // The testbed's supply chest rolls testbed-supply-crate (mw-e18.3) and the slice's alcove chest
+    // slice-alcove-chest (mw-e01.6), so only the extra is unused.
     writeTable('zz-spare', { guaranteed: [{ item: 'healing-draught' }] });
     expect(run()).toBe(0);
     expect(console.log).toHaveBeenCalledWith(
       '::warning title=Loot tables::data/loot-table/zz-spare.json#: loot-table:zz-spare is not referenced by any creature, container or loot table',
     );
-    expect(console.log).toHaveBeenCalledWith('Loot tables valid (3 table(s), 1 warning(s)).');
+    expect(console.log).toHaveBeenCalledWith('Loot tables valid (4 table(s), 1 warning(s)).');
   });
 
   it('AC-2: fails naming a cycle of nested tables', () => {

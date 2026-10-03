@@ -72,8 +72,9 @@ describe('training dummy (mw-e04.6)', () => {
     const combat = prepareTestbedCombat(loadGameContent());
     expect(combat.moves.get('sword-light-1')?.chainNext).toBe('sword-light-2');
     expect(combat.tracks.has('knight-sword-arc-light-1')).toBe(true);
-    expect(combat.melee.shield.id).toBe(KNIGHT_SHIELD_ID);
+    expect(combat.melee.shield?.id).toBe(KNIGHT_SHIELD_ID);
     expect([combat.melee.parry, combat.melee.riposte]).toEqual(['shield-parry', 'sword-riposte']);
+    expect([combat.melee.bash, combat.melee.bashFallback]).toEqual(['shield-bash', 'kick']);
     expect(combat.damage.modifiers().map((m) => [m.name, m.stage])).toEqual([
       ['shield-block', 'guard'],
     ]);

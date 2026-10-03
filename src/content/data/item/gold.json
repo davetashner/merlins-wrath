@@ -1,0 +1,15 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "gold",
+  "category": "currency",
+  "name": "Gold",
+  "description": "A few coins, clipped at the edges and black in the creases. Money spends the same however long it sat in the dark.",
+  "notes": "Money (mw-e01.6): what a loot table rolls into a container's gold, so a chest can hold a few coins. Taken from a container it goes to the gold counter, never into the pack (mw-e17.3, mw-e18.3); its id matches the `gold` the container window and pickup notes report it under. Placeholder text until e39-item-creature-text.",
+  "icon": "icon-item-gold-coin-01",
+  "value": 1,
+  "stackable": true,
+  "maxStack": 9999,
+  "worldProperties": {
+    "material": "copper"
+  }
+}

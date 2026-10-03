@@ -20,9 +20,13 @@
 //   the same keyring and lockpick path as a door: while it is locked, its prompt offers Unlock and
 //   Pick lock instead of Search, and every open, take and put is refused with `lockRefused` reason
 //   `locked`, without rolling its table (AC-3).
-// - Interact: an unlocked container offers Search; Interact opens it and takes everything (a
-//   minimal take-all; the container window that browses its contents is mw-e18.4). An opened, empty
-//   container's Search is greyed with the reason "Empty".
+// - Interact: an unlocked container offers Search; Interact opens it and fires `container.searched`,
+//   which the game answers with the container window (mw-e18.4). An opened, empty container's Search
+//   is greyed with the reason "Empty".
+// - Window actions (mw-e18.4): the window's Take, Take gold and Take All reach the sim as one
+//   `loot.containerAction` command each (`containerActionCommand`), so looting is in the replay like
+//   any input. Every take that moved something fires `container.taken` with what moved (the pickup
+//   toasts read it); every command fires `container.action` with whether it worked and, if not, why.
 //
 // Trap (mw-e10) and ownership (e18 stolen items) hooks are later beads. The sim never imports
 // content: the game passes loot tables, items and locks in.
@@ -30,7 +34,7 @@
 import type { EntityId } from '../core/component';
 import { defineComponent } from '../core/component';
 import { defineEvent } from '../core/events';
-import type { World } from '../core/world';
+import type { System, World } from '../core/world';
 import { entityFactKey } from '../facts/store';
 import {
   addAffordanceGate,
@@ -113,8 +117,26 @@ export interface ContainerLooted {
   readonly fact: string;
 }
 
+/** Interact's Search opened a container: the game shows its window. */
+export interface ContainerSearched {
+  readonly tick: number;
+  readonly entity: EntityId;
+  readonly actor: EntityId;
+}
+
+/** A take moved something out of a container into an actor's inventory. */
+export interface ContainerTaken {
+  readonly tick: number;
+  readonly entity: EntityId;
+  readonly actor: EntityId;
+  /** What moved, in order (gold as item `gold`). Never empty. */
+  readonly moved: readonly LootStack[];
+}
+
 export const containerOpened = defineEvent<ContainerOpened>('container.opened');
 export const containerLooted = defineEvent<ContainerLooted>('container.looted');
+export const containerSearched = defineEvent<ContainerSearched>('container.searched');
+export const containerTaken = defineEvent<ContainerTaken>('container.taken');
 
 /** Why a container refused. */
 export type ContainerRefusal =
@@ -276,20 +298,36 @@ export class Containers {
   takeAll(world: World<never>, entity: EntityId, actor: EntityId): MoveResult {
     const open = this.open(world, entity, actor);
     if (!open.ok) return open;
-    const moved: LootStack[] = [];
-    const { gold } = this.#pack(world, entity);
-    if (gold > 0) {
-      this.inventory.spendGold(world, entity, gold);
-      this.inventory.addGold(world, actor, gold);
-      moved.push({ item: 'gold', count: gold });
-    }
+    const moved: LootStack[] = [...this.#moveGold(world, entity, actor)];
     for (const { instanceId, defId, count } of open.items) {
       if (this.#transfer(world, entity, actor, instanceId, count) === undefined) {
         moved.push({ item: defId, count });
       }
     }
-    this.#lootedBy(world, entity, actor);
+    this.#takenBy(world, entity, actor, moved);
     return { ok: true, moved };
+  }
+
+  /**
+   * `actor` opens `entity` and takes the gold in it (moved is empty when there is none). Refused
+   * only while locked.
+   * @throws RangeError when `entity` is not a container or `actor` has no inventory.
+   */
+  takeGold(world: World<never>, entity: EntityId, actor: EntityId): MoveResult {
+    const open = this.open(world, entity, actor);
+    if (!open.ok) return open;
+    const moved = this.#moveGold(world, entity, actor);
+    this.#takenBy(world, entity, actor, moved);
+    return { ok: true, moved };
+  }
+
+  /** Moves all of `entity`'s gold to `actor`: what moved (nothing when it has none). */
+  #moveGold(world: World<never>, entity: EntityId, actor: EntityId): LootStack[] {
+    const { gold } = this.#pack(world, entity);
+    if (gold === 0) return [];
+    this.inventory.spendGold(world, entity, gold);
+    this.inventory.addGold(world, actor, gold);
+    return [{ item: 'gold', count: gold }];
   }
 
   /**
@@ -306,7 +344,7 @@ export class Containers {
     const open = this.open(world, entity, actor);
     if (!open.ok) return open;
     const result = this.#move(world, entity, actor, instanceId, count);
-    if (result.ok) this.#lootedBy(world, entity, actor);
+    if (result.ok) this.#takenBy(world, entity, actor, result.moved);
     return result;
   }
 
@@ -370,8 +408,19 @@ export class Containers {
     return undefined;
   }
 
-  /** Sets the looted fact and fires `container.looted` when a take left `entity` empty. */
-  #lootedBy(world: World<never>, entity: EntityId, actor: EntityId): void {
+  /**
+   * After a take: fires `container.taken` when something moved, then sets the looted fact and fires
+   * `container.looted` when the take left `entity` empty.
+   */
+  #takenBy(
+    world: World<never>,
+    entity: EntityId,
+    actor: EntityId,
+    moved: readonly LootStack[],
+  ): void {
+    if (moved.length > 0) {
+      world.events.emit(containerTaken, { tick: world.tick, entity, actor, moved });
+    }
     if (!isEmpty(this.#pack(world, entity))) return;
     const fact = containerFact(this.#container(world, entity), 'looted');
     world.facts.set(fact, true);
@@ -419,14 +468,123 @@ export class Containers {
   }
 }
 
+/** One container window action (mw-e18.4). */
+export type ContainerAction =
+  | { readonly op: 'take-all' }
+  | { readonly op: 'take'; readonly instanceId: number; readonly count?: number }
+  | { readonly op: 'take-gold' };
+
+/** The command carrying a container window action. */
+export const CONTAINER_ACTION_COMMAND = 'loot.containerAction' as const;
+
+export interface ContainerActionCommand {
+  readonly kind: typeof CONTAINER_ACTION_COMMAND;
+  readonly actor: EntityId;
+  /** The container. */
+  readonly entity: EntityId;
+  readonly action: ContainerAction;
+}
+
+/** A container action command was carried out, or refused. */
+export interface ContainerActionDone {
+  readonly tick: number;
+  readonly actor: EntityId;
+  readonly entity: EntityId;
+  readonly action: ContainerAction;
+  readonly ok: boolean;
+  /** Why it was refused (absent when it happened). */
+  readonly reason?: ContainerRefusal;
+}
+
+export const containerActionDone = defineEvent<ContainerActionDone>('container.action');
+
+const checkPositive = (name: string, value: number): void => {
+  if (!Number.isSafeInteger(value) || value < 1) {
+    throw new RangeError(`${name} must be a positive integer, got ${String(value)}`);
+  }
+};
+
+/**
+ * A command carrying `action` on container `entity` for `actor`.
+ * @throws RangeError for a bad instance id or count.
+ */
+export function containerActionCommand(
+  actor: EntityId,
+  entity: EntityId,
+  action: ContainerAction,
+): ContainerActionCommand {
+  if (action.op === 'take') {
+    checkPositive('instance id', action.instanceId);
+    if (action.count !== undefined) checkPositive('count', action.count);
+  }
+  return { kind: CONTAINER_ACTION_COMMAND, actor, entity, action };
+}
+
+/** Whether `input` is a container action command. */
+export function isContainerActionCommand(input: unknown): input is ContainerActionCommand {
+  return (
+    typeof input === 'object' &&
+    input !== null &&
+    (input as { kind?: unknown }).kind === CONTAINER_ACTION_COMMAND
+  );
+}
+
+/** Carries out one container action through `containers`. */
+function applyContainerAction(
+  containers: Containers,
+  world: World<never>,
+  { actor, entity, action }: ContainerActionCommand,
+): MoveResult {
+  switch (action.op) {
+    case 'take-all':
+      return containers.takeAll(world, entity, actor);
+    case 'take-gold':
+      return containers.takeGold(world, entity, actor);
+    case 'take':
+      return containers.take(world, entity, actor, action.instanceId, action.count);
+  }
+}
+
+/**
+ * Carries out this tick's container action commands, in command order, and fires `container.action`
+ * for each. A command whose container is gone (or never was one) or whose actor has no inventory is
+ * skipped. `active`: false once the containers are uninstalled.
+ */
+export function containerActionsSystem<TInput>(
+  containers: Containers,
+  active: () => boolean,
+): System<TInput> {
+  return {
+    name: 'containerActions',
+    run({ world, inputs }) {
+      if (!active()) return;
+      const sim = world as unknown as World<never>; // container actions never read world inputs
+      for (const input of inputs as readonly unknown[]) {
+        if (!isContainerActionCommand(input)) continue;
+        if (!sim.has(input.entity, ContainerComponent)) continue;
+        if (inventoryOf(sim, input.actor) === undefined) continue;
+        const result = applyContainerAction(containers, sim, input);
+        sim.events.emit(containerActionDone, {
+          tick: sim.tick,
+          actor: input.actor,
+          entity: input.entity,
+          action: input.action,
+          ...(result.ok ? { ok: true } : { ok: false, reason: result.reason }),
+        });
+      }
+    },
+  };
+}
+
 /** The gate that greys an opened, empty container's Search with EMPTY_REASON. */
 const emptyGate: AffordanceGate = (world, _actor, target, affordance) =>
   affordance.verb === 'search' && containerEmpty(world, target) ? EMPTY_REASON : undefined;
 
 /**
  * Sets up containers in `world`: registers `loot.container` (and the inventory component if it is
- * not yet), takes everything on Interact's Search, greys an empty container's Search, and brings a
- * container's prompt up to date when its lock opens. For locked containers install mechanisms first
+ * not yet), opens a container on Interact's Search (`container.searched`), carries out container
+ * action commands each step, greys an empty container's Search, and brings a container's prompt up
+ * to date when its lock opens. For locked containers install mechanisms first
  * (they unlock and pick locks); for prompts, interaction. Call once at setup, between steps. Returns
  * a function that removes the subscriptions.
  */
@@ -437,18 +595,22 @@ export function installContainers<TInput>(
   const sim: World<never> = world;
   world.register(ContainerComponent);
   if (!world.isRegistered(InventoryComponent)) world.register(InventoryComponent);
+  let active = true;
+  world.addSystem(containerActionsSystem(containers, () => active));
   const offs = [
     addAffordanceGate(world, emptyGate),
     world.events.on(interacted, ({ actor, target, verb }) => {
       if (verb !== 'search' || !sim.has(target, ContainerComponent)) return;
       if (inventoryOf(sim, actor) === undefined) return;
-      containers.takeAll(sim, target, actor);
+      if (!containers.open(sim, target, actor).ok) return;
+      world.events.emit(containerSearched, { tick: world.tick, entity: target, actor });
     }),
     world.events.on(lockUnlocked, ({ entity }) => {
       refreshContainerAffordances(sim, entity);
     }),
   ];
   return () => {
+    active = false;
     for (const off of offs) off();
   };
 }

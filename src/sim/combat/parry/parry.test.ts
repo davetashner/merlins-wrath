@@ -84,6 +84,7 @@ const TABLE: HitStopTable = Object.freeze({
 
 const WOOD: RuntimeShield = Object.freeze({
   id: 'wood-shield',
+  kind: 'shield',
   absorption: Object.freeze({ slash: 85, pierce: 85, blunt: 85, fire: 30 }),
   stability: 60,
   raiseTicks: 6,

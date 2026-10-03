@@ -44,12 +44,23 @@ import {
   containerEmpty,
   containerFact,
   containerLooted,
+  CONTAINER_ACTION_COMMAND,
+  containerActionCommand,
+  containerActionDone,
+  containerActionsSystem,
   containerOpened,
+  containerSearched,
+  containerTaken,
   Containers,
+  isContainerActionCommand,
   EMPTY_REASON,
   installContainers,
   refreshContainerAffordances,
+  type ContainerAction,
+  type ContainerActionDone,
   type ContainerLooted,
+  type ContainerSearched,
+  type ContainerTaken,
   type ContainerOpened,
   type ContainerSpec,
 } from './containers';
@@ -193,6 +204,12 @@ function setup(options: SetupOptions = {}) {
   const opened: ContainerOpened[] = [];
   const looted: ContainerLooted[] = [];
   const refused: LockRefused[] = [];
+  const searched: ContainerSearched[] = [];
+  const taken: ContainerTaken[] = [];
+  const done: ContainerActionDone[] = [];
+  world.events.on(containerSearched, (e) => searched.push(e));
+  world.events.on(containerTaken, (e) => taken.push(e));
+  world.events.on(containerActionDone, (e) => done.push(e));
   world.events.on(containerOpened, (e) => opened.push(e));
   world.events.on(containerLooted, (e) => looted.push(e));
   world.events.on(lockRefused, (e) => refused.push(e));
@@ -222,6 +239,9 @@ function setup(options: SetupOptions = {}) {
     opened: heard(opened),
     looted: heard(looted),
     refused: heard(refused),
+    searched: heard(searched),
+    taken: heard(taken),
+    done: heard(done),
     inside,
     carried,
     save,
@@ -247,6 +267,9 @@ function reload(
 }
 
 const opens = (t: Setup) => t.containers.open(t.sim, t.chest, t.player);
+const command = (t: Setup, action: ContainerAction) =>
+  containerActionCommand(t.player, t.chest, action) as unknown as ActionFrame;
+const takeAllCommand = (t: Setup) => command(t, { op: 'take-all' });
 
 describe('lootable containers (mw-e18.3)', () => {
   it('AC-1: a chest with a loot table rolls once: opened twice across a save and reload, the contents are identical', () => {
@@ -303,7 +326,7 @@ describe('lootable containers (mw-e18.3)', () => {
     expect(inventoryOf(knight.sim, crate)?.items).toEqual([]);
   });
 
-  it('AC-2: Interact takes all: the contents move to the inventory, the chest is empty and its looted fact is set', () => {
+  it('AC-2: Interact opens the chest; Take All moves the contents to the inventory, empties it and sets its looted fact', () => {
     const t = setup({ chest: { contents: [{ item: 'letter', count: 1 }] } });
     expect(t.prompt()).toMatchObject({
       target: t.chest,
@@ -313,7 +336,11 @@ describe('lootable containers (mw-e18.3)', () => {
     });
     t.world.step([PRESS]);
     expect(t.opened()).toHaveLength(1);
+    // Search opens it for the window (mw-e18.4): nothing moves yet.
+    expect(t.searched()).toEqual([{ tick: t.world.tick - 1, entity: t.chest, actor: t.player }]);
+    expect(t.carried()).toEqual([]);
     const taken = t.opened()[0]?.rolled ?? [];
+    t.world.step([takeAllCommand(t)]);
     expect(t.inside()).toEqual([]);
     expect(inventoryOf(t.sim, t.chest)?.gold).toBe(0);
     // Everything that was inside is carried now, the quest letter too (taking it is not losing it).
@@ -331,12 +358,22 @@ describe('lootable containers (mw-e18.3)', () => {
     expect(t.looted()).toEqual([
       { tick: t.world.tick - 1, entity: t.chest, actor: t.player, fact },
     ]);
+    expect(t.done()).toEqual([
+      {
+        tick: t.world.tick - 1,
+        actor: t.player,
+        entity: t.chest,
+        action: { op: 'take-all' },
+        ok: true,
+      },
+    ]);
 
     // Empty now: Search is greyed with the reason, and Interact does nothing more.
     t.world.step([IDLE]);
     expect(t.prompt()).toMatchObject({ verb: 'search', available: false, reason: EMPTY_REASON });
     t.world.step([PRESS]);
-    expect(t.opened()).toHaveLength(1);
+    expect(t.opened()).toHaveLength(2); // the take-all opened it too
+    expect(t.searched()).toHaveLength(1);
   });
 
   it('AC-2: take all reports what moved, gold included; a stack the inventory refuses stays inside', () => {
@@ -450,7 +487,7 @@ describe('lootable containers (mw-e18.3)', () => {
     expect(t.world.facts.has(`entity:${LEVEL}/chest.opened`)).toBe(false);
   });
 
-  it('AC-3: the key on the keyring unlocks the chest through the same path as a door; then Search takes all', () => {
+  it('AC-3: the key on the keyring unlocks the chest through the same path as a door; then Search opens it and Take All empties it', () => {
     const t = setup({ chest: { lock: IRON_CHEST }, carry: ['chest-key'] });
     expect(t.prompt()).toMatchObject({ verb: 'unlock', available: true });
     t.world.step([PRESS]);
@@ -460,6 +497,8 @@ describe('lootable containers (mw-e18.3)', () => {
     expect(t.prompt()).toMatchObject({ verb: 'search', available: true });
     t.world.step([PRESS]);
     expect(t.opened()).toHaveLength(1);
+    expect(t.searched()).toHaveLength(1);
+    t.world.step([takeAllCommand(t)]);
     expect(t.inside()).toEqual([]);
 
     // The unlocked lock is part of the level's changes: after a reload the chest offers Search.
@@ -628,5 +667,135 @@ describe('lootable containers (mw-e18.3)', () => {
     expect(() => addSceneContainers(t.sim, t.containers, 'vault', unknown, locks)).toThrow(
       'unknown lock "nope"',
     );
+  });
+});
+
+describe('container window actions (mw-e18.4)', () => {
+  it('AC-1: a take-all command moves every stack and the gold in one step and reports what moved', () => {
+    const t = setup({
+      chest: {
+        loot: null,
+        contents: [
+          { item: 'bread', count: 2 },
+          { item: 'arrow', count: 5 },
+          { item: 'gold', count: 12 },
+        ],
+      },
+    });
+    t.world.step([takeAllCommand(t)]);
+    expect(t.inside()).toEqual([]);
+    expect(t.carried()).toEqual([
+      ['bread', 2],
+      ['arrow', 5],
+    ]);
+    expect(inventoryOf(t.sim, t.player)?.gold).toBe(12);
+    expect(t.taken()).toEqual([
+      {
+        tick: t.world.tick - 1,
+        entity: t.chest,
+        actor: t.player,
+        moved: [
+          { item: 'gold', count: 12 },
+          { item: 'bread', count: 2 },
+          { item: 'arrow', count: 5 },
+        ],
+      },
+    ]);
+    expect(t.looted()).toHaveLength(1);
+  });
+
+  it('take and take-gold commands move one stack or the gold; refusals are reported and move nothing', () => {
+    const t = setup({
+      chest: {
+        loot: 'regalia',
+        contents: [
+          { item: 'bread', count: 3 },
+          { item: 'gold', count: 7 },
+        ],
+      },
+      carry: ['crown'],
+    });
+    opens(t);
+    const [bread, crown] = inventoryOf(t.sim, t.chest)?.items ?? [];
+    t.world.step([
+      command(t, { op: 'take', instanceId: bread?.instanceId ?? 0, count: 2 }),
+      command(t, { op: 'take-gold' }),
+      command(t, { op: 'take', instanceId: crown?.instanceId ?? 0 }),
+      command(t, { op: 'take', instanceId: 99 }),
+    ]);
+    expect(t.inside()).toEqual([
+      ['bread', 1],
+      ['crown', 1],
+    ]);
+    expect(inventoryOf(t.sim, t.player)?.gold).toBe(7);
+    expect(t.taken().map((e) => e.moved)).toEqual([
+      [{ item: 'bread', count: 2 }],
+      [{ item: 'gold', count: 7 }],
+    ]);
+    expect(t.done().map(({ action, ok, reason }) => ({ op: action.op, ok, reason }))).toEqual([
+      { op: 'take', ok: true, reason: undefined },
+      { op: 'take-gold', ok: true, reason: undefined },
+      { op: 'take', ok: false, reason: 'unique-held' },
+      { op: 'take', ok: false, reason: 'no-instance' },
+    ]);
+    // No gold left: take-gold moves nothing and fires no take.
+    expect(t.containers.takeGold(t.sim, t.chest, t.player)).toEqual({ ok: true, moved: [] });
+    expect(t.taken()).toHaveLength(2);
+  });
+
+  it('a locked container refuses window actions; Search on it opens nothing', () => {
+    const t = setup({ chest: { lock: IRON_CHEST } });
+    t.world.step([command(t, { op: 'take-gold' })]);
+    expect(t.done()).toMatchObject([{ ok: false, reason: 'locked' }]);
+    t.world.events.emit(interacted, {
+      actor: t.player,
+      target: t.chest,
+      verb: 'search',
+      affordance: 0,
+    });
+    expect(t.searched()).toEqual([]);
+    expect(t.opened()).toEqual([]);
+  });
+
+  it('skips commands for a gone container, a non-container or an actor without an inventory, and stops once uninstalled', () => {
+    const t = setup({ chest: { loot: null, contents: [{ item: 'bread', count: 1 }] } });
+    const stranger = t.sim.spawn();
+    const other = t.sim.spawn();
+    t.world.step([
+      containerActionCommand(stranger, t.chest, { op: 'take-all' }) as unknown as ActionFrame,
+      containerActionCommand(t.player, other, { op: 'take-all' }) as unknown as ActionFrame,
+      IDLE,
+    ]);
+    expect(t.done()).toEqual([]);
+    expect(t.inside()).toEqual([['bread', 1]]);
+    t.off();
+    t.world.step([takeAllCommand(t)]);
+    expect(t.done()).toEqual([]);
+    expect(t.inside()).toEqual([['bread', 1]]);
+  });
+
+  it('builds commands, validates them, and recognises them', () => {
+    expect(containerActionCommand(1, 2, { op: 'take', instanceId: 3, count: 4 })).toEqual({
+      kind: CONTAINER_ACTION_COMMAND,
+      actor: 1,
+      entity: 2,
+      action: { op: 'take', instanceId: 3, count: 4 },
+    });
+    expect(() => containerActionCommand(1, 2, { op: 'take', instanceId: 0 })).toThrow(
+      /instance id must be a positive integer/,
+    );
+    expect(() => containerActionCommand(1, 2, { op: 'take', instanceId: 1, count: 1.5 })).toThrow(
+      /count must be a positive integer/,
+    );
+    expect(isContainerActionCommand(containerActionCommand(1, 2, { op: 'take-all' }))).toBe(true);
+    expect(isContainerActionCommand(null)).toBe(false);
+    expect(isContainerActionCommand('loot.containerAction')).toBe(false);
+    expect(isContainerActionCommand({ kind: 'item.inventoryAction' })).toBe(false);
+    expect(
+      containerActionsSystem(
+        new Containers(new InventoryRules(ITEMS), new LootTables(TABLES, ITEMS)),
+        () => true,
+      ).name,
+    ).toBe('containerActions');
   });
 });

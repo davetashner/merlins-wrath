@@ -93,16 +93,23 @@ export function isFire(world: World, light: LightEmitterView): boolean {
   return light.entity !== null && readProperty(world as World<never>, light.entity, 'burning');
 }
 
-/** A scene spawn that sets world properties (a torch, a burning crate): what the e2e watches. */
+/** A scene spawn that starts as a light source (a torch, a burning crate, a lamp): what the e2e watches. */
 export interface LightSpawn {
   readonly id: string;
   readonly entity: EntityId;
 }
 
-/** The spawns of `loaded` that set world properties, in scene order. */
+/**
+ * The spawns of `loaded` whose world properties make them light sources (`burning` or
+ * `lightEmitter`), in scene order. Other property spawns (the perf-baseline's pushable crates,
+ * mw-e32.1) are not watched, so a busy scene does not republish their light every frame.
+ */
 export function lightSpawns(loaded: LoadedScene): LightSpawn[] {
   return loaded.spawns
-    .filter(({ spawn }) => spawn.properties !== undefined)
+    .filter(
+      ({ spawn }) =>
+        spawn.properties?.burning !== undefined || spawn.properties?.lightEmitter !== undefined,
+    )
     .map(({ entity, spawn }) => ({ id: spawn.id, entity }));
 }
 

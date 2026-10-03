@@ -1,0 +1,11 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "slice-alcove-chest",
+  "notes": "The vertical slice's alcove chest (docs/design/vertical-slice.md B6, mw-e01.6): a small surprise for climbing up, never needed to finish. Always a healing draught and the miner's tally stick (the oddity, for its text), then one roll of a few coins. Not tuned.",
+  "guaranteed": [
+    { "item": "healing-draught", "count": 1 },
+    { "item": "miners-tally-stick", "count": 1 }
+  ],
+  "rolls": { "min": 1, "max": 1 },
+  "entries": [{ "item": "gold", "weight": 1, "count": { "min": 3, "max": 8 } }]
+}
