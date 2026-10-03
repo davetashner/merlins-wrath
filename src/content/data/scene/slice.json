@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "slice",
   "name": "Vertical slice",
-  "description": "The m1 vertical slice in grey box (docs/design/vertical-slice.md \u00a74, mw-e01.4): a 10 \u00d7 10 m spawn room behind a wooden door, a dim 20 m corridor with an ivy-faced ledge in its side alcove, a 12 \u00d7 12 m arena with two pillars, a floor brazier and a loot alcove 1.4 m up off its east side, and an iron exit door locked by the slice-exit lock. Checkpoint volumes CP-1 (past the spawn door) and CP-2 (before the arena) request autosaves; walking into the vestibule behind the exit door sets slice.complete.",
+  "description": "The m1 vertical slice in grey box (docs/design/vertical-slice.md \u00a74, mw-e01.4): a 10 \u00d7 10 m spawn room behind a wooden door, a dim 20 m corridor with an ivy-faced ledge in its side alcove, a 12 \u00d7 12 m arena with two pillars, a floor brazier and a loot alcove 1.4 m up off its east side, and an iron exit door locked by the slice-exit lock. The alcove holds a chest rolling the slice-alcove-chest loot table, and the rusted gallery key that opens the exit lies at the Forgotten miner\u2019s post by pillar B (mw-e01.6) until the miner carries and drops it (mw-e01.5). Checkpoint volumes CP-1 (past the spawn door) and CP-2 (before the arena) request autosaves; walking into the vestibule behind the exit door sets slice.complete.",
   "grid": 1,
   "camera": {
     "position": [-14, 22, -10],
@@ -276,6 +276,17 @@
       "id": "step-crate",
       "at": [5.5, 0, 34],
       "prop": "crate"
+    },
+    {
+      "id": "alcove-chest",
+      "at": [8, 1.25, 36.5],
+      "yaw": 180,
+      "container": { "loot": "slice-alcove-chest" }
+    },
+    {
+      "id": "gallery-key",
+      "at": [2.5, 0, 32.5],
+      "item": { "id": "rusted-gallery-key" }
     },
     {
       "id": "exit-door",

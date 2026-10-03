@@ -128,3 +128,171 @@ test('mw-e01.4 AC-3: walking the route into the exit without the key, it stays l
   expect(await data<Record<string, unknown>>(page, 'facts')).toEqual({});
   expect(problems).toEqual([]);
 });
+
+// mw-e01.6: the slice's loot. The rusted gallery key lies at the Forgotten miner's post by pillar B
+// (2.5, 0, 32.5) until the miner carries it (mw-e01.5); the alcove chest stands at (8, 1.4, 36.5),
+// 1.4 m up off the arena. These tests reach them with the debug console's `tp` (the walk there is
+// mw-e01.9's): the pack is on #app[data-items], what each container holds on #app[data-containers]
+// and whether the inventory screen is open on #app[data-inventory].
+
+interface Stack {
+  item: string;
+  count: number;
+}
+
+interface Containers {
+  'alcove-chest'?: { opened: boolean; items: Stack[]; gold: number };
+}
+
+const pack = async (page: Page) =>
+  (await data<{ pack: Stack[] } | null>(page, 'items'))?.pack ?? [];
+const alcoveChest = async (page: Page) =>
+  (await data<Containers | null>(page, 'containers'))?.['alcove-chest'];
+
+/** Opens the slice with the debug console and waits for the player to stand in a running sim. */
+async function openSlice(page: Page): Promise<void> {
+  await page.goto('/?scene=slice&debug=1');
+  const app = page.locator('#app');
+  await expect(app).toHaveAttribute('data-scene', 'slice', { timeout: 10_000 });
+  await expect(app).toHaveAttribute('data-player', /"grounded":true/, { timeout: 10_000 });
+}
+
+/** Types `line` into the debug console, leaving it open. */
+async function type(page: Page, line: string): Promise<void> {
+  await page.keyboard.press('Backquote');
+  const input = page.getByTestId('debug-console-input');
+  await expect(input).toBeFocused();
+  await page.keyboard.insertText(line);
+  await page.keyboard.press('Enter');
+}
+
+/** Types `line` into the debug console and closes it again. */
+async function run(page: Page, line: string): Promise<void> {
+  await type(page, line);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#app')).toHaveAttribute('data-debug-console', 'closed');
+}
+
+/** Teleports the player to (x, y, z), lets it land and turns it to look at `look`. */
+async function standAt(
+  page: Page,
+  [x, y, z]: [number, number, number],
+  look: { x: number; z: number },
+): Promise<void> {
+  await run(page, `tp ${String(x)} ${String(y)} ${String(z)}`);
+  await expect(page.locator('#app')).toHaveAttribute('data-player', /"grounded":true/);
+  await takeControl(page);
+  await turnTo(page, look, { tolerance: 0.03 });
+}
+
+test('mw-e01.6 AC-2: holding the gallery key, Interact on the exit door unlocks and opens it without opening the inventory', async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const problems = collectProblems(page);
+  await stubPointerLock(page);
+  // Count every time the inventory screen opens, from the first frame on.
+  await page.addInitScript(() => {
+    const w = window as unknown as { inventoryOpens: number };
+    w.inventoryOpens = 0;
+    new MutationObserver(() => {
+      const app = document.querySelector<HTMLElement>('#app');
+      if (app?.dataset['inventory'] === 'open') w.inventoryOpens += 1;
+    }).observe(document, { attributes: true, subtree: true, attributeFilter: ['data-inventory'] });
+  });
+  await openSlice(page);
+  const app = page.locator('#app');
+  await expect(app).toHaveAttribute('data-mechanisms', /"exit-door":\{"status":"locked"/);
+  await takeControl(page);
+
+  // The key at the miner's post: Interact takes it onto the keyring.
+  await standAt(page, [2.5, 0, 31.3], { x: 2.5, z: 32.5 });
+  const prompt = page.getByTestId('interact-prompt');
+  await expect(prompt).toContainText('Rusted gallery key', { timeout: 10_000 });
+  await interact(page);
+  await expect
+    .poll(async () => (await pack(page)).map((stack) => stack.item), { timeout: 30_000 })
+    .toEqual(['rusted-gallery-key']);
+
+  // A step in front of the iron door: one Interact unlocks and opens it.
+  await standAt(page, [0, 0, 35.5], { x: 0, z: 37 });
+  await expect(prompt).not.toContainText('Locked.', { timeout: 10_000 });
+  await interact(page);
+  await expect
+    .poll(async () => (await data<Mechanisms>(page, 'mechanisms')).doors['exit-door'], {
+      timeout: 30_000,
+    })
+    .toEqual({ status: 'open', openness: 1 });
+  await expect(app).toHaveAttribute('data-inventory', 'closed');
+  expect(
+    await page.evaluate(() => (window as unknown as { inventoryOpens: number }).inventoryOpens),
+  ).toBe(0);
+  // The quest key stays on the ring.
+  expect((await pack(page)).map((stack) => stack.item)).toEqual(['rusted-gallery-key']);
+
+  // Through into the vestibule: the slice is complete.
+  const through = await walkNorth(page, 38.5);
+  expect(through.position.z).toBeGreaterThan(37.5);
+  await expect
+    .poll(async () => (await data<Record<string, unknown>>(page, 'facts'))['slice.complete'], {
+      timeout: 10_000,
+    })
+    .toBe(true);
+  expect(problems).toEqual([]);
+});
+
+test('mw-e01.6 AC-3: loot the alcove chest, save, close the tab, load the save: the chest is empty', async ({
+  context,
+}) => {
+  test.setTimeout(180_000);
+  const first = await context.newPage();
+  const problems = collectProblems(first);
+  await stubPointerLock(first);
+  await openSlice(first);
+  expect(await alcoveChest(first)).toEqual({ opened: false, items: [], gold: 0 });
+  await takeControl(first);
+
+  // Up in the alcove, facing the chest: Interact opens it (rolling its table), Enter takes all.
+  await standAt(first, [8, 1.4, 35.3], { x: 8, z: 36.5 });
+  const prompt = first.getByTestId('interact-prompt');
+  await expect(prompt).toContainText('Search', { timeout: 10_000 });
+  await first.keyboard.press('KeyE');
+  await expect(first.locator('#app')).toHaveAttribute('data-container-window', 'open');
+  await first.keyboard.press('Enter');
+  await expect.poll(() => alcoveChest(first)).toEqual({ opened: true, items: [], gold: 0 });
+  // Always a healing draught and the miner's tally stick (the coins go to the gold counter).
+  await expect
+    .poll(async () => (await pack(first)).map((stack) => stack.item).sort())
+    .toEqual(['healing-draught', 'miners-tally-stick']);
+  await expect(prompt).toContainText('Empty');
+
+  await run(first, 'save manual-1');
+  await expect(first.locator('#app')).toHaveAttribute('data-saved-game', /"slot":"manual-1"/);
+  expect(problems).toEqual([]);
+  await first.close();
+
+  // A new tab: the chest as built, then the save.
+  const second = await context.newPage();
+  const later = collectProblems(second);
+  await stubPointerLock(second);
+  await openSlice(second);
+  expect(await alcoveChest(second)).toEqual({ opened: false, items: [], gold: 0 });
+  await type(second, 'kill');
+  const screen = second.locator('[data-screen="death"]');
+  // The death beat (mw-e01.8, 90 sim ticks) runs first: seconds of wall time on a slow runner.
+  await expect(screen).toBeVisible({ timeout: 45_000 });
+  await screen.getByRole('button', { name: 'Load last save' }).click();
+  await openSlice(second);
+  await expect(second.locator('#app')).toHaveAttribute('data-loaded-save', /"slot":"manual-1"/);
+  await expect.poll(() => alcoveChest(second)).toEqual({ opened: true, items: [], gold: 0 });
+
+  // Open it again: empty, and nothing more comes out.
+  await takeControl(second);
+  await standAt(second, [8, 1.4, 35.3], { x: 8, z: 36.5 });
+  const again = second.getByTestId('interact-prompt');
+  await expect(again).toContainText('Empty', { timeout: 10_000 });
+  await second.keyboard.press('KeyE');
+  await expect(again).toContainText('Empty');
+  expect(await alcoveChest(second)).toEqual({ opened: true, items: [], gold: 0 });
+  expect(later).toEqual([]);
+});

@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "rusted-gallery-key",
+  "category": "key",
+  "name": "Rusted gallery key",
+  "description": "Long as a finger and orange with rust, on a ring worn thin by a miner's belt. He kept it safe for years after he stopped remembering what it was for.",
+  "notes": "The vertical slice's exit key (docs/design/vertical-slice.md B5, mw-e01.6): it opens the iron exit door's slice-exit lock straight from the keyring (mw-e17.5). A quest item, so it can't be dropped, thrown or sold and is never lost in the level; reusable, so it stays on the ring. The Forgotten miner carries it and drops it on death (mw-e01.5); until that encounter lands it lies at the miner's post by pillar B. Placeholder text until e39-item-creature-text.",
+  "icon": "icon-item-gallery-key-01",
+  "value": 0,
+  "worldProperties": {
+    "material": "iron"
+  },
+  "flags": {
+    "unique": true,
+    "questItem": true
+  },
+  "key": {
+    "opens": ["slice-exit"]
+  }
+}
