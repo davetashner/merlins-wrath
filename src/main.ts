@@ -722,14 +722,18 @@ function startRenderer(
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
     let animation: AnimDemo | undefined;
     let publishedProbe = '';
+    // The AI debug overlay (mw-e11.17): loaded with the debug console (below), so release builds
+    // never have it. `ai.freeze` holds the sim through simPaused; it draws before each render.
+    let aiDebug: { held(): boolean; frame(): void } | undefined;
     const { loop, sync } = createGameLoop({
       world,
       sources,
       // Queued debug-console commands pass even while a UI screen withholds gameplay frames.
       sampleCommands: commands.sampler(bridge.sampleCommands),
-      simPaused: bridge.simPaused,
-      // A pausing menu's queued command (the inventory's Use, Drop…) still runs, one tick a frame.
-      stepWhilePaused: () => commands.size > 0,
+      simPaused: () => bridge.simPaused() || aiDebug?.held() === true,
+      // A pausing menu's queued command (the inventory's Use, Drop…) still runs, one tick a frame;
+      // while `ai.freeze` holds the sim, queued commands wait for `ai.step`.
+      stepWhilePaused: () => aiDebug?.held() !== true && commands.size > 0,
       onStep: () => {
         player?.onStep();
         animation?.driver.capture();
@@ -783,6 +787,7 @@ function startRenderer(
         audio.update(listenerPose(camera.position, camera.quaternion));
         publishAudio();
         drawLights();
+        aiDebug?.frame();
         view.renderFrame(timeMs);
       },
     });
@@ -1383,72 +1388,100 @@ function startRenderer(
     };
     const sandboxScene = request.kind === 'scene' && request.id === combat.sandbox.tuning.scene;
     if (__DEBUG_CONSOLE__ && debugConsoleEnabled({ ...consoleGate, sandbox: sandboxScene })) {
-      void import('@tools/console/start').then(({ startDebugConsole, unboundDebugSpawns }) => {
-        const bookmarks = new Map(
-          (scenes.current?.layout.spawns ?? []).map((spawn) => [spawn.id, spawn.position] as const),
-        );
-        startDebugConsole({
-          world,
-          submit: (command) => {
-            commands.push(command as GameCommand);
-          },
-          player: (): EntityId | undefined => player?.entity,
-          // ctl.get / ctl.set / ctl.dump (mw-e02.3) over the player's live controller tuning.
-          controller: content.get('controller', PLAYER_CONTROLLER_ID),
-          spawnables: [...spawners.keys()].sort(),
-          // Sandbox dummies take options (mw-e04.9: `spawn dummy --poise 60`); props take none.
-          checkSpawn: (content, options) =>
-            combat.spawners.has(content)
-              ? checkSandboxSpawn(combat.sandbox, content, options, world.clock.hz)
-              : Object.keys(options).length === 0
-                ? undefined
-                : `${content} takes no options`,
-          sandbox: (command) => checkSandboxCommand(combat.sandbox, command, world.clock.hz),
-          bookmarks: () => bookmarks,
-          // `spawn … at-cursor` (mw-e12.4): where the centre of the view meets the level.
-          cursorPoint: () =>
-            viewCentrePoint(physics, { position: camera.position, quaternion: camera.quaternion }),
-          scenes: scenes.available(),
-          loadScene: (id) => {
-            const params = new URLSearchParams(location.search);
-            params.set('scene', id);
-            location.search = params.toString();
-          },
-          loop,
-          // `save [slot]` (mw-e30.7): writes the world into a slot and publishes its state hash.
-          save: (slot) => {
-            void deathReload
-              .then((reload) => reload.debugSave(slot))
-              .catch((error: unknown) => {
-                console.error(error);
-              });
-          },
-          // A UI screen (mw-e00.23): while open it captures input, so the player gets no action
-          // frames and pointer lock is released; the sim keeps running.
-          dom: { document, keys: globalThis.window, screens: ui },
-          storage: globalThis.localStorage,
-          onToggle: (open) => {
-            root.dataset['debugConsole'] = open ? 'open' : 'closed';
-          },
-        });
-        // Props the console spawned get grey-box objects like the scene's own props: a movable one
-        // a body-sized box following its physics pose.
-        afterStep.push(() => {
-          for (const { entity, placement } of unboundDebugSpawns(world, (id) => sync.has(id))) {
-            const size =
-              placement.prop !== undefined && world.has(entity, PhysicsObjectComponent)
-                ? props(placement.prop)?.size
-                : undefined;
-            sync.bind(
-              entity,
-              size === undefined
-                ? object3DBinding(greybox.spawn(placement), readSceneTransform)
-                : object3DBinding(greybox.body(placement, size), readPhysicsObjectTransform),
-            );
-          }
-        });
-        root.dataset['debugConsole'] = 'closed';
-      });
+      void Promise.all([import('@tools/console/start'), import('@tools/ai-debug/start')]).then(
+        ([{ startDebugConsole, unboundDebugSpawns }, { startAiDebug }]) => {
+          const bookmarks = new Map(
+            (scenes.current?.layout.spawns ?? []).map(
+              (spawn) => [spawn.id, spawn.position] as const,
+            ),
+          );
+          const debugConsole = startDebugConsole({
+            world,
+            submit: (command) => {
+              commands.push(command as GameCommand);
+            },
+            player: (): EntityId | undefined => player?.entity,
+            // ctl.get / ctl.set / ctl.dump (mw-e02.3) over the player's live controller tuning.
+            controller: content.get('controller', PLAYER_CONTROLLER_ID),
+            spawnables: [...spawners.keys()].sort(),
+            // Sandbox dummies take options (mw-e04.9: `spawn dummy --poise 60`); props take none.
+            checkSpawn: (content, options) =>
+              combat.spawners.has(content)
+                ? checkSandboxSpawn(combat.sandbox, content, options, world.clock.hz)
+                : Object.keys(options).length === 0
+                  ? undefined
+                  : `${content} takes no options`,
+            sandbox: (command) => checkSandboxCommand(combat.sandbox, command, world.clock.hz),
+            bookmarks: () => bookmarks,
+            // `spawn … at-cursor` (mw-e12.4): where the centre of the view meets the level.
+            cursorPoint: () =>
+              viewCentrePoint(physics, {
+                position: camera.position,
+                quaternion: camera.quaternion,
+              }),
+            scenes: scenes.available(),
+            loadScene: (id) => {
+              const params = new URLSearchParams(location.search);
+              params.set('scene', id);
+              location.search = params.toString();
+            },
+            loop,
+            // `save [slot]` (mw-e30.7): writes the world into a slot and publishes its state hash.
+            save: (slot) => {
+              void deathReload
+                .then((reload) => reload.debugSave(slot))
+                .catch((error: unknown) => {
+                  console.error(error);
+                });
+            },
+            // A UI screen (mw-e00.23): while open it captures input, so the player gets no action
+            // frames and pointer lock is released; the sim keeps running.
+            dom: { document, keys: globalThis.window, screens: ui },
+            storage: globalThis.localStorage,
+            onToggle: (open) => {
+              root.dataset['debugConsole'] = open ? 'open' : 'closed';
+            },
+          });
+          // ai.debug / ai.freeze / ai.step (mw-e11.17): the overlay reads sim introspection snapshots;
+          // a click with the pointer free selects an agent; the probe reads the light under the
+          // crosshair. The e2e reads what it drew from #app[data-ai-debug].
+          aiDebug = startAiDebug({
+            world,
+            loop,
+            registry: debugConsole.registry,
+            scene: view.scene,
+            camera,
+            root,
+            pointerLocked: () => document.pointerLockElement !== null,
+            light: light.field,
+            cursorPoint: () =>
+              viewCentrePoint(physics, {
+                position: camera.position,
+                quaternion: camera.quaternion,
+              }),
+            publish: (json) => {
+              root.dataset['aiDebug'] = json;
+            },
+          });
+          // Props the console spawned get grey-box objects like the scene's own props: a movable one
+          // a body-sized box following its physics pose.
+          afterStep.push(() => {
+            for (const { entity, placement } of unboundDebugSpawns(world, (id) => sync.has(id))) {
+              const size =
+                placement.prop !== undefined && world.has(entity, PhysicsObjectComponent)
+                  ? props(placement.prop)?.size
+                  : undefined;
+              sync.bind(
+                entity,
+                size === undefined
+                  ? object3DBinding(greybox.spawn(placement), readSceneTransform)
+                  : object3DBinding(greybox.body(placement, size), readPhysicsObjectTransform),
+              );
+            }
+          });
+          root.dataset['debugConsole'] = 'closed';
+        },
+      );
     }
     // Debug attribute (mw-e03.35 AC-4): colliders registered in the physics world.
     root.dataset['colliders'] = String(physics.count());

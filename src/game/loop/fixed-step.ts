@@ -112,6 +112,11 @@ export interface FrameLoop {
    * step itself, so the sim stays deterministic. @throws RangeError outside 0–MAX_TIME_SCALE.
    */
   timeScale: number;
+  /**
+   * Runs exactly one more sim step on the next frame, paused (`simPaused`) or frozen (time scale 0)
+   * or not: the AI debug overlay's `ai.step` (mw-e11.17). Calls add up; each runs on its own frame.
+   */
+  stepOnce(): void;
 }
 
 /** Fastest sim speed the frame loop accepts. */
@@ -150,6 +155,7 @@ export function createFrameLoop<TCommand>(options: FrameLoopOptions<TCommand>): 
   let accumulator = 0;
   let alpha = 0;
   let timeScale = 1;
+  let owedSteps = 0;
 
   // A call, not the variable: onStep may stop the loop mid-frame, which narrowing can't see.
   const isRunning = (): boolean => running;
@@ -185,6 +191,13 @@ export function createFrameLoop<TCommand>(options: FrameLoopOptions<TCommand>): 
       steps++;
       options.onStep?.(sim.tick);
       if (!isRunning()) return; // stopped by onStep: no more steps, no render
+    }
+    if (owedSteps > 0) {
+      owedSteps--;
+      sim.step(sample(sim.tick));
+      steps++;
+      options.onStep?.(sim.tick);
+      if (!isRunning()) return;
     }
     if (accumulator + EPSILON_MS >= stepMs) {
       // Keep only the fraction of a step; whole steps past the cap are dropped, not deferred.
@@ -236,6 +249,9 @@ export function createFrameLoop<TCommand>(options: FrameLoopOptions<TCommand>): 
       for (const unsubscribe of subscriptions.splice(0)) unsubscribe();
     },
     frame,
+    stepOnce() {
+      owedSteps++;
+    },
     get running() {
       return running;
     },

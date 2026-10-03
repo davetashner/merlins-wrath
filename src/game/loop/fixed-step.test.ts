@@ -186,6 +186,42 @@ describe('createFrameLoop', () => {
     expect(loop.timeScale).toBe(0.5);
   });
 
+  it('stepOnce runs exactly one more step on the next frame, even while the sim is paused (mw-e11.17)', () => {
+    let paused = true;
+    const onStep = vi.fn();
+    const { frames, sim, rendered, loop } = setup({ simPaused: () => paused, onStep });
+    loop.start();
+    for (let i = 0; i < 10; i++) frames.frame(1000 / 60);
+    expect(sim.steps).toHaveLength(0);
+    loop.stepOnce();
+    loop.stepOnce();
+    frames.frame(1000 / 60);
+    expect(sim.steps).toHaveLength(1);
+    expect(rendered.at(-1)?.steps).toBe(1);
+    frames.frame(1000 / 60);
+    frames.frame(1000 / 60);
+    expect(sim.steps).toHaveLength(2);
+    expect(onStep).toHaveBeenCalledTimes(2);
+    paused = false;
+    loop.stepOnce();
+    frames.frame(1000 / 60);
+    expect(sim.steps).toHaveLength(4); // the frame's own step and the owed one
+  });
+
+  it('stepOnce stops after its step when onStep stops the loop', () => {
+    const { frames, sim, rendered, loop } = setup({
+      simPaused: () => true,
+      onStep: () => {
+        loop.stop();
+      },
+    });
+    loop.start();
+    loop.stepOnce();
+    frames.frame(1000 / 60);
+    expect(sim.steps).toHaveLength(1);
+    expect(rendered).toHaveLength(0);
+  });
+
   it('samples per-tick commands once per tick, with the tick about to be stepped', () => {
     const sampled: number[] = [];
     const { frames, sim, loop } = setup({
