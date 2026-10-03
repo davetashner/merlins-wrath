@@ -457,6 +457,17 @@ export {
   type HitStopTier,
 } from './types/hit-stop.ts';
 export {
+  MAX_STEALTH_WEIGHT,
+  STEALTH_ID,
+  VISIBILITY_STANCES,
+  stealthSchema,
+  type StealthDef,
+  type StealthDefInput,
+  type StealthEntry,
+  type VisibilityStance,
+  type VisibilityTuning,
+} from './types/stealth.ts';
+export {
   ANIM_ID_PATTERN,
   AUDIO_CUE_PATTERN,
   CANCEL_TARGETS,

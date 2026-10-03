@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- How visible you are now depends on the light on your body, your stance, how fast you move and
+  how far away a watcher is. Shadows hide you, sprinting through torchlight gives you away, and a
+  dark figure against a bright window stands out.
 - Saves keep your pack, gold, equipped gear and quick slots exactly as you left them, stolen goods
   still marked as stolen. If an update removes an item, a save holding it still loads; only that item
   is gone.

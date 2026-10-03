@@ -71,6 +71,7 @@ export * from './progression';
 export * from './properties';
 export * from './scene';
 export * from './sight';
+export * from './stealth';
 export * from './stimulus';
 export * from './targeting';
 export * from './testing';

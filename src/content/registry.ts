@@ -51,6 +51,7 @@ import { shieldSchema } from './types/shield.ts';
 import { signalGraphSchema } from './types/signal-graph.ts';
 import { checkSocketTracks, socketTrackSchema } from './types/socket-track.ts';
 import { spellSchema } from './types/spell.ts';
+import { stealthSchema } from './types/stealth.ts';
 import { targetableSchema } from './types/targetable.ts';
 import { testPropSchema } from './types/testprop.ts';
 import { checkUnlocks, unlockSchema } from './types/unlock.ts';
@@ -94,6 +95,7 @@ export const contentTypes = {
   'signal-graph': signalGraphSchema,
   'socket-track': socketTrackSchema,
   spell: spellSchema,
+  stealth: stealthSchema,
   targetable: targetableSchema,
   testprop: testPropSchema,
   unlock: unlockSchema,
