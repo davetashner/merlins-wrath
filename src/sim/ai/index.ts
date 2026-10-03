@@ -6,6 +6,7 @@ export * from './behaviour';
 export * from './components';
 export * from './inputs';
 export * from './introspect';
+export * from './memory';
 export * from './navigation';
 export * from './primitives';
 export * from './routes';

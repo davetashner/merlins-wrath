@@ -39,6 +39,7 @@ import {
   type CompiledState,
 } from './behaviour';
 import { AlertStateChanged, BrainComponent, type Blackboard, type Brain } from './components';
+import { DEFAULT_MEMORY_TUNING, type MemoryTuning } from './memory';
 import { straightLineNavigation, type AiNavigation } from './navigation';
 import type { StepRunner } from './primitives';
 import { at, getIf, got } from './util';
@@ -59,6 +60,8 @@ export interface AiOptions {
    * without it windows are not read and every creature walks the first route of its routine.
    */
   readonly hourOfDay?: (world: World<never>) => number;
+  /** How target memory decays and predicts (mw-e11.8); defaults to `DEFAULT_MEMORY_TUNING`. */
+  readonly memory?: MemoryTuning;
 }
 
 interface AiRuntime {
@@ -277,6 +280,7 @@ export function installAi<TInput>(world: World<TInput>, options: AiOptions): voi
       navigation: options.navigation ?? straightLineNavigation,
       attacks: options.attacks,
       hourOfDay: options.hourOfDay,
+      memory: options.memory ?? DEFAULT_MEMORY_TUNING,
     },
     maxThinks,
   };
@@ -292,6 +296,11 @@ export function aiBehaviour(world: World<never>, id: string): CompiledBehaviour 
 /** The ports of `world`'s AI (AI must be installed). */
 export function aiPorts(world: World<never>): AiPorts {
   return got(runtimes, world).ports;
+}
+
+/** The memory tuning of `world`'s AI (the default when AI is not installed). */
+export function memoryTuning(world: World<never>): MemoryTuning {
+  return runtimes.get(world)?.ports.memory ?? DEFAULT_MEMORY_TUNING;
 }
 
 /** What an agent's brain starts from. */
@@ -336,12 +345,14 @@ export function giveBrain(world: World<never>, entity: EntityId, spec: BrainSpec
       stimulus: null,
       stimulusTick: -1,
       target: null,
+      targetSource: null,
       targetVisible: false,
       targetSeenTick: -1,
       lkp: null,
       waypoint: 0,
     },
     awareness: [],
+    memory: [],
     postAlertUntil: -1,
     postAlertRate: 1,
     routeDir: 1,

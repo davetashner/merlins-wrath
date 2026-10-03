@@ -21,6 +21,10 @@ check enforces this).
   the bottom of the screen showing what is in them and how many are left. The screen pauses the
   game, works fully with mouse, keyboard or controller, and follows the Text size setting, which
   now applies to the game's menus and HUD text.
+- Guards no longer know where you are once they lose sight of you. A guard hunts where it last saw
+  you, carried on a little way in the direction you were running, and not a step further, so
+  ducking round a corner, doubling back or climbing out of view really does shake it off. Given
+  long enough, it forgets you.
 - Guards keep routines you can watch and time. A guard can walk a loop, pace back and forth, wander
   between spots at random, or stand at a post sweeping its gaze across an arc. It pauses at each
   stop for a set time, faces a set way, and may lean on a wall or warm its hands while it waits.

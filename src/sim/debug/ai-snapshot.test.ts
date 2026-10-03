@@ -1,6 +1,7 @@
 // AI introspection snapshots (mw-e11.17): what the AI debug overlay reads for each agent.
 import type { BehaviourDef, Frozen, NavAgent, SenseProfile } from '@content/index';
 import { describe, expect, it } from 'vitest';
+import { hearReport } from '../ai/awareness';
 import { compileBehaviours } from '../ai/behaviour';
 import { BrainComponent, type Brain } from '../ai/components';
 import { giveBrain, installAi } from '../ai/runtime';
@@ -205,6 +206,16 @@ describe('AI introspection snapshots (mw-e11.17)', () => {
     });
     b.blackboard.target = 99; // a target it has no record of
     expect(snapper.build().agents[0]?.lkp?.confidence).toBe(0.45);
+  });
+
+  it('LKP confidence is the target memory’s while it has one (mw-e11.8)', () => {
+    const w = world();
+    const guard = agent(w, 0, 0);
+    giveBrain(w, guard, { behaviour: 'snap-guard' });
+    w.step();
+    const Q = { x: 3, y: 0, z: 4 };
+    hearReport(w, guard, { source: entitySource(7), position: Q, confidence: 0.5 });
+    expect(aiSnapshotter(w).build().agents[0]?.lkp).toEqual({ position: Q, confidence: 0.35 });
   });
 
   it('a brain whose behaviour AI does not know, idle or not, shows no primitive', () => {
