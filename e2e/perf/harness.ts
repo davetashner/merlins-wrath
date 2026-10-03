@@ -3,8 +3,13 @@
 // - Frame time: the game's own ?perf probe (src/tools/perf/frame-probe.ts) times every rAF callback
 //   after a 3 s warm-up until it has 1,800 frame intervals, and publishes the raw intervals on
 //   #app[data-perf]; percentiles are computed here with the suite's percentile code.
-// - Long tasks: a PerformanceObserver installed before any page script records every long task; the
-//   ones inside the probe's sampling window and over 200 ms are counted.
+// - Long tasks: a PerformanceObserver installed before any page script records every long task, and
+//   a wrapper around requestAnimationFrame records when each frame callback ran. A long task that
+//   overlaps a frame callback is a frame render; the rest (GC, parsing, timers, input handlers) are
+//   not. On a real GPU (reference mode) every long task ≥ 200 ms in the sampling window counts. On
+//   GPU-less runners (CI mode) each software-rendered frame is itself a 100–200 ms task, so frame
+//   renders are only reported there and the budget counts the long tasks that are not frame renders,
+//   during play: the perf-baseline sampling window and the testbed's idle minutes.
 // - Load: the Chrome DevTools Protocol throttles the network to 50 Mbps (contract §1) and counts the
 //   encoded bytes of every response; playable is the first frame drawn after the scene loaded
 //   (#app[data-scene] appears), on the page's clock, which starts at navigation.
@@ -46,6 +51,19 @@ export const LONG_TASK_MS = 200;
 
 const INIT_SCRIPT = `
   window.__vesperLongTasks = [];
+  window.__vesperFrames = [];
+  const raf = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = (callback) =>
+    raf((time) => {
+      const start = performance.now();
+      try {
+        callback(time);
+      } finally {
+        const frames = window.__vesperFrames;
+        if (frames.length >= 400000) frames.splice(0, 200000);
+        frames.push(start, performance.now());
+      }
+    });
   try {
     new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
@@ -68,6 +86,8 @@ const INIT_SCRIPT = `
 
 interface PerfWindow {
   __vesperLongTasks: { start: number; duration: number }[];
+  /** Frame callback intervals, flattened: start, end, start, end… (page clock, ms). */
+  __vesperFrames: number[];
   __vesperPlayableMs?: number;
 }
 
@@ -94,8 +114,13 @@ export async function enforce(
     body: JSON.stringify(attachment),
     contentType: 'application/json',
   });
-  const metrics = attachment.measurements.map((m) => m.metric);
-  const results = evaluateAll(budgets(mode, metrics), attachment.measurements);
+  // The budgets this test measured: same metric, and same scene when the budget names one.
+  const measured = budgets(mode).filter((b) =>
+    attachment.measurements.some(
+      (m) => m.metric === b.metric && (b.scene === undefined || m.scene === b.scene),
+    ),
+  );
+  const results = evaluateAll(measured, attachment.measurements);
   for (const result of results) {
     testInfo.annotations.push({
       type: result.pass ? 'perf' : 'perf-fail',
@@ -176,6 +201,63 @@ export function directoryBytes(dir: string): number {
   return total;
 }
 
+/** Long tasks in a window of the page's clock. */
+export interface LongTaskStats {
+  /** Long tasks ≥ 200 ms, frame renders included. */
+  readonly over200: number;
+  /** Long tasks ≥ 200 ms that overlap no frame callback (not frame renders). */
+  readonly nonFrameOver200: number;
+  /** Every long task (≥ 50 ms): ms after the window started, duration, and whether a frame render. */
+  readonly log: readonly {
+    readonly atMs: number;
+    readonly durationMs: number;
+    readonly frame: boolean;
+  }[];
+}
+
+/** Classifies the long tasks that started in [fromMs, toMs] on the page's clock. */
+export async function longTasksBetween(
+  page: Page,
+  fromMs: number,
+  toMs: number,
+): Promise<LongTaskStats> {
+  const { tasks, frames } = await page.evaluate(() => {
+    const w = window as unknown as PerfWindow;
+    return { tasks: w.__vesperLongTasks, frames: w.__vesperFrames };
+  });
+  const overlapsFrame = (start: number, end: number): boolean => {
+    for (let i = 0; i + 1 < frames.length; i += 2) {
+      if ((frames[i] ?? 0) < end && (frames[i + 1] ?? 0) > start) return true;
+    }
+    return false;
+  };
+  const log = tasks
+    .filter((t) => t.start >= fromMs && t.start <= toMs)
+    .map((t) => ({
+      atMs: Math.round(t.start - fromMs),
+      durationMs: Math.round(t.duration),
+      frame: overlapsFrame(t.start, t.start + t.duration),
+    }));
+  const over = log.filter((t) => t.durationMs >= LONG_TASK_MS);
+  return { over200: over.length, nonFrameOver200: over.filter((t) => !t.frame).length, log };
+}
+
+/** One console line about the long tasks of a phase, listing those ≥ 200 ms. */
+export function describeLongTasks(phase: string, stats: LongTaskStats): string {
+  const over = stats.log.filter((t) => t.durationMs >= LONG_TASK_MS);
+  const frames = stats.log.filter((t) => t.frame).length;
+  return (
+    `[perf] ${phase}: ${String(stats.log.length)} long task(s) ≥ 50 ms (${String(frames)} frame renders); ` +
+    `≥ 200 ms: ${String(stats.over200)}, not frame renders: ${String(stats.nonFrameOver200)}` +
+    (over.length === 0
+      ? ''
+      : ` [ms in: duration${over.some((t) => t.frame) ? ', f = frame render' : ''}] ` +
+        over
+          .map((t) => `${String(t.atMs)}: ${String(t.durationMs)}${t.frame ? 'f' : ''}`)
+          .join(', '))
+  );
+}
+
 /** What the game's ?perf probe publishes on #app[data-perf]. */
 interface ProbeReport {
   readonly frame: Percentiles;
@@ -187,9 +269,8 @@ interface ProbeReport {
 export interface FrameSample {
   readonly run: FrameRun;
   readonly samples: readonly number[];
-  readonly longTasks: number;
-  /** Every long task (≥ 50 ms) in the sampling window: ms after the window started, and duration. */
-  readonly longTaskLog: readonly { readonly atMs: number; readonly durationMs: number }[];
+  /** Long tasks in the sampling window. */
+  readonly longTasks: LongTaskStats;
 }
 
 /**
@@ -217,11 +298,7 @@ export async function sampleFrames(
   ).toMatchObject({
     ok: true,
   });
-  const tasks = await page.evaluate(() => (window as unknown as PerfWindow).__vesperLongTasks);
-  const inWindow = tasks.filter(
-    (t) => t.start >= probe.window.startMs && t.start <= probe.window.endMs,
-  );
-  const longTasks = inWindow.filter((t) => t.duration >= LONG_TASK_MS).length;
+  const longTasks = await longTasksBetween(page, probe.window.startMs, probe.window.endMs);
   return {
     run: {
       scene,
@@ -232,10 +309,6 @@ export async function sampleFrames(
     },
     samples: probe.samples,
     longTasks,
-    longTaskLog: inWindow.map((t) => ({
-      atMs: Math.round(t.start - probe.window.startMs),
-      durationMs: Math.round(t.duration),
-    })),
   };
 }
 

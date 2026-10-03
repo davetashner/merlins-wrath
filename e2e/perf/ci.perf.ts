@@ -1,8 +1,9 @@
 // The perf budget suite's CI mode (mw-e32.1): `pnpm perf`, and the perf-budget job on GitHub's
 // GPU-less runners. It enforces what does not need a GPU to mean something — transfer and bundle
-// size, throttled load times, heap and long tasks — and records software-rendered frame time, which
-// CI compares with main's as a warning only (scripts/perf/compare-cli.ts, AC-5). Budgets:
-// perf/perf-budgets.json, every number from contract §1. Harness: ./harness.ts.
+// size, throttled load times, heap and long tasks that are not frame renders — and records
+// software-rendered frame time (and the long tasks that are frame renders), which CI compares with
+// main's as a warning only (scripts/perf/compare-cli.ts, AC-5). Budgets: perf/perf-budgets.json,
+// every number from contract §1. Harness: ./harness.ts.
 import { test } from '@playwright/test';
 import {
   browserName,
@@ -10,8 +11,9 @@ import {
   directoryBytes,
   enforce,
   frameMeasurements,
+  describeLongTasks,
   instrument,
-  LONG_TASK_MS,
+  longTasksBetween,
   playableMs,
   sampleFrames,
   throttled,
@@ -57,7 +59,7 @@ test('bundle size of the production build', async ({ page }, testInfo) => {
   });
 });
 
-test('perf-baseline: software-rendered frame time and long tasks over 200 ms', async ({
+test('perf-baseline: software-rendered frame time and long tasks that are not frame renders', async ({
   page,
 }, testInfo) => {
   test.setTimeout((FRAME_CAP_S + 120) * 1_000);
@@ -70,42 +72,50 @@ test('perf-baseline: software-rendered frame time and long tasks over 200 ms', a
   });
   console.log(
     `[perf] perf-baseline ${String(sample.run.frame.count)} frames on ${sample.run.renderer}: ` +
-      `p50 ${sample.run.frame.p50.toFixed(2)} / p95 ${sample.run.frame.p95.toFixed(2)} ms, ` +
-      `${String(sample.longTasks)} long task(s) ≥ 200 ms`,
+      `p50 ${sample.run.frame.p50.toFixed(2)} / p95 ${sample.run.frame.p95.toFixed(2)} ms`,
   );
-  // Software rendering makes most frames long tasks (≥ 50 ms); list only the ones that count.
-  const over = sample.longTaskLog.filter((t) => t.durationMs >= LONG_TASK_MS);
-  console.log(
-    `[perf] ${String(sample.longTaskLog.length)} long task(s) ≥ 50 ms in the sampling window` +
-      (over.length === 0
-        ? ''
-        : `; ≥ 200 ms at (ms into sampling: duration) ${over.map((t) => `${String(t.atMs)}: ${String(t.durationMs)}`).join(', ')}`),
-  );
+  console.log(describeLongTasks('perf-baseline sampling', sample.longTasks));
   // Frame time has no absolute budget in CI mode (software rendering); it is recorded for the
-  // comparison with main. The long-task count is enforced.
+  // comparison with main. Software-rendered frames are long tasks themselves, so all long tasks
+  // are only reported; the ones that are not frame renders are enforced.
   await enforce(testInfo, 'ci', {
     browser: browserName(page),
     frames: sample.run,
     measurements: [
       ...frameMeasurements(sample),
-      { metric: 'longTasksOver200ms', value: sample.longTasks, scene: 'perf-baseline' },
+      { metric: 'longTasksOver200ms', value: sample.longTasks.over200, scene: 'perf-baseline' },
+      {
+        metric: 'nonFrameLongTasksOver200ms',
+        value: sample.longTasks.nonFrameOver200,
+        scene: 'perf-baseline',
+      },
     ],
   });
 });
 
-test('AC-4: JS heap after 5 minutes idle in the testbed', async ({ page }, testInfo) => {
+test('AC-4: JS heap and long tasks over 5 minutes idle in the testbed', async ({
+  page,
+}, testInfo) => {
   test.setTimeout((HEAP_IDLE_S + 120) * 1_000);
   await page.goto('/?scene=testbed');
-  await playableMs(page, 60_000);
+  const playable = await playableMs(page, 60_000);
   const cdp = await page.context().newCDPSession(page);
   const before = (await cdp.send('Runtime.getHeapUsage')).totalSize;
   await page.waitForTimeout(HEAP_IDLE_S * 1_000);
   const after = await cdp.send('Runtime.getHeapUsage');
+  // Long tasks while idling in play, from the first playable frame to now.
+  const idle = await longTasksBetween(page, playable, await page.evaluate(() => performance.now()));
+  console.log(describeLongTasks(`testbed idle ${String(HEAP_IDLE_S)} s`, idle));
+  const load = await longTasksBetween(page, 0, playable);
+  console.log(describeLongTasks('testbed load to playable (reported only)', load));
   console.log(
     `[perf] heap after ${String(HEAP_IDLE_S)} s idle: ${(after.totalSize / 1e6).toFixed(1)} MB allocated ` +
       `(${(after.usedSize / 1e6).toFixed(1)} MB used; ${(before / 1e6).toFixed(1)} MB at start)`,
   );
   await enforce(testInfo, 'ci', {
-    measurements: [{ metric: 'heapBytesAfterIdle', value: after.totalSize, scene: 'testbed' }],
+    measurements: [
+      { metric: 'heapBytesAfterIdle', value: after.totalSize, scene: 'testbed' },
+      { metric: 'nonFrameLongTasksOver200ms', value: idle.nonFrameOver200, scene: 'testbed' },
+    ],
   });
 });

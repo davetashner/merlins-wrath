@@ -86,13 +86,19 @@ describe('perf run report (mw-e32.1)', () => {
     expect(buildReport(budgets, [], meta('ci')).pass).toBe(false); // nothing measured is no pass
   });
 
-  it('shows a budget that was not measured in its scene', () => {
-    const report = buildReport(
+  it('leaves out a budget measured only in another scene; shows a broken value as not measured', () => {
+    const elsewhere = buildReport(
       budgets,
       [{ measurements: [{ metric: 'frameP95Ms', value: 9, scene: 'testbed' }] }],
       meta('reference'),
     );
-    expect(formatSummary(report)).toContain('| not measured | ≤ 16.70 ms | — | **FAIL** |');
+    expect(elsewhere.results).toEqual([]);
+    const broken = buildReport(
+      budgets,
+      [{ measurements: [{ metric: 'frameP95Ms', value: Number.NaN, scene: 'perf-baseline' }] }],
+      meta('reference'),
+    );
+    expect(formatSummary(broken)).toContain('| not measured | ≤ 16.70 ms | — | **FAIL** |');
   });
 
   describe('writing', () => {

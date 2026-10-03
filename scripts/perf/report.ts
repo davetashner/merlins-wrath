@@ -58,9 +58,10 @@ export interface RunMeta {
 }
 
 /**
- * The report for one run: every budget of the run's mode judged against the attachments. Budgets whose
- * metric the run never measured are left out, so a filtered run (`--grep heap`) judges just what it
- * measured; the spec that should have measured one fails on its own.
+ * The report for one run: every budget of the run's mode judged against the attachments. Budgets the
+ * run never measured (no measurement of their metric, in their scene when they name one) are left
+ * out, so a filtered run (`--grep heap`) judges just what it measured; the spec that should have
+ * measured one fails on its own.
  */
 export function buildReport(
   budgets: readonly PerfBudget[],
@@ -68,9 +69,14 @@ export function buildReport(
   meta: RunMeta,
 ): PerfRunReport {
   const measurements = attachments.flatMap((a) => a.measurements);
-  const measured = new Set(measurements.map((m) => m.metric));
   const results = evaluateAll(
-    budgets.filter((b) => b.mode === meta.mode && measured.has(b.metric)),
+    budgets.filter(
+      (b) =>
+        b.mode === meta.mode &&
+        measurements.some(
+          (m) => m.metric === b.metric && (b.scene === undefined || m.scene === b.scene),
+        ),
+    ),
     measurements,
   );
   return {

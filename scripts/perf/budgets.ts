@@ -26,8 +26,13 @@ export const PERF_METRICS = {
   warmReloadMs: 'ms',
   /** JS heap (allocated) after idling in the testbed. */
   heapBytesAfterIdle: 'bytes',
-  /** Main-thread tasks longer than 200 ms while frames are sampled. */
+  /** Main-thread tasks of 200 ms or more while frames are sampled, frame renders included. */
   longTasksOver200ms: 'count',
+  /**
+   * The same, leaving out tasks that are frame renders (overlap a requestAnimationFrame callback):
+   * GC, parsing, timers. What CI can judge, where software rendering makes every frame a long task.
+   */
+  nonFrameLongTasksOver200ms: 'count',
   /** Frame interval percentiles in a scene, ms. */
   frameP50Ms: 'ms',
   frameP95Ms: 'ms',

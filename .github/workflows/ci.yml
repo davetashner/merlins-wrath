@@ -162,8 +162,10 @@ jobs:
 
   # The perf budget suite in CI mode (mw-e32.1; budgets in perf/perf-budgets.json, all from contract
   # §1): initial transfer and bundle size, load-to-playable and warm reload at 50 Mbps, JS heap after
-  # 5 minutes idle, long tasks over 200 ms, plus software-rendered frame time in the perf-baseline
-  # scene, compared with main's last report as a warning only (AC-5). Not a required check yet.
+  # 5 minutes idle, long tasks over 200 ms that are not frame renders (software-rendered frames are
+  # long tasks themselves on these GPU-less runners, so those are only reported), plus
+  # software-rendered frame time in the perf-baseline scene, compared with main's last report as a
+  # warning only (AC-5). Not a required check yet.
   perf-budget:
     runs-on: ubuntu-latest
     timeout-minutes: 20

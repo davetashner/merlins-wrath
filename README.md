@@ -58,12 +58,17 @@ has two modes:
 
 - **CI mode** (`pnpm perf`, the `perf-budget` CI job): initial transfer and build size ≤ 50 MB,
   load-to-playable ≤ 10 s and warm reload ≤ 3 s at 50 Mbps (CDP throttling), JS heap ≤ 1.5 GB after
-  5 minutes idle in the testbed, no long task ≥ 200 ms while frames are sampled. Frame time is
-  software-rendered there (no GPU), so it has no absolute budget: CI compares it with main's last
-  report and only warns when p50 or p95 is more than 15 % slower.
+  5 minutes idle in the testbed. The runners have no GPU, so every frame is software-rendered and is
+  itself a 100–200 ms main-thread task. That gives frame time no absolute budget: CI compares it with
+  main's last report and only warns when p50 or p95 is more than 15 % slower. For the same reason,
+  long tasks that are frame renders (they overlap a `requestAnimationFrame` callback) are only
+  reported. The budget is on the other long tasks ≥ 200 ms (GC, parsing, timers), of which there must
+  be none during play: the `perf-baseline` sampling window and the testbed's idle minutes. Long tasks
+  while loading are reported only.
 - **Reference mode** (`pnpm perf:ref`, by hand on the reference machine — MacBook Pro M1 Pro, Chrome):
   headed Chrome, uncapped, 2560×1440 drawing buffer, 1,800 frames after a 3 s warm-up in the
-  `perf-baseline` scene; fails unless frame time p50 and p95 are ≤ 16.7 ms. Writes
+  `perf-baseline` scene. It fails unless frame time p50 and p95 are ≤ 16.7 ms and no task of 200 ms or
+  more, frame renders included, runs while frames are sampled. Writes
   `perf/results/<date>-<sha>.json`; commit it so results build a trend. Close other apps first.
 
 Every run writes `test-results/perf-report.json` and prints a per-budget table. `perf-baseline`

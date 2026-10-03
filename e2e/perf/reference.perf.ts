@@ -8,6 +8,7 @@
 import { test } from '@playwright/test';
 import {
   browserName,
+  describeLongTasks,
   enforce,
   frameMeasurements,
   instrument,
@@ -29,9 +30,14 @@ test('AC-1: perf-baseline at High, 1440p-equivalent: frame time p95 ≤ 16.7 ms 
     minSamples: SAMPLE_FRAMES,
     viewport: '1280×720 @2x',
   });
+  console.log(describeLongTasks('perf-baseline sampling', sample.longTasks));
   await enforce(testInfo, 'reference', {
     browser: browserName(page),
     frames: sample.run,
-    measurements: frameMeasurements(sample),
+    measurements: [
+      ...frameMeasurements(sample),
+      // A real GPU renders a frame in milliseconds: any task ≥ 200 ms here is a hitch.
+      { metric: 'longTasksOver200ms', value: sample.longTasks.over200, scene: 'perf-baseline' },
+    ],
   });
 });

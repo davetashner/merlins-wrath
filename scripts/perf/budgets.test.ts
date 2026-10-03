@@ -41,6 +41,14 @@ describe('perf budgets (mw-e32.1)', () => {
         'frame-p95-high',
       ]),
     );
+    // Long tasks: CI judges only those that are not frame renders; the reference GPU judges all.
+    expect(budgets.filter((b) => b.metric === 'nonFrameLongTasksOver200ms')).toMatchObject([
+      { mode: 'ci', scene: 'perf-baseline', max: 0 },
+      { mode: 'ci', scene: 'testbed', max: 0 },
+    ]);
+    expect(budgets.filter((b) => b.metric === 'longTasksOver200ms')).toMatchObject([
+      { mode: 'reference', scene: 'perf-baseline', max: 0 },
+    ]);
     expect(budgets.find((b) => b.id === 'frame-p95-high')).toMatchObject({
       max: 16.7,
       mode: 'reference',
