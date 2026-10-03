@@ -21,8 +21,17 @@ import type { EntityId } from '../core/component';
 import { cos, sin } from '../math';
 import { PlacementComponent } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
-import { AiCuePlayed, AiNoiseEmitted } from './components';
+import { AiCuePlayed, AiNoiseEmitted, RouteBlocked } from './components';
 import { face, type AiStatus } from './navigation';
+import {
+  activeRoute,
+  faceYaw,
+  nearestWaypoint,
+  nextWaypoint,
+  scanYaw,
+  type ActiveRoute,
+  type PatrolRoute,
+} from './routes';
 import { at, getIf } from './util';
 import type { AgentView, Num } from './view';
 
@@ -47,26 +56,19 @@ type Compilers = {
 /** Metres within which `follow-route` counts a waypoint as reached. */
 export const WAYPOINT_RADIUS = 0.25;
 
+// `follow-route`'s step data: the tick its dwell ends (-1 walking), waypoints blocked in a row, the
+// waypoint it stands at (-1 none), the tick it arrived there, and the routine entry it walks.
+const REST = 0;
+const BLOCKED = 1;
+const AT = 2;
+const SINCE = 3;
+const ENTRY = 4;
+/** A post's dwell: it holds its waypoint for good (a finite number, so saves keep it as JSON). */
+const HOLD = Number.MAX_SAFE_INTEGER;
+
 const ticks = (seconds: number, hz: number): number => Math.round(seconds * hz);
 
 const placementOf = (v: AgentView, entity: EntityId) => getIf(v.world, entity, PlacementComponent);
-
-/** Index of the patrol waypoint nearest the agent, or -1 without a route or placement. */
-function nearestWaypoint(v: AgentView): number {
-  const route = v.creature?.origin.patrol ?? [];
-  const at = placementOf(v, v.entity);
-  if (at === undefined) return -1;
-  let best = -1;
-  let bestDistance = Infinity;
-  route.forEach((p, i) => {
-    const d = (p.x - at.x) * (p.x - at.x) + (p.z - at.z) * (p.z - at.z);
-    if (d < bestDistance) {
-      best = i;
-      bestDistance = d;
-    }
-  });
-  return best;
-}
 
 /** Where `target` is for this agent now, or undefined when it has none or it is gone. */
 function targetPoint(v: AgentView, target: BehaviourTarget): Vec3 | undefined {
@@ -81,15 +83,19 @@ function targetPoint(v: AgentView, target: BehaviourTarget): Vec3 | undefined {
     case 'origin':
       return v.creature?.origin.at;
     case 'nearest-waypoint':
-      return v.creature?.origin.patrol?.[at(v.brain.stepData, 0)];
+      return activeRoute(v)?.route.waypoints[at(v.brain.stepData, 0)]?.at;
   }
 }
 
-/** A `start` hook that remembers the nearest waypoint when the step targets it. */
+/**
+ * A `start` hook that remembers the waypoint of the running route nearest by navigation distance
+ * when the step targets it (mw-e11.9 AC-3), -1 when there is none.
+ */
 const startFor = (target: BehaviourTarget) =>
   target === 'nearest-waypoint'
     ? (v: AgentView) => {
-        v.brain.stepData[0] = nearestWaypoint(v);
+        const active = activeRoute(v);
+        v.brain.stepData[0] = active === undefined ? -1 : nearestWaypoint(v, active.route);
       }
     : undefined;
 
@@ -122,27 +128,81 @@ const COMPILERS: Compilers = {
 
   'follow-route': (step, num) => {
     const dwell = num(step.dwellS);
+    /** Begins walking `active` from the waypoint nearest by navigation distance (resuming). */
+    const resume = (v: AgentView, active: ActiveRoute) => {
+      const data = v.brain.stepData;
+      data[REST] = -1;
+      data[BLOCKED] = 0;
+      data[AT] = -1;
+      data[SINCE] = 0;
+      data[ENTRY] = active.entry;
+      const nearest = nearestWaypoint(v, active.route);
+      if (nearest >= 0) v.brain.blackboard.waypoint = nearest;
+    };
+    /** Stands at waypoint `index`: faces its look, plays its idle cue, dwells (a post holds). */
+    const arrive = (v: AgentView, route: PatrolRoute, index: number) => {
+      const wp = at(route.waypoints, index);
+      const data = v.brain.stepData;
+      if (wp.look !== undefined) faceYaw(v, wp.look);
+      if (wp.idle !== undefined) {
+        v.world.events.emit(AiCuePlayed, { tick: v.tick, entity: v.entity, cue: wp.idle });
+      }
+      data[AT] = index;
+      data[SINCE] = v.tick;
+      data[REST] = route.kind === 'post' ? HOLD : v.tick + ticks(wp.dwellS ?? dwell(v), v.hz);
+      data[BLOCKED] = 0;
+      v.brain.blackboard.waypoint = nextWaypoint(v, route, index);
+    };
     return {
       primitive: 'follow-route',
+      start(v) {
+        const active = activeRoute(v);
+        if (active !== undefined) resume(v, active);
+      },
       update(v) {
-        const route = v.creature?.origin.patrol ?? [];
-        if (route.length === 0) return 'failure';
+        const active = activeRoute(v);
+        if (active === undefined) return 'failure';
+        const data = v.brain.stepData;
+        if (data[ENTRY] !== active.entry) resume(v, active); // its schedule moved it to another route
+        const { route } = active;
         const bb = v.brain.blackboard;
-        const resting = v.brain.stepData[0] ?? -1;
-        if (v.tick < resting) return 'running';
-        const index = bb.waypoint % route.length;
-        const status = v.ports.navigation.travel(v.world, v.entity, {
-          goal: at(route, index),
-          within: WAYPOINT_RADIUS,
-          speed: v.brain.gaits[step.gait],
-          dt: 1 / v.hz,
-        });
-        if (status === 'failure') return 'failure';
-        if (status === 'success') {
-          bb.waypoint = (index + 1) % route.length;
-          v.brain.stepData[0] = v.tick + ticks(dwell(v), v.hz);
+        const resting = at(data, REST);
+        if (resting >= 0) {
+          if (v.tick < resting) {
+            const yaw = scanYaw(at(route.waypoints, at(data, AT)), v.tick - at(data, SINCE), v.hz);
+            if (yaw !== undefined) faceYaw(v, yaw);
+            return 'running';
+          }
+          data[REST] = -1;
+          data[AT] = -1;
         }
-        return 'running';
+        const n = route.waypoints.length;
+        for (;;) {
+          const index = bb.waypoint % n;
+          const wp = at(route.waypoints, index);
+          const status = v.ports.navigation.travel(v.world, v.entity, {
+            goal: wp.at,
+            within: WAYPOINT_RADIUS,
+            speed: v.brain.gaits[step.gait],
+            dt: 1 / v.hz,
+          });
+          if (status === 'running') return 'running';
+          if (status === 'success') {
+            arrive(v, route, index);
+            return 'running';
+          }
+          // Unreachable (a locked door): report it and skip to the next waypoint (AC-4).
+          v.world.events.emit(RouteBlocked, {
+            tick: v.tick,
+            entity: v.entity,
+            route: route.id,
+            waypoint: wp.id,
+            at: wp.at,
+          });
+          bb.waypoint = nextWaypoint(v, route, index);
+          data[BLOCKED] = at(data, BLOCKED) + 1;
+          if (at(data, BLOCKED) >= n) return 'failure';
+        }
       },
     };
   },

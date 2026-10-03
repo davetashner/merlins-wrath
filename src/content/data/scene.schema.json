@@ -773,6 +773,44 @@
               "description": "Position in grid cells (x, y, z), snapped to SCENE_SNAP_STEP."
             }
           },
+          "routine": {
+            "description": "Routes the spawned creature walks (mw-e11.9): the first whose window holds the hour runs (needs creature; not with patrol).",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "route": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                  "description": "Route id of this scene."
+                },
+                "hours": {
+                  "description": "From and to, hours of the day (wraps past midnight when from > to); omit for always.",
+                  "type": "array",
+                  "prefixItems": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 24
+                    },
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 24
+                    }
+                  ],
+                  "items": false,
+                  "minItems": 2,
+                  "maxItems": 2
+                }
+              },
+              "required": [
+                "route"
+              ],
+              "additionalProperties": false
+            }
+          },
           "properties": {
             "description": "World properties of the spawned entity, e.g. a torch: { \"burning\": true, \"fuel\": 3600 } (mw-e03.37). A spawn with properties is placed in the sim, so the light field and stimuli reach it.",
             "type": "object",
@@ -1247,6 +1285,143 @@
         "required": [
           "id",
           "at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "waypoints": {
+      "default": [],
+      "description": "Named points patrol routes walk through (mw-e11.9).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Name of the waypoint, unique in the scene, e.g. yard-gate."
+          },
+          "at": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Position in grid cells (x, y, z), snapped to SCENE_SNAP_STEP."
+          },
+          "dwellS": {
+            "description": "Seconds a guard stands here; default: the follow-route step’s dwellS (a post holds forever).",
+            "type": "number",
+            "minimum": 0
+          },
+          "look": {
+            "description": "Direction it faces while it stands here, degrees: 0 faces +z, 90 faces +x.",
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMaximum": 360
+          },
+          "scanArc": {
+            "description": "Degrees it sweeps its gaze across, centred on look, while it stands here.",
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 360
+          },
+          "scanS": {
+            "default": 6,
+            "description": "Seconds one full sweep of the scan arc takes (there and back).",
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "idle": {
+            "description": "Idle action cue played on arrival (e.g. guard-lean, guard-warm-hands, guard-check-door).",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          }
+        },
+        "required": [
+          "id",
+          "at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "routes": {
+      "default": [],
+      "description": "Patrol routes and guard posts over the waypoints (mw-e11.9).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Name of the route, unique in the scene, e.g. yard-loop."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "loop",
+              "ping-pong",
+              "random",
+              "post"
+            ],
+            "description": "loop, ping-pong, random (weighted graph) or post."
+          },
+          "waypoints": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "description": "Waypoint ids in walking order (random: the graph’s waypoints, each once)."
+          },
+          "links": {
+            "description": "Random routes only: the weighted ways between its waypoints.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                  "description": "Waypoint it leaves."
+                },
+                "to": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                  "description": "Waypoint it goes to."
+                },
+                "weight": {
+                  "default": 1,
+                  "description": "Relative chance of taking this way; default 1.",
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "from",
+                "to"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "waypoints"
         ],
         "additionalProperties": false
       }

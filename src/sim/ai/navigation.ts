@@ -3,6 +3,8 @@
 // Until the navmesh (E12/E14) provides paths, `straightLineNavigation` walks straight across the
 // ground plane: it moves the agent's placement toward the goal at the gait speed and turns its
 // facing to the direction of travel. A navmesh-backed port replaces it without touching behaviours.
+// A port may also measure how far away a point is by its paths (`distance`), which patrol routines
+// use to pick the nearest waypoint (mw-e11.9); without it the straight line is the measure.
 
 import type { EntityId } from '../core/component';
 import type { World } from '../core/world';
@@ -32,6 +34,18 @@ export interface AiNavigation {
    * when the goal cannot be reached, else running.
    */
   travel(world: World<never>, entity: EntityId, request: TravelRequest): AiStatus;
+  /**
+   * Metres `entity` would travel to reach `goal` (Infinity when it cannot). Optional: without it
+   * the straight-line distance stands in.
+   */
+  readonly distance?: (world: World<never>, entity: EntityId, goal: Vec3) => number;
+}
+
+/** Horizontal straight-line metres from `entity` to `goal` (Infinity without a placement). */
+export function straightDistance(world: World<never>, entity: EntityId, goal: Vec3): number {
+  const at = getIf(world, entity, PlacementComponent);
+  if (at === undefined) return Infinity;
+  return Math.sqrt((goal.x - at.x) ** 2 + (goal.z - at.z) ** 2);
 }
 
 /** Turns `entity`'s facing (when it has one) toward horizontal direction (dx, dz). */
@@ -50,6 +64,7 @@ export function face(world: World<never>, entity: EntityId, dx: number, dz: numb
  * placement or does not move (speed ≤ 0) and is not there yet.
  */
 export const straightLineNavigation: AiNavigation = Object.freeze({
+  distance: straightDistance,
   travel(world: World<never>, entity: EntityId, request: TravelRequest): AiStatus {
     const at = getIf(world, entity, PlacementComponent);
     if (at === undefined) return 'failure';

@@ -2,7 +2,7 @@
   "$schema": "../../../data/scene.schema.json",
   "id": "creature-pen",
   "name": "Creature pen",
-  "description": "A walled 12 m pen for spawning creatures from data (mw-e12.4), in debug builds only: two fixture hounds, a fixture guard with a patrol route and a fixture sentinel stand at their spawn points (no AI yet). The debug console spawns more (spawn fixture-hound 3 at-cursor) and removes them (despawn all).",
+  "description": "A walled 12 m pen for spawning creatures from data (mw-e12.4), in debug builds only: two fixture hounds, a fixture guard with a patrol route and a fixture sentinel at its corner post (mw-e11.9) stand at their spawn points (no AI yet). The debug console spawns more (spawn fixture-hound 3 at-cursor) and removes them (despawn all).",
   "grid": 1,
   "camera": {
     "position": [0, 8, -12],
@@ -69,9 +69,21 @@
       "id": "sentinel-corner",
       "at": [4, 0, 4],
       "yaw": 180,
-      "creature": "fixture-sentinel"
+      "creature": "fixture-sentinel",
+      "routine": [{ "route": "corner-watch" }]
     }
   ],
+  "waypoints": [
+    {
+      "id": "corner",
+      "at": [4, 0, 4],
+      "look": 180,
+      "scanArc": 90,
+      "scanS": 8,
+      "idle": "sentinel-scan"
+    }
+  ],
+  "routes": [{ "id": "corner-watch", "kind": "post", "waypoints": ["corner"] }],
   "light": {
     "ambient": 0.26,
     "directional": [{ "id": "sun", "direction": [-0.45, -1, 0.3], "level": 0.5, "reach": 60 }]

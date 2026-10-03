@@ -393,17 +393,25 @@ export {
 } from './types/kit.ts';
 export {
   OUTSIDE_ROOM,
+  ROUTE_KINDS,
   SCENE_SNAP_STEP,
   SCENE_YAWS,
   sceneAcousticsSchema,
   scenePlacementSchema,
+  sceneRouteSchema,
+  sceneRoutineSchema,
   sceneSchema,
   sceneSpawnSchema,
+  sceneWaypointSchema,
+  type RouteKind,
   type SceneAcousticsDef,
   type SceneDef,
   type SceneDefInput,
   type ScenePlacementDef,
+  type SceneRouteDef,
+  type SceneRoutineDef,
   type SceneSpawnDef,
+  type SceneWaypointDef,
   type SceneYaw,
 } from './types/scene.ts';
 export {

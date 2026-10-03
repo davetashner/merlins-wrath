@@ -14,6 +14,8 @@ export interface AiPorts {
   readonly navigation: AiNavigation;
   /** The attack table the `attack` primitive starts attacks from; absent = attacks always fail. */
   readonly attacks: AttackLookup | undefined;
+  /** The hour of the day, 0–24, for routine windows (mw-e11.9); absent = windows are not read. */
+  readonly hourOfDay: ((world: World<never>) => number) | undefined;
 }
 
 /** One agent as inputs and primitives see it. */

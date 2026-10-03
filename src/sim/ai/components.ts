@@ -84,6 +84,8 @@ export interface Brain {
   postAlertUntil: number;
   /** Awareness accumulation multiplier while on edge (1 otherwise). */
   postAlertRate: number;
+  /** Which way it walks a ping-pong route: 1 forward, -1 back (mw-e11.9; kept across alerts). */
+  routeDir: number;
 }
 
 /** The brain component. */
@@ -123,3 +125,21 @@ export interface AiNoise {
 
 /** An agent made a noise. */
 export const AiNoiseEmitted = defineEvent<AiNoise>('aiNoiseEmitted');
+
+/** A patrol waypoint the agent could not reach (mw-e11.9): it skipped to the next one. */
+export interface RouteBlock {
+  readonly tick: number;
+  readonly entity: EntityId;
+  /** Route id. */
+  readonly route: string;
+  /** Waypoint id. */
+  readonly waypoint: string;
+  /** Where the waypoint is. */
+  readonly at: Vec3;
+}
+
+/**
+ * An agent found its route blocked: the hook for the door-check anomaly (a guard who finds a door
+ * locked that should not be notices it; mw-e11.15).
+ */
+export const RouteBlocked = defineEvent<RouteBlock>('aiRouteBlocked');
