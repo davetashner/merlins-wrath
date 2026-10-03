@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Loot in the vertical slice. The Rusted gallery key lies by the far pillar in the arena: take it
+  and the iron exit door unlocks and opens with one press of Interact, straight from your keyring,
+  so you can walk through and finish the slice. The key is a quest item and can't be dropped or
+  lost. Up in the raised alcove, a chest holds a healing draught, a few coins and a miner's tally
+  stick with a story of its own; once you have emptied it, it stays empty after a save and reload.
 - Enemies fight like a team instead of a mob. In a fight, at most two take a swing at you at a time
   while the rest circle at their own striking distance, waiting their turn. Each picks a blow that
   can actually reach you from where it stands, a bold one favouring its heavy swings, and calls out

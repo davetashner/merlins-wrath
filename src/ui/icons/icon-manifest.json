@@ -56,6 +56,14 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-gallery-key-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-gold-coin-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-healing-draught-01",
     "placeholder": true
   },
@@ -97,6 +105,10 @@
   },
   {
     "id": "icon-item-standard-arrow-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-tally-stick-01",
     "placeholder": true
   },
   {

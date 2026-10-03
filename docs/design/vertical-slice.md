@@ -196,6 +196,8 @@ so luring it into the fire is a systemic option, not a scripted one.
 When the skeleton dies, its Died event drops the **Rusted gallery key** as a world item within 1 m of
 the body (mw-e01.5 AC-2). Interact ("Take Rusted gallery key") adds it to the keyring. The key is a
 quest item, so it cannot be dropped (mw-e17.7 AC-4) and can never be lost in the level.
+Until the encounter lands, the key (`rusted-gallery-key`) lies on the floor at the skeleton's post
+at (2.5, 0, 32.5) by pillar B (mw-e01.6); mw-e01.5 replaces that placement with the drop.
 
 | System                          | Bead                                                   | Status |
 | ------------------------------- | ------------------------------------------------------ | ------ |

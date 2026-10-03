@@ -1,0 +1,13 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "miners-tally-stick",
+  "category": "misc",
+  "name": "Miner's tally stick",
+  "description": "A hazel stick notched once for every bucket hauled up the gallery. The notches stop halfway down, mid-shift. Someone was still counting.",
+  "notes": "The slice alcove chest's oddity (mw-e01.6): worthless, a line of story bible §7.4 voice about the Forgotten miners who walked into the song mid-shift. Placeholder text until e39-item-creature-text.",
+  "icon": "icon-item-tally-stick-01",
+  "value": 1,
+  "worldProperties": {
+    "material": "wood"
+  }
+}
