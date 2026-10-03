@@ -74,3 +74,37 @@ test('AC-3: `spawn fixture-hound 3` in the testbed console makes 3 drawn hounds;
   await expect.poll(() => creatures(page)).toMatchObject({ count: 0, drawn: 0 });
   expect(problems).toEqual([]);
 });
+
+// mw-1ja AC-2: the Forgotten miner has four looks; ?miner=N pins the Nth, so each loads its own model
+// file (and the shared pick) with no console errors. Which look a miner wears is otherwise random per
+// game session (src/render/creatures/variant.ts).
+for (const look of [1, 2, 3, 4]) {
+  test(`AC-2 (mw-1ja): ?miner=${String(look)} draws look ${String(look)} of the Forgotten miner`, async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const problems = collectProblems(page);
+    const model = page.waitForResponse(
+      (response) =>
+        response
+          .url()
+          .includes(`/assets/model/model-creature-forgotten-miner-0${String(look)}.glb`) &&
+        response.ok(),
+    );
+    await page.goto(`/?scene=testbed&debug=1&miner=${String(look)}`);
+    await expect(page.locator('#app')).toHaveAttribute('data-debug-console', 'closed', {
+      timeout: 10_000,
+    });
+    await page.keyboard.press('Backquote');
+    await expect(page.getByTestId('debug-console-input')).toBeFocused();
+    await page.keyboard.type('spawn forgotten-miner 1');
+    await page.keyboard.press('Enter');
+    await expect
+      .poll(() => creatures(page))
+      .toMatchObject({ count: 1, drawn: 1, kinds: { 'forgotten-miner': 1 } });
+    await model;
+    // Give the model a few frames to swap in, so a failure to build it would raise an error here.
+    await page.waitForTimeout(1_500);
+    expect(problems).toEqual([]);
+  });
+}

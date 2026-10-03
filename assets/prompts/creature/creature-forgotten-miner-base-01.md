@@ -1,8 +1,9 @@
 # creature-forgotten-miner-base-01: the Forgotten miner, unarmed A-pose flat
 
-**Status: candidate, awaiting owner approval** (mw-2l9). Four variants (a to d) were generated; variant **b**
-was sent to image-to-3D (tall, thin limbs, clearest ribs and negative space, symmetric A-pose). If the owner
-prefers another, regenerate the model from it (9 credits).
+**Status: candidates, awaiting owner approval** (mw-0i5). Four variants (a to d) were generated. **All four
+are modelled** and one is drawn at random for each miner each game (mw-1ja): `model-creature-forgotten-miner-01`
+is variant b, `-02` is a, `-03` is c, `-04` is d. Drop any the owner dislikes from
+`FORGOTTEN_MINER_URLS` (src/render/creatures/forgotten-model.ts) and `MINER_VARIANTS`.
 
 | Field | Value |
 |---|---|
