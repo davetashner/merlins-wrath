@@ -22,6 +22,7 @@ export * from './interact-prompt';
 export * from './inventory';
 export * from './item-icons';
 export * from './kit-panel';
+export * from './pause-menu';
 export * from './lock-marker';
 export * from './pickup-toasts';
 export * from './quick-slots';

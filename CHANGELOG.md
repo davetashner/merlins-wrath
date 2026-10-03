@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- You can pause. Esc, P or the controller's Menu button stops the game and opens the pause menu:
+  Resume, Settings, Save, Load and Quit to Title. Save is greyed out with "Can't save during combat"
+  while a fight is on. Quit to Title asks first if you have played on since your last save, then
+  takes you back to the title, where Continue picks up from that save. The menu works with the
+  keyboard, the mouse or a controller's d-pad.
 - The vertical slice saves itself. Walking through the first door and reaching the end of the
   corridor each make an autosave, and so does finishing the slice. An autosave never happens
   mid-fight: it waits until the skeleton's fight is over. Close the game, press Continue on the
