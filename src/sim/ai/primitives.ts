@@ -25,7 +25,8 @@ import { canStartAttack, startAttack } from '../combat/attacks/executor';
 import { cos, sin } from '../math';
 import { PlacementComponent } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
-import { AiCuePlayed, AiNoiseEmitted, RouteBlocked } from './components';
+import { emitNoise } from '../noise/system';
+import { AiCuePlayed, RouteBlocked } from './components';
 import { recall } from './memory';
 import { face, type AiStatus } from './navigation';
 import {
@@ -57,6 +58,9 @@ type StepOf<K extends BehaviourPrimitive> = Extract<BehaviourStepDef, { readonly
 type Compilers = {
   readonly [K in BehaviourPrimitive]: (step: StepOf<K>, num: NumOf) => StepRunner;
 };
+
+/** The `kind` of the noises `emit-noise` raises on `noiseEmitted` (mw-e09.22). */
+export const AI_NOISE_KIND = 'ai';
 
 /** Metres within which `follow-route` counts a waypoint as reached. */
 export const WAYPOINT_RADIUS = 0.25;
@@ -275,12 +279,13 @@ const COMPILERS: Compilers = {
       update(v) {
         const at = selfAt(v);
         if (at === undefined) return 'failure';
-        const point = Object.freeze({ x: at.x, y: at.y, z: at.z });
-        v.world.events.emit(AiNoiseEmitted, {
-          tick: v.tick,
+        // On the shared channel (mw-e09.22), so noise propagation carries it to every listener.
+        emitNoise(v.world, {
+          position: at,
+          loudness: db(v),
+          kind: AI_NOISE_KIND,
           entity: v.entity,
-          at: point,
-          db: db(v),
+          source: v.entity,
         });
         return 'success';
       },

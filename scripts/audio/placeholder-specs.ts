@@ -220,6 +220,22 @@ const COMBAT: readonly PlaceholderSpec[] = [
     },
   },
   {
+    // The frozen fixture guard's strike windup (debug builds only; TelegraphStarted, `sfx-telegraph-`
+    // + its attack's telegraph): a short rising whistle, so a fixture guard's swing is heard before
+    // it lands now that it fights in the game loop (mw-e11.21).
+    id: 'sfx-telegraph-fixture-guard-strike-windup',
+    bus: 'combat',
+    spatial: true,
+    variants: 1,
+    recipe: {
+      duration: 0.3,
+      peakDb: -8,
+      layers: [
+        noise('bandpass', 700, 0.8, { to: 1600, q: 1.5, attack: 0.08, hold: 0.12, decay: 0.1 }),
+      ],
+    },
+  },
+  {
     // The grey-box Forgotten's parryable windups (mw-e04.20, TelegraphStarted): a dry bone rattle
     // with a rising scrape, so a swing is heard before it lands.
     id: 'sfx-telegraph-forgotten-windup',

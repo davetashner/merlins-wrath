@@ -52,6 +52,7 @@ import { towardPlayer } from '../combat/sandbox/dummies';
 import { ActionTimelineComponent, giveActionTimeline } from '../combat/timeline/components';
 import type { ComponentType, EntityId } from '../core/component';
 import type { World } from '../core/world';
+import type { SpawnParams } from '../debug/commands';
 import type { Spawner } from '../debug/system';
 import { joinFaction, membershipFromCreature } from '../factions/runtime';
 import type { FactionTable } from '../factions/table';
@@ -351,22 +352,79 @@ export function spawnSceneCreatures(
   return { entities, errors };
 }
 
+/** Most waypoints a `--patrol` spawn option may list. */
+export const MAX_PATROL_POINTS = 16;
+
+const PATROL_NUMBER = /^-?\d+(\.\d+)?$/;
+
+/**
+ * The route of a `--patrol` spawn option (mw-e11.21): waypoints `x,y,z` in metres separated by `;`
+ * (`0,0,12;0,0,20`), at least one and at most MAX_PATROL_POINTS.
+ * @throws RangeError for anything else.
+ */
+export function parsePatrolParam(text: string): Vec3[] {
+  const points = text.split(';');
+  if (points.length > MAX_PATROL_POINTS) {
+    throw new RangeError(`--patrol takes at most ${String(MAX_PATROL_POINTS)} waypoints`);
+  }
+  return points.map((point) => {
+    const parts = point.split(',');
+    if (parts.length !== 3 || !parts.every((part) => PATROL_NUMBER.test(part))) {
+      throw new RangeError(
+        `--patrol waypoint "${point}" is not x,y,z (metres, e.g. 0,0,12;0,0,20)`,
+      );
+    }
+    const [x = 0, y = 0, z = 0] = parts.map(Number);
+    return { x, y, z };
+  });
+}
+
+/**
+ * What is wrong with the options of a creature spawn (`spawn fixture-guard --patrol 0,0,12;0,0,20`),
+ * or undefined when they are fine. `--patrol` is the only option.
+ */
+export function checkCreatureSpawn(params: SpawnParams): string | undefined {
+  for (const name of Object.keys(params)) {
+    if (name !== 'patrol') return `unknown option --${name} (creatures take --patrol x,y,z;x,y,z…)`;
+  }
+  const patrol = params['patrol'];
+  if (patrol === undefined) return undefined;
+  try {
+    parsePatrolParam(patrol);
+    return undefined;
+  } catch (error) {
+    return (error as Error).message;
+  }
+}
+
 /**
  * The debug console's spawners, one per creature id (`spawn fixture-hound 3`): each creature faces
- * the player when there is one. They take no options. A spawner throws a RangeError (the command is
- * skipped) when the world has no creatures installed.
+ * the player when there is one. With `--patrol x,y,z;x,y,z…` (mw-e11.21) the creature walks that
+ * route: it spawns at the first waypoint, facing the second. A spawner throws a RangeError (the
+ * command is skipped) for options `checkCreatureSpawn` rejects or when the world has no creatures
+ * installed.
  */
 export function creatureSpawners(options: CreatureSpawnOptions): Map<string, Spawner> {
   const spawner =
     (creature: string): Spawner =>
-    (world, at) => {
+    (world, at, params) => {
       const w: World<never> = world;
       if (!creaturesInstalled(w)) throw new RangeError('creatures are not installed');
-      const facing = towardPlayer(w, at);
+      const problem = checkCreatureSpawn(params);
+      if (problem !== undefined) throw new RangeError(problem);
+      const patrol =
+        params['patrol'] === undefined ? undefined : parsePatrolParam(params['patrol']);
+      const [first, second] = patrol ?? [];
+      const feet = first ?? at;
+      const facing =
+        first !== undefined && second !== undefined
+          ? { x: second.x - first.x, y: 0, z: second.z - first.z }
+          : towardPlayer(w, feet);
       const result = spawnCreature(w, options, {
         creature,
-        at,
+        at: feet,
         ...(facing !== undefined && { facing }),
+        ...(patrol !== undefined && { patrol }),
       });
       if (!result.ok) throw new RangeError(spawnErrorMessage(result.error));
       return result.entity;

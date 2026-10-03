@@ -979,6 +979,15 @@
     "placeholder": true
   },
   {
+    "id": "sfx-telegraph-fixture-guard-strike-windup",
+    "variants": [
+      "sfx-telegraph-fixture-guard-strike-windup-01"
+    ],
+    "bus": "combat",
+    "spatial": true,
+    "placeholder": true
+  },
+  {
     "id": "sfx-telegraph-forgotten-lunge",
     "variants": [
       "sfx-telegraph-forgotten-lunge-01"

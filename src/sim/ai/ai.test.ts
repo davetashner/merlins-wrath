@@ -24,6 +24,14 @@ import { CombatFacingComponent } from '../combat/melee/components';
 import type { EntityId } from '../core/component';
 import { World, type WorldSnapshot } from '../core/world';
 import { CreatureComponent, type Creature } from '../creatures/components';
+import { noiseEmitted, type NoiseEvent } from '../noise/events';
+import { buildSoundGraph } from '../noise/graph';
+import {
+  installNoisePropagation,
+  NoiseListenerComponent,
+  noiseHeard,
+  type NoiseHeard,
+} from '../noise/system';
 import { entitySource, perceived, percept } from '../perception/percept';
 import { hashWorld } from '../snapshot';
 import { PlacementComponent, placeEntity } from '../stimulus/placement';
@@ -31,11 +39,9 @@ import type { Vec3 } from '../stimulus/shapes';
 import { BehaviourError, compileBehaviour, compileBehaviours, compileCurve } from './behaviour';
 import {
   AiCuePlayed,
-  AiNoiseEmitted,
   AlertStateChanged,
   BrainComponent,
   type AiCue,
-  type AiNoise,
   type AlertStateChange,
   type Brain,
 } from './components';
@@ -44,7 +50,7 @@ import { installAwareness } from './awareness';
 import { introspectBrain } from './introspect';
 import { face, straightLineNavigation, type AiNavigation } from './navigation';
 import { observePercepts } from './memory';
-import { isPrimitive } from './primitives';
+import { AI_NOISE_KIND, isPrimitive } from './primitives';
 import {
   aiBehaviour,
   aiPorts,
@@ -692,14 +698,25 @@ describe('steps and failure', () => {
     });
     const world = aiWorld([def]);
     const cues: AiCue[] = [];
-    const noises: AiNoise[] = [];
+    const noises: NoiseEvent[] = [];
     world.events.on(AiCuePlayed, (c) => cues.push(c));
-    world.events.on(AiNoiseEmitted, (n) => noises.push(n));
+    world.events.on(noiseEmitted, (n) => noises.push(n));
     const dog = agent(world, { x: 1, y: 2, z: 3 });
     writeBlackboard(world, dog, { stimulus: { x: 5, y: 0, z: 5 }, awareness: 0.7 });
     run(world, 6);
     expect(cues).toEqual([{ tick: 5, entity: dog, cue: 'woof' }]);
-    expect(noises).toEqual([{ tick: 5, entity: dog, at: { x: 1, y: 2, z: 3 }, db: 60 }]);
+    // mw-e09.22 AC-2: on the shared channel, with the agent as its source.
+    expect(noises).toEqual([
+      {
+        tick: 5,
+        position: { x: 1, y: 2, z: 3 },
+        loudness: 60,
+        kind: 'ai',
+        entity: dog,
+        source: dog,
+        tags: [],
+      },
+    ]);
     expect(brain(world, dog)).toMatchObject({
       activity: null,
       ended: { activity: 'bark', ok: true },
@@ -1220,5 +1237,30 @@ describe('brain state is plain data', () => {
     script(loaded.world, loaded.guards, 300, 600);
     expect(hashWorld(loaded.world)).toBe(hashWorld(straight.world));
     expect(brain(straight.world, must(straight.guards[1])).state).toBe('unaware');
+  });
+});
+
+describe('emit-noise on the shared noise channel (mw-e09.22)', () => {
+  it('AC-2: a behaviour’s emit-noise step raises noiseEmitted with the agent as its source, which propagation carries to listeners', () => {
+    const world = aiWorld([
+      only([
+        { do: 'emit-noise', db: 70 },
+        { do: 'wait', seconds: 10 },
+      ]),
+    ]);
+    installNoisePropagation(world, { graph: buildSoundGraph({ rooms: [], portals: [] }) });
+    const emitted: NoiseEvent[] = [];
+    const heard: NoiseHeard[] = [];
+    world.events.on(noiseEmitted, (n) => emitted.push(n));
+    world.events.on(noiseHeard, (h) => heard.push(h));
+    const guard = agent(world, { x: 2, y: 0, z: 0 });
+    const ear = world.spawn();
+    placeEntity(world, ear, { x: 6, y: 0, z: 0 }, 0.4);
+    world.add(ear, NoiseListenerComponent, { thresholdDb: 0, range: 40 });
+    run(world, 3);
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]).toMatchObject({ kind: AI_NOISE_KIND, entity: guard, source: guard });
+    // The agent does not hear itself (it is the source); the other listener does.
+    expect(heard.map((h) => [h.listener, h.noise.source])).toEqual([[ear, guard]]);
   });
 });

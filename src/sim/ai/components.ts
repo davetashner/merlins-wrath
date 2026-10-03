@@ -124,18 +124,6 @@ export interface AiCue {
 /** An agent played a cue. */
 export const AiCuePlayed = defineEvent<AiCue>('aiCuePlayed');
 
-/** An `emit-noise` step: a noise at the agent's position (sound propagation, mw-e09). */
-export interface AiNoise {
-  readonly tick: number;
-  readonly entity: EntityId;
-  readonly at: Vec3;
-  /** Loudness at the source, dB. */
-  readonly db: number;
-}
-
-/** An agent made a noise. */
-export const AiNoiseEmitted = defineEvent<AiNoise>('aiNoiseEmitted');
-
 /** A patrol waypoint the agent could not reach (mw-e11.9): it skipped to the next one. */
 export interface RouteBlock {
   readonly tick: number;
