@@ -26,6 +26,8 @@
     "content:loot": "node scripts/loot-check-cli.ts",
     "content:schemas": "node scripts/content-schemas-cli.ts",
     "content:docs": "node scripts/content-docs-cli.ts",
+    "nav:bake": "node scripts/nav-bake-cli.ts bake",
+    "nav:check": "node scripts/nav-bake-cli.ts check",
     "audio:placeholders": "node scripts/audio/gen-placeholders-cli.ts",
     "audio:placeholder-report": "node scripts/audio/placeholder-report-cli.ts",
     "vfx:placeholders": "node scripts/vfx/gen-placeholders-cli.ts",

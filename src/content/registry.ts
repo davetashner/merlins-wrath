@@ -7,8 +7,9 @@
 // the capability registry, without cycles or pure numeric upgrades (mw-e19.3), the capability ids
 // items grant, teach or learn (mw-e17.2) and the locks keys open (mw-e03.18), the class files against
 // the capability registry, the items and the proficiency tags items call for (mw-e19.4), and the
-// spawns the signal graphs a scene places bind (mw-e03.18), and loot tables' references, nesting and
-// unique items across the world (mw-e18.2).
+// spawns the signal graphs a scene places bind (mw-e03.18), loot tables' references, nesting and
+// unique items across the world (mw-e18.2), and baked navmeshes against their scenes' door spawns
+// (mw-e11.4).
 
 import { checkAnimation } from './anim-checks.ts';
 import { checkCreatureAttacks } from './attack-checks.ts';
@@ -45,6 +46,7 @@ import { lootTableSchema } from './types/loot-table.ts';
 import { locomotionSchema } from './types/locomotion.ts';
 import { materialSchema } from './types/material.ts';
 import { moveSchema } from './types/move.ts';
+import { checkNavmeshes, navmeshSchema } from './types/navmesh.ts';
 import { puzzleSchema } from './types/puzzle.ts';
 import { sandboxSchema } from './types/sandbox.ts';
 import { sceneSchema } from './types/scene.ts';
@@ -89,6 +91,7 @@ export const contentTypes = {
   locomotion: locomotionSchema,
   material: materialSchema,
   move: moveSchema,
+  navmesh: navmeshSchema,
   puzzle: puzzleSchema,
   sandbox: sandboxSchema,
   scene: sceneSchema,
@@ -119,6 +122,7 @@ export const contentChecks: readonly ContentCheck[] = [
   checkClasses,
   checkSceneSignals,
   checkLootTables,
+  checkNavmeshes,
 ];
 
 export type ContentTypes = typeof contentTypes;

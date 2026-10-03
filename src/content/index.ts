@@ -512,6 +512,13 @@ export {
   WORLD_IMPACT_KINDS,
 } from './types/move.ts';
 export {
+  checkNavmeshes,
+  NAVMESH_VERSION,
+  navmeshSchema,
+  type NavmeshDef,
+  type NavmeshDefInput,
+} from './types/navmesh.ts';
+export {
   SOCKET_ROTATION_TOLERANCE,
   checkSocketTracks,
   compileSocketTrack,
