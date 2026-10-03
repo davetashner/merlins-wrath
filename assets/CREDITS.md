@@ -53,7 +53,7 @@ non-commercial use are **placeholders only** and must be flagged `placeholder: y
 
 | Asset id | Type | Source | Tier | Date | Licence | Terms / URL | Author / attribution | Prompt file | Placeholder |
 |---|---|---|---|---|---|---|---|---|---|
-| _(none yet)_ | | | | | | | | | |
+| model-char-knight-01 | model | generated:tripo-via-higgsfield/tripo_h3_1_image_to_3d | Higgsfield Plus | 2026-10-03 | GEN-OWNED | UNVERIFIED: Higgsfield and Tripo output terms not yet read for this tier (follow-up bead); treated as placeholder until checked | owner | `assets/prompts/model/model-char-knight-01.md` | yes |
 
 ## Music
 
