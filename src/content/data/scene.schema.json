@@ -1106,6 +1106,93 @@
               "profile"
             ],
             "additionalProperties": false
+          },
+          "door": {
+            "description": "Makes the spawned entity a door: profile, lock and starting state (mw-e03.18).",
+            "type": "object",
+            "properties": {
+              "profile": {
+                "description": "Door profile: kind, size, speed, material, what it shuts out.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "door"
+              },
+              "lock": {
+                "description": "The lock it carries: what keys, picks and spells get past.",
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                "x-contentRef": "lock"
+              },
+              "locked": {
+                "description": "Starts locked; defaults to true when it has a lock (needs one).",
+                "type": "boolean"
+              },
+              "state": {
+                "default": "closed",
+                "description": "How it starts: closed, open or jammed.",
+                "type": "string",
+                "enum": [
+                  "closed",
+                  "open",
+                  "jammed"
+                ]
+              },
+              "hinge": {
+                "default": "left",
+                "description": "Hinged and trapdoor: the side the hinge is on (−x or +x before yaw); sliding: the side it slides to.",
+                "type": "string",
+                "enum": [
+                  "left",
+                  "right"
+                ]
+              },
+              "swing": {
+                "default": "forward",
+                "description": "Hinged: swings towards +z (forward) or −z (back) before yaw.",
+                "type": "string",
+                "enum": [
+                  "forward",
+                  "back"
+                ]
+              }
+            },
+            "required": [
+              "profile"
+            ],
+            "additionalProperties": false
+          },
+          "switch": {
+            "description": "Makes the spawned entity a lever, button, crank or wheel (mw-e03.18).",
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "lever",
+                  "button",
+                  "crank",
+                  "wheel"
+                ],
+                "description": "lever, button, crank or wheel."
+              },
+              "positions": {
+                "description": "Positions it steps through (crank and wheel; a lever has 2, a button none).",
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 8
+              },
+              "initial": {
+                "default": 0,
+                "description": "Position it starts in (0 = off).",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [
@@ -1242,6 +1329,38 @@
         }
       },
       "additionalProperties": false
+    },
+    "signals": {
+      "description": "Signal graphs wiring its switches, volumes and doors (mw-e03.18).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "graph": {
+            "description": "The graph to place.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "x-contentRef": "signal-graph"
+          },
+          "bindings": {
+            "default": {},
+            "description": "Binding name → spawn id, for names that are not themselves spawn ids.",
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            }
+          }
+        },
+        "required": [
+          "graph"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "required": [

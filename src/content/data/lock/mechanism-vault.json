@@ -1,0 +1,9 @@
+{
+  "$schema": "../lock.schema.json",
+  "id": "mechanism-vault",
+  "name": "Grey-box vault lock",
+  "notes": "The locked iron door in the grey-box mechanism room (mw-e03.18): no key exists for it, so it shows the locked prompt; a thief with lockpicks picks it (tier 1), and a sorcerer's unlock spell (e07) would open it too.",
+  "tier": 1,
+  "pickTier": 1,
+  "hint": "Locked. The key is nowhere in this room."
+}

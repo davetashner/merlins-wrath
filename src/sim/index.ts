@@ -59,6 +59,7 @@ export * from './geom';
 export * from './input';
 export * from './interaction';
 export * from './light';
+export * from './mechanisms';
 export * as simMath from './math';
 export * from './noise';
 export * from './physics';

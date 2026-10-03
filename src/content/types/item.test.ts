@@ -62,6 +62,7 @@ describe('item fixtures (mw-e17.2)', () => {
     expect(
       itemFixtureSources()
         .map((s) => s.path)
+        .filter((path) => path.startsWith(`${ITEM_FIXTURE_ROOT}/item/`))
         .sort(),
     ).toEqual(
       Object.values(FIXTURE_ITEM_IDS)
@@ -72,6 +73,7 @@ describe('item fixtures (mw-e17.2)', () => {
 
   it('AC-1: a valid fixture for each category validates, with its cross-references resolved', () => {
     for (const source of itemFixtureSources()) {
+      if (!source.path.startsWith(`${ITEM_FIXTURE_ROOT}/item/`)) continue; // the locks keys open
       const json = JSON.parse(source.text) as Record<string, unknown>;
       delete json['$schema'];
       expect(problems(json), source.path).toEqual([]);
@@ -322,6 +324,23 @@ describe('item loading (mw-e17.2)', () => {
     ]);
     expect(issues).toEqual([
       'src/content/data/item/test-item.json#/grants/1/capability: item:test-item names unknown capability "verb.fly": declare it in src/content/data/capability/',
+    ]);
+  });
+
+  it('mw-e03.18: a key’s locks must be declared lock content, and a master key’s tag carried by one', () => {
+    const lock = file('src/content/data/lock/tower.json', {
+      id: 'tower',
+      name: 'Tower',
+      notes: 'Test.',
+      tier: 1,
+      tags: ['warden'],
+    });
+    const key = (data: unknown) =>
+      file('src/content/data/item/test-item.json', { ...misc, category: 'key', key: data });
+    expect(loadIssues([lock, key({ opens: ['tower'], opensTag: 'warden' })])).toEqual([]);
+    expect(loadIssues([lock, key({ opens: ['tower', 'cellar'], opensTag: 'crypt' })])).toEqual([
+      'src/content/data/item/test-item.json#/key/opens/1: item:test-item opens unknown lock "cellar": declare it in src/content/data/lock/',
+      'src/content/data/item/test-item.json#/key/opensTag: item:test-item opens locks tagged "crypt", but no lock carries that tag',
     ]);
   });
 

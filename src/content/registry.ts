@@ -4,14 +4,16 @@
 // conditions against the fact registry (mw-e27.5), animation (mw-e02.20) and socket tracks
 // (mw-e04.26), capability ids and puzzles against their scenes, capabilities and facts (mw-e15.1),
 // creature attacks' readability (windups and telegraph cues, mw-e04.20), unlock definitions against
-// the capability registry, without cycles or pure numeric upgrades (mw-e19.3), and the capability
-// ids items grant, teach or learn (mw-e17.2), and the class files against the capability registry,
-// the items and the proficiency tags items call for (mw-e19.4).
+// the capability registry, without cycles or pure numeric upgrades (mw-e19.3), the capability ids
+// items grant, teach or learn (mw-e17.2) and the locks keys open (mw-e03.18), the class files against
+// the capability registry, the items and the proficiency tags items call for (mw-e19.4), and the
+// spawns the signal graphs a scene places bind (mw-e03.18).
 
 import { checkAnimation } from './anim-checks.ts';
 import { checkCreatureAttacks } from './attack-checks.ts';
 import { checkConditions } from './condition-checks.ts';
 import { checkFacts } from './fact-checks.ts';
+import { checkSceneSignals } from './mechanism-checks.ts';
 import { checkPuzzles } from './puzzle-checks.ts';
 import type { Catalogue, ContentCheck, EntryOf } from './loader.ts';
 import { animClipSchema } from './types/anim-clip.ts';
@@ -28,12 +30,14 @@ import { namedConditionSchema } from './types/condition.ts';
 import { controllerSchema } from './types/controller.ts';
 import { creatureSchema } from './types/creature.ts';
 import { cueSheetSchema } from './types/cue-sheet.ts';
+import { doorSchema } from './types/door.ts';
 import { environmentDamageSchema } from './types/environment-damage.ts';
 import { factSchema } from './types/fact.ts';
 import { factionSchema } from './types/faction.ts';
 import { checkItems, itemSchema } from './types/item.ts';
 import { hitStopSchema } from './types/hit-stop.ts';
 import { kitSchema } from './types/kit.ts';
+import { lockSchema } from './types/lock.ts';
 import { lockOnSchema } from './types/lock-on.ts';
 import { locomotionSchema } from './types/locomotion.ts';
 import { materialSchema } from './types/material.ts';
@@ -68,12 +72,14 @@ export const contentTypes = {
   controller: controllerSchema,
   creature: creatureSchema,
   'cue-sheet': cueSheetSchema,
+  door: doorSchema,
   'environment-damage': environmentDamageSchema,
   fact: factSchema,
   faction: factionSchema,
   'hit-stop': hitStopSchema,
   item: itemSchema,
   kit: kitSchema,
+  lock: lockSchema,
   'lock-on': lockOnSchema,
   locomotion: locomotionSchema,
   material: materialSchema,
@@ -105,6 +111,7 @@ export const contentChecks: readonly ContentCheck[] = [
   checkUnlocks,
   checkItems,
   checkClasses,
+  checkSceneSignals,
 ];
 
 export type ContentTypes = typeof contentTypes;

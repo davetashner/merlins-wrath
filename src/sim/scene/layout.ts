@@ -11,6 +11,7 @@ import type { KitPurpose, KitShape, SceneYaw } from '@content/index';
 import type { RampRise } from '../character/greybox';
 import type { InteractableSpec } from '../interaction/affordance';
 import type { LightEnvironment } from '../light/field';
+import type { DoorHinge, DoorSwing, SwitchKind } from '../mechanisms/components';
 import type { StaticColliderDesc } from '../physics/static-colliders';
 import type { WorldPropertyValues } from '../properties/spec';
 import type { Vec3 } from '../stimulus/shapes';
@@ -80,6 +81,45 @@ export interface SceneBreakable {
   readonly reveals?: string;
 }
 
+/** A door spawn as written in data (mw-e03.18): its profile, lock and how it starts. */
+export interface SceneDoorSpec {
+  readonly profile: { readonly id: string };
+  readonly lock?: { readonly id: string } | undefined;
+  readonly locked?: boolean | undefined;
+  readonly state?: 'closed' | 'open' | 'jammed' | undefined;
+  readonly hinge?: DoorHinge | undefined;
+  readonly swing?: DoorSwing | undefined;
+}
+
+/** A door as laid out: plain ids. */
+export interface SceneDoor {
+  readonly profile: string;
+  readonly lock?: string;
+  readonly locked?: boolean;
+  readonly state?: 'closed' | 'open' | 'jammed';
+  readonly hinge?: DoorHinge;
+  readonly swing?: DoorSwing;
+}
+
+/** A switch spawn (mw-e03.18). */
+export interface SceneSwitchSpec {
+  readonly kind: SwitchKind;
+  readonly positions?: number | undefined;
+  readonly initial?: number | undefined;
+}
+
+/** A signal graph placed in a scene (mw-e03.18): its id and binding renames. */
+export interface SceneSignalSpec {
+  readonly graph: { readonly id: string };
+  readonly bindings?: Readonly<Record<string, string>> | undefined;
+}
+
+/** A placed signal graph as laid out: binding name → spawn id, for names that are not spawn ids. */
+export interface SceneSignal {
+  readonly graph: string;
+  readonly bindings: Readonly<Record<string, string>>;
+}
+
 export interface ScenePlacementSpec {
   readonly piece: { readonly id: string };
   /** Grid cells. */
@@ -118,6 +158,10 @@ export interface SceneSpawnSpec {
   readonly properties?: ScenePropertiesSpec | undefined;
   /** Makes the spawned entity breakable (mw-e03.11). */
   readonly breakable?: SceneBreakableSpec | undefined;
+  /** Makes the spawned entity a door (mw-e03.18). */
+  readonly door?: SceneDoorSpec | undefined;
+  /** Makes the spawned entity a switch (mw-e03.18). */
+  readonly switch?: SceneSwitchSpec | undefined;
 }
 
 /** A box with its own ambient level, in grid cells (mw-e03.37). */
@@ -152,6 +196,8 @@ export interface SceneSpec {
   readonly spawns: readonly SceneSpawnSpec[];
   /** Static lighting for the light field (mw-e03.37); none: dark but for emitters. */
   readonly light?: SceneLightSpec | undefined;
+  /** Signal graphs wiring the scene's switches, volumes and doors (mw-e03.18). */
+  readonly signals?: readonly SceneSignalSpec[] | undefined;
 }
 
 /** Finds a kit piece by id (undefined when there is none). */
@@ -219,6 +265,10 @@ export interface SceneSpawnPlacement {
   readonly properties?: ScenePropertiesSpec;
   /** Its breakable profile and instance data, when it is breakable (mw-e03.11). */
   readonly breakable?: SceneBreakable;
+  /** Its door data, when it is a door (mw-e03.18). */
+  readonly door?: SceneDoor;
+  /** Its switch data, when it is a switch (mw-e03.18). */
+  readonly switch?: SceneSwitchSpec;
 }
 
 export interface SceneLayout {
@@ -228,6 +278,8 @@ export interface SceneLayout {
   readonly spawns: readonly SceneSpawnPlacement[];
   /** The scene's static lighting in metres, for `LightField.setEnvironment` (mw-e03.37). */
   readonly light: LightEnvironment;
+  /** Its placed signal graphs, in scene order (mw-e03.18). */
+  readonly signals: readonly SceneSignal[];
 }
 
 /** Thrown when a scene names a kit piece the lookup does not have. */
@@ -326,6 +378,27 @@ function breakableOf(spec: SceneBreakableSpec): SceneBreakable {
   });
 }
 
+/** A door's data-file form as plain ids. */
+function doorOf(spec: SceneDoorSpec): SceneDoor {
+  return Object.freeze({
+    profile: spec.profile.id,
+    ...(spec.lock !== undefined && { lock: spec.lock.id }),
+    ...(spec.locked !== undefined && { locked: spec.locked }),
+    ...(spec.state !== undefined && { state: spec.state }),
+    ...(spec.hinge !== undefined && { hinge: spec.hinge }),
+    ...(spec.swing !== undefined && { swing: spec.swing }),
+  });
+}
+
+/** A switch's data without absent fields. */
+function switchOf(spec: SceneSwitchSpec): SceneSwitchSpec {
+  return Object.freeze({
+    kind: spec.kind,
+    ...(spec.positions !== undefined && { positions: spec.positions }),
+    ...(spec.initial !== undefined && { initial: spec.initial }),
+  });
+}
+
 /**
  * Lays out every placement and spawn of `scene` in world space, in scene order.
  * @throws SceneLayoutError when a placement names a piece `kit` does not have.
@@ -382,6 +455,8 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       }),
       ...(spawn.properties !== undefined && { properties: spawn.properties }),
       ...(spawn.breakable !== undefined && { breakable: breakableOf(spawn.breakable) }),
+      ...(spawn.door !== undefined && { door: doorOf(spawn.door) }),
+      ...(spawn.switch !== undefined && { switch: switchOf(spawn.switch) }),
     }),
   );
   return Object.freeze({
@@ -390,6 +465,14 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
     parts: Object.freeze(parts),
     spawns: Object.freeze(spawns),
     light: sceneLight(scene.light, scene.grid),
+    signals: Object.freeze(
+      (scene.signals ?? []).map((signal) =>
+        Object.freeze({
+          graph: signal.graph.id,
+          bindings: Object.freeze({ ...signal.bindings }),
+        }),
+      ),
+    ),
   });
 }
 

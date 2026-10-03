@@ -23,6 +23,80 @@ const source = (path: string, json: unknown): ContentSource => ({
   text: JSON.stringify(json),
 });
 
+describe('scene mechanisms (mw-e03.18)', () => {
+  const spawn = (id: string, extra: object) => ({ id, at: [0, 0, 0], ...extra });
+
+  it('fills door and switch defaults, and places signal graphs', () => {
+    const scene = sceneSchema.parse({
+      ...room,
+      spawns: [
+        spawn('gate', { door: { profile: 'portcullis' } }),
+        spawn('lever', { switch: { kind: 'lever' } }),
+      ],
+      signals: [{ graph: 'gate' }],
+    });
+    expect(scene.spawns[0]?.door).toEqual({
+      profile: new ContentRef('door', 'portcullis'),
+      state: 'closed',
+      hinge: 'left',
+      swing: 'forward',
+    });
+    expect(scene.spawns[1]?.switch).toEqual({ kind: 'lever', initial: 0 });
+    expect(scene.signals).toEqual([
+      { graph: new ContentRef('signal-graph', 'gate'), bindings: {} },
+    ]);
+  });
+
+  it('rejects a spawn that is a door and a switch, a door with its own prompt and a lockless locked door', () => {
+    expect(
+      problems({
+        ...room,
+        spawns: [
+          spawn('both', {
+            door: { profile: 'wooden-door', locked: true },
+            switch: { kind: 'lever' },
+            interact: { affordances: [{ verb: 'open' }] },
+          }),
+        ],
+      }),
+    ).toEqual([
+      'spawns.0.switch: spawn "both" cannot be both a door and a switch',
+      'spawns.0.interact: spawn "both" is a door: its affordances follow its state, so it declares none',
+      'spawns.0.door: spawn "both" starts locked but has no lock',
+    ]);
+  });
+
+  it('rejects positions on a lever or button, and a start outside the positions', () => {
+    expect(
+      problems({
+        ...room,
+        spawns: [
+          spawn('lever', { switch: { kind: 'lever', positions: 3 } }),
+          spawn('button', { switch: { kind: 'button', initial: 1 } }),
+          spawn('crank', { switch: { kind: 'crank', positions: 4, initial: 3 } }),
+          spawn('wheel', { switch: { kind: 'wheel', initial: 2 } }),
+        ],
+      }),
+    ).toEqual([
+      'spawns.0.switch: spawn "lever" is a lever: only a crank or wheel sets positions',
+      'spawns.1.switch: spawn "button" starts in position 1 of 1',
+      'spawns.3.switch: spawn "wheel" starts in position 2 of 2',
+    ]);
+  });
+
+  it('rejects a signal binding to a spawn the scene does not have', () => {
+    expect(
+      problems({
+        ...room,
+        spawns: [spawn('gate', {})],
+        signals: [{ graph: 'gate', bindings: { 'gate-lever': 'lever', gate: 'gate' } }],
+      }),
+    ).toEqual([
+      'signals.0.bindings.gate-lever: binding "gate-lever" names spawn "lever", which this scene does not have',
+    ]);
+  });
+});
+
 describe('scene schema (mw-e00.21)', () => {
   it('fills defaults: 1 m grid, no yaw, unit scale, no spawns', () => {
     expect(sceneSchema.parse(room)).toEqual({
@@ -33,6 +107,7 @@ describe('scene schema (mw-e00.21)', () => {
         { piece: new ContentRef('kit', 'floor'), at: [0, 0, 0], yaw: 0, scale: [1, 1, 1] },
       ],
       spawns: [],
+      signals: [],
     });
   });
 
@@ -212,12 +287,31 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room and the weak-wall room', () => {
+  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room and the mechanism room', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
         .map((s) => s.id),
-    ).toEqual(['combat-sandbox', 'kit-gallery', 'lighting-room', 'testbed', 'weak-wall-room']);
+    ).toEqual([
+      'combat-sandbox',
+      'kit-gallery',
+      'lighting-room',
+      'mechanism-room',
+      'testbed',
+      'weak-wall-room',
+    ]);
+  });
+
+  it('mw-e03.18: the mechanism room places a prefab of every door kind and wires its switches', () => {
+    const scene = loadContent(contentTypes, gameContentSources(), contentChecks).get(
+      'scene',
+      'mechanism-room',
+    );
+    const doors = scene.spawns.flatMap((s) => (s.door === undefined ? [] : [s.door.profile.id]));
+    expect(doors).toEqual(['portcullis', 'wooden-door', 'iron-door', 'sliding-door', 'trapdoor']);
+    const switches = scene.spawns.flatMap((s) => (s.switch === undefined ? [] : [s.switch.kind]));
+    expect(switches).toEqual(['lever', 'button', 'crank']);
+    expect(scene.signals.map((s) => s.graph.id)).toEqual(['mechanism-room']);
   });
 
   it('mw-e03.11: the weak-wall room’s middle wall is a cracked old wall that reveals the passage', () => {

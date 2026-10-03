@@ -52,7 +52,13 @@
               "physicsImpact",
               "ArrowFired",
               "arrowImpact",
-              "breakableBroken"
+              "breakableBroken",
+              "doorStateChanged",
+              "doorBlocked",
+              "lockUnlocked",
+              "lockRefused",
+              "switchUsed",
+              "mechanismJammed"
             ],
             "description": "The sim event that triggers the rule (see src/content/cue-events.ts for its facts)."
           },
@@ -169,7 +175,13 @@
                 "physicsImpact",
                 "ArrowFired",
                 "arrowImpact",
-                "breakableBroken"
+                "breakableBroken",
+                "doorStateChanged",
+                "doorBlocked",
+                "lockUnlocked",
+                "lockRefused",
+                "switchUsed",
+                "mechanismJammed"
               ]
             }
           },

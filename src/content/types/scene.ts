@@ -73,6 +73,72 @@ export const sceneBreakableSchema = z.strictObject({
     .describe('Passage it opens when it breaks: names the passageRevealed event (nav, quests).'),
 });
 
+/** Door states a scene can place a door in (mw-e03.18). */
+export const SCENE_DOOR_STATES = ['closed', 'open', 'jammed'] as const;
+
+/** Switch kinds (mw-e03.18; the sim's SWITCH_KINDS). */
+export const SWITCH_KIND_IDS = ['lever', 'button', 'crank', 'wheel'] as const;
+
+/** Most positions a crank or wheel may have. */
+export const MAX_SWITCH_POSITIONS = 8;
+
+/**
+ * Makes a spawn a door (mw-e03.18): its profile (kind, size, speed, material, what it shuts out), the
+ * lock it carries and how it starts. The door stands in the spawn's doorway: the spawn point is the
+ * middle of the bottom of the closed leaf, and the spawn's yaw turns it with its doorway.
+ */
+export const sceneDoorSchema = z.strictObject({
+  profile: ref('door').describe('Door profile: kind, size, speed, material, what it shuts out.'),
+  lock: ref('lock')
+    .optional()
+    .describe('The lock it carries: what keys, picks and spells get past.'),
+  locked: z
+    .boolean()
+    .optional()
+    .describe('Starts locked; defaults to true when it has a lock (needs one).'),
+  state: z
+    .enum(SCENE_DOOR_STATES)
+    .default('closed')
+    .describe('How it starts: closed, open or jammed.'),
+  hinge: z
+    .enum(['left', 'right'])
+    .default('left')
+    .describe(
+      'Hinged and trapdoor: the side the hinge is on (−x or +x before yaw); sliding: the side it slides to.',
+    ),
+  swing: z
+    .enum(['forward', 'back'])
+    .default('forward')
+    .describe('Hinged: swings towards +z (forward) or −z (back) before yaw.'),
+});
+
+/**
+ * Makes a spawn a switch (mw-e03.18): a lever toggles, a button is momentary, a crank or wheel steps
+ * through its positions. Signal graphs read it through lever and button nodes bound to the spawn.
+ */
+export const sceneSwitchSchema = z.strictObject({
+  kind: z.enum(SWITCH_KIND_IDS).describe('lever, button, crank or wheel.'),
+  positions: z
+    .int()
+    .min(2)
+    .max(MAX_SWITCH_POSITIONS)
+    .optional()
+    .describe('Positions it steps through (crank and wheel; a lever has 2, a button none).'),
+  initial: z.int().min(0).default(0).describe('Position it starts in (0 = off).'),
+});
+
+/**
+ * Places a signal graph in the scene (mw-e03.18, mw-e03.21). A node's entity name is a spawn id
+ * unless `bindings` maps it to another.
+ */
+export const sceneSignalSchema = z.strictObject({
+  graph: ref('signal-graph').describe('The graph to place.'),
+  bindings: z
+    .record(contentId, contentId)
+    .default({})
+    .describe('Binding name → spawn id, for names that are not themselves spawn ids.'),
+});
+
 export const scenePlacementSchema = z.strictObject({
   piece: ref('kit').describe('Id of the kit piece.'),
   at: gridPosition,
@@ -145,6 +211,12 @@ export const sceneSpawnSchema = z.strictObject({
     .describe(
       'Makes the spawned entity breakable, e.g. a pot that spills its contents (mw-e03.11).',
     ),
+  door: sceneDoorSchema
+    .optional()
+    .describe('Makes the spawned entity a door: profile, lock and starting state (mw-e03.18).'),
+  switch: sceneSwitchSchema
+    .optional()
+    .describe('Makes the spawned entity a lever, button, crank or wheel (mw-e03.18).'),
 });
 
 const lightLevel = z.number().min(0).max(1);
@@ -208,6 +280,10 @@ export const sceneSchema = z
     light: sceneLightSchema
       .optional()
       .describe('Static lighting: ambient level, ambient zones, directional lights (mw-e03.37).'),
+    signals: z
+      .array(sceneSignalSchema)
+      .default([])
+      .describe('Signal graphs wiring its switches, volumes and doors (mw-e03.18).'),
   })
   .superRefine((scene, ctx) => {
     const seen = new Set<string>();
@@ -220,6 +296,7 @@ export const sceneSchema = z
         });
       }
       seen.add(spawn.id);
+      checkMechanism(spawn, index, ctx);
       if (spawn.creature !== undefined) return;
       for (const key of ['faction', 'patrol'] as const) {
         if (spawn[key] === undefined) continue;
@@ -230,10 +307,54 @@ export const sceneSchema = z
         });
       }
     });
+    scene.signals.forEach((signal, index) => {
+      for (const [name, id] of Object.entries(signal.bindings)) {
+        if (seen.has(id)) continue;
+        ctx.addIssue({
+          code: 'custom',
+          path: ['signals', index, 'bindings', name],
+          message: `binding "${name}" names spawn "${id}", which this scene does not have`,
+        });
+      }
+    });
   });
+
+type SpawnDef = z.output<typeof sceneSpawnSchema>;
+
+/** A spawn's door and switch data must agree with each other and with its other fields. */
+function checkMechanism(spawn: SpawnDef, index: number, ctx: z.RefinementCtx): void {
+  const issue = (key: string, message: string) => {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['spawns', index, key],
+      message: `spawn "${spawn.id}" ${message}`,
+    });
+  };
+  const { door } = spawn;
+  if (door !== undefined) {
+    if (spawn.switch !== undefined) issue('switch', 'cannot be both a door and a switch');
+    if (spawn.interact !== undefined) {
+      issue('interact', 'is a door: its affordances follow its state, so it declares none');
+    }
+    if (door.locked === true && door.lock === undefined)
+      issue('door', 'starts locked but has no lock');
+  }
+  const own = spawn.switch;
+  if (own === undefined) return;
+  const positions = own.positions ?? (own.kind === 'button' ? 1 : 2);
+  if (own.kind !== 'crank' && own.kind !== 'wheel' && own.positions !== undefined) {
+    issue('switch', `is a ${own.kind}: only a crank or wheel sets positions`);
+  }
+  if (own.initial >= positions) {
+    issue('switch', `starts in position ${String(own.initial)} of ${String(positions)}`);
+  }
+}
 
 export type SceneDef = z.output<typeof sceneSchema>;
 export type SceneDefInput = z.input<typeof sceneSchema>;
 export type ScenePlacementDef = z.output<typeof scenePlacementSchema>;
 export type SceneSpawnDef = z.output<typeof sceneSpawnSchema>;
 export type SceneLightDef = z.output<typeof sceneLightSchema>;
+export type SceneDoorDef = z.output<typeof sceneDoorSchema>;
+export type SceneSwitchDef = z.output<typeof sceneSwitchSchema>;
+export type SceneSignalDef = z.output<typeof sceneSignalSchema>;

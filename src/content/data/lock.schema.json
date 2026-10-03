@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "The lock id keys name in `key.opens`."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (debug tools and docs)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where it is and what opens it, for owner review."
+    },
+    "tier": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5,
+      "description": "How good the lock is, 0 (a latch) … 5 (a vault)."
+    },
+    "pickTier": {
+      "default": null,
+      "description": "Lockpicking tier needed to pick it (the minigame is mw-e10); null: it cannot be picked.",
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "sealed": {
+      "default": false,
+      "description": "A magical seal: keys and picks fail until a spell dispels it.",
+      "type": "boolean"
+    },
+    "tags": {
+      "default": [],
+      "description": "Tags a master key (`key.opensTag`) opens, e.g. \"warden-tower\".",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
+    },
+    "hint": {
+      "default": "Locked.",
+      "description": "Shown when Interact finds no way past it, e.g. \"Locked.\"",
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "tier"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Display name (debug tools and docs)."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the numbers come from (bead, design intent), for owner review."
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "hinged",
+        "sliding",
+        "portcullis",
+        "trapdoor"
+      ],
+      "description": "hinged swings about a side, sliding moves sideways into the wall, portcullis rises, trapdoor swings up from the floor."
+    },
+    "size": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10
+        },
+        {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10
+        },
+        {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10
+        }
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "Leaf width (across the doorway, out from the hinge), height and thickness, metres; a trapdoor: length out from its hinge, length along it, thickness."
+    },
+    "seconds": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 60,
+      "description": "Seconds to go from fully closed to fully open (and back): its speed."
+    },
+    "crush": {
+      "default": 0,
+      "description": "Blunt hit, J, it delivers to something it closes on; what does not break wedges it (0: it just stops).",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1000000000
+    },
+    "manual": {
+      "default": true,
+      "description": "Opens and closes by hand (Interact); false for a portcullis that only signals move.",
+      "type": "boolean"
+    },
+    "material": {
+      "description": "What the leaf is made of: its world properties.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "x-contentRef": "material"
+    },
+    "blocks": {
+      "type": "object",
+      "properties": {
+        "light": {
+          "type": "boolean",
+          "description": "Shuts out light when closed."
+        },
+        "gas": {
+          "type": "boolean",
+          "description": "Shuts out gas and smoke when closed."
+        },
+        "sound": {
+          "type": "boolean",
+          "description": "Muffles sound when closed (noise propagation, mw-e09.3)."
+        }
+      },
+      "required": [
+        "light",
+        "gas",
+        "sound"
+      ],
+      "additionalProperties": false,
+      "description": "What it shuts out while closed; open or broken it shuts out nothing."
+    },
+    "loudness": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 140,
+      "description": "Noise when it starts to move, dB 1 m away (stealth and AI hearing)."
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "notes",
+    "kind",
+    "size",
+    "seconds",
+    "material",
+    "blocks",
+    "loudness"
+  ],
+  "additionalProperties": false
+}

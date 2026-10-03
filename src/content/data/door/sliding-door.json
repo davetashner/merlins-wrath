@@ -1,0 +1,13 @@
+{
+  "$schema": "../door.schema.json",
+  "id": "sliding-door",
+  "name": "Sliding stone door (grey-box prefab)",
+  "notes": "A stone slab that slides sideways into the wall (mw-e03.18): the kind of door a hidden button or a puzzle opens, never a hand. 1.5 s to slide its full 1.2 m. No crush: it stops against whatever is in the doorway. Stone, so it shuts out light, smoke and sound while closed, and grinds at 60 dB as it starts.",
+  "kind": "sliding",
+  "size": [1.2, 2.2, 0.15],
+  "seconds": 1.5,
+  "manual": false,
+  "material": "stone",
+  "blocks": { "light": true, "gas": true, "sound": true },
+  "loudness": 60
+}

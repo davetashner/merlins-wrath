@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Doors, locks, levers, buttons, cranks and wheels. Doors swing, slide, rise or drop open and stop
+  against whatever is in their way; a dropping portcullis crushes what is weak and wedges on what is
+  not. Wooden doors burn and break, iron ones do not. Locked doors open with the right key from your
+  keyring or with lockpicks, and a frozen lever will not budge until it thaws. Try them in the new
+  grey-box mechanism room (`?scene=mechanism-room`).
 - Items lie in the world as physical objects: walk up to one and press Interact ("Take <name>") to
   put it in your pack, press G to drop the last item you picked up in front of you, or T to throw one
   along your look. Dropped and thrown items fall, bounce and make a noise when they land, louder the

@@ -34,6 +34,7 @@ import type { ContentCheck, ContentIssue, Frozen } from '../loader.ts';
 import { contentId, ref } from '../schema.ts';
 import { worldPropertiesSchema } from '../world-properties.ts';
 import { capabilityId, capabilityIds, localisationKey } from './capability.ts';
+import type { LockDef } from './lock.ts';
 
 /** Item categories (inventory tabs group them, mw-e17.10). */
 export const ITEM_CATEGORIES = [
@@ -443,20 +444,47 @@ export function itemCapabilityUsages(item: ItemDef): { pointer: string; id: stri
   ];
 }
 
-/** The load check for items: every capability an item names is in the registry (AC-4). */
+/**
+ * The load check for items: every capability an item names is in the registry (AC-4), and every lock
+ * a key opens is declared lock content (mw-e03.18): each `key.opens` id is a lock, and a master key's
+ * `opensTag` is carried by at least one lock.
+ */
 export const checkItems: ContentCheck = (entries) => {
   const capabilities = capabilityIds(entries);
+  const locks = new Set<string>();
+  const lockTags = new Set<string>();
+  for (const { type, value } of entries) {
+    if (type !== 'lock') continue;
+    locks.add(value.id);
+    for (const tag of (value as LockDef).tags) lockTags.add(tag);
+  }
   const issues: ContentIssue[] = [];
   for (const { type, file, value } of entries) {
     if (type !== 'item') continue;
-    for (const { pointer, id } of itemCapabilityUsages(value as ItemDef)) {
+    const item = value as ItemDef;
+    const report = (pointer: string, message: string) => {
+      issues.push({ file, pointer, message: `item:${item.id} ${message}` });
+    };
+    for (const { pointer, id } of itemCapabilityUsages(item)) {
       if (!capabilities.has(id)) {
-        issues.push({
-          file,
+        report(
           pointer,
-          message: `item:${value.id} names unknown capability "${id}": declare it in src/content/data/capability/`,
-        });
+          `names unknown capability "${id}": declare it in src/content/data/capability/`,
+        );
       }
+    }
+    if (item.category !== 'key') continue;
+    item.key.opens.forEach((lock, i) => {
+      if (!locks.has(lock)) {
+        report(
+          `/key/opens/${String(i)}`,
+          `opens unknown lock "${lock}": declare it in src/content/data/lock/`,
+        );
+      }
+    });
+    const tag = item.key.opensTag;
+    if (tag !== undefined && !lockTags.has(tag)) {
+      report('/key/opensTag', `opens locks tagged "${tag}", but no lock carries that tag`);
     }
   }
   return issues;

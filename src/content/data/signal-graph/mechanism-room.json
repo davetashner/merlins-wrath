@@ -1,0 +1,21 @@
+{
+  "$schema": "../signal-graph.schema.json",
+  "id": "mechanism-room",
+  "name": "Grey-box mechanism room",
+  "notes": "The wiring of the grey-box mechanism room (scene mechanism-room, mw-e03.18): the lever by the north doorway raises and lowers the portcullis onto the corridor; the button by the east doorway slides the stone door open for six seconds, then it closes again; the floor crank lifts the trapdoor while it is turned to any position but the first. Binding names are the scene's spawn ids.",
+  "nodes": [
+    { "id": "north-lever", "kind": "lever", "entity": "north-lever" },
+    { "id": "north-gate", "kind": "receiver", "receiver": "door", "entity": "north-gate" },
+    { "id": "east-button", "kind": "button", "entity": "east-button" },
+    { "id": "east-hold", "kind": "timer", "seconds": 6 },
+    { "id": "east-door", "kind": "receiver", "receiver": "door", "entity": "east-door" },
+    { "id": "floor-crank", "kind": "lever", "entity": "floor-crank" },
+    { "id": "trapdoor", "kind": "receiver", "receiver": "door", "entity": "trapdoor" }
+  ],
+  "wires": [
+    { "from": "north-lever", "to": "north-gate" },
+    { "from": "east-button", "to": "east-hold" },
+    { "from": "east-hold", "to": "east-door" },
+    { "from": "floor-crank", "to": "trapdoor" }
+  ]
+}
