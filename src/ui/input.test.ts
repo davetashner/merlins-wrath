@@ -91,6 +91,8 @@ describe('keyIntent', () => {
     expect(keyIntent(key('Space'))).toBe('confirm');
     expect(keyIntent(key('Escape'))).toBe('back');
     expect(keyIntent(key('KeyQ'))).toBe('tabPrev');
+    expect(keyIntent(key('KeyR'))).toBe('secondary');
+    expect(keyIntent({ ...key('KeyR'), repeat: true })).toBeUndefined();
     expect(keyIntent(key('PageDown'))).toBe('tabNext');
     expect(keyIntent(key('Tab'))).toBe('next');
     expect(keyIntent(key('Tab', { shiftKey: true }))).toBe('prev');
@@ -114,11 +116,11 @@ describe('keyIntent', () => {
 });
 
 describe('padIntents', () => {
-  it('maps the D-pad, A/B and LB/RB (standard mapping)', () => {
-    expect([...padIntents(pad([0, 1, 4, 5, 12, 13, 14, 15]))].sort()).toEqual(
-      ['back', 'confirm', 'down', 'left', 'right', 'tabNext', 'tabPrev', 'up'].sort(),
+  it('maps the D-pad, A/B/X and LB/RB (standard mapping)', () => {
+    expect([...padIntents(pad([0, 1, 2, 4, 5, 12, 13, 14, 15]))].sort()).toEqual(
+      ['back', 'confirm', 'down', 'left', 'right', 'secondary', 'tabNext', 'tabPrev', 'up'].sort(),
     );
-    expect(padIntents(pad([2, 3, 9]))).toEqual(new Set());
+    expect(padIntents(pad([3, 9]))).toEqual(new Set());
   });
 
   it('reads the left stick past the threshold as directions', () => {

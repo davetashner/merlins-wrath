@@ -55,6 +55,7 @@ import {
   startWorldItems,
 } from '@game/items/index';
 import { startInventoryUi, type InventoryUi } from '@game/items/inventory-screen';
+import { startContainerUi, type ContainerUi } from '@game/items/container-window';
 import {
   ContainerWatch,
   hasContainers,
@@ -206,6 +207,7 @@ import {
   type ActionFrame,
   type DebugCommand,
   type DifficultyCommand,
+  type ContainerActionCommand,
   type InventoryActionCommand,
   type SandboxCommand,
   type UseQuickSlotCommand,
@@ -276,6 +278,7 @@ const BOOT_SEED = 1;
 /** Everything the game feeds `World.step`: sampled input plus queued debug-console commands. */
 type GameCommand =
   | ActionFrame
+  | ContainerActionCommand
   | DebugCommand
   | DifficultyCommand
   | InventoryActionCommand
@@ -429,6 +432,8 @@ function startRenderer(
   // The Inventory action (I, View) opens and closes the inventory screen (mw-e17.10), once the world
   // has one: seen in gameplay frames while it is closed, and in the frames drained while it pauses.
   let inventoryUi: InventoryUi | undefined;
+  // The container window and pickup toasts (mw-e18.4), once the player exists.
+  let containerUi: ContainerUi | undefined;
   const bridge = createUiGameBridge({
     ui,
     sampleCommands: (tick) => {
@@ -766,6 +771,7 @@ function startRenderer(
         if (debugCamera.update(elapsedMs)) writeCameraData();
         lastFrameMs = timeMs;
         deathBeat?.frame(frame.alpha);
+        containerUi?.frame(timeMs);
         player?.frame(frame);
         if (player !== undefined) {
           const glyph = inputGlyph('interact', sampler.lastDevice, {
@@ -1050,6 +1056,33 @@ function startRenderer(
       afterStep.push(() => {
         inventoryUi?.afterStep();
       });
+      // The container window and pickup toasts (mw-e18.4): Interact's Search on a chest opens its
+      // window; Take, Take gold and Take All reach the sim as commands. Every pickup (a world item,
+      // anything taken from a container) shows a toast bottom-right. The e2e reads
+      // #app[data-container-window] (open/closed) and #app[data-pickups] (the visible toasts).
+      if (player !== undefined) {
+        const loot = startContainerUi({
+          ui,
+          world,
+          content,
+          player: player.entity,
+          submit: (command) => {
+            commands.push(command);
+          },
+          hudScale: settings.get('accessibility.hudScale'),
+          now: () => performance.now(),
+          publish: (key, value) => {
+            root.dataset[key] = value;
+          },
+        });
+        containerUi = loot;
+        settings.on('accessibility.hudScale', (scale) => {
+          loot.setHudScale(scale);
+        });
+        afterStep.push(() => {
+          loot.afterStep();
+        });
+      }
       // Class selection (mw-e19.5): the chosen class's capabilities, kit and stats go onto the player
       // once its inventory exists, and the player then moves on the class's controller tuning. The
       // kit panel shows the class and the pack; #app[data-player-class] is the sim's player.class
@@ -1176,8 +1209,8 @@ function startRenderer(
         });
       }
       // Containers (mw-e18.3): only in scenes that have them, after world items (they share the
-      // inventory rules) and mechanisms (which unlock a locked chest). Interact on one takes
-      // everything; the e2e reads what each holds from #app[data-containers].
+      // inventory rules) and mechanisms (which unlock a locked chest). Interact on one opens its
+      // window (above); the e2e reads what each holds from #app[data-containers].
       if (hasContainers(loaded.layout)) {
         const made = startContainers(
           world,

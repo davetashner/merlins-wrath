@@ -1,17 +1,31 @@
 // The UI input adapter (mw-e00.23): turns keyboard events and Gamepad API polls into UI intents
-// (ui.up/down/left/right/confirm/back/tabPrev/tabNext). It is deliberately separate from the gameplay
+// (ui.up/down/left/right/confirm/back/tabPrev/tabNext/secondary). It is deliberately separate from the gameplay
 // action map (src/game/input, e02-input-actions): menu navigation keys are fixed, so a player who
 // remaps gameplay can never lock themselves out of the menus, and src/ui does not depend on the
 // gameplay layer. Prompt glyphs for gameplay actions are resolved by the caller from those bindings.
 //
-// Keyboard: arrows move, Enter/Space confirm, Esc back, Q/E and PageUp/PageDown switch tabs, Tab and
-// Shift+Tab step through the focus order. Gamepad (W3C standard mapping): D-pad or left stick move,
-// A (Cross) confirm, B (Circle) back, LB/RB switch tabs. A held direction repeats after a delay.
+// Keyboard: arrows move, Enter/Space confirm, Esc back, Q/E and PageUp/PageDown switch tabs, R is a
+// screen's secondary action (the container window's Take All), Tab and Shift+Tab step through the
+// focus order. Gamepad (W3C standard mapping): D-pad or left stick move, A (Cross) confirm, B (Circle)
+// back, X (Square) the secondary action, LB/RB switch tabs. A held direction repeats after a delay.
 // Every browser dependency is injected, so the rules are unit-tested with plain objects.
 
-/** A UI intent. `next`/`prev` are Tab / Shift+Tab (keyboard only). */
+/**
+ * A UI intent. `next`/`prev` are Tab / Shift+Tab (keyboard only); `secondary` is a screen's own second
+ * action (R, X), which does nothing unless the screen handles it.
+ */
 export type UiIntent =
-  'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'tabPrev' | 'tabNext' | 'next' | 'prev';
+  | 'up'
+  | 'down'
+  | 'left'
+  | 'right'
+  | 'confirm'
+  | 'back'
+  | 'tabPrev'
+  | 'tabNext'
+  | 'next'
+  | 'prev'
+  | 'secondary';
 
 export type Direction = 'up' | 'down' | 'left' | 'right';
 
@@ -38,12 +52,14 @@ export const UI_KEYS: Readonly<Record<string, UiIntent>> = Object.freeze({
   KeyE: 'tabNext',
   PageUp: 'tabPrev',
   PageDown: 'tabNext',
+  KeyR: 'secondary',
 });
 
 /** Standard-mapping button index → intent. */
 export const UI_PAD_BUTTONS: Readonly<Record<number, UiIntent>> = Object.freeze({
   0: 'confirm',
   1: 'back',
+  2: 'secondary',
   4: 'tabPrev',
   5: 'tabNext',
   12: 'up',

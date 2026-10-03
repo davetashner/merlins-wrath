@@ -3,6 +3,8 @@
   "id": "fixture-lodestone-charm",
   "category": "artifact",
   "notes": "A trinket that grants Mage Hand while worn.",
+  "name": "Lodestone charm",
+  "description": "It points north, mostly. On Tuesdays it points at whoever owes you money.",
   "icon": "icon-item-fixture-lodestone-charm-01",
   "value": 200,
   "equip": {

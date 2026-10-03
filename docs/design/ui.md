@@ -48,6 +48,7 @@ ui.subscribe(({ capturesInput, pausesSim }) => { /* … */ });
 | `confirm` | Enter, Space | A | `click()` the focused element |
 | `back` | Esc | B | `onBack`, else close the screen |
 | `tabPrev/tabNext` | Q/E, PageUp/PageDown | LB/RB | first tab strip on the screen |
+| `secondary` | R | X | none: the screen's own second action (the container window's Take All) |
 | `next/prev` | Tab / Shift+Tab | — | Tab order, wrapping inside the screen |
 
 An intent is routed in this order:
@@ -208,6 +209,44 @@ quickSlots.update(views.quickSlots(world, player)); // QuickSlotHud, bottom cent
 - **Readouts:** `#app[data-inventory]` is `open` or `closed`, and `#app[data-quick-slots]` holds
   each slot's `{label, count}` or null. The UI testbed opens the screen over a demo pack with
   `openScreen('inventory')`.
+
+## Container window and pickup toasts (`src/ui/container-window.ts`, `src/ui/pickup-toasts.ts`, `src/game/items/container-window.ts`, mw-e18.4)
+
+```ts
+const window = openContainerWindow(ui, {
+  model,                        // LootViews.windowModel(world, chest): title, gold, stacks in pack order
+  onTake: (id) => submit(containerActionCommand(player, chest, { op: 'take', instanceId: id })),
+  onTakeGold: () => submit(containerActionCommand(player, chest, { op: 'take-gold' })),
+  onTakeAll: () => submit(containerActionCommand(player, chest, { op: 'take-all' })),
+});
+toasts.push(views.pickup(defId, count), nowMs); // PickupToasts in ui.hud, bottom-right
+toasts.frame(nowMs);                             // every drawn frame: expires toasts
+```
+
+- **Opening:** Interact's Search on an unlocked container opens it in the sim and fires
+  `container.searched`; `ContainerWindowController` opens the window after that step (never over
+  another screen). The window pauses the sim and captures input; Back (Esc, B) or Close shuts it.
+- **Rows:** one button per stack (icon, name, count) and one for the gold. Confirm or a click takes
+  that stack; the window stays open and refreshes after the paused step that ran the command
+  (`stepWhilePaused`), keeping focus on the same row or its neighbour. A refused take (a second
+  unique) is said on its status line.
+- **Take All:** focused when the window opens, so Interact then confirm loots a chest. R or X (the
+  UI's `secondary` intent, a fixed menu key like Q/E) presses it from anywhere in the window. It
+  closes the window at once, in the same frame, and the next step carries out the command.
+- **Empty:** a container with nothing in it says "Empty"; Take All is disabled and focus starts on
+  Close. (An opened, empty container's Search is greyed, so this is reached by taking the last
+  stack.)
+- **Sim:** every action is a `loot.containerAction` command (`src/sim/loot/containers.ts`), so
+  looting is in the replay. A take that moved something fires `container.taken`; every command fires
+  `container.action` with whether it worked and why not.
+- **Toasts:** the player's pickups (world items, `item.pickedUp`; container takes, `container.taken`)
+  become toasts: at most four, merged by definition with a count (a merge restarts its 3 s), the one
+  due to go first making way when full. A unique artifact gets a gold-edged "Discovery" toast with
+  its flavour line (item data's `description`) for 6 s; discoveries never make way, and a pickup with
+  no room waits. The corner is a polite live region, sized in em times the HUD scale.
+- **Readouts:** `#app[data-container-window]` is `open` or `closed`; `#app[data-pickups]` lists the
+  visible toasts (`{text, count, discovery}`). The UI testbed has `openScreen('container')`,
+  `openScreen('container-empty')` and `__ui.pickups()`.
 
 ## Class selection and the kit panel (`src/ui/class-select.ts`, `src/game/classes.ts`, mw-e19.5)
 

@@ -42,6 +42,7 @@ export const UI_TOKENS: Readonly<Record<string, string>> = Object.freeze({
   'ui-color-lock': PALETTE.wayfinder,
   'ui-color-flash': PALETTE.cream,
   'ui-color-damage': PALETTE.ember,
+  'ui-color-discovery': PALETTE.wayfinder,
   // Type (style bible §9.1; the fonts are self-hosted by mw-e37, system fallbacks until then).
   'ui-font-body': "'Alegreya Sans', 'Atkinson Hyperlegible', system-ui, sans-serif",
   'ui-font-heading': "'Cinzel', Georgia, serif",
@@ -464,6 +465,66 @@ ${tokens}
   border-radius: var(--ui-radius);
 }
 .vb-toast[data-tone='warning'] { border-left-color: var(--ui-color-warning); }
+.vb-panel.vb-container { width: min(26em, 100%); }
+.vb-container h1 { overflow-wrap: anywhere; }
+.vb-container-rows[hidden], .vb-container-empty[hidden] { display: none; }
+.vb-container-rows { gap: var(--ui-space-1); }
+.vb-button.vb-container-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--ui-space-2);
+  width: 100%;
+  text-align: left;
+}
+.vb-container-icon { width: 1.5em; height: 1.5em; }
+.vb-container-name { overflow-wrap: anywhere; line-height: 1.2; }
+.vb-container-count { font-variant-numeric: tabular-nums; font-weight: 700; }
+.vb-container-empty { margin: 0; padding: var(--ui-space-2) 0; font-style: italic; }
+.vb-container-status, .vb-container-hint { margin: 0; }
+.vb-container-status:empty { display: none; }
+.vb-container-hint { color: var(--ui-color-text-muted); font-size: ${size(0.875)}; }
+.vb-container-actions { flex-wrap: wrap; }
+.vb-pickups {
+  position: absolute;
+  right: var(--ui-space-3);
+  bottom: var(--ui-space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--ui-space-2);
+  max-width: min(22em, 45%);
+  pointer-events: none;
+}
+.vb-pickup {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-1) var(--ui-space-3);
+  background: var(--ui-color-panel);
+  color: var(--ui-color-text);
+  text-shadow: none;
+  border-left: 4px solid var(--ui-color-accent);
+  border-radius: var(--ui-radius);
+}
+.vb-pickup-icon { flex: none; width: 1.5em; height: 1.5em; }
+.vb-pickup-text { display: flex; flex-direction: column; min-width: 0; }
+.vb-pickup-name { font-weight: 700; overflow-wrap: anywhere; }
+.vb-pickup[data-kind='discovery'] {
+  padding: var(--ui-space-2) var(--ui-space-3);
+  background: var(--ui-color-panel-raised);
+  border: 2px solid var(--ui-color-discovery);
+  border-left-width: 6px;
+}
+.vb-pickup[data-kind='discovery'] .vb-pickup-icon { width: 2.25em; height: 2.25em; }
+.vb-pickup-heading {
+  font-family: var(--ui-font-heading);
+  font-size: ${size(0.75)};
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-color-text-muted);
+}
+.vb-pickup-flavour { font-style: italic; overflow-wrap: anywhere; }
 .vb-glyph-prompt { display: inline-flex; align-items: center; gap: var(--ui-space-1); }
 .vb-glyph-prompt kbd {
   font: inherit;
