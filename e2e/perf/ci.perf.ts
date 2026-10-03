@@ -11,6 +11,7 @@ import {
   enforce,
   frameMeasurements,
   instrument,
+  LONG_TASK_MS,
   playableMs,
   sampleFrames,
   throttled,
@@ -72,11 +73,14 @@ test('perf-baseline: software-rendered frame time and long tasks over 200 ms', a
       `p50 ${sample.run.frame.p50.toFixed(2)} / p95 ${sample.run.frame.p95.toFixed(2)} ms, ` +
       `${String(sample.longTasks)} long task(s) ≥ 200 ms`,
   );
-  if (sample.longTaskLog.length > 0) {
-    console.log(
-      `[perf] long tasks (ms into sampling: duration): ${sample.longTaskLog.map((t) => `${String(t.atMs)}: ${String(t.durationMs)}`).join(', ')}`,
-    );
-  }
+  // Software rendering makes most frames long tasks (≥ 50 ms); list only the ones that count.
+  const over = sample.longTaskLog.filter((t) => t.durationMs >= LONG_TASK_MS);
+  console.log(
+    `[perf] ${String(sample.longTaskLog.length)} long task(s) ≥ 50 ms in the sampling window` +
+      (over.length === 0
+        ? ''
+        : `; ≥ 200 ms at (ms into sampling: duration) ${over.map((t) => `${String(t.atMs)}: ${String(t.durationMs)}`).join(', ')}`),
+  );
   // Frame time has no absolute budget in CI mode (software rendering); it is recorded for the
   // comparison with main. The long-task count is enforced.
   await enforce(testInfo, 'ci', {
