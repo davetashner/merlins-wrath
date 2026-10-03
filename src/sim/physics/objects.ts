@@ -244,14 +244,20 @@ export function removePhysicsObject(world: World<never>, entity: EntityId): void
 
 /**
  * Teleports physics object `entity`: its body's centre goes to `position` at once, stopped and awake
- * (its rotation is kept), and its `physics.object` pose and placement follow in the same tick, so
- * every later system of the tick sees it there (the debug console's `tp`, mw-e33.17).
- * @throws Error when `entity` is not a physics object; RangeError for a non-finite position.
+ * (turned to `rotation` when given, else keeping its rotation), and its `physics.object` pose and
+ * placement follow in the same tick, so every later system of the tick sees it there (the debug
+ * console's `tp`, mw-e33.17; a saved pose, mw-e27.3).
+ * @throws Error when `entity` is not a physics object; RangeError for a non-finite pose.
  */
-export function teleportPhysicsObject(world: World<never>, entity: EntityId, position: Vec3): void {
+export function teleportPhysicsObject(
+  world: World<never>,
+  entity: EntityId,
+  position: Vec3,
+  rotation?: Quat,
+): void {
   const object = world.get(entity, PhysicsObjectComponent);
   if (object === undefined) throw new Error(`entity ${String(entity)} is not a physics object`);
-  rigidBodiesOf(world).moveBody(object.body as ColliderHandle, position);
+  rigidBodiesOf(world).moveBody(object.body as ColliderHandle, position, rotation);
   const { x, y, z } = position;
   world.set(
     entity,
@@ -259,6 +265,7 @@ export function teleportPhysicsObject(world: World<never>, entity: EntityId, pos
     frozenObject({
       ...object,
       position: Object.freeze({ x, y, z }),
+      ...(rotation !== undefined && { rotation: Object.freeze({ ...rotation }) }),
       sleeping: false,
       awakeSince: object.sleeping ? world.tick : object.awakeSince,
     }),

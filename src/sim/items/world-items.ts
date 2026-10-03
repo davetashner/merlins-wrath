@@ -326,6 +326,11 @@ export class WorldItems {
     this.#name = options.name ?? ((def) => readableName(def.id));
   }
 
+  /** Whether `defId` is a known item. */
+  has(defId: string): boolean {
+    return this.#defs.has(defId);
+  }
+
   /** The definition of `defId`. @throws RangeError for an id it does not know. */
   def(defId: string): WorldItemDef {
     const def = this.#defs.get(defId);

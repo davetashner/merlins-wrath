@@ -2,7 +2,7 @@
 // a stable name; the name is what snapshots and saves use, so it must never change once shipped.
 // Storage is a dense id/value pair of arrays plus an id → slot index. Queries need ascending entity
 // id order for determinism, so a store tracks whether its dense order is still sorted and re-sorts
-// before queries next read it (the world settles stores after each batch of structural changes).
+// before a query or snapshot next reads it (lazily, so a run of structural changes sorts it once).
 
 /** `items[index]` for an index known to be in range (noUncheckedIndexedAccess can't see it). */
 function at<T>(items: readonly T[], index: number): T {

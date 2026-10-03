@@ -85,6 +85,15 @@ describe('Rapier dynamic bodies (mw-e03.10)', () => {
       angvel: { x: 0, y: 0, z: 0 },
       sleeping: false,
     });
+    const half = Math.SQRT1_2;
+    physics.moveBody(ball, { x: 1, y: 4, z: -1 }, { x: 0, y: half, z: 0, w: half });
+    const turned = physics.poseOf(ball);
+    expect(turned.position).toEqual({ x: 1, y: 4, z: -1 });
+    expect(turned.rotation.y).toBeCloseTo(half, 6);
+    expect(turned.rotation.w).toBeCloseTo(half, 6);
+    expect(() => {
+      physics.moveBody(ball, { x: 0, y: 0, z: 0 }, { x: 0, y: NaN, z: 0, w: 1 });
+    }).toThrow('body rotation must be finite');
     expect(() => {
       physics.moveBody(ball, { x: Infinity, y: 0, z: 0 });
     }).toThrow('body position must be finite');
