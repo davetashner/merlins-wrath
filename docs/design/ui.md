@@ -153,7 +153,8 @@ openOptionsMenu(ui, settings, { category: 'audio' });
 
 ```ts
 openClassSelect(ui, {
-  cards: classCards(content), // knight, archer, sorcerer, thief: pitch, 3 verbs, kit preview
+  // knight, archer, sorcerer, thief: pitch, 3 verbs, kit preview; locked unless playable
+  cards: classCards(content, playableClasses(content, location.search, __DEBUG_CONSOLE__)),
   onConfirm: (id) => applyClass(world, player, id, createClassRules(content, capabilities)),
 });
 kitPanel.update(kitModel(world, player, content)); // HUD: class, gold, carried items
@@ -165,10 +166,18 @@ kitPanel.update(kitModel(world, player, content)); // HUD: class, gold, carried 
   The screen pauses the sim and captures input; Back does not close it.
 - **Card text** comes from class data: `name`, `pitch` and the three `verbs`, plus the starting kit.
   Items have no localised names yet, so `itemLabel` shows `mana-draught` as "Mana draught".
+- **Locked cards** (mw-e01.15): `game.playableClasses` (`src/content/data/game/game.json`; m1 ships
+  `["knight"]`) lists the classes Confirm accepts. The others keep their text, greyed with a dashed
+  border, a "Locked" badge and the reason "Not playable in this build yet" as the card's
+  `aria-describedby`. They stay focusable (`aria-disabled="true"`), but confirm or a click never
+  highlights one, and while one holds focus Confirm is disabled with the same reason (`title`,
+  `aria-describedby`) and the status line says "<Class>: Not playable in this build yet". The first
+  playable card takes focus on open. A build with the debug console unlocks every class with
+  `?allclasses` (mw-e19.5's per-class tests use it); `?class=<locked id>` is refused with a warning.
 - **In the game**: `?newgame` opens the screen over the testbed once the player has spawned;
   `?class=<id>` applies a class at boot without it. Without either, the testbed boots with no class,
   as before. `#app[data-player-class]` publishes the sim's `player.class`. The title screen flow is
-  mw-e01.2, locking classes the slice can't play is mw-e01.15, and the card art is mw-e37.125.
+  mw-e01.2 and the card art is mw-e37.125.
 
 ## Testing
 

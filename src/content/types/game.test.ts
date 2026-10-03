@@ -1,0 +1,73 @@
+import { describe, expect, it } from 'vitest';
+import { gameContentSources } from '../game-content.ts';
+import { ContentLoadError, loadContent, type ContentSource } from '../loader.ts';
+import { contentChecks, contentTypes } from '../registry.ts';
+import { describeContent } from '../testing.ts';
+import { PLAYER_CLASSES } from './controller.ts';
+import { GAME_CONFIG_ID, gameSchema, type GameConfigInput } from './game.ts';
+
+const GAME_FILE = 'src/content/data/game/game.json';
+
+const config = (over: Partial<GameConfigInput> = {}): GameConfigInput => ({
+  id: GAME_CONFIG_ID,
+  notes: 'Test.',
+  playableClasses: ['knight'],
+  ...over,
+});
+
+/** Issues from loading the game's content with the game file replaced by `json`. */
+function loadIssues(json: unknown): string[] {
+  const sources: ContentSource[] = [
+    ...gameContentSources().filter((s) => s.path !== GAME_FILE),
+    { path: GAME_FILE, text: JSON.stringify(json) },
+  ];
+  try {
+    loadContent(contentTypes, sources, contentChecks);
+  } catch (error) {
+    if (!(error instanceof ContentLoadError)) throw error;
+    return error.issues.map((i) => `${i.file}#${i.pointer}: ${i.message}`);
+  }
+  return [];
+}
+
+describe('game configuration (mw-e01.15)', () => {
+  describeContent('game', 'lists playable classes that all have class data', (entry, content) => {
+    expect(entry.id).toBe(GAME_CONFIG_ID);
+    expect(entry.playableClasses.length).toBeGreaterThan(0);
+    for (const target of entry.playableClasses) {
+      expect(content.has('class', target.id)).toBe(true);
+      expect(PLAYER_CLASSES as readonly string[]).toContain(target.id);
+    }
+  });
+
+  it('m1 ships the Knight as the only playable class', () => {
+    const content = loadContent(contentTypes, gameContentSources(), contentChecks);
+    const game = content.get('game', GAME_CONFIG_ID);
+    expect(game.playableClasses.map(({ id }) => id)).toEqual(['knight']);
+  });
+
+  it('AC-3: a playable class with no class data file fails validation naming the id', () => {
+    expect(loadIssues(config({ playableClasses: ['knight', 'bard'] }))).toEqual([
+      `${GAME_FILE}#/playableClasses/1: game:game references missing class:bard`,
+    ]);
+  });
+
+  it('AC-4: an empty playableClasses fails validation: a build must offer a class', () => {
+    const result = gameSchema.safeParse(config({ playableClasses: [] }));
+    expect(result.success).toBe(false);
+    expect(result.error?.issues.map(({ message }) => message)).toEqual([
+      'a build must offer at least one playable class',
+    ]);
+    expect(loadIssues(config({ playableClasses: [] }))).toEqual([
+      `${GAME_FILE}#/playableClasses: a build must offer at least one playable class (at playableClasses)`,
+    ]);
+  });
+
+  it('rejects a class listed twice and any id but "game"', () => {
+    expect(loadIssues(config({ playableClasses: ['knight', 'knight'] }))).toEqual([
+      `${GAME_FILE}#/playableClasses/1: "knight" is listed twice (at playableClasses[1])`,
+    ]);
+    expect(gameSchema.safeParse(config({ id: 'other' as never })).success).toBe(false);
+    expect(gameSchema.parse(config()).playableClasses.map(({ id }) => id)).toEqual(['knight']);
+  });
+});

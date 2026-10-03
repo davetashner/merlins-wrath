@@ -288,6 +288,13 @@ export {
   type ClassEntry,
 } from './types/class.ts';
 export {
+  GAME_CONFIG_ID,
+  gameSchema,
+  type GameConfig,
+  type GameConfigEntry,
+  type GameConfigInput,
+} from './types/game.ts';
+export {
   checkUnlocks,
   UNLOCK_CHANNELS,
   unlockCycles,

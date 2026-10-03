@@ -6,6 +6,7 @@ import {
   CLASS_SELECT_SCREEN,
   CLASS_SELECT_TEXT,
   highlightedText,
+  lockedText,
   openClassSelect,
   type ClassCardModel,
 } from '@ui/class-select';
@@ -19,22 +20,21 @@ beforeEach(() => {
   ui = new UiRoot(document.body, { unstyled: true });
 });
 
-const CARDS: readonly ClassCardModel[] = [
-  {
-    id: 'knight',
-    name: 'Knight',
-    pitch: 'Steel.',
-    verbs: ['Parry', 'Bash', 'Plate'],
-    kit: ['Sword'],
-  },
-  {
-    id: 'thief',
-    name: 'Thief',
-    pitch: 'Shadows.',
-    verbs: ['Pick', 'Lift', 'Climb'],
-    kit: ['Knife', '40 gold'],
-  },
-];
+const KNIGHT: ClassCardModel = {
+  id: 'knight',
+  name: 'Knight',
+  pitch: 'Steel.',
+  verbs: ['Parry', 'Bash', 'Plate'],
+  kit: ['Sword'],
+};
+const THIEF: ClassCardModel = {
+  id: 'thief',
+  name: 'Thief',
+  pitch: 'Shadows.',
+  verbs: ['Pick', 'Lift', 'Climb'],
+  kit: ['Knife', '40 gold'],
+};
+const CARDS: readonly ClassCardModel[] = [KNIGHT, THIEF];
 
 const card = (id: string): HTMLElement => find(`[data-class="${id}"]`);
 const texts = (selector: string, root: ParentNode): string[] =>
@@ -95,5 +95,61 @@ describe('class selection screen', () => {
     const select = openClassSelect(ui, { cards: [], onConfirm: vi.fn() });
     expect(select.confirm.disabled).toBe(true);
     expect(document.querySelectorAll('[role="radio"]')).toHaveLength(0);
+  });
+
+  it('AC-1: a locked card shows a lock badge and the reason, stays focusable, and focus starts on the first playable card', () => {
+    const cards = [{ ...KNIGHT, locked: true }, THIEF];
+    openClassSelect(ui, { cards, onConfirm: vi.fn() });
+    const knight = card('knight');
+    expect(knight.dataset['locked']).toBe('');
+    expect(knight.getAttribute('aria-disabled')).toBe('true');
+    expect(knight.getAttribute('tabindex')).toBe('0');
+    expect(find('[data-part="lock"]', knight).textContent).toBe(CLASS_SELECT_TEXT.lockBadge);
+    expect(find('[data-part="lock-reason"]', knight).textContent).toBe(
+      'Not playable in this build yet',
+    );
+    expect(knight.getAttribute('aria-describedby')).toBe(
+      find('[data-part="lock-reason"]', knight).id,
+    );
+    expect(card('thief').querySelector('[data-part="lock"]')).toBeNull();
+    expect(card('thief').hasAttribute('aria-describedby')).toBe(false);
+    expect(document.activeElement).toBe(card('thief'));
+  });
+
+  it('AC-2: a locked card never highlights; Confirm is disabled with the reason while it holds focus', () => {
+    const onConfirm = vi.fn();
+    const select = openClassSelect(ui, {
+      cards: [KNIGHT, { ...THIEF, locked: true }],
+      onConfirm,
+    });
+    const status = find('[data-testid="class-select-status"]');
+    card('thief').focus();
+    expect(select.confirm.disabled).toBe(true);
+    expect(select.confirm.dataset['reason']).toBe(CLASS_SELECT_TEXT.lockReason);
+    expect(status.textContent).toBe(lockedText('Thief'));
+    ui.intent('confirm', 'gamepad');
+    card('thief').click();
+    expect(select.highlighted).toBeUndefined();
+    expect(card('thief').getAttribute('aria-checked')).toBe('false');
+
+    // Back on a playable card with nothing highlighted, Confirm stays disabled but loses the reason.
+    card('knight').focus();
+    expect(select.confirm.disabled).toBe(true);
+    expect(select.confirm.hasAttribute('title')).toBe(false);
+    expect(select.confirm.dataset['reason']).toBeUndefined();
+    expect(status.textContent).toBe(CLASS_SELECT_TEXT.none);
+    ui.intent('confirm', 'keyboard');
+    expect(status.textContent).toBe(highlightedText('Knight'));
+    select.confirm.click();
+    expect(onConfirm).toHaveBeenCalledExactlyOnceWith('knight');
+  });
+
+  it('focuses the first card when every class is locked', () => {
+    const select = openClassSelect(ui, {
+      cards: CARDS.map((c) => ({ ...c, locked: true })),
+      onConfirm: vi.fn(),
+    });
+    expect(document.activeElement).toBe(card('knight'));
+    expect(select.confirm.disabled).toBe(true);
   });
 });
