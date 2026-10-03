@@ -24,6 +24,11 @@ check enforces this).
   where you are so the others keep up. Stagger one and it loses its swing and rethinks once it
   recovers. Climb somewhere it cannot follow and it waits below, then jeers at you instead of
   pacing back and forth.
+- The game now opens on its title screen. New Game takes you to class selection and, once you
+  confirm the Knight, straight into the vertical slice's spawn room with the knight's kit, no reload
+  in between. Continue loads your most recent save (it stays greyed out with "No saves yet" until
+  you have one) and Load lists every save. The build number shows under the menu, so playtest
+  reports can say which build they came from.
 - Creatures come alive in the grey-box levels. They now watch, listen and think while you play:
   a guard sees you by the light you stand in and the walls in the way, hears noises muffled by
   shut doors and stone, and walks its patrol through doorways and around pillars on the level's

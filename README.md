@@ -39,6 +39,14 @@ pnpm dev                 # Vite dev server
 
 First e2e run: `pnpm exec playwright install chromium`.
 
+## Opening the game
+
+`/` is the front door: the title screen (New Game, Continue, Load) over the game's start scene
+(`game.startScene` in `src/content/data/game/game.json`; the slice in m1). New Game opens class
+selection, and confirming starts the run at the start scene's spawn point. Any of `?scene=<id>`,
+`?newgame`, `?class=<id>` or `?menu=title|load|save` skips the title for development and the e2e:
+**`/?scene=testbed`** is the grey-box testbed, `/?scene=slice` the slice without the menus.
+
 ## Combat sandbox
 
 Where combat feel is judged and tuned: open **`/?scene=combat-sandbox`** (e.g.

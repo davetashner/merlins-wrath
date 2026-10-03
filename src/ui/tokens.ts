@@ -611,6 +611,7 @@ ${tokens}
 }
 .vb-title-menu .vb-button { font-size: ${size(1.25)}; }
 .vb-title-last { margin: 0; color: var(--ui-color-text-muted); font-size: ${size(0.875)}; }
+.vb-title-build { margin: 0; color: var(--ui-color-text-muted); font-size: ${size(0.75)}; }
 .vb-button[aria-disabled='true'] { opacity: 0.55; cursor: not-allowed; }
 .vb-panel.vb-slots { width: min(48rem, 100%); }
 .vb-slot-list {

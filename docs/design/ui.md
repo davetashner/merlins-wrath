@@ -273,10 +273,10 @@ kitPanel.update(kitModel(world, player, content)); // HUD: class, gold, carried 
   `aria-describedby`) and the status line says "<Class>: Not playable in this build yet". The first
   playable card takes focus on open. A build with the debug console unlocks every class with
   `?allclasses` (mw-e19.5's per-class tests use it); `?class=<locked id>` is refused with a warning.
-- **In the game**: `?newgame` opens the screen over the testbed once the player has spawned;
-  `?class=<id>` applies a class at boot without it. Without either, the testbed boots with no class,
-  as before. `#app[data-player-class]` publishes the sim's `player.class`. The title screen flow is
-  mw-e01.2 and the card art is mw-e37.125.
+- **In the game**: the title screen's New Game opens the screen over the start scene (mw-e01.2,
+  below). `?newgame` opens it once the player has spawned in the `?scene=` scene; `?class=<id>`
+  applies a class at boot without it. A `?scene=` URL with neither boots with no class, as before.
+  `#app[data-player-class]` publishes the sim's `player.class`. The card art is mw-e37.125.
 
 ## Title menu and save screens (`src/ui/save-menus.ts`, `src/game/save/menus`, mw-e30.11)
 
@@ -305,10 +305,22 @@ await menus.openLoad();   // every save, most recent first
   shows that warning as an alert.
 - **In the game.** `?menu=title|load|save` opens a menu at boot over the freshly built area, with
   the sim paused. Continue and Load reload into the save's area through the death screen's hand-off
-  (`DeathReload.reload`). New Game reloads with `?newgame`. The thumbnail is read from the canvas
-  straight after the next render. The e2e reads `#app[data-save-menu-saved]` (tick and hash) and
-  `#app[data-save-menu-title|list|deleted]`. mw-e01.2 makes the title menu the front door, and
-  mw-e01.3 opens Save and Load from the pause menu.
+  (`DeathReload.reload`). New Game closes the title and opens class selection over the same scene,
+  with no reload (a scene without a player reloads with `?newgame` instead). The title shows the
+  build SHA ("Build abc1234") under the menu. The thumbnail is read from the canvas straight after the
+  next render. The e2e reads `#app[data-save-menu-saved]` (tick and hash) and
+  `#app[data-save-menu-title|list|deleted]`. mw-e01.3 opens Save and Load from the pause menu.
+- **The front door (mw-e01.2).** A page that names no `?scene=`, `?newgame`, `?class=` or `?menu=`
+  boots the game's start scene, `game.startScene` (`src/content/data/game/game.json`; the slice in
+  m1, the mountain road from m3), with the title menu over it (`bootMenuRequest`,
+  `src/game/save/menus/request.ts`). New Game → class select → Confirm leaves the player at the start
+  scene's `player-start` with the class kit. Any of those parameters skips the title, so dev and e2e
+  URLs (`?scene=testbed`, `?scene=slice&debug=1`, `?scene=testbed&newgame`) boot straight into a
+  scene as before. **Owner decision (2026-10-03):** the default boot changed from the testbed to the
+  title; the testbed stays one parameter away at `?scene=testbed`. Restarting the area after a death
+  reloads with the area's `?scene=`, so it restarts the scene rather than showing the title. The e2e
+  reads `#app[data-front-door]`: page-relative milliseconds when the title showed (`titleMs`), New Game
+  was pressed (`newGameMs`) and the class was applied (`playableMs`).
 
 ## Testing
 

@@ -12,6 +12,7 @@ const config = (over: Partial<GameConfigInput> = {}): GameConfigInput => ({
   id: GAME_CONFIG_ID,
   notes: 'Test.',
   playableClasses: ['knight'],
+  startScene: 'slice',
   ...over,
 });
 
@@ -61,6 +62,23 @@ describe('game configuration (mw-e01.15)', () => {
     expect(loadIssues(config({ playableClasses: [] }))).toEqual([
       `${GAME_FILE}#/playableClasses: a build must offer at least one playable class (at playableClasses)`,
     ]);
+  });
+
+  it('m1 starts a new game in the slice scene (mw-e01.2)', () => {
+    const content = loadContent(contentTypes, gameContentSources(), contentChecks);
+    const game = content.get('game', GAME_CONFIG_ID);
+    expect(game.startScene.id).toBe('slice');
+    expect(content.has('scene', game.startScene.id)).toBe(true);
+  });
+
+  it('mw-e01.2 AC-4: a startScene with no scene file fails the content check naming the missing id', () => {
+    expect(loadIssues(config({ startScene: 'mountain-road' }))).toEqual([
+      `${GAME_FILE}#/startScene: game:game references missing scene:mountain-road`,
+    ]);
+    // A start scene is required: the title screen and New Game need one.
+    const withoutStart: Partial<GameConfigInput> = config();
+    delete withoutStart.startScene;
+    expect(gameSchema.safeParse(withoutStart).success).toBe(false);
   });
 
   it('rejects a class listed twice and any id but "game"', () => {

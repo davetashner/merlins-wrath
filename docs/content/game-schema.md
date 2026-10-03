@@ -10,3 +10,4 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `id` | `"game"` | required | Always "game": there is one game configuration. |
 | `notes` | string | required | What this build offers and why. |
 | `playableClasses` | list of ref → class (at least 1) | required | The classes the class select screen lets the player confirm; the rest show locked (mw-e01.15). |
+| `startScene` | ref → scene | required | The scene a new game starts in and the title screen shows behind it (mw-e01.2). |

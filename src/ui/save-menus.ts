@@ -5,7 +5,8 @@
 // most recent first) and the Save screen (the ten manual slots): one row per slot with its thumbnail,
 // title and details, and a Delete button beside it. Rows stack vertically, so up/down move between
 // slots, right reaches Delete, Enter presses and Esc goes back: everything is reachable by keyboard
-// or pad alone. Grey-box styling; the menu kit art is mw-e37.35.
+// or pad alone. Grey-box styling; the menu kit art is mw-e37.35. The title menu shows the build SHA
+// (mw-e01.2), so a playtester's report names the build they played.
 //
 // The screens only report choices; src/game/save/menus loads, saves, asks for confirmation and
 // redraws the list through `SlotList.update`.
@@ -29,6 +30,7 @@ export const SAVE_MENU_TEXT = Object.freeze({
   load: 'Load',
   noSaves: 'No saves yet',
   lastSave: 'Last save',
+  build: 'Build',
   loadHeading: 'Load a save',
   saveHeading: 'Save the game',
   loadVerb: 'Load',
@@ -51,6 +53,8 @@ export interface TitleMenuOptions<T extends ContinueEntry> {
   readonly last: T | undefined;
   /** Why Continue is disabled when there is no save (default "No saves yet"). */
   readonly unavailable?: string | undefined;
+  /** The build SHA, shown under the menu ("Build abc1234"); omitted shows none. */
+  readonly build?: string | undefined;
   /** Continue was pressed (only ever with a save). */
   readonly onContinue: (last: T) => void;
   readonly onNewGame: () => void;
@@ -111,6 +115,15 @@ export function openTitleMenu<T extends ContinueEntry>(
     h('h1', { text: SAVE_MENU_TEXT.title }),
     h('nav', { attrs: { 'aria-label': SAVE_MENU_TEXT.menu } }, column),
   );
+  if (options.build !== undefined) {
+    content.append(
+      h('p', {
+        className: 'vb-title-build',
+        text: `${SAVE_MENU_TEXT.build} ${options.build}`,
+        data: { testid: 'title-build' },
+      }),
+    );
+  }
   const screen = ui.push({
     id: TITLE_SCREEN,
     label: SAVE_MENU_TEXT.title,

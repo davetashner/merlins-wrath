@@ -140,12 +140,10 @@ test('AC-2: with no saves the title menu disables Continue with "No saves yet" a
   await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
   expect(await seriousAxeViolations(page)).toEqual([]);
 
-  // New Game goes on to class selection.
-  const reloaded = page.waitForEvent('load');
+  // New Game closes the title and goes on to class selection over the same scene (mw-e01.2).
   await page.keyboard.press('Enter');
-  await reloaded;
   await expect(page.locator('[data-screen="class-select"]')).toBeVisible({ timeout: 30_000 });
-  expect(page.url()).not.toContain('menu=');
+  expect((await menuState(page)).top).toBe('class-select');
   expect(problems).toEqual([]);
 });
 
