@@ -16,6 +16,10 @@
 // attacks; `share-target` tells allies where it believes the target is (as an event: who hears it
 // is the world's business, not the agent's).
 //
+// Leashes (mw-e01.17, leash.ts): out of Combat a leashed agent's `move-to` goal is pulled in to its
+// leash edge; `post` is its leash post (its spawn without a leash), and arriving there turns it the
+// way it was placed.
+//
 // The compiler table is typed against the content vocabulary (BEHAVIOUR_PRIMITIVES), so a primitive
 // added to the schema without a runner here fails the typecheck.
 
@@ -33,6 +37,7 @@ import { cos, sin } from '../math';
 import { PlacementComponent } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import { emitNoise } from '../noise/system';
+import type { Creature } from '../creatures/components';
 import {
   attackWeights,
   believedTarget,
@@ -42,6 +47,7 @@ import {
   pickWeighted,
 } from './combat';
 import { AiCuePlayed, AiTargetShared, RouteBlocked, type Brain } from './components';
+import { leashOf, withinLeash } from './leash';
 import { recall } from './memory';
 import { approach, face, type AiStatus } from './navigation';
 import {
@@ -169,6 +175,8 @@ function targetPoint(v: AgentView, target: BehaviourTarget): Vec3 | undefined {
       return bb.targetSource === null ? (bb.lkp ?? undefined) : believed(v);
     case 'origin':
       return v.creature?.origin.at;
+    case 'post':
+      return leashOf(v)?.post ?? v.creature?.origin.at;
     case 'nearest-waypoint':
       return activeRoute(v)?.route.waypoints[at(v.brain.stepData, 0)]?.at;
   }
@@ -197,16 +205,20 @@ const COMPILERS: Compilers = {
       primitive: 'move-to',
       ...(start !== undefined && { start }),
       update(v) {
-        const goal = targetPoint(v, step.target);
-        if (goal === undefined) return 'failure';
+        const point = targetPoint(v, step.target);
+        if (point === undefined) return 'failure';
         const status = v.ports.navigation.travel(v.world, v.entity, {
-          goal,
+          goal: withinLeash(v, point),
           within: within(v),
           speed: v.brain.gaits[step.gait],
           dt: 1 / v.hz,
         });
         if (status === 'success' && step.target === 'nearest-waypoint') {
           v.brain.blackboard.waypoint = at(v.brain.stepData, 0);
+        }
+        if (status === 'success' && step.target === 'post') {
+          const { origin } = v.creature as Pick<Creature, 'origin'>; // a post is a creature's
+          face(v.world, v.entity, origin.facing.x, origin.facing.z);
         }
         return status;
       },

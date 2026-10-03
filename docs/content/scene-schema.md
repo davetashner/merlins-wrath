@@ -112,6 +112,9 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].routine` | list of object (at least 1) | — | Routes the spawned creature walks (mw-e11.9): the first whose window holds the hour runs (needs creature; not with patrol). |
 | `spawns[].routine[].route` | id | required | Route id of this scene. |
 | `spawns[].routine[].hours` | list of any (at least 2) | — | From and to, hours of the day (wraps past midnight when from > to); omit for always. |
+| `spawns[].leash` | object | — | Ties the spawned creature to a post (mw-e01.17): in Combat it chases only this far from the post, then searches and walks home (needs creature). |
+| `spawns[].leash.radius` | number > 0 | required | Metres from the post, measured on the level, past which a chase ends. |
+| `spawns[].leash.post` | list of any (at least 3) | — | The post, grid cells; absent = the spawn point. |
 | `spawns[].properties` | object | — | World properties of the spawned entity, e.g. a torch: { "burning": true, "fuel": 3600 } (mw-e03.37). A spawn with properties is placed in the sim, so the light field and stimuli reach it. |
 | `spawns[].properties.material` | ref → material | — | Material preset id (a material content entry). |
 | `spawns[].properties.temperature` | number -273.15–10000 | — | Current temperature, °C. |

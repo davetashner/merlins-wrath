@@ -1,13 +1,14 @@
 {
   "$schema": "../behaviour.schema.json",
   "id": "forgotten",
-  "notes": "The Forgotten skeleton's fight (mw-e13.1, ADR-0005), the vertical slice's arena encounter: it stands where it was left until it notices someone, turns to a noise and shambles over to look, and fights anyone it sees. Struck by something it did not see, it is Alerted: it turns toward where the blow came from and hurries over to look. When its target slips out of sight it searches the last place it saw them, then stands down still on edge (mw-e11.7). In Combat (mw-e11.13) it presses in and strikes with one of its e04 grey-box attacks, chosen by the attacks' own ranges, cooldowns and weights: the overhead chop (the parry-practice swing) and the two-hit slash up close, the lunging thrust when the target hangs back at 1.6-2.8 m. While its swings cool down it circles at its preferred range, and below a target it cannot reach it waits, then rattles at them. Its habits (sweeping, hauling, ignoring quiet players) are mw-e13.4; the resting idle and wake are mw-e01.5; crumbling and reassembling is mw-e13.3.",
+  "notes": "The Forgotten skeleton's fight (mw-e13.1, ADR-0005), the vertical slice's arena encounter: it stands where it was left until it notices someone, turns to a noise and shambles over to look, and fights anyone it sees. Leashed to its post (mw-e01.17), it chases only so far: past the leash it drops its target, searches the leash edge for a moment and lurches home, wounds and all, to stand at its post again. Struck by something it did not see, it is Alerted: it turns toward where the blow came from and hurries over to look. When its target slips out of sight it searches the last place it saw them, then stands down still on edge (mw-e11.7). In Combat (mw-e11.13) it presses in and strikes with one of its e04 grey-box attacks, chosen by the attacks' own ranges, cooldowns and weights: the overhead chop (the parry-practice swing) and the two-hit slash up close, the lunging thrust when the target hangs back at 1.6-2.8 m. While its swings cool down it circles at its preferred range, and below a target it cannot reach it waits, then rattles at them. Its habits (sweeping, hauling, ignoring quiet players) are mw-e13.4; the resting idle and wake are mw-e01.5; crumbling and reassembling is mw-e13.3.",
   "tuning": {
     "suspiciousTimeoutS": 12,
     "searchingTimeoutS": 20,
     "alertedTimeoutS": 15,
     "combatLostS": 6,
-    "preferredRange": 2.2
+    "preferredRange": 2.2,
+    "leashSearchS": 2
   },
   "thinkHz": 10,
   "inertia": 0.1,
@@ -21,7 +22,7 @@
         },
         { "to": "alerted", "when": { "event": "damaged-by-unseen" } }
       ],
-      "activities": ["stand"]
+      "activities": ["home", "stand"]
     },
     "suspicious": {
       "timeoutS": { "tuning": "suspiciousTimeoutS" },
@@ -62,6 +63,13 @@
     }
   },
   "activities": {
+    "home": {
+      "weight": 2,
+      "considerations": [
+        { "input": "fromPost", "curve": { "kind": "step", "at": 0.5, "below": 0, "above": 1 } }
+      ],
+      "steps": [{ "do": "move-to", "target": "post", "within": 0.5, "gait": "run" }]
+    },
     "stand": {
       "steps": [{ "do": "wait", "seconds": 1 }]
     },

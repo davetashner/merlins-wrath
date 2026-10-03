@@ -102,6 +102,11 @@ export interface Brain {
    * is out of reach); absent until it first fights, and in brains saved before it existed.
    */
   combat?: CombatMemory;
+  /**
+   * The tick its search at its leash edge ends (mw-e01.17, leash.ts): set when its leash breaks,
+   * gone once it leaves Searching; absent otherwise, and in brains saved before leashes existed.
+   */
+  leashSearchUntil?: number;
 }
 
 /** The brain component. */
@@ -113,7 +118,10 @@ export interface AlertStateChange {
   readonly entity: EntityId;
   readonly from: AlertState;
   readonly to: AlertState;
-  /** `timeout`, `input:<input>`, `event:<event>`, `done:<activity>` or `failed:<activity>`. */
+  /**
+   * `timeout`, `input:<input>`, `event:<event>`, `done:<activity>`, `failed:<activity>`, or `leash`
+   * (its leash broke: mw-e01.17).
+   */
   readonly cause: string;
 }
 

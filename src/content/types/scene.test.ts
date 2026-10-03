@@ -350,6 +350,44 @@ describe('scene patrol routines (mw-e11.9)', () => {
   });
 });
 
+describe('scene creature leashes (mw-e01.17)', () => {
+  it('takes a radius and an optional post, needs a creature and a positive, on-grid leash', () => {
+    const spawns = [
+      { id: 'skeleton', at: [2.5, 0, 32.5], creature: 'forgotten-miner', leash: { radius: 25 } },
+      {
+        id: 'warden',
+        at: [0, 0, 0],
+        creature: 'forgotten-miner',
+        leash: { radius: 8, post: [1, 0, 1] },
+      },
+    ];
+    expect(problems({ ...room, spawns })).toEqual([]);
+    expect(sceneSchema.parse({ ...room, spawns }).spawns.map((s) => s.leash)).toEqual([
+      { radius: 25 },
+      { radius: 8, post: [1, 0, 1] },
+    ]);
+    expect(
+      problems({
+        ...room,
+        spawns: [
+          { id: 'marker', at: [0, 0, 0], leash: { radius: 5 } },
+          { id: 'a', at: [0, 0, 0], creature: 'forgotten-miner', leash: { radius: 0 } },
+          {
+            id: 'b',
+            at: [0, 0, 0],
+            creature: 'forgotten-miner',
+            leash: { radius: 5, post: [0.1, 0, 0] },
+          },
+        ],
+      }),
+    ).toEqual([
+      'spawns.1.leash.radius: Too small: expected number to be >0',
+      'spawns.2.leash.post: must snap to the grid: every coordinate a multiple of 0.25 cells',
+      'spawns.0.leash: spawn "marker" sets leash but spawns no creature',
+    ]);
+  });
+});
+
 describe('scene schema (mw-e00.21)', () => {
   it('fills defaults: 1 m grid, no yaw, unit scale, no spawns', () => {
     expect(sceneSchema.parse(room)).toEqual({

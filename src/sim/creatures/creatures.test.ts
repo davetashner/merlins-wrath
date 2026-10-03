@@ -393,6 +393,7 @@ describe('creature spawner (mw-e12.4)', () => {
       spawn({ id: 'gate', creature: 'guard', yaw: 180, faction: 'bandits', patrol: route }),
       spawn({ id: 'nest', creature: 'wyvern' }),
       spawn({ id: 'yard', creature: 'hound', routine }),
+      spawn({ id: 'post', creature: 'hound', leash: { radius: 25, post: { x: 2, y: 0, z: 6 } } }),
     ]);
     expect(result.errors).toEqual([
       { point: 'nest', error: { kind: 'unknown-creature', creature: 'wyvern' } },
@@ -418,6 +419,29 @@ describe('creature spawner (mw-e12.4)', () => {
     const again = respawnCreature(w, options, yard);
     if (!again.ok) throw new Error('respawn failed');
     expect(w.get(again.entity, CreatureComponent)?.origin.routine).toBe(routine);
+    // mw-e01.17: so does a leash.
+    const post = result.entities[3];
+    if (post === undefined) throw new Error('missing creature');
+    const leash = { radius: 25, post: { x: 2, y: 0, z: 6 } };
+    expect(w.get(post, CreatureComponent)?.origin.leash).toEqual(leash);
+    const back = respawnCreature(w, options, post);
+    if (!back.ok) throw new Error('respawn failed');
+    expect(w.get(back.entity, CreatureComponent)?.origin.leash).toEqual(leash);
+  });
+
+  it('mw-e01.17: a leash without a post is tied to where the creature spawns', () => {
+    const w = world();
+    const spawned = spawnCreature(w, options, {
+      creature: 'hound',
+      at: { x: 1, y: 0, z: 2 },
+      leash: { radius: 10 },
+    });
+    if (!spawned.ok) throw new Error('spawn failed');
+    w.step();
+    expect(w.get(spawned.entity, CreatureComponent)?.origin.leash).toEqual({
+      radius: 10,
+      post: { x: 1, y: 0, z: 2 },
+    });
   });
 
   it('the debug console spawns creatures by id, facing the player, and `despawn all` removes them', () => {

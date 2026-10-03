@@ -5,6 +5,7 @@
 
 import type { BehaviourInput } from '@content/index';
 import { HealthComponent } from '../combat/damage/components';
+import { fromPost } from './leash';
 import { offRoute } from './routes';
 import { getIf } from './util';
 import {
@@ -49,6 +50,8 @@ const FIXED: Readonly<Record<BehaviourInput, InputFn>> = {
   attackToken: (v) => (hasAttackToken(v) ? 1 : 0),
   /** Seconds its target has been out of its reach (combat.ts). */
   targetUnreachableS: unreachableSeconds,
+  /** Metres on the level from its leash post (0 without a leash, leash.ts). */
+  fromPost,
 };
 
 /** The accessor of input `name`, or undefined when there is no such input. */

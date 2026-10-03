@@ -23,7 +23,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `states.<key>.transitions` | list of object | `[]` | Checked in order after the timeout; at most one is taken per think. |
 | `states.<key>.transitions[].to` | `"unaware"` \| `"suspicious"` \| `"investigating"` \| `"searching"` \| `"alerted"` \| `"combat"` | required | State it moves to (defined in this behaviour). |
 | `states.<key>.transitions[].when` | object | required | Transition condition. |
-| `states.<key>.transitions[].when.input` | string | required | An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, trait.<trait> or need.<need>. |
+| `states.<key>.transitions[].when.input` | string | required | An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, fromPost, trait.<trait> or need.<need>. |
 | `states.<key>.transitions[].when.gte` | number or object | — | True when the input is at least this. |
 | `states.<key>.transitions[].when.gte.tuning` | string | required | Tuning key. |
 | `states.<key>.transitions[].when.lt` | number or object | — | True when the input is below this. |
@@ -37,7 +37,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `activities.<key>.interruptible` | boolean | `true` | false holds the activity until it ends or the state changes. |
 | `activities.<key>.retryAfterS` | number ≥ 0 | `2` | Seconds a failed activity is excluded from scoring. |
 | `activities.<key>.considerations` | list of object | `[]` | Input × curve factors; none = always its weight. |
-| `activities.<key>.considerations[].input` | string | required | An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, trait.<trait> or need.<need>. |
+| `activities.<key>.considerations[].input` | string | required | An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, fromPost, trait.<trait> or need.<need>. |
 | `activities.<key>.considerations[].curve` | object | required | Response curve. |
 | `activities.<key>.considerations[].curve.kind` | `"linear"` | required |  |
 | `activities.<key>.considerations[].curve.slope` | number | required |  |
@@ -50,7 +50,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `activities.<key>.considerations[].curve.exponent` | integer 1–8 | required |  |
 | `activities.<key>.steps` | list of object (at least 1) | required | Primitives run in order. |
 | `activities.<key>.steps[].do` | `"move-to"` | required |  |
-| `activities.<key>.steps[].target` | `"stimulus"` \| `"target"` \| `"lkp"` \| `"nearest-waypoint"` \| `"origin"` | required | Where to go. |
+| `activities.<key>.steps[].target` | `"stimulus"` \| `"target"` \| `"lkp"` \| `"nearest-waypoint"` \| `"origin"` \| `"post"` | required | Where to go. |
 | `activities.<key>.steps[].within` | number > 0 or object | `0.5` | Arrives within this many metres. |
 | `activities.<key>.steps[].within.tuning` | string | required | Tuning key. |
 | `activities.<key>.steps[].gait` | `"sneak"` \| `"walk"` \| `"run"` | `"walk"` | Gait (its speed comes from the creature). |
@@ -58,7 +58,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `activities.<key>.steps[].dwellS` | number ≥ 0 or object | `0` | Seconds it stands at each waypoint that sets no dwell of its own. |
 | `activities.<key>.steps[].dwellS.tuning` | string | required | Tuning key. |
 | `activities.<key>.steps[].do` | `"look-at"` | required |  |
-| `activities.<key>.steps[].target` | `"stimulus"` \| `"target"` \| `"lkp"` \| `"nearest-waypoint"` \| `"origin"` | required | What to face. |
+| `activities.<key>.steps[].target` | `"stimulus"` \| `"target"` \| `"lkp"` \| `"nearest-waypoint"` \| `"origin"` \| `"post"` | required | What to face. |
 | `activities.<key>.steps[].seconds` | number ≥ 0 or object | required | How long it looks. |
 | `activities.<key>.steps[].seconds.tuning` | string | required | Tuning key. |
 | `activities.<key>.steps[].do` | `"look-around"` | required |  |

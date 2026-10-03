@@ -152,7 +152,7 @@
                       "properties": {
                         "input": {
                           "type": "string",
-                          "description": "An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, trait.<trait> or need.<need>."
+                          "description": "An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, fromPost, trait.<trait> or need.<need>."
                         },
                         "gte": {
                           "description": "True when the input is at least this.",
@@ -318,7 +318,7 @@
               "properties": {
                 "input": {
                   "type": "string",
-                  "description": "An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, trait.<trait> or need.<need>."
+                  "description": "An input: awareness, hasStimulus, targetVisible, targetLostS, healthFraction, timeInState, offRoute, targetDistance, attackToken, targetUnreachableS, fromPost, trait.<trait> or need.<need>."
                 },
                 "curve": {
                   "oneOf": [
@@ -424,7 +424,8 @@
                         "target",
                         "lkp",
                         "nearest-waypoint",
-                        "origin"
+                        "origin",
+                        "post"
                       ],
                       "description": "Where to go."
                     },
@@ -534,7 +535,8 @@
                         "target",
                         "lkp",
                         "nearest-waypoint",
-                        "origin"
+                        "origin",
+                        "post"
                       ],
                       "description": "What to face."
                     },
