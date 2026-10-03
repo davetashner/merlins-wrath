@@ -61,6 +61,7 @@ import {
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
   installDebugCommands,
+  installSlainFacts,
   LEDGE_HANG_CAPABILITY,
   testPropSpawners,
   type EntityId,
@@ -330,6 +331,8 @@ export function createGameWorld<TInput>(
     sight: new RapierSightWorld(physics),
     navigation,
   });
+  // A placed creature's death sets its slain fact (mw-e01.7).
+  installSlainFacts(world, scene.id);
   const aiWatch = watchCreatureAi(world, sceneCreatures.ai, navigation);
   return {
     world,

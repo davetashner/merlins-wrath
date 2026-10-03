@@ -499,3 +499,33 @@ describe('section load hooks (mw-e27.4)', () => {
     );
   });
 });
+
+describe('component types registered on first use (mw-e01.7)', () => {
+  const Class = defineComponent<string>('Class');
+  const Stats = defineComponent<number>('Stats');
+
+  it('a save holding an on-demand type the world has not registered yet registers it and loads', () => {
+    const saved = new World({ seed: 3 }).register(Name);
+    const hero = saved.spawn();
+    saved.add(hero, Name, 'hero');
+    saved.register(Class); // chosen mid-game: registered only then
+    saved.add(hero, Class, 'thief');
+    const registry = new SaveRegistry({ onDemand: [Class, Stats] });
+    const bytes = registry.write(saved, options);
+
+    const fresh = new World({ seed: 3 }).register(Name);
+    fresh.spawn();
+    expect(registry.read(fresh, bytes)).toMatchObject({ ok: true });
+    expect(fresh.get(hero, Class)).toBe('thief');
+    expect(fresh.isRegistered(Stats)).toBe(false);
+    expect(hashWorld(fresh)).toBe(hashWorld(saved));
+
+    // Loading again into a world that has the type already is just a load.
+    expect(registry.read(fresh, bytes)).toMatchObject({ ok: true });
+    // Without the on-demand list the fresh world refuses the save, unchanged.
+    const strict = new World({ seed: 3 }).register(Name);
+    strict.spawn();
+    expect(new SaveRegistry().read(strict, bytes)).toMatchObject({ ok: false });
+    expect(strict.isRegistered(Class)).toBe(false);
+  });
+});

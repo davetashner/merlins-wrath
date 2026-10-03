@@ -28,6 +28,7 @@ export {
   WORLD_SECTION_VERSION,
   type CheckSaveResult,
   type LoadSaveResult,
+  type SaveRegistryOptions,
   type SaveWarning,
   type WriteSaveOptions,
 } from './registry';

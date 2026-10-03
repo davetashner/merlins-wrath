@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- The vertical slice saves itself. Walking through the first door and reaching the end of the
+  corridor each make an autosave, and so does finishing the slice. An autosave never happens
+  mid-fight: it waits until the skeleton's fight is over. Close the game, press Continue on the
+  title and you are back where you saved within moments, with a dead skeleton still dead and an
+  emptied chest still empty. Save slots now show your class (a thief's save says Thief).
 - The knight can bash with its shield: hold block and press attack (right click then left click, or
   LT then RT). The bash cuts a spellcaster's windup short and makes them flinch, knocks aside a foe
   guarding with only a blade so they reel for a second, shoves barrels and other light things across
