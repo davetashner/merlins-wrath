@@ -49,7 +49,9 @@ pnpm preview                            # serves dist/ at http://localhost:4173
 
 ### 4. Play
 
-There is no title screen or pause menu yet (mw-e01.2, mw-e01.3), so you start a game from the URL.
+Open the site with no `?scene=` and you get the title screen: **Continue** (your latest save),
+**New Game** (class select) and **Load**. **Esc**, **P** or the controller's Menu button pauses with
+Resume, Settings, Save, Load and Quit to Title. To skip the front door while testing, start from the URL.
 The best place to start is the vertical slice as the Knight:
 
 > **http://localhost:5173/?scene=slice&newgame** — pick your class on the class-select screen
@@ -101,10 +103,10 @@ Load any scene with `?scene=<id>` (an unknown id lists the available ones):
 | `lighting-room`   | Torches, a burning crate and moonlight, with dark corners to hide in. |
 | `kit-gallery`     | Every grey-box kit piece in a row (an art check, not gameplay). |
 
-**What the slice can't do yet:** the Forgotten miner skeleton and the gallery key it drops are not
-placed in the level yet (mw-e01.6), so the arena is empty and the exit door stays locked. Until then,
-use the debug console to play those beats: `spawn forgotten-miner` puts a skeleton in front of you,
-and `noclip` walks you through the exit door into the vestibule.
+**What the slice can't do yet:** the Forgotten miner skeleton is not placed in the arena yet (mw-e01.5),
+so the arena starts empty. The rusted gallery key lies at the miner's post, so you can pick it up and
+open the exit door, and the alcove chest holds its loot. To fight the skeleton, use the debug console:
+`spawn forgotten-miner` puts one in front of you.
 
 #### Debug console and URL options
 
