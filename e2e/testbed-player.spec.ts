@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { holdKey, stubPointerLock, takeControl } from './helpers/player';
 
 // mw-e02.23: a controllable player (mw-e02.6: an animated grey-box rig) in ?scene=testbed, against the production build
 // (Chromium). The page publishes the player's sim state on #app[data-player] (JSON: tick, feet
@@ -6,8 +7,8 @@ import { expect, test, type Page } from '@playwright/test';
 // (mw-e02.4) on #app[data-orbit-camera] after every frame it draws; the tests only read them.
 //
 // Input counts only while the pointer is locked to the canvas, and headless Chromium refuses pointer
-// lock, so an init script stands in for the browser's lock: requestPointerLock locks at once and
-// fires pointerlockchange, exactly as a granted request does. Everything after that (key events,
+// lock, so an init script (helpers/player stubPointerLock) stands in for the browser's lock:
+// requestPointerLock locks at once and fires pointerlockchange, exactly as a granted request does. Everything after that (key events,
 // the ActionSampler, the sim) is the real game.
 
 // Driver performance notices from the GPU process are not our errors (see e2e/render-boot.spec.ts).
@@ -17,6 +18,8 @@ const DRIVER_PERF_NOTICE = /^\[\.WebGL-[^\]]+\]GL Driver Message \([^)]*\bPerfor
 const BACK_WALL_FACE_Z = -4.9;
 /** The player's capsule radius (src/content/data/controller/player.json). */
 const RADIUS = 0.35;
+/** The W key, for helpers/player holdKey. */
+const KEY_W = { code: 'KeyW', key: 'w' };
 
 interface PlayerData {
   tick: number;
@@ -67,29 +70,12 @@ async function waitTicks(page: Page, ticks: number): Promise<PlayerData> {
 
 /** Loads the testbed, waits for the player to settle and takes control (click to lock). */
 async function play(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    const lock: { element: Element | null } = { element: null };
-    const change = () => document.dispatchEvent(new Event('pointerlockchange'));
-    Object.defineProperty(Document.prototype, 'pointerLockElement', {
-      configurable: true,
-      get: () => lock.element,
-    });
-    Element.prototype.requestPointerLock = function requestPointerLock(this: Element) {
-      lock.element = this;
-      change();
-      return Promise.resolve();
-    };
-    Document.prototype.exitPointerLock = function exitPointerLock() {
-      lock.element = null;
-      change();
-    };
-  });
+  await stubPointerLock(page);
   await page.goto('/?scene=testbed');
   const app = page.locator('#app');
   await expect(app).toHaveAttribute('data-scene', 'testbed', { timeout: 5_000 });
   await expect(app).toHaveAttribute('data-player', /"grounded":true/);
-  await page.getByTestId('game-canvas').click();
-  await expect.poll(() => page.evaluate(() => document.pointerLockElement !== null)).toBe(true);
+  await takeControl(page);
 }
 
 test('AC-1: holding W for 1 s moves the player capsule at least 4 m forward, with no console errors', async ({
@@ -349,6 +335,9 @@ test('mw-e04.8: R with no direction held backsteps the player 1.2 m away from th
   expect(problems).toEqual([]);
 });
 
+// W is held for a number of sim ticks from inside the page (helpers/player holdKey), not for a span
+// of wall time: on a software-rendered runner a few frames a second, 300 ms of wall time can be one
+// frame (five ticks) or, with Playwright round trips around it, many more.
 test('the debug camera (F2) takes WASD from the player, and hands it back', async ({ page }) => {
   const problems = collectProblems(page);
   await play(page);
@@ -356,19 +345,22 @@ test('the debug camera (F2) takes WASD from the player, and hands it back', asyn
   await page.keyboard.press('F2');
   await expect(app).toHaveAttribute('data-debug-camera', 'on');
   // Flying releases pointer lock, so the player stays put while the camera moves.
-  expect(await page.evaluate(() => document.pointerLockElement)).toBeNull();
-  const parked = await player(page);
-  await page.keyboard.down('KeyW');
-  await page.waitForTimeout(300);
-  await page.keyboard.up('KeyW');
-  expect((await waitTicks(page, 5)).position).toEqual(parked.position);
+  const { locked, parked } = await page.evaluate(() => ({
+    locked: document.pointerLockElement !== null,
+    parked: JSON.parse(
+      document.querySelector<HTMLElement>('#app')?.dataset['player'] ?? 'null',
+    ) as {
+      position: { x: number; y: number; z: number };
+    },
+  }));
+  expect(locked).toBe(false);
+  // Half a second of sim time with W down flies the camera; the player does not move.
+  expect((await holdKey(page, KEY_W, 30, 5)).position).toEqual(parked.position);
   await page.keyboard.press('F2');
   await expect(app).toHaveAttribute('data-debug-camera', 'off');
-  await page.getByTestId('game-canvas').click();
-  await page.keyboard.down('KeyW');
-  await page.waitForTimeout(300);
-  await page.keyboard.up('KeyW');
-  expect((await waitTicks(page, 5)).position.z).toBeGreaterThan(parked.position.z + 0.5);
+  await takeControl(page);
+  // The same half second walks the player again.
+  expect((await holdKey(page, KEY_W, 30, 5)).position.z).toBeGreaterThan(parked.position.z + 0.5);
   expect(problems).toEqual([]);
 });
 
@@ -381,6 +373,11 @@ test('the debug camera (F2) takes WASD from the player, and hands it back', asyn
 test('AC-5: walking the narrow corridor with pillars, no frame puts the near plane inside geometry, and no console errors', async ({
   page,
 }) => {
+  // The walk's budget is sim ticks (at most 480), and the frame loop runs at most five ticks a
+  // frame, so it can take 96 drawn frames: on a software-rendered CI runner at ~3 frames a second
+  // that alone is ~32 s of wall time, beyond the default 30 s test timeout before setup is counted.
+  // The timeout covers the tick bound at that frame rate; the walk itself is paced by ticks.
+  test.setTimeout(75_000);
   const problems = collectProblems(page);
   await play(page);
   const start = await orbitCamera(page);

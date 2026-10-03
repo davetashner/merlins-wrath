@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { stubPointerLock, takeControl, turnTo } from './helpers/player';
 
 // mw-e27.4 AC-4: world state survives a save, closing the tab and loading the save, against the
 // production build (Chromium). The greybox slice does not exist yet, so this plays the testbed (owner
@@ -13,12 +14,6 @@ import { expect, test, type Page } from '@playwright/test';
 
 // Driver performance notices from the GPU process are not our errors (see e2e/render-boot.spec.ts).
 const DRIVER_PERF_NOTICE = /^\[\.WebGL-[^\]]+\]GL Driver Message \([^)]*\bPerformance\b/;
-
-interface PlayerData {
-  position: { x: number; y: number; z: number };
-  yaw: number;
-  grounded: boolean;
-}
 
 interface Stack {
   item: string;
@@ -56,27 +51,6 @@ async function data<T>(page: Page, key: string): Promise<T | null> {
   return JSON.parse(json ?? 'null') as T | null;
 }
 
-/** Grants pointer lock as a browser does (headless Chromium refuses it). */
-async function stubPointerLock(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    const lock: { element: Element | null } = { element: null };
-    const change = () => document.dispatchEvent(new Event('pointerlockchange'));
-    Object.defineProperty(Document.prototype, 'pointerLockElement', {
-      configurable: true,
-      get: () => lock.element,
-    });
-    Element.prototype.requestPointerLock = function requestPointerLock(this: Element) {
-      lock.element = this;
-      change();
-      return Promise.resolve();
-    };
-    Document.prototype.exitPointerLock = function exitPointerLock() {
-      lock.element = null;
-      change();
-    };
-  });
-}
-
 /** Opens the testbed with the debug console and waits for the player to stand in a running sim. */
 async function openTestbed(page: Page): Promise<void> {
   await page.goto('/?scene=testbed&debug=1');
@@ -97,59 +71,14 @@ async function type(page: Page, line: string): Promise<void> {
   await page.keyboard.press('Backquote');
   const input = page.getByTestId('debug-console-input');
   await expect(input).toBeFocused();
-  await page.keyboard.type(line);
+  // One input event for the whole line: per-key typing costs a round trip a character on a slow runner.
+  await page.keyboard.insertText(line);
   await page.keyboard.press('Enter');
 }
 
-/** Takes pointer lock by clicking the game. */
-async function takeControl(page: Page): Promise<void> {
-  await page.getByTestId('game-canvas').click();
-  await expect.poll(() => page.evaluate(() => document.pointerLockElement !== null)).toBe(true);
-}
-
-/**
- * Turns the player to face the point (x, z) with mouse moves sent from the page, one per drawn frame
- * (as e2e/items.spec.ts does). Yaw 0 looks along −z, so the player faces (−sin yaw, −cos yaw).
- */
+/** Turns the player to face the point (x, z) through a convergent mouse-look loop (helpers/player). */
 async function face(page: Page, x: number, z: number): Promise<void> {
-  const turned = await page.evaluate(
-    ([tx, tz]) =>
-      new Promise<boolean>((resolve) => {
-        const app = document.querySelector('#app');
-        const started = performance.now();
-        const step = () => {
-          const json = app?.getAttribute('data-player');
-          if (json !== null && json !== undefined) {
-            const { yaw, position } = JSON.parse(json) as PlayerData;
-            const dx = tx - position.x;
-            const dz = tz - position.z;
-            const length = Math.hypot(dx, dz) || 1;
-            const cos = (-Math.sin(yaw) * dx - Math.cos(yaw) * dz) / length;
-            if (cos > 0.985) {
-              resolve(true);
-              return;
-            }
-            // Turn the short way round: left (negative movement) when the target is to the left.
-            const cross = -Math.sin(yaw) * dz + Math.cos(yaw) * dx;
-            const amount = cos > 0.8 ? 3 : 15;
-            window.dispatchEvent(
-              new MouseEvent('mousemove', {
-                movementX: cross > 0 ? amount : -amount,
-                movementY: 0,
-              }),
-            );
-          }
-          if (performance.now() - started > 20_000) {
-            resolve(false);
-            return;
-          }
-          requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      }),
-    [x, z] as const,
-  );
-  expect(turned).toBe(true);
+  await turnTo(page, { x, z });
 }
 
 /** Interacts (E) once the prompt offers `label`. */
