@@ -13,6 +13,16 @@ export const SKIN_INFLUENCES = 4;
 export interface BoneSegment {
   readonly head: readonly [number, number, number];
   readonly tail: readonly [number, number, number];
+  /**
+   * How far from the segment the bone's own flesh reaches, metres (default 0). A vertex within it
+   * counts as touching the bone, so a thick torso bone keeps the cloth hanging beside an arm.
+   */
+  readonly radius?: number;
+  /**
+   * A vertex closer to the midline than this (|x|, metres, default 0) is out of the bone's reach: a
+   * limb off to one side does not drag the cloth hanging in front of the torso.
+   */
+  readonly lateral?: number;
 }
 
 /** Skin attributes for a mesh: `SKIN_INFLUENCES` bone indices and weights per vertex. */
@@ -21,9 +31,15 @@ export interface SkinWeights {
   readonly weights: Float32Array;
 }
 
+/** How much a limb's flesh (armour, sleeves) exceeds its thin grey-box shape. */
+const LIMB_FLESH = 1.8;
+/** How far inside a side bone's own x the vertices it may move can sit (see BoneSegment.lateral). */
+const LATERAL_MARGIN = 0.03;
+
 /**
  * The rest segment of every bone: from the bone's joint to the far end of its grey-box shape (the
  * shape's centre is half its extent from the joint). A bone without a shape is a point at its joint.
+ * Its radius is half the shape's wider horizontal side, scaled up for long thin limbs.
  */
 export function restSegments(rig: Rig): BoneSegment[] {
   const heads: [number, number, number][] = [];
@@ -37,11 +53,22 @@ export function restSegments(rig: Rig): BoneSegment[] {
     ];
     heads.push(head);
     const c = def.shape?.center ?? [0, 0, 0];
-    return { head, tail: [head[0] + 2 * c[0], head[1] + 2 * c[1], head[2] + 2 * c[2]] };
+    const size = def.shape?.size ?? [0, 0, 0];
+    const side = Math.max(size[0], size[2]);
+    const limb = side > 0 && size[1] >= 3 * side;
+    return {
+      head,
+      tail: [head[0] + 2 * c[0], head[1] + 2 * c[1], head[2] + 2 * c[2]],
+      radius: (side / 2) * (limb ? LIMB_FLESH : 1),
+      lateral: Math.max(
+        0,
+        Math.min(Math.abs(head[0]), Math.abs(head[0] + 2 * c[0])) - LATERAL_MARGIN,
+      ),
+    };
   });
 }
 
-/** Squared distance from point (px, py, pz) to the segment `s`. */
+/** Squared distance from point (px, py, pz) to the segment `s`, less its radius (0 when inside). */
 function distanceSquared(s: BoneSegment, px: number, py: number, pz: number): number {
   const [hx, hy, hz] = s.head;
   const dx = s.tail[0] - hx;
@@ -55,15 +82,21 @@ function distanceSquared(s: BoneSegment, px: number, py: number, pz: number): nu
   const ex = px - (hx + t * dx);
   const ey = py - (hy + t * dy);
   const ez = pz - (hz + t * dz);
-  return ex * ex + ey * ey + ez * ez;
+  const outside = Math.max(0, Math.sqrt(ex * ex + ey * ey + ez * ez) - (s.radius ?? 0));
+  return outside * outside;
 }
 
 /**
  * Binds each vertex of `positions` (x, y, z triples) to its nearest bones. Weights fall off as
  * 1 / distance⁴ so the nearest bone dominates and joints blend over a short span; the four nearest
- * bones are kept and their weights sum to 1. `bones` must be non-empty.
+ * bones are kept and their weights sum to 1. `skip` lists bones no vertex may bind to (a held prop's
+ * bone: its segment hangs across the body). `bones` must leave at least one bone to bind to.
  */
-export function autoSkin(positions: ArrayLike<number>, bones: readonly BoneSegment[]): SkinWeights {
+export function autoSkin(
+  positions: ArrayLike<number>,
+  bones: readonly BoneSegment[],
+  skip: ReadonlySet<number> = new Set(),
+): SkinWeights {
   const count = Math.floor(positions.length / 3);
   const indices = new Uint16Array(count * SKIN_INFLUENCES);
   const weights = new Float32Array(count * SKIN_INFLUENCES);
@@ -75,6 +108,7 @@ export function autoSkin(positions: ArrayLike<number>, bones: readonly BoneSegme
     const pz = positions[v * 3 + 2] ?? 0;
     scored.length = 0;
     bones.forEach((bone, b) => {
+      if (skip.has(b) || Math.abs(px) < (bone.lateral ?? 0)) return;
       const d2 = distanceSquared(bone, px, py, pz) + eps;
       scored.push({ bone: b, w: 1 / (d2 * d2) });
     });
