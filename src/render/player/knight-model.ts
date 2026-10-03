@@ -10,45 +10,33 @@
 
 import {
   Bone,
-  BufferAttribute,
-  BufferGeometry,
-  Euler,
-  Float32BufferAttribute,
   Group,
-  Matrix4,
   Mesh,
-  type Material,
-  type Object3D,
+  Float32BufferAttribute,
   Skeleton,
   SkinnedMesh,
   Uint16BufferAttribute,
 } from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import {
+  placeGeometry,
+  readGlbMesh,
+  turnAndGround,
+  type GlbModel,
+  type Placement,
+} from '../models/glb';
 import { autoSkin, restSegments, type GreyboxRig, type Pose, type Rig } from '../animation/index';
 
 /** Where the optimised models are served from (public/assets/model). */
 export const KNIGHT_MODEL_URL = '/assets/model/model-char-knight-01.glb';
 
 /** A mesh and its material, in the space its consumer expects. */
-export interface KnightModel {
-  readonly geometry: BufferGeometry;
-  readonly material: Material;
-}
+export type KnightModel = GlbModel;
 
-/**
- * How a held prop sits on its bone. The mesh is first turned by `rotateDeg` (x, y, z Euler degrees),
- * then scaled so its extent along y is `length` metres, then moved so `anchor` of that extent (the
- * hilt end for a sword) and the centre of its x and z extents land on `offset` from the bone.
- */
-export interface PropPlacement {
+/** How a held prop sits on its bone: a placement (see Placement) plus the file and the bone. */
+export interface PropPlacement extends Placement {
   readonly url: string;
   /** The rig bone the prop is fixed to. */
   readonly bone: string;
-  readonly rotateDeg: readonly [number, number, number];
-  readonly length: number;
-  readonly anchor: 'top' | 'bottom' | 'centre';
-  readonly offset: readonly [number, number, number];
 }
 
 /** A prop loaded and placed, ready to attach to `bone`. */
@@ -85,84 +73,18 @@ export const SHIELD_PLACEMENT: PropPlacement = {
   offset: [-0.12, -0.1, -0.16],
 };
 
-/** A float copy of `attribute` (a quantised glTF attribute holds normalised integers). */
-function toFloat(attribute: BufferAttribute): Float32BufferAttribute {
-  const out = new Float32Array(attribute.count * attribute.itemSize);
-  for (let i = 0; i < attribute.count; i++) {
-    for (let k = 0; k < attribute.itemSize; k++) {
-      out[i * attribute.itemSize + k] = attribute.getComponent(i, k);
-    }
-  }
-  return new Float32BufferAttribute(out, attribute.itemSize);
-}
-
-/** The first mesh of the GLB at `url`, as float attributes with its node transform applied. */
-async function readGlbMesh(url: string): Promise<KnightModel> {
-  const loader = new GLTFLoader();
-  loader.setMeshoptDecoder(MeshoptDecoder);
-  const gltf = await loader.loadAsync(url);
-  gltf.scene.updateMatrixWorld(true);
-  let found: Mesh | undefined;
-  gltf.scene.traverse((object: Object3D) => {
-    if (found === undefined && object instanceof Mesh) found = object;
-  });
-  if (found === undefined) throw new Error(`${url} contains no mesh`);
-  const source = found.geometry;
-  const geometry = new BufferGeometry();
-  geometry.setAttribute('position', toFloat(source.getAttribute('position') as BufferAttribute));
-  geometry.setAttribute('normal', toFloat(source.getAttribute('normal') as BufferAttribute));
-  if (source.hasAttribute('uv')) {
-    geometry.setAttribute('uv', toFloat(source.getAttribute('uv') as BufferAttribute));
-  }
-  if (source.index !== null) geometry.setIndex(source.index);
-  geometry.applyMatrix4(found.matrixWorld);
-  const material = Array.isArray(found.material) ? found.material[0] : found.material;
-  if (material === undefined) throw new Error(`${url} has no material`);
-  return { geometry, material };
-}
-
 /** Loads the knight's body and puts it in rig space (feet at y = 0, facing −z). */
 export async function loadKnightModel(url: string = KNIGHT_MODEL_URL): Promise<KnightModel> {
-  const { geometry, material } = await readGlbMesh(url);
+  const model = await readGlbMesh(url);
   // +90° about y: the mesh's +x (front) becomes −z.
-  geometry.applyMatrix4(new Matrix4().makeRotationY(Math.PI / 2));
-  geometry.computeBoundingBox();
-  geometry.translate(0, -(geometry.boundingBox?.min.y ?? 0), 0);
-  geometry.computeBoundingBox();
-  geometry.computeBoundingSphere();
-  return { geometry, material };
+  turnAndGround(model.geometry, 90);
+  return model;
 }
 
 /** Loads a held prop and places it as `placement` says, in its bone's space. */
 export async function loadKnightProp(placement: PropPlacement): Promise<KnightProp> {
   const { geometry, material } = await readGlbMesh(placement.url);
-  const [rx, ry, rz] = placement.rotateDeg.map((d) => (d * Math.PI) / 180) as [
-    number,
-    number,
-    number,
-  ];
-  geometry.applyMatrix4(new Matrix4().makeRotationFromEuler(new Euler(rx, ry, rz)));
-  geometry.computeBoundingBox();
-  const box = geometry.boundingBox;
-  const height = box === null ? 0 : box.max.y - box.min.y;
-  if (box === null || height <= 0) throw new Error(`${placement.url} has no extent`);
-  const scale = placement.length / height;
-  geometry.scale(scale, scale, scale);
-  geometry.computeBoundingBox();
-  const placed = geometry.boundingBox;
-  if (placed === null) throw new Error(`${placement.url} has no extent`);
-  const y =
-    placement.anchor === 'top'
-      ? placed.max.y
-      : placement.anchor === 'bottom'
-        ? placed.min.y
-        : (placed.min.y + placed.max.y) / 2;
-  geometry.translate(
-    placement.offset[0] - (placed.min.x + placed.max.x) / 2,
-    placement.offset[1] - y,
-    placement.offset[2] - (placed.min.z + placed.max.z) / 2,
-  );
-  geometry.computeBoundingSphere();
+  placeGeometry(geometry, placement, placement.url);
   return { geometry, material, bone: placement.bone };
 }
 

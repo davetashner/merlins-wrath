@@ -13,6 +13,8 @@ check enforces this).
 
 ### Added
 
+- The skeleton in the arena has a model: a bony miner in a leather cap with a pick, with eyes that glow
+  cold blue. It does not walk or swing yet (animation is still to come) and is a placeholder until approved.
 - The knight has a model. Your character now walks, crouches and fights as the armoured knight
   from the concept art instead of a grey box, with a separate sword in the right hand and the shield
   on the left arm. It is a placeholder until the final model is approved.
