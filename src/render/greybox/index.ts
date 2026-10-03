@@ -23,7 +23,16 @@ import type {
   Vec3,
 } from '@sim/index';
 import { renderIntensity } from '../light/index.ts';
-import { loadBrazier, loadTorch } from '../props/set-pieces';
+import { loadBrazier, loadChest, loadTorch } from '../props/set-pieces';
+import {
+  CRATE_URL,
+  IVY_TILE,
+  IVY_URL,
+  paintedMaterial,
+  PILLAR_TILE,
+  PILLAR_URL,
+  worldUvPartGeometry,
+} from '../props/surfaces';
 import {
   BoxGeometry,
   BufferGeometry,
@@ -114,6 +123,48 @@ function wedgeGeometry(w: number, h: number, l: number): BufferGeometry {
 }
 
 /** One part's geometry, placed in world space. Non-indexed, position + normal only, so all merge. */
+/** The layout parts that wear a painting (mw-va0): what it is, how many metres a tile covers, its colour until it loads. */
+const PAINTED = {
+  pillar: { url: PILLAR_URL, tile: PILLAR_TILE, fallback: 0x8c8a80 },
+  ivy: { url: IVY_URL, tile: IVY_TILE, fallback: 0x2f4a3a },
+} as const;
+export type PaintedKind = keyof typeof PAINTED;
+
+/** The world properties of a placement that decide a part's painting (the level material, a climb grade). */
+export interface PaintedProperties {
+  readonly material?: { readonly id: string } | undefined;
+  readonly climbable?: string | undefined;
+}
+
+/** Which painting a part wears: a kit pillar, or a piece whose material or climb grade is ivy. */
+export function paintedKind(
+  part: Pick<ScenePart, 'piece'>,
+  properties: PaintedProperties | undefined,
+): PaintedKind | undefined {
+  if (part.piece === 'pillar') return 'pillar';
+  if (properties?.material?.id === 'ivy' || properties?.climbable === 'ivy') return 'ivy';
+  return undefined;
+}
+
+const paintedMaterialCache = new Map<PaintedKind, MeshStandardMaterial>();
+
+/** The shared tiling material of a painted kind. */
+function paintedMaterials(kind: PaintedKind): MeshStandardMaterial {
+  let material = paintedMaterialCache.get(kind);
+  if (material === undefined) {
+    material = paintedMaterial(PAINTED[kind].url, PAINTED[kind].fallback, true);
+    paintedMaterialCache.set(kind, material);
+  }
+  return material;
+}
+
+/** The crate's painted face, on all six faces of its box (mw-va0); shared by every crate. */
+let crateMaterial: MeshStandardMaterial | undefined;
+function crateFaces(): MeshStandardMaterial {
+  crateMaterial ??= paintedMaterial(CRATE_URL, PURPOSE_COLOURS.interactive, false);
+  return crateMaterial;
+}
+
 function partGeometry(part: ScenePart): BufferGeometry {
   const { size, center, rotation } = part;
   let geometry: BufferGeometry;
@@ -253,12 +304,32 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
       const group = new Group();
       group.name = `scene:${layout.id}`;
       const byPurpose = new Map<KitPurpose, BufferGeometry[]>();
+      const paintedParts = new Map<PaintedKind, BufferGeometry[]>();
       for (const part of layout.parts) {
         // A breakable piece is drawn on its own (`piece`), so it can go when it breaks.
         if (layout.pieces[part.placement]?.breakable !== undefined) continue;
+        // The pillars and the ivy wear paintings (mw-va0), so they are drawn on their own, with UVs.
+        const kind = paintedKind(part, layout.pieces[part.placement]?.properties);
+        const geometry =
+          kind === undefined ? undefined : worldUvPartGeometry(part, PAINTED[kind].tile);
+        if (kind !== undefined && geometry !== undefined) {
+          const painted = paintedParts.get(kind) ?? [];
+          painted.push(geometry);
+          paintedParts.set(kind, painted);
+          continue;
+        }
         const list = byPurpose.get(part.purpose) ?? [];
         list.push(partGeometry(part));
         byPurpose.set(part.purpose, list);
+      }
+      for (const [kind, geometries] of paintedParts) {
+        const merged = mergeGeometries(geometries);
+        for (const geometry of geometries) geometry.dispose();
+        const mesh = new Mesh(merged, paintedMaterials(kind));
+        mesh.name = kind;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        group.add(mesh);
       }
       for (const [purpose, geometries] of byPurpose) {
         const merged = mergeGeometries(geometries);
@@ -305,7 +376,10 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
         mesh.rotation.x = Math.PI / 2;
         mesh.position.y = 0.3;
       } else {
-        mesh = new Mesh(new BoxGeometry(0.7, 0.7, 0.7), gridMaterial(PURPOSE_COLOURS.interactive));
+        mesh = new Mesh(
+          new BoxGeometry(0.7, 0.7, 0.7),
+          spawn.prop === 'crate' ? crateFaces() : gridMaterial(PURPOSE_COLOURS.interactive),
+        );
         mesh.position.y = 0.35;
       }
       mesh.name = spawn.prop ?? (spawn.container === undefined ? 'marker' : 'container');
@@ -314,6 +388,21 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
       group.add(mesh);
       // A torch or a brazier (mw-546): its model takes the bracket's place once loaded (the bracket
       // stays if it never loads). The flame and light are the light rig's, at this spawn point.
+      if (spawn.container !== undefined && spawn.prop === undefined) {
+        void loadChest().then(
+          (model) => {
+            mesh.visible = false;
+            const chest = new Mesh(model.geometry, model.material);
+            chest.name = 'chest';
+            chest.castShadow = true;
+            chest.receiveShadow = true;
+            group.add(chest);
+          },
+          (error: unknown) => {
+            console.warn('The chest model did not load; keeping the stand-in.', error);
+          },
+        );
+      }
       const isTorch = spawn.tags.includes('torch');
       if (spawn.prop === undefined && (isTorch || spawn.tags.includes('brazier'))) {
         const loaded = isTorch ? loadTorch() : loadBrazier(spawn.position.y);
@@ -345,7 +434,7 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
       group.name = `body:${spawn.id}`;
       const mesh = new Mesh(
         new BoxGeometry(size.x, size.y, size.z),
-        gridMaterial(PURPOSE_COLOURS.interactive),
+        spawn.prop === 'crate' ? crateFaces() : gridMaterial(PURPOSE_COLOURS.interactive),
       );
       mesh.name = spawn.prop ?? 'body';
       mesh.castShadow = true;

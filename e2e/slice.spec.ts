@@ -297,10 +297,11 @@ test('mw-e01.6 AC-3: loot the alcove chest, save, close the tab, load the save: 
   expect(later).toEqual([]);
 });
 
-// mw-546: the slice's set pieces wear their art. The two door fronts are painted on the leaves, and the
-// torch and brazier models replace the bracket stand-ins; each is requested and loads with no console
-// errors (the models and textures are placeholders, see assets/prompts/model).
-test('mw-546: the slice loads its door fronts, torch and brazier with no console errors', async ({
+// mw-546, mw-va0: the slice's set pieces wear their art. The two door fronts are painted on the leaves, the
+// torch, brazier and chest models replace their stand-ins, and the crate, pillars and ivy ledge wear
+// paintings; each is requested and loads with no console errors (the models and textures are
+// placeholders, see assets/prompts).
+test('mw-546, mw-va0: the slice loads its door fronts, models and surface paintings with no console errors', async ({
   page,
 }) => {
   test.setTimeout(60_000);
@@ -316,6 +317,10 @@ test('mw-546: the slice loads its door fronts, torch and brazier with no console
     'door-iron-01.webp',
     'model-prop-wall-torch-01.glb',
     'model-prop-brazier-floor-01.glb',
+    'model-prop-chest-wooden-01.glb',
+    'crate-01.webp',
+    'pillar-glenstone-01.webp',
+    'ivy-stone-01.webp',
   ];
   const loaded = assets.map((name) =>
     page.waitForResponse((response) => response.url().endsWith(name) && response.ok()),
