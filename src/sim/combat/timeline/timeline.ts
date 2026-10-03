@@ -35,9 +35,16 @@
 // target stands in reach, e04.12). A redirected move neither continues a chain nor takes a cancel
 // window's `move`, and pays its own stamina.
 //
+// Charges (mw-e04.13, charge.ts). A request that holds (a press of a bound button, or `requestMove`
+// with `hold`) for a move with a charged variant starts it holding: its windup stops on the charged
+// move's `holdTick` while the button stays down, ChargeReady fires once at full charge, and letting
+// go (or the auto-release) swings it on as the uncharged move or the charged move at its charge level.
+// An interrupt drops the hold with the move.
+//
 // Input. Entities with an ActionInput are driven by the tick's ActionFrame: a press (not a hold) of a
 // bound button requests its move, in BUTTON_ACTIONS order, so of two presses on one tick the later
-// in that order wins. Anything else (AI, scripts, tests) calls `requestMove`.
+// in that order wins. A held move is let go on the first tick no button bound to it is down.
+// Anything else (AI, scripts, tests) calls `requestMove`.
 //
 // Traversal. While the entity's character controller is in a traversal mode (mantle, hang, climb:
 // `handsBusy`), buffered requests are dropped with ActionRejected{reason:"traversal"} and `canActNow`
@@ -58,19 +65,24 @@ import type {
 import { CharacterController } from '../../character/system';
 import type { EntityId } from '../../core/component';
 import type { System, World } from '../../core/world';
-import { actionFrameOf, BUTTON_ACTIONS } from '../../input/action-frame';
+import { actionFrameOf, BUTTON_ACTIONS, type ActionFrame } from '../../input/action-frame';
 import { ActionRejected } from '../actions';
-import { spendStamina, StaminaComponent } from '../stamina';
+import { drainStamina, spendStamina, StaminaComponent } from '../stamina';
+import { chargeIndex, chargeLevel, type ChargeIndex } from './charge';
 import {
   ActionInputComponent,
   ActionTimelineComponent,
+  type ActionInput,
   type ActionTimeline,
+  type BufferedAction,
   type RunningAction,
 } from './components';
 import {
   ActionEnded,
   ActionPhaseChanged,
   ActionStarted,
+  ChargeReady,
+  ChargeReleased,
   type ActionEndReason,
   type ActionPhase,
 } from './events';
@@ -174,14 +186,42 @@ export function canActNow(
   return inWindow(lookup(moves, current.move), current.tick, into);
 }
 
+/** How a request is made. */
+export interface MoveRequestOptions {
+  /**
+   * Its button is held: a move with a charged variant starts charging, until `releaseCharge` (or the
+   * auto-release). Ignored for moves that cannot be charged. Defaults to false.
+   */
+  readonly hold?: boolean;
+}
+
 /**
  * Buffers a request for `move` (a move id, or a chain root) for `entity`, replacing any request
  * already buffered: the most recent input wins. The timeline tries it on its next run and for
  * ACTION_BUFFER_TICKS local ticks after. Throws when `entity` has no timeline.
  */
-export function requestMove(world: World<never>, entity: EntityId, move: string): void {
+export function requestMove(
+  world: World<never>,
+  entity: EntityId,
+  move: string,
+  options: MoveRequestOptions = {},
+): void {
   const timeline = timelineOf(world, entity);
-  store(world, entity, { ...timeline, buffer: Object.freeze({ move, age: 0 }) });
+  const buffer: BufferedAction = { move, age: 0, ...(options.hold === true && { hold: true }) };
+  store(world, entity, { ...timeline, buffer: Object.freeze(buffer) });
+}
+
+/**
+ * Lets go of `entity`'s held charge (mw-e04.13): its next timeline step releases it. Returns whether
+ * a charge was being held. Throws when `entity` has no timeline.
+ */
+export function releaseCharge(world: World<never>, entity: EntityId): boolean {
+  const timeline = timelineOf(world, entity);
+  const { current } = timeline;
+  if (current?.hold?.holding !== true) return false;
+  const hold = Object.freeze({ held: current.hold.held, holding: false });
+  store(world, entity, { ...timeline, current: Object.freeze({ ...current, hold }) });
+  return true;
 }
 
 /**
@@ -285,6 +325,7 @@ export type MoveRedirect = (
 
 interface StepRules {
   readonly moves: MoveTable;
+  readonly charges: ChargeIndex;
   readonly chainResetTicks: number;
   readonly redirect: MoveRedirect | undefined;
 }
@@ -294,8 +335,9 @@ function tryStart(
   rules: StepRules,
   entity: EntityId,
   step: { current: RunningAction | null; locked: boolean; previous: RuntimeMove | null },
-  requested: string,
+  request: BufferedAction,
 ): Attempt {
+  const requested = request.move;
   const { moves } = rules;
   const { current, locked, previous } = step;
   const running = current === null ? null : { at: current.tick, move: lookup(moves, current.move) };
@@ -328,7 +370,74 @@ function tryStart(
     phase: phaseAt(move, 0),
     moveTick: 0,
   });
-  return Object.freeze({ move: move.id, tick: 0, startedAt: tick });
+  const holds = request.hold === true && rules.charges.has(move.id);
+  return Object.freeze({
+    move: move.id,
+    tick: 0,
+    startedAt: tick,
+    ...(holds && { hold: Object.freeze({ held: 1, holding: true }) }),
+  });
+}
+
+/** The charged variant of `id` and its hold rules; throws when `id` cannot be charged. */
+function chargeOf(
+  rules: StepRules,
+  id: string,
+): { charged: RuntimeMove; hold: NonNullable<RuntimeMove['charge']> } {
+  const charged = rules.charges.get(id);
+  if (charged?.charge == null) throw new Error(`move "${id}" has no charged variant to hold`);
+  return { charged, hold: charged.charge };
+}
+
+/**
+ * One local tick of a held charge (see charge.ts): counts the hold, drains the charge's stamina,
+ * emits ChargeReady at full charge, and releases when let go or at the auto-release.
+ */
+function holdStep(
+  world: World<never>,
+  rules: StepRules,
+  entity: EntityId,
+  current: RunningAction & { readonly hold: NonNullable<RunningAction['hold']> },
+): RunningAction {
+  const base = lookup(rules.moves, current.move);
+  const { charged, hold: spec } = chargeOf(rules, base.id);
+  let { held } = current.hold;
+  let auto = false;
+  if (current.hold.holding) {
+    held += 1;
+    const extra = Math.max(0, charged.staminaCost - base.staminaCost);
+    const gained = chargeLevel(charged, held) - chargeLevel(charged, held - 1);
+    if (extra > 0 && gained > 0 && world.get(entity, StaminaComponent) !== undefined) {
+      drainStamina(world, entity, extra * gained);
+    }
+    if (held === spec.fullHoldTicks) {
+      world.events.emit(ChargeReady, {
+        tick: world.tick,
+        entity,
+        move: base.id,
+        charged: charged.id,
+        held,
+      });
+    }
+    if (held < spec.autoReleaseTicks) {
+      return Object.freeze({ ...current, hold: Object.freeze({ held, holding: true }) });
+    }
+    auto = true;
+  }
+  const charges = held >= spec.minHoldTicks;
+  const charge = charges ? chargeLevel(charged, held) : null;
+  const released = charges ? charged.id : base.id;
+  world.events.emit(ChargeReleased, {
+    tick: world.tick,
+    entity,
+    move: base.id,
+    released,
+    held,
+    charge,
+    auto,
+  });
+  const { tick, startedAt } = current;
+  return Object.freeze({ move: released, tick, startedAt, ...(charge !== null && { charge }) });
 }
 
 /** One local tick of `timeline` (see the file header). */
@@ -346,9 +455,15 @@ function localStep(
     const idle = chain.idle + 1;
     chain = idle >= chainResetTicks ? null : Object.freeze({ move: chain.move, idle });
   }
+  if (current?.hold !== undefined) {
+    current = holdStep(world, rules, entity, { ...current, hold: current.hold });
+  }
   if (current !== null) {
     const move = lookup(moves, current.move);
-    const tick = current.tick + 1;
+    // A held charge stops its windup on the charged move's hold tick.
+    const holding = current.hold !== undefined;
+    const stop = holding && current.tick >= chargeOf(rules, move.id).hold.holdTick;
+    const tick = stop ? current.tick : current.tick + 1;
     if (tick >= move.totalTicks) {
       emitEnded(world, entity, current, tick, 'completed');
       current = null;
@@ -382,7 +497,7 @@ function localStep(
   }
   if (buffer !== null) {
     const previous = chain === null ? null : lookup(moves, chain.move);
-    const attempt = tryStart(world, rules, entity, { current, locked, previous }, buffer.move);
+    const attempt = tryStart(world, rules, entity, { current, locked, previous }, buffer);
     if (typeof attempt === 'object') {
       current = attempt;
       buffer = null;
@@ -398,10 +513,15 @@ function localStep(
       });
       buffer = null;
     } else {
-      buffer = Object.freeze({ move: buffer.move, age: buffer.age + 1 });
+      buffer = Object.freeze({ ...buffer, age: buffer.age + 1 });
     }
   }
   return { ...timeline, current, lockTicks, buffer, chain };
+}
+
+/** Whether any button bound to `move` is down in `frame`. */
+function buttonDown(bindings: ActionInput['bindings'], frame: ActionFrame, move: string): boolean {
+  return BUTTON_ACTIONS.some((action) => bindings[action] === move && frame[action].held);
 }
 
 /** What the timeline needs: every move an entity may perform, by id (`compileMoves`). */
@@ -425,17 +545,24 @@ export function actionTimelineSystem<TInput>(options: ActionTimelineOptions): Sy
       `chain reset must be a whole number of ticks ≥ 0, got ${String(chainResetTicks)}`,
     );
   }
-  const rules: StepRules = { moves, chainResetTicks, redirect };
+  const charges = chargeIndex(moves);
+  const rules: StepRules = { moves, charges, chainResetTicks, redirect };
   return {
     name: 'action-timeline',
     run: ({ world, inputs }) => {
       const w: World<never> = world;
       const frame = actionFrameOf(inputs);
       if (frame !== undefined) {
-        w.query(ActionInputComponent, ActionTimelineComponent).forEach((entity, { bindings }) => {
+        w.query(ActionInputComponent, ActionTimelineComponent).forEach((entity, input, line) => {
+          const { bindings } = input;
+          const { current } = line;
+          if (current?.hold?.holding === true && !buttonDown(bindings, frame, current.move)) {
+            releaseCharge(w, entity);
+          }
           for (const action of BUTTON_ACTIONS) {
             const move = bindings[action];
-            if (move !== undefined && frame[action].pressed) requestMove(w, entity, move);
+            if (move === undefined || !frame[action].pressed) continue;
+            requestMove(w, entity, move, { hold: charges.has(move) });
           }
         });
       }

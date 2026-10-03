@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- The knight has a heavy attack you can charge (ability 1: 1, Y or D-pad Up). Tap it for a slow,
+  heavy overhead; hold it and the knight holds the blade high, building a charge that hits up to
+  1.8 times as hard and breaks far more poise, full after a second and swung on its own if you keep
+  holding. While it winds up and charges the knight shrugs off light blows, but a hard enough hit
+  staggers it and the charge is lost. A full charge costs a little more stamina than a plain heavy.
 - Loot in the vertical slice. The Rusted gallery key lies by the far pillar in the arena: take it
   and the iron exit door unlocks and opens with one press of Interact, straight from your keyring,
   so you can walk through and finish the slice. The key is a quest item and can't be dropped or

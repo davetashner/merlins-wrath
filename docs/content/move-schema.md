@@ -72,11 +72,12 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `flags.iframes.to` | integer ≥ 0 | required | Last tick (inclusive); at least from, and inside the move. |
 | `telegraphTick` | integer ≥ 0 | `0` | Tick the telegraph (TelegraphStarted, e04.20) fires; before the first active tick. |
 | `chainNext` | ref → move | — | Move the next attack press chains into (e.g. light 1 → light 2); absent = none. |
-| `charge` | object | — | A charged move: its damage and stamina cost are the full-charge values, lerped from `from` by hold time (e04.13). |
+| `charge` | object | — | A charged move: its damage and stamina cost are the full-charge values, lerped from `from` by hold time (e04.13). It has the same frames as `from`: the charge only holds the windup. |
 | `charge.from` | ref → move | required | The uncharged move this is the full charge of (e.g. the heavy). |
 | `charge.minHoldTicks` | integer ≥ 0 | required | Hold ticks below which the uncharged move is used instead. |
 | `charge.fullHoldTicks` | integer > 0 | required | Hold ticks at which the charge is full; values lerp from the uncharged move. |
 | `charge.autoReleaseTicks` | integer > 0 | required | Hold ticks at which it releases on its own. |
+| `charge.holdTick` | integer ≥ 0 | required | Move tick of `from`’s startup the windup holds on while the button stays down (the top of the swing); before the first active tick. Released, the swing plays on from there. |
 | `motion` | object | — | Root motion of a committed move, e.g. a roll’s 3.0 m (e04.8); absent = none. |
 | `motion.distance` | number ≥ 0 | required | Metres travelled, spread evenly over the active ticks; the character stands still (grounded) on the move’s other ticks. Walls stop it; ledges do not. |
 | `motion.direction` | `"input"` \| `"backward"` | required | "input": the direction held when the move was requested, relative to the camera or lock-on target (facing when none); "backward": away from the facing. |
