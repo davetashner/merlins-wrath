@@ -23,11 +23,15 @@ import {
   dummyReadout,
   installSandboxRules,
   prepareTestbedCombat,
+  attachCombatHud,
+  cameraForward,
+  horizontalHalfFov,
   readArrowTransform,
   readDummyTransform,
   readSandboxDummyTransform,
   startTestbedCombat,
   TRAINING_DUMMY,
+  type CombatHudGlue,
   type SandboxHud,
 } from '@game/combat/index';
 import {
@@ -91,7 +95,7 @@ import {
   playerFocus,
   propBodies,
 } from '@game/physics-objects';
-import { createSettingsStore } from '@game/settings/index';
+import { createSettingsStore, type SettingsStore } from '@game/settings/index';
 import { createUiGameBridge } from '@game/ui/index';
 import {
   createGameLight,
@@ -203,7 +207,15 @@ import { bindDebugCameraInput, DebugCamera } from '@tools/debug-camera/index';
 import { layer as tools } from '@tools/index';
 import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/frame-probe';
 import { formatVfxStats, parseVfxParam, VfxDemo } from '@tools/vfx-demo/index';
-import { InteractPrompt, KitPanel, LockMarker, openClassSelect, UiRoot } from '@ui/index';
+import {
+  CombatHud,
+  InteractPrompt,
+  KitPanel,
+  LockMarker,
+  openClassSelect,
+  reducedMotion,
+  UiRoot,
+} from '@ui/index';
 import {
   DEBUG_CAMERA_HINT,
   GAMEPAD_DISCONNECTED_HINT,
@@ -240,7 +252,7 @@ if (app) {
   // Player settings (mw-e31.1): per-browser, loaded first; in memory when the browser blocks storage.
   const settings = createSettingsStore({ storage: () => globalThis.localStorage });
   app.dataset['settingsStore'] = settings.persistent ? 'local' : 'memory';
-  startRenderer(app, startSaves(app));
+  startRenderer(app, startSaves(app), settings);
 }
 
 // Opens save storage (mw-e30.2). If the browser blocks IndexedDB the game runs on in-memory saves,
@@ -264,7 +276,11 @@ async function startSaves(root: HTMLElement): Promise<OpenedSaveStore> {
 
 // Renderer and physics bootstrap (mw-e00.19). Checks the minimum features first so a browser
 // without WebGL 2 or WebAssembly gets a readable screen instead of a blank page or uncaught error.
-function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void {
+function startRenderer(
+  root: HTMLElement,
+  saves: Promise<OpenedSaveStore>,
+  settings: SettingsStore,
+): void {
   const missing = missingFeatures(globalThis);
   if (missing.length > 0) {
     showUnsupported(root, missing);
@@ -502,6 +518,8 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
     // The combat sandbox's frame-data overlay and slow motion (mw-e04.9), in the sandbox scene or
     // with ?frames anywhere.
     let sandboxHud: SandboxHud | undefined;
+    // The player's health and stamina bars with damage feedback (mw-e04.10), once it is a combatant.
+    let combatHud: CombatHudGlue | undefined;
     let publishedDummy = '';
 
     // VFX (mw-e29.1): effects from content, simulated each frame after the sim and the camera have
@@ -701,6 +719,7 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
           if (readout !== publishedDummy) root.dataset['dummy'] = publishedDummy = readout;
         }
         sandboxHud?.frame();
+        combatHud?.frame(timeMs);
         lockMarker.update(
           lockMarkerModel(
             player?.lockTarget(),
@@ -904,6 +923,27 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
       );
       drawArrows();
       afterStep.push(drawArrows);
+      // The combat HUD (mw-e04.10): bars bottom-left, sized by the HUD scale setting, fed by the
+      // player's sim state and events; arcs point at off-screen attackers relative to the camera.
+      if (player !== undefined) {
+        const bars = new CombatHud({
+          scale: settings.get('accessibility.hudScale'),
+          reducedMotion: () => reducedMotion(ui.element, (q) => globalThis.matchMedia(q)),
+        });
+        ui.hud.append(bars.element);
+        settings.on('accessibility.hudScale', (scale) => {
+          bars.setScale(scale);
+        });
+        combatHud = attachCombatHud({
+          world,
+          player: player.entity,
+          hud: bars,
+          view: () => ({
+            forward: cameraForward(camera.quaternion),
+            halfFov: horizontalHalfFov(camera.fov, camera.aspect),
+          }),
+        });
+      }
       // World items (mw-e17.7): the scene's items lie in the world as physics objects; the player
       // takes one with Interact and drops (G) or throws (T) the selected one. Each gets a placeholder
       // box once it exists; the e2e reads the pack and the world items from #app[data-items], which

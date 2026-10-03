@@ -56,6 +56,19 @@ describe('schema', () => {
     for (const key of keys) expect(settingDef(key).label).not.toBe('');
   });
 
+  it('mw-e04.10: HUD size is an accessibility slider, 75–200 %, default 100 %, needing no migration', () => {
+    expect(settingDef('accessibility.hudScale')).toMatchObject({
+      kind: 'slider',
+      min: 0.75,
+      max: 2,
+      default: 1,
+      unit: 'percent',
+    });
+    // Settings stored before it existed pick up the default.
+    const stored = JSON.stringify({ version: SETTINGS_VERSION, settings: {} });
+    expect(loadSettings(stored, () => undefined).accessibility.hudScale).toBe(1);
+  });
+
   it('rejects an unknown key', () => {
     expect(() => settingDef('audio.nope' as SettingKey)).toThrow(RangeError);
   });

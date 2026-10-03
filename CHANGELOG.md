@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Health and stamina bars in the bottom-left corner. When you take a hit, the health you lost stays
+  visible in a lighter colour for half a second before it drains away. The health bar pulses when
+  you are below a quarter of your health, and the stamina bar flashes when you try something you
+  don't have the stamina for. A hit from off screen shows a red arc pointing towards where it came
+  from. A new HUD size option under Accessibility scales the bars from 75 % to 200 %.
 - The vertical slice has a level to play through, in grey box (`?scene=slice`). Open the wooden door
   out of the spawn room and walk a dim corridor, where ivy in a side alcove climbs to a torchlit
   ledge. The corridor opens into a pillared arena lit by torches and a brazier, with a loot alcove
