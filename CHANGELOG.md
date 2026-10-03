@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- Loot is now checked before the game ships: a chest that names an item or table that doesn't exist,
+  tables that roll each other in a loop, or a one-of-a-kind artifact promised in two places fails the
+  build instead of leaving you an empty chest or a second copy of a unique treasure.
 - Sound now travels like it does in a building. Noise fades with distance, a shut door muffles it,
   an iron door more than a wooden one, and stone walls and floors swallow most of it. Someone in the
   next room hears where it came through the doorway, not where you are. Guards don't listen for it

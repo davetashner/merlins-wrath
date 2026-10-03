@@ -7,12 +7,14 @@
 // the capability registry, without cycles or pure numeric upgrades (mw-e19.3), the capability ids
 // items grant, teach or learn (mw-e17.2) and the locks keys open (mw-e03.18), the class files against
 // the capability registry, the items and the proficiency tags items call for (mw-e19.4), and the
-// spawns the signal graphs a scene places bind (mw-e03.18).
+// spawns the signal graphs a scene places bind (mw-e03.18), and loot tables' references, nesting and
+// unique items across the world (mw-e18.2).
 
 import { checkAnimation } from './anim-checks.ts';
 import { checkCreatureAttacks } from './attack-checks.ts';
 import { checkConditions } from './condition-checks.ts';
 import { checkFacts } from './fact-checks.ts';
+import { checkLootTables } from './loot-checks.ts';
 import { checkSceneSignals } from './mechanism-checks.ts';
 import { checkPuzzles } from './puzzle-checks.ts';
 import type { Catalogue, ContentCheck, EntryOf } from './loader.ts';
@@ -116,6 +118,7 @@ export const contentChecks: readonly ContentCheck[] = [
   checkItems,
   checkClasses,
   checkSceneSignals,
+  checkLootTables,
 ];
 
 export type ContentTypes = typeof contentTypes;
