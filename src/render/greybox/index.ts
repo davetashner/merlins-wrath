@@ -80,7 +80,8 @@ const SHADOW_MAP_SIZE = 2048;
 /**
  * The glenstone painted over a purpose's flat colour (mw-7w0, the owner's quay probe). `floor` lays it on
  * upward-facing surfaces only and keeps the grid (the testbed, as the owner wired it); `all` blends it onto
- * every face by the surface's normal (triplanar) and drops the grid (the slice).
+ * every face, projected along the surface's dominant axis (one fetch, not a blend: the slice is boxes), and
+ * drops the grid.
  */
 export interface StoneSurface {
   readonly faces: 'floor' | 'all';
@@ -142,11 +143,9 @@ function gridMaterial(
               'diffuseColor.rgb = mix(diffuseColor.rgb, stoneColour, stoneFacing);',
             ]
           : [
-              'vec3 stoneW = pow(abs(normalize(vGridNormal)), vec3(4.0));',
-              'stoneW /= stoneW.x + stoneW.y + stoneW.z;',
-              'vec3 stoneColour = texture2D(vbStoneMap, vGridPos.zy / vbStoneTile).rgb * stoneW.x',
-              '  + texture2D(vbStoneMap, vGridPos.xz / vbStoneTile).rgb * stoneW.y',
-              '  + texture2D(vbStoneMap, vGridPos.xy / vbStoneTile).rgb * stoneW.z;',
+              'vec3 stoneA = abs(normalize(vGridNormal));',
+              'vec2 stoneUv = stoneA.y >= max(stoneA.x, stoneA.z) ? vGridPos.xz : (stoneA.x >= stoneA.z ? vGridPos.zy : vGridPos.xy);',
+              'vec3 stoneColour = texture2D(vbStoneMap, stoneUv / vbStoneTile).rgb;',
               'diffuseColor.rgb = mix(diffuseColor.rgb, stoneColour, vbStoneAmount);',
             ];
     const gridLines =

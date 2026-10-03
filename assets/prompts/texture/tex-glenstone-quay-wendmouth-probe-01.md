@@ -39,8 +39,11 @@ This remains a placeholder/style probe until owner approval and the `mw-e37.8` K
 
 - **Testbed** (`createGreyboxView`, `stoneFor`): the floor (`walkable` purpose) only, on upward-facing
   surfaces, one tile per 4 m, with the 1 m grid still drawn (the owner's original wiring).
-- **Slice**: the `walkable`, `blocking` and `climbable` parts, on every face (a triplanar blend by the
-  surface's normal), no grid. The pillars, the ivy ledge, the crate, the doors and the models keep their own art.
+- **Slice**: the `walkable`, `blocking` and `climbable` parts, on every face, projected along the
+  surface's dominant axis (one texture fetch, not a blend: the slice is built of axis-aligned boxes), no grid. The pillars, the ivy ledge, the crate, the doors and the models keep their own art.
 - The painting fades in once it has loaded (no black flash), and a failed load leaves the flat colours.
 - The runtime file is WebP (261 KB) rather than the 2 MB PNG, to keep the transfer small.
+- **Cost:** a three-fetch triplanar blend cut the slice from 24 to 14 fps under software GL (what CI renders
+  with) and failed three e2e shards on tick-paced thresholds; one fetch by dominant axis is within about 9% of
+  no texture (22 fps).
 
