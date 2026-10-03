@@ -6,8 +6,11 @@
 // frames.
 //
 // The meter's delayed-damage segment: when the value drops, a trail stays at the old value for
-// `trailHoldMs`, then drains towards the new value at `trailDrainPerSec` (fraction of max per second).
-// Under reduced motion it snaps.
+// `trailHoldMs`, then drains towards the new value at `trailDrainPerSec` (fraction of max per second),
+// or over a fixed `trailDrainMs` whatever its size (the combat HUD's chip, mw-e04.10). Under reduced
+// motion it snaps. A meter can also flash (`flash(nowMs)` sets `data-flash` for `flashMs`) and mark
+// itself low (`data-low` while the value is below `lowBelow` of max). Every timer runs on the `nowMs`
+// the caller passes, never on wall time, so tests drive it frame by frame.
 
 import { h } from './components/dom';
 
@@ -60,6 +63,12 @@ export interface MeterOptions {
   readonly kind?: 'health' | 'stamina';
   readonly trailHoldMs?: number;
   readonly trailDrainPerSec?: number;
+  /** Drain the whole trail in this many ms after the hold, whatever its size (overrides the rate). */
+  readonly trailDrainMs?: number;
+  /** How long `flash()` keeps the flash state (default 300 ms). */
+  readonly flashMs?: number;
+  /** Fraction of max below which the meter is marked low (`data-low`); omitted = never. */
+  readonly lowBelow?: number;
   /** Whether motion is reduced right now (see comfort.ts reducedMotion). */
   readonly reducedMotion?: () => boolean;
 }
@@ -78,15 +87,25 @@ export class Meter implements HudWidget<MeterModel> {
   readonly #cache = new WriteCache();
   readonly #holdMs: number;
   readonly #drain: number;
+  readonly #drainMs: number | undefined;
+  readonly #flashMs: number;
+  readonly #lowBelow: number;
   readonly #reduced: () => boolean;
   #shown: number | undefined;
   #trailFrac = 0;
+  #drainFrom = 0;
   #lastMs: number | undefined;
   #holdUntil = 0;
+  #flashUntil = -Infinity;
+  #flashing = false;
+  #low = false;
 
   constructor(options: MeterOptions) {
     this.#holdMs = options.trailHoldMs ?? 500;
     this.#drain = options.trailDrainPerSec ?? 0.6;
+    this.#drainMs = options.trailDrainMs;
+    this.#flashMs = options.flashMs ?? 300;
+    this.#lowBelow = options.lowBelow ?? 0;
     this.#reduced = options.reducedMotion ?? (() => false);
     this.#trail = h('span', { className: 'vb-meter-trail' });
     this.#fill = h('span', { className: 'vb-meter-fill' });
@@ -111,6 +130,26 @@ export class Meter implements HudWidget<MeterModel> {
     return this.#trailFrac;
   }
 
+  /** The delayed-damage segment's width as a fraction of max: trail minus fill (tests read it). */
+  get chip(): number {
+    return Math.max(0, this.#trailFrac - (this.#shown ?? 0));
+  }
+
+  /** Whether the flash state is on as of the last update. */
+  get flashing(): boolean {
+    return this.#flashing;
+  }
+
+  /** Whether the meter is marked low as of the last update. */
+  get low(): boolean {
+    return this.#low;
+  }
+
+  /** Starts (or restarts) the flash at `nowMs`; it shows from the next `update`. */
+  flash(nowMs: number): void {
+    this.#flashUntil = nowMs + this.#flashMs;
+  }
+
   update(model: MeterModel, nowMs: number): void {
     const f = fraction(model.value, model.max);
     // Drain time since the last frame, counting only what lies past the hold.
@@ -122,14 +161,29 @@ export class Meter implements HudWidget<MeterModel> {
     } else if (f < this.#shown) {
       // A drop: the trail holds where the bar was (or higher, if still draining) before draining.
       this.#trailFrac = Math.max(this.#trailFrac, this.#shown);
+      this.#drainFrom = this.#trailFrac;
       this.#holdUntil = nowMs + this.#holdMs;
     } else if (f > this.#trailFrac) {
       this.#trailFrac = f; // healing: no trail
     } else if (nowMs >= this.#holdUntil && this.#trailFrac > f) {
-      this.#trailFrac = Math.max(f, this.#trailFrac - (this.#drain * dt) / 1000);
+      if (this.#drainMs === undefined) {
+        this.#trailFrac = Math.max(f, this.#trailFrac - (this.#drain * dt) / 1000);
+      } else {
+        const t = this.#drainMs > 0 ? (nowMs - this.#holdUntil) / this.#drainMs : 1;
+        this.#trailFrac = t >= 1 ? f : Math.max(f, this.#drainFrom + (f - this.#drainFrom) * t);
+      }
     }
     this.#shown = f;
+    this.#flashing = nowMs < this.#flashUntil;
+    this.#low = f < this.#lowBelow;
     const c = this.#cache;
+    c.set('flash', String(this.#flashing), (v) => {
+      this.element.toggleAttribute('data-flash', v === 'true');
+    });
+    c.set('low', String(this.#low), (v) => {
+      this.element.toggleAttribute('data-low', v === 'true');
+    });
+    c.set('value', String(model.value), (v) => (this.element.dataset['value'] = v));
     c.set('fill', scaleText(f), (v) => (this.#fill.style.transform = v));
     c.set('trail', scaleText(this.#trailFrac), (v) => (this.#trail.style.transform = v));
     c.set('max', String(model.max), (v) => {

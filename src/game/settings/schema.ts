@@ -178,6 +178,15 @@ export const SETTINGS_SCHEMA = {
         default: 1,
         unit: 'times',
       }),
+      hudScale: slider({
+        label: 'HUD size',
+        help: 'Scales the health and stamina bars and the damage direction ring.',
+        min: 0.75,
+        max: 2,
+        step: 0.05,
+        default: 1,
+        unit: 'percent',
+      }),
       motion: choice({
         label: 'Motion',
         help: 'Reduce screen and menu motion, or follow your system setting.',

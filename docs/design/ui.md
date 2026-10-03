@@ -97,7 +97,17 @@ binding.frame(latestSnapshot, frame.timeMs);
 - Each widget writes the DOM only when a shown value changed (`WriteCache`). An idle HUD therefore
   costs zero DOM writes.
 - `Meter` draws the delayed-damage trail, which snaps under reduced motion.
-- Deriving the vitals from real sim components is owned by the HUD feature beads (e.g. mw-e04.10).
+- `Meter` options: `trailDrainMs` drains the trail over a fixed time whatever its size, `flash(nowMs)`
+  sets `data-flash` for `flashMs`, and `lowBelow` sets `data-low` below that fraction of max. Every
+  timer runs on the `nowMs` passed to `update`, so tests step it without wall time.
+- `CombatHud` (`src/ui/combat-hud.ts`, mw-e04.10) is the player's health and stamina bars, bottom-left.
+  Health has a chip that holds 500 ms and drains over the next 500 ms, and it pulses below 25 %.
+  Stamina flashes for 300 ms on `staminaRejected(nowMs)`. `damageFrom(bearing, nowMs)` shows an arc
+  on a ring around the screen centre (0° ahead, clockwise) that fades over 1.5 s. Bar sizes are inline
+  pixels from `combatHudLayout(scale)`, where scale is the `accessibility.hudScale` setting (75–200 %).
+  The glue is `attachCombatHud` in `src/game/combat/combat-hud.ts`. It reads the player's health and
+  stamina each frame and turns `ActionRejected{reason:"stamina"}` and `DamageApplied` into feedback.
+  Only hits from outside the camera's horizontal field of view get an arc.
 - `InteractPrompt` (`src/ui/interact-prompt.ts`) is the contextual Interact prompt (`[E] Pull lever`,
   greyed with a reason when unavailable, a bar for holds); see [interaction](interaction.md).
 - `LockMarker` (`src/ui/lock-marker.ts`, mw-e02.16) is the lock-on ring. Its model is the locked entity

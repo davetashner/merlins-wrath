@@ -40,6 +40,8 @@ export const UI_TOKENS: Readonly<Record<string, string>> = Object.freeze({
   'ui-color-stamina': PALETTE.leaf,
   'ui-color-bar-trail': PALETTE.hearth,
   'ui-color-lock': PALETTE.wayfinder,
+  'ui-color-flash': PALETTE.cream,
+  'ui-color-damage': PALETTE.ember,
   // Type (style bible §9.1; the fonts are self-hosted by mw-e37, system fallbacks until then).
   'ui-font-body': "'Alegreya Sans', 'Atkinson Hyperlegible', system-ui, sans-serif",
   'ui-font-heading': "'Cinzel', Georgia, serif",
@@ -235,6 +237,51 @@ ${tokens}
 .vb-meter-trail { background: var(--ui-color-bar-trail); }
 .vb-meter-fill { background: var(--ui-color-health); }
 .vb-meter[data-kind='stamina'] .vb-meter-fill { background: var(--ui-color-stamina); }
+.vb-combat-hud { position: absolute; inset: 0; pointer-events: none; }
+.vb-combat-bars { position: absolute; display: flex; flex-direction: column; }
+.vb-combat-bars .vb-meter {
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px var(--ui-color-hud-shadow);
+  overflow: visible;
+}
+.vb-combat-bars .vb-meter-trail, .vb-combat-bars .vb-meter-fill { border-radius: inherit; }
+.vb-meter[data-flash] {
+  box-shadow: 0 0 0 2px var(--ui-color-flash), 0 0 6px 2px var(--ui-color-warning);
+}
+.vb-meter[data-flash] .vb-meter-fill { background: var(--ui-color-flash); }
+.vb-meter[data-low] {
+  box-shadow: 0 0 0 2px var(--ui-color-warning);
+  animation: vb-low-pulse calc(1000ms * var(--ui-motion-scale)) ease-in-out infinite alternate;
+}
+.vb-ui[data-motion='reduce'] .vb-meter[data-low] { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .vb-ui:not([data-motion='full']) .vb-meter[data-low] { animation: none; }
+}
+@keyframes vb-low-pulse {
+  from { box-shadow: 0 0 0 2px var(--ui-color-warning); }
+  to { box-shadow: 0 0 0 2px var(--ui-color-warning), 0 0 10px 4px var(--ui-color-warning); }
+}
+.vb-damage-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.vb-damage-arc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+.vb-damage-arc::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 6px solid transparent;
+  border-top-color: var(--ui-color-damage);
+  filter: drop-shadow(0 0 2px var(--ui-color-hud-shadow));
+}
+.vb-damage-arc[hidden] { display: none; }
 .vb-lock-marker {
   position: absolute;
   left: 0;

@@ -4,6 +4,7 @@
 export const layer = 'ui' as const;
 
 export * from './class-select';
+export * from './combat-hud';
 export * from './comfort';
 export * from './components/controls';
 export * from './components/list';
