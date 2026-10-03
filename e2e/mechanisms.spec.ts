@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { holdKey, turnTo } from './helpers/player';
 
 // mw-e03.18 AC-7: the grey-box mechanism room (laid out like the slice's spawn room) against the
 // production build (Chromium). The knight starts facing the north doorway, shut by a portcullis, with
@@ -91,5 +92,41 @@ test('AC-7: the bot pulls the lever, walks through the raised portcullis and rea
     .poll(async () => (await data<PlayerData>(page, 'player')).position.z, { timeout: 20_000 })
     .toBeGreaterThan(WALL_FAR_FACE + 1.5);
   await page.keyboard.up('KeyW');
+  expect(problems).toEqual([]);
+});
+
+// mw-e01.19 AC-3: a hinged door opens while the player leans on it. The west closet's wooden door is
+// the slice's spawn-room door (same profile) and swings back, away from the hall, into the closet.
+// The bot walks west until the door stops it, presses Interact without stepping back, and the door
+// swings open past it instead of stopping blocked.
+test('AC-3: the player walks into the wooden door, presses Interact and it opens without stepping back', async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  const problems = collectProblems(page);
+  await play(page);
+  await page.getByTestId('game-canvas').click();
+  await expect.poll(() => page.evaluate(() => document.pointerLockElement !== null)).toBe(true);
+  // Across the hall to just short of the west doorway, then face west (yaw π/2 looks along −x).
+  await turnTo(page, { x: -4, z: 0 });
+  await holdKey(page, { code: 'KeyW', key: 'w' }, 40, 20);
+  await turnTo(page, { x: -4, z: 0 }, { tolerance: 0.05 });
+  await holdKey(page, { code: 'KeyW', key: 'w' }, 30, 20);
+  await turnTo(page, Math.PI / 2);
+  // Into the door until it stops the player, leaning on its front face (x = −4.97).
+  const leaning = await holdKey(page, { code: 'KeyW', key: 'w' }, 90, 10);
+  expect(leaning.position.x).toBeGreaterThan(-4.97);
+  expect(leaning.position.x).toBeLessThan(-4.5);
+  expect(Math.abs(leaning.position.z)).toBeLessThan(0.5);
+  await expect(page.getByTestId('interact-prompt')).toContainText('Open door', { timeout: 5_000 });
+  await page.keyboard.press('KeyE');
+  await expect
+    .poll(async () => (await data<Mechanisms>(page, 'mechanisms')).doors['west-door'], {
+      timeout: 10_000,
+    })
+    .toEqual({ status: 'open', openness: 1 });
+  // The player never had to step back.
+  const after = (await data<PlayerData>(page, 'player')).position;
+  expect(after.x).toBeLessThan(-4.5);
   expect(problems).toEqual([]);
 });

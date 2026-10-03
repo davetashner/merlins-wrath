@@ -240,6 +240,9 @@ check enforces this).
 
 ### Fixed
 
+- A hinged door you open while standing right up against it now swings open away from you,
+  instead of stopping as if something were in its way. A door still stops against anyone standing
+  where it swings.
 - A wall or other level piece that burns away (an ivy-covered wall, say) no longer leaves an
   invisible wall behind: you can walk and see through where it stood. The debug console's `tp` now
   moves physics props (crates) too, instead of leaving them where they were.

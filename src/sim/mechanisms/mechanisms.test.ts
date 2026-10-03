@@ -29,7 +29,13 @@ import type { MaterialPresets } from '../properties/materials';
 import { registerSceneComponents, ScenePieceComponent } from '../scene/loader';
 import type { SignalGraphDef } from '../signals/graph';
 import { addSignalGraph, installSignals, signalOutput, signalSystem } from '../signals/runtime';
-import { PlacementCentreComponent, PlacementComponent, placeEntity } from '../stimulus/placement';
+import { characterCentre } from '../character/stimuli';
+import {
+  PlacementCentreComponent,
+  PlacementComponent,
+  placeEntity,
+  setPlacementCentre,
+} from '../stimulus/placement';
 import { installStimuli, stimulusSystem } from '../stimulus/stimulus';
 import {
   DoorComponent,
@@ -447,6 +453,53 @@ describe('door motion', () => {
     expect(doorOf(world, gate).blockedBy).toBe(tall);
     expect(log.blocked.map((e) => e.by)).toEqual([first, tall]);
     expect(later).toBeGreaterThan(0);
+  });
+
+  /** A character as the controller places it: feet and capsule radius, centred on its capsule. */
+  function character(world: World<never>, feet: { x: number; y: number; z: number }): EntityId {
+    const capsule = { radius: 0.35, height: 1.8, crouchHeight: 1 };
+    const entity = body(world, feet, capsule.radius);
+    const { offset, radius } = characterCentre(capsule, false);
+    setPlacementCentre(world, entity, offset, radius);
+    return entity;
+  }
+
+  it('AC-1: a hinged door opens past a character pressed against the side it swings away from (mw-e01.19)', () => {
+    const { world, log } = setup();
+    // The slice's spawn door: yawed, swinging back, the player leaning on its front face.
+    const gate = door(world, WOODEN_DOOR, { yaw: 90, swing: 'back' });
+    const leaf = closedBox(doorOf(world, gate));
+    const player = character(world, { x: leaf.max.x + 0.35 + 0.01, y: 0, z: 0 });
+    openDoor(world, gate);
+    steps(world, 61);
+    expect(doorStatus(world, gate)).toBe('open');
+    expect(log.blocked).toEqual([]);
+    expect(log.states.map((e) => e.to)).toEqual(['opening', 'open']);
+    expect(world.has(player, PlacementCentreComponent)).toBe(true);
+  });
+
+  it('AC-2: a hinged door still stops against a character standing in its swing (mw-e01.19)', () => {
+    const { world, log } = setup();
+    const gate = door(world);
+    const player = character(world, { x: 0, y: 0, z: 0.6 });
+    openDoor(world, gate);
+    steps(world, 60);
+    const stopped = doorOf(world, gate);
+    expect(doorStatus(world, gate)).toBe('blocked');
+    expect(stopped.blockedBy).toBe(player);
+    expect(stopped.openness).toBeGreaterThan(0.2);
+    expect(stopped.openness).toBeLessThan(0.35);
+    // The event reports where the body is: the middle of its capsule.
+    expect(log.blocked).toEqual([
+      expect.objectContaining({ by: player, position: { x: 0, y: 0.9, z: 0.6 } }),
+    ]);
+    // Closing onto it from open stops too.
+    const swing = door(world, WOODEN_DOOR, { origin: { x: 5, y: 0, z: 0 }, state: 'open' });
+    const other = character(world, { x: 5, y: 0, z: 0.6 });
+    closeDoor(world, swing);
+    steps(world, 60);
+    expect(doorOf(world, swing).blockedBy).toBe(other);
+    expect(doorOf(world, swing).openness).toBeGreaterThan(0.6);
   });
 
   it('ignores level pieces, mechanisms and points in its way', () => {

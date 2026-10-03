@@ -51,6 +51,7 @@ import { ScenePieceComponent } from '../scene/loader';
 import { pressButton, setLever, SignalGraphComponent, signalReceived } from '../signals/runtime';
 import {
   boundingSphereOf,
+  PlacementCentreComponent,
   PlacementComponent,
   placeEntity,
   type Placement,
@@ -82,7 +83,7 @@ import {
   type DoorState,
   type LockRefusal,
 } from './events';
-import { closedBox, contactOpenness, leafBox, leafCentre } from './geometry';
+import { closedBox, contactOpenness, leafBox, leafCentre, type Obstacle } from './geometry';
 import type { Keyring } from './keys';
 
 /** Noise of a switch moving, dB 1 m away. */
@@ -646,15 +647,29 @@ function syncDoor(world: World<never>, entity: EntityId, rules: Rules): void {
   if (next !== door) world.set(entity, DoorComponent, next);
 }
 
-/** Bodies that can stand in a door's way: placed, with a size, and not level geometry or mechanisms. */
-function obstacles(world: World<never>, self: EntityId): { entity: EntityId; at: Placement }[] {
-  const found: { entity: EntityId; at: Placement }[] = [];
+/** Something in a door's way: what the leaf meets (`body`) and its bounding sphere (`at`). */
+interface InTheWay {
+  readonly entity: EntityId;
+  readonly at: Placement;
+  readonly body: Obstacle;
+}
+
+/**
+ * Bodies that can stand in a door's way: placed, with a size, and not level geometry or mechanisms.
+ * One placed at its feet with a centre above them (a character, mw-e04.34) is an upright body as tall
+ * as the top of its bounding sphere, so a leaf meets its capsule rather than that sphere (mw-e01.19).
+ */
+function obstacles(world: World<never>, self: EntityId): InTheWay[] {
+  const found: InTheWay[] = [];
   const pieces = world.isRegistered(ScenePieceComponent);
   world.query(PlacementComponent).forEach((entity, placed) => {
     if (entity === self || placed.radius <= 0) return;
     if (world.has(entity, DoorComponent) || world.has(entity, SwitchComponent)) return;
     if (pieces && world.has(entity, ScenePieceComponent)) return;
-    found.push({ entity, at: boundingSphereOf(world, entity, placed) });
+    const at = boundingSphereOf(world, entity, placed);
+    const centre = world.get(entity, PlacementCentreComponent);
+    const body = centre === undefined ? at : { ...placed, height: centre.offset.y + centre.radius };
+    found.push({ entity, at, body });
   });
   return found;
 }
@@ -669,7 +684,7 @@ function stepDoor(world: World<never>, entity: EntityId, door: Door): void {
   let stop = to;
   let by: { entity: EntityId; at: Vec3 } | undefined;
   for (const obstacle of obstacles(world, entity)) {
-    const contact = contactOpenness(door, from, to, obstacle.at);
+    const contact = contactOpenness(door, from, to, obstacle.body);
     if (contact === undefined) continue;
     // Every contact lies between `from` and `to`, so the first one always comes before `to`.
     if (door.target === 1 ? contact < stop : contact > stop) {
