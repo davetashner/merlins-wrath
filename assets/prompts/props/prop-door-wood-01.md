@@ -1,6 +1,6 @@
 # prop-door-wood-01: the spawn room's wooden door front (texture)
 
-**Status: candidates, awaiting owner approval** (mw-546 set pieces). Used as the painted front of the `wooden-door` leaf (variant b, which also shows a latch plate).
+**Status: candidates, awaiting owner approval** (mw-546 set pieces). Owner chose variant a (2026-10-03): used as the painted front of the `wooden-door` leaf (variant b, with a latch plate, was used first and replaced).
 
 | Field | Value |
 |---|---|

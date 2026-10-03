@@ -2,7 +2,7 @@
 // props, loaded once and shared by every torch and brazier. The flame and the light come from the
 // light rig at the spawn point (src/render/light), so the models carry no fire: a torch's head ends just
 // below the spawn point (the flame sits on it) and a brazier rim just above it (the flame burns in the
-// coals, so a brazier spawns at the height of its coals, not on the floor). A wall torch arrives with its
+// coals, so a brazier spawns at the height of its coals, not on the floor). A wall torch is placed with its
 // wall plate on −x; the greybox view turns it to face the room from whichever side wall it hangs on.
 //
 // Render-only (needs a GPU context to draw), so it is excluded from unit coverage and verified by the
@@ -13,9 +13,12 @@ import { placeGeometry, readGlbMesh, type GlbModel, type Placement } from '../mo
 export const TORCH_URL = '/assets/model/model-prop-wall-torch-01.glb';
 export const BRAZIER_URL = '/assets/model/model-prop-brazier-floor-01.glb';
 
-/** The torch: 0.7 m tall, its head 5 cm under the spawn point; the wall plate stays on −x. */
+/**
+ * The torch: 0.7 m tall, its head 5 cm under the spawn point. Tripo leaves its wall plate on −z; the
+ * 90° turn about y puts it on −x, where the greybox view expects it.
+ */
 export const TORCH_PLACEMENT: Placement = {
-  rotateDeg: [0, 0, 0],
+  rotateDeg: [0, 90, 0],
   length: 0.7,
   anchor: 'top',
   offset: [0, -0.05, 0],

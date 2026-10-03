@@ -1,6 +1,6 @@
 # prop-wall-torch-01: the slice's wall torch (unlit)
 
-**Status: candidates, awaiting owner approval** (mw-546 set pieces). Modelled (variant a).
+**Status: candidates, awaiting owner approval** (mw-546 set pieces). Owner chose variant b (2026-10-03); modelled from it. Variant a was modelled first and replaced.
 
 | Field | Value |
 |---|---|

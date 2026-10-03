@@ -1,6 +1,6 @@
 # prop-door-iron-01: the arena's locked iron door front (texture)
 
-**Status: candidates, awaiting owner approval** (mw-546 set pieces). Used as the painted front of the `iron-door` leaf (variant b, the heavier riveted grid).
+**Status: candidates, awaiting owner approval** (mw-546 set pieces). Owner chose variant a (2026-10-03): used as the painted front of the `iron-door` leaf (variant b, the greyer riveted grid, was used first and replaced).
 
 | Field | Value |
 |---|---|

@@ -1,6 +1,6 @@
 # prop-brazier-floor-01: the arena's floor brazier (unlit)
 
-**Status: candidates, awaiting owner approval** (mw-546 set pieces). Modelled (variant b: three chunky legs model cleanly).
+**Status: candidates, awaiting owner approval** (mw-546 set pieces). Owner chose variant b (2026-10-03); modelled from it (three chunky legs model cleanly).
 
 | Field | Value |
 |---|---|

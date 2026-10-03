@@ -4,16 +4,17 @@
 
 ## Generation
 
-- Source: `prop-wall-torch-01` variant a (`assets/prompts/props/prop-wall-torch-01.md`).
+- Source: `prop-wall-torch-01` variant **b**, the owner's choice (`assets/prompts/props/prop-wall-torch-01.md`).
+  Variant a was modelled first (job `e4284410-12f9-42c8-bb91-dff441f9a3ec`, 1,478 triangles) and replaced.
 - Tripo H3.1 through Higgsfield `generate_3d`, plan Plus, 2026-10-03, 9 credits. Job
-  `e4284410-12f9-42c8-bb91-dff441f9a3ec`; `face_limit` 1500, `texture` true, `pbr` false, `auto_size` true.
-- Raw result: 1,478 triangles, one material, 0.5 m tall, wall plate on −x, head up. No flame (the flame is
+  `7c4bff2b-6088-4c6b-a717-29b8311bb603`; `face_limit` 1500, `texture` true, `pbr` false, `auto_size` true.
+- Raw result: 1,422 triangles, one material, 0.5 m tall, wall plate on −z, head up. No flame (the flame is
   the light rig's sphere at the spawn point).
 
 ## Processing
 
-1. `gltf-transform optimize … --texture-size 512` → `public/assets/model/model-prop-wall-torch-01.glb` (29 KB).
-2. At load (`TORCH_PLACEMENT`, `src/render/props/set-pieces.ts`): scaled to 0.7 m, its head 5 cm under the
+1. `gltf-transform optimize … --texture-size 512` → `public/assets/model/model-prop-wall-torch-01.glb` (33 KB).
+2. At load (`TORCH_PLACEMENT`, `src/render/props/set-pieces.ts`): turned 90° about y (plate −z to −x), scaled to 0.7 m, its head 5 cm under the
    spawn point so the flame sits on it. `src/render/greybox/index.ts` swaps it in for the bracket stand-in on
    spawns tagged `torch` (the stand-in stays if it fails to load) and turns it 180° for a torch east of
    the room's centreline so the wall plate meets the wall.
