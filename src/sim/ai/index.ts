@@ -3,6 +3,7 @@
 export * from './alert';
 export * from './awareness';
 export * from './behaviour';
+export * from './combat';
 export * from './components';
 export * from './inputs';
 export * from './introspect';

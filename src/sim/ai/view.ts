@@ -19,6 +19,8 @@ export interface AiPorts {
   readonly hourOfDay: ((world: World<never>) => number) | undefined;
   /** How target memory decays and predicts (mw-e11.8). */
   readonly memory: MemoryTuning;
+  /** How many creatures may attack one target at once (mw-e11.13). */
+  readonly attackTokens: number;
 }
 
 /** One agent as inputs and primitives see it. */

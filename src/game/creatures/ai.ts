@@ -29,6 +29,7 @@
 
 import { STEALTH_ID, type GameContent } from '@content/index';
 import {
+  approach,
   BrainComponent,
   buildSoundGraph,
   compileBehaviours,
@@ -152,6 +153,12 @@ export class SceneNavigation implements AiNavigation {
 
   readonly distance = (world: World<never>, entity: EntityId, goal: Vec3): number =>
     (this.#navmesh?.distance ?? straightDistance)(world, entity, goal);
+
+  /** Navmesh approach (mw-e11.13: wait below a target out of reach); straight-line travel without. */
+  readonly approach = (world: World<never>, entity: EntityId, request: TravelRequest) =>
+    this.#navmesh === undefined
+      ? approach(straightLineNavigation, world, entity, request)
+      : this.#navmesh.approach(world, entity, request);
 }
 
 /** What `installCreatureAi` runs on (see the file header). */

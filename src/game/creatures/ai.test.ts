@@ -102,6 +102,8 @@ describe('creature AI glue (mw-e11.21, mw-e11.23)', () => {
     expect(navigation.distance(world, walker, { x: 3, y: 0, z: 3 })).toBe(5);
     const step = { goal: { x: 3, y: 0, z: 3 }, within: 0.1, speed: 1, dt: 1 };
     expect(navigation.travel(world, walker, step)).toBe('running');
+    // Rooted, a straight-line approach cannot get closer: out of reach (mw-e11.13).
+    expect(navigation.approach(world, walker, { ...step, speed: 0 })).toBe('unreachable');
     const testbed = { id: 'testbed', spawns: [] } as unknown as Parameters<
       SceneNavigation['load']
     >[2];
@@ -111,5 +113,6 @@ describe('creature AI glue (mw-e11.21, mw-e11.23)', () => {
     const arena = { x: 0, y: 0, z: 24 };
     expect(navigation.distance(world, walker, arena)).toBeGreaterThan(24);
     expect(navigation.travel(world, walker, { ...step, goal: arena })).toBe('running');
+    expect(navigation.approach(world, walker, { ...step, goal: arena })).toBe('running');
   });
 });

@@ -10,6 +10,12 @@
 // that slips out of sight is hunted where it was last seen heading; `lkp` aims at the same
 // prediction while there is a target memory, else at the blackboard's guess.
 //
+// Fighting (mw-e11.13, combat.ts): `strike` closes in and performs one attack, chosen among those
+// usable at the distance, under the target's attack-token budget, and waits as close as it can get
+// to a target it cannot reach; `circle` strafes around the target at a preferred range between
+// attacks; `share-target` tells allies where it believes the target is (as an event: who hears it
+// is the world's business, not the agent's).
+//
 // The compiler table is typed against the content vocabulary (BEHAVIOUR_PRIMITIVES), so a primitive
 // added to the schema without a runner here fails the typecheck.
 
@@ -17,6 +23,7 @@ import type {
   BehaviourPrimitive,
   BehaviourStepDef,
   BehaviourTarget,
+  RuntimeAttack,
   Tunable,
 } from '@content/index';
 import { AttackerComponent } from '../combat/attacks/components';
@@ -26,9 +33,17 @@ import { cos, sin } from '../math';
 import { PlacementComponent } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import { emitNoise } from '../noise/system';
-import { AiCuePlayed, RouteBlocked } from './components';
+import {
+  attackWeights,
+  believedTarget,
+  combatOf,
+  distance3,
+  hasAttackToken,
+  pickWeighted,
+} from './combat';
+import { AiCuePlayed, AiTargetShared, RouteBlocked, type Brain } from './components';
 import { recall } from './memory';
-import { face, type AiStatus } from './navigation';
+import { approach, face, type AiStatus } from './navigation';
 import {
   activeRoute,
   faceYaw,
@@ -75,7 +90,56 @@ const ENTRY = 4;
 /** A post's dwell: it holds its waypoint for good (a finite number, so saves keep it as JSON). */
 const HOLD = Number.MAX_SAFE_INTEGER;
 
+// `strike`'s step data: 1 once its attack has started; the attacks usable when it last rolled (a
+// bit per attack it knows, -1 before the first roll); what that roll chose (the index of an attack
+// it knows, or -1: close in for one out of reach).
+const STRUCK = 0;
+const ROLLED = 1;
+const CHOICE = 2;
+/** `strike` closes to this share of the reach of the attacks it closes in for. */
+const CLOSE_IN = 0.9;
+/** Metres past the closest an attack is used from that `strike` backs off to. */
+const BACK_OFF = 0.25;
+
+// `circle`'s step data: which way it strafes (1 or -1), then the spot it strafes to (x, y, z).
+const WAY = 0;
+const SPOT = 1;
+/** How far around its target one `circle` step strafes: an eighth of a turn. */
+const ARC = Math.PI / 4;
+const ARC_COS = cos(ARC);
+const ARC_SIN = sin(ARC);
+/** Metres within which `circle` counts its spot as reached. */
+const SPOT_RADIUS = 0.3;
+
 const ticks = (seconds: number, hz: number): number => Math.round(seconds * hz);
+
+/** The agent can reach its target after all: its out-of-reach clock stops. */
+function reachable(brain: Brain): void {
+  if (brain.combat === undefined) return;
+  brain.combat.unreachableSince = -1;
+  brain.combat.unreachableAt = null;
+}
+
+/** The attacks the agent knows, in data order (its attacker's list, else the whole table). */
+function knownAttacks(v: AgentView): RuntimeAttack[] | undefined {
+  const table = v.ports.attacks;
+  const attacker = getIf(v.world, v.entity, AttackerComponent);
+  if (table === undefined || attacker === undefined) return undefined;
+  const known: RuntimeAttack[] = [];
+  for (const id of attacker.attacks ?? [...table.keys()]) {
+    const attack = table.get(id);
+    if (attack !== undefined) known.push(attack);
+  }
+  return known;
+}
+
+/** A horizontal unit vector from `from` toward `to` (+x when they stand on one spot). */
+function heading(from: Vec3, to: Vec3): { x: number; z: number } {
+  const dx = to.x - from.x;
+  const dz = to.z - from.z;
+  const length = Math.sqrt(dx * dx + dz * dz);
+  return length > 1e-9 ? { x: dx / length, z: dz / length } : { x: 1, z: 0 };
+}
 
 /** The agent's own placement (the only one a primitive may read). */
 const selfAt = (v: AgentView) => getIf(v.world, v.entity, PlacementComponent);
@@ -85,6 +149,12 @@ function believed(v: AgentView): Vec3 | undefined {
   const source = v.brain.blackboard.targetSource;
   if (source === null) return undefined;
   return recall(v.brain.memory, source, v.tick, v.hz, v.ports.memory)?.predicted;
+}
+
+/** Turns the agent toward `point` from where it stands (its placement, which the caller checked). */
+function faceToward(v: AgentView, point: Vec3): void {
+  const here = selfAt(v) as Vec3;
+  face(v.world, v.entity, point.x - here.x, point.z - here.z);
 }
 
 /** Where `target` is for this agent now, or undefined when it has none or it is gone. */
@@ -322,6 +392,165 @@ const COMPILERS: Compilers = {
       },
     };
   },
+
+  strike: (step, num) => {
+    const giveUp = num(step.giveUpS);
+    return {
+      primitive: 'strike',
+      start(v) {
+        v.brain.stepData.push(0, -1, -1);
+      },
+      update(v) {
+        const { world, entity, brain } = v;
+        const data = brain.stepData;
+        if (at(data, STRUCK) === 1) {
+          if (currentAttack(world, entity) !== undefined) return 'running';
+          combatOf(brain).token = -1;
+          return 'success';
+        }
+        const target = brain.blackboard.target;
+        const goal = believedTarget(v);
+        const from = selfAt(v);
+        const known = knownAttacks(v);
+        if (target === null || goal === undefined || from === undefined || known === undefined) {
+          return 'failure';
+        }
+        // Sort its attacks by what the distance allows: usable now, out of reach, too close.
+        const distance = distance3(from, goal);
+        const usable: number[] = [];
+        const far: number[] = [];
+        const near: number[] = [];
+        let mask = 0;
+        known.forEach((attack, i) => {
+          const check = canStartAttack(world, entity, attack, { distance });
+          if (check.ok) {
+            usable.push(i);
+            mask += 2 ** i;
+          } else if (check.reason === 'too-far') far.push(i);
+          else if (check.reason === 'too-close') near.push(i);
+        });
+        if (at(data, ROLLED) !== mask) {
+          data[ROLLED] = mask;
+          const pool = [...usable, ...far].map((i) => at(known, i));
+          const weights = attackWeights(pool, brain.traits['aggression'] ?? 0.5);
+          let closeIn = 0;
+          for (let k = usable.length; k < weights.length; k++) closeIn += at(weights, k);
+          const pick = pickWeighted(
+            [...weights.slice(0, usable.length), closeIn],
+            world.random('ai').float(),
+          );
+          data[CHOICE] = pick >= 0 && pick < usable.length ? at(usable, pick) : -1;
+        }
+        if (usable.length > 0) reachable(brain);
+        const choice = at(data, CHOICE);
+        if (choice >= 0) {
+          if (!hasAttackToken(v)) return 'failure';
+          const dx = goal.x - from.x;
+          const dz = goal.z - from.z;
+          const aim = dx === 0 && dz === 0 ? { x: 0, y: 0, z: 1 } : { x: dx, y: 0, z: dz };
+          startAttack(world, entity, at(known, choice), aim);
+          combatOf(brain).token = target;
+          data[STRUCK] = 1;
+          return 'running';
+        }
+        const move = { speed: brain.gaits[step.gait], dt: 1 / v.hz };
+        if (far.length > 0) {
+          let reach = Infinity;
+          for (const i of far) reach = Math.min(reach, at(known, i).rangeMax);
+          const status = approach(v.ports.navigation, world, entity, {
+            goal,
+            within: reach * CLOSE_IN,
+            ...move,
+          });
+          if (status === 'failure') return 'failure';
+          const here = selfAt(v) as Vec3; // travel moves it, never removes it
+          if (status === 'running' || (status === 'success' && distance3(here, goal) <= reach)) {
+            reachable(brain);
+            return 'running';
+          }
+          // As close as it can get: it waits there, facing its target, until it gives up.
+          faceToward(v, goal);
+          const combat = combatOf(brain);
+          if (combat.unreachableSince < 0) {
+            combat.unreachableSince = v.tick;
+            combat.unreachableAt = { x: goal.x, y: goal.y, z: goal.z };
+          }
+          return v.tick - combat.unreachableSince >= ticks(giveUp(v), v.hz) ? 'failure' : 'running';
+        }
+        if (near.length > 0) {
+          let least = 0;
+          for (const i of near) least = Math.max(least, at(known, i).rangeMin);
+          const away = heading(goal, from);
+          const back = least + BACK_OFF - distance;
+          const status = v.ports.navigation.travel(world, entity, {
+            goal: { x: from.x + away.x * back, y: from.y, z: from.z + away.z * back },
+            within: BACK_OFF / 2,
+            ...move,
+          });
+          faceToward(v, goal);
+          return status === 'failure' ? 'failure' : 'running';
+        }
+        return 'failure'; // nothing ready: every attack cooling down, or barred by its health
+      },
+    };
+  },
+
+  circle: (step, num) => {
+    const range = num(step.range);
+    const seconds = num(step.seconds);
+    return {
+      primitive: 'circle',
+      start(v) {
+        const data = v.brain.stepData;
+        const way = v.world.random('ai').float() < 0.5 ? -1 : 1;
+        data[WAY] = way;
+        const target = believedTarget(v);
+        const from = selfAt(v);
+        if (target === undefined || from === undefined) return;
+        // An eighth of a turn around the target from where it stands, at its preferred range.
+        const out = heading(target, from);
+        const x = out.x * ARC_COS - way * out.z * ARC_SIN;
+        const z = way * out.x * ARC_SIN + out.z * ARC_COS;
+        const r = range(v);
+        data.push(target.x + x * r, from.y, target.z + z * r);
+      },
+      update(v) {
+        const data = v.brain.stepData;
+        const target = believedTarget(v);
+        if (target === undefined || data.length <= SPOT || selfAt(v) === undefined) {
+          return 'failure';
+        }
+        if (elapsed(v) >= ticks(seconds(v), v.hz)) return 'success';
+        const status = v.ports.navigation.travel(v.world, v.entity, {
+          goal: { x: at(data, SPOT), y: at(data, SPOT + 1), z: at(data, SPOT + 2) },
+          within: SPOT_RADIUS,
+          speed: v.brain.gaits[step.gait],
+          dt: 1 / v.hz,
+        });
+        faceToward(v, target);
+        return status;
+      },
+    };
+  },
+
+  'share-target': () => ({
+    primitive: 'share-target',
+    update(v) {
+      const source = v.brain.blackboard.targetSource;
+      const memory =
+        source === null ? undefined : recall(v.brain.memory, source, v.tick, v.hz, v.ports.memory);
+      if (memory !== undefined) {
+        v.world.events.emit(AiTargetShared, {
+          tick: v.tick,
+          entity: v.entity,
+          source: memory.source,
+          position: memory.predicted,
+          confidence: memory.confidence,
+        });
+      }
+      return 'success';
+    },
+  }),
 
   'forget-stimulus': () => ({
     primitive: 'forget-stimulus',

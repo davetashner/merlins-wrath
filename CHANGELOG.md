@@ -13,6 +13,12 @@ check enforces this).
 
 ### Added
 
+- Enemies fight like a team instead of a mob. In a fight, at most two take a swing at you at a time
+  while the rest circle at their own striking distance, waiting their turn. Each picks a blow that
+  can actually reach you from where it stands, a bold one favouring its heavy swings, and calls out
+  where you are so the others keep up. Stagger one and it loses its swing and rethinks once it
+  recovers. Climb somewhere it cannot follow and it waits below, then jeers at you instead of
+  pacing back and forth.
 - Creatures come alive in the grey-box levels. They now watch, listen and think while you play:
   a guard sees you by the light you stand in and the walls in the way, hears noises muffled by
   shut doors and stone, and walks its patrol through doorways and around pillars on the level's

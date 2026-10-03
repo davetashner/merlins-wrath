@@ -13,6 +13,7 @@ import { defineEvent } from '../core/events';
 import type { PerceptSource } from '../perception/percept';
 import type { Vec3 } from '../stimulus/shapes';
 import type { AwarenessRecord } from './awareness';
+import type { CombatMemory } from './combat';
 import type { MemoryRecord } from './memory';
 
 /** What an agent believes about the world (typed keys; perception writes them). */
@@ -96,6 +97,11 @@ export interface Brain {
   postAlertRate: number;
   /** Which way it walks a ping-pong route: 1 forward, -1 back (mw-e11.9; kept across alerts). */
   routeDir: number;
+  /**
+   * What it remembers about its fight (mw-e11.13: the attack token it holds, since when its target
+   * is out of reach); absent until it first fights, and in brains saved before it existed.
+   */
+  combat?: CombatMemory;
 }
 
 /** The brain component. */
@@ -123,6 +129,24 @@ export interface AiCue {
 
 /** An agent played a cue. */
 export const AiCuePlayed = defineEvent<AiCue>('aiCuePlayed');
+
+/** A `share-target` step: where an agent believes its target is, for allies near it. */
+export interface AiTargetShare {
+  readonly tick: number;
+  readonly entity: EntityId;
+  /** Its target memory's source (opaque: never an entity id). */
+  readonly source: PerceptSource;
+  /** Where it believes the target is (its memory's prediction). */
+  readonly position: Vec3;
+  /** How sure it is, 0–1. */
+  readonly confidence: number;
+}
+
+/**
+ * An agent told its allies where its target is (mw-e11.13). Who hears it is the world's business
+ * (`installTargetSharing`, src/sim/creatures): agent code knows nothing of where its allies are.
+ */
+export const AiTargetShared = defineEvent<AiTargetShare>('aiTargetShared');
 
 /** A patrol waypoint the agent could not reach (mw-e11.9): it skipped to the next one. */
 export interface RouteBlock {

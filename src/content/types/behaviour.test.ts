@@ -294,7 +294,7 @@ describe('behaviour schema', () => {
     });
   });
 
-  it('the fixture guard behaviour loads with the fixtures and names a real attack', () => {
+  it('the fixture guard behaviour loads with the fixtures and fights with its creature’s attacks', () => {
     const content = loadFixtureContent();
     const guard = content.get('behaviour', 'fixture-guard');
     expect(Object.keys(guard.states)).toEqual([
@@ -305,11 +305,18 @@ describe('behaviour schema', () => {
       'alerted',
       'combat',
     ]);
-    const strike = guard.activities['engage']?.steps[2];
-    expect(strike).toEqual({
-      do: 'attack',
-      attack: new ContentRef('attack', 'fixture-guard-strike'),
+    expect(guard.states.combat?.activities).toEqual(['press', 'circle', 'taunt']);
+    // mw-e11.13: `strike` picks among the creature's own attacks (its fixture-guard-strike).
+    expect(guard.activities['press']?.steps[2]).toEqual({ do: 'strike', gait: 'run', giveUpS: 8 });
+    expect(guard.activities['circle']?.steps[1]).toEqual({
+      do: 'circle',
+      range: { tuning: 'preferredRange' },
+      seconds: 2,
+      gait: 'walk',
     });
+    expect(content.get('creature', 'fixture-guard').attacks).toEqual([
+      new ContentRef('attack', 'fixture-guard-strike'),
+    ]);
     expect(content.get('creature', 'fixture-guard').behaviour.profile).toBe(guard.id);
   });
 });
