@@ -39,6 +39,8 @@ import {
   wrapYaw,
   type PlayerOptions,
 } from './player';
+import { placeEntity, PlacementComponent } from '../stimulus/placement';
+import { LockOnComponent, NO_LOCK } from '../targeting/components';
 
 const TUNING: Frozen<ControllerTuning> = {
   capsule: { radius: 0.35, height: 1.8, crouchHeight: 1.0 },
@@ -181,6 +183,34 @@ describe('player spawn (mw-e02.23)', () => {
     });
     expect(yaw()).toBe(Math.PI);
     expect(pitch()).toBe(0);
+  });
+
+  it('a fall reset also clears placement, the view anchor and the lock-on', () => {
+    const resetY = -PLAYER_FALL_RESET_MARGIN;
+    const { world, player, state } = setup(undefined, { fallResetY: resetY });
+    world.register(PlacementComponent, LockOnComponent);
+    placeEntity(world, player, { x: 40, y: resetY - 1, z: 30 }, 0.35);
+    world.add(player, ViewAnchor, { point: { x: 1, y: 1, z: 1 } });
+    world.add(player, LockOnComponent, { target: null, unseenTicks: 3, armed: false });
+    world.set(player, CharacterController, {
+      ...state(),
+      position: { x: 40, y: resetY - 1, z: 30 },
+    });
+    world.step([IDLE_ACTION_FRAME]);
+    expect(world.has(player, ViewAnchor)).toBe(false);
+    expect(world.get(player, LockOnComponent)).toBe(NO_LOCK);
+    expect(world.get(player, PlacementComponent)).toMatchObject({ x: 0, y: SKIN, z: -2 });
+  });
+
+  it('a fall reset leaves an entity with no controller state alone', () => {
+    const { world, player } = setup(undefined, { fallResetY: -PLAYER_FALL_RESET_MARGIN });
+    world.remove(player, CharacterController);
+    world.step([IDLE_ACTION_FRAME]);
+    expect(world.has(player, CharacterController)).toBe(false);
+  });
+
+  it('rejects a non-finite fall reset height', () => {
+    expect(() => setup(undefined, { fallResetY: Number.NaN })).toThrow(RangeError);
   });
 });
 
