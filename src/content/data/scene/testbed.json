@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "testbed",
   "name": "Greybox testbed",
-  "description": "The default scene: a room with an ivy-covered climbing wall up to a ledge and a wooden target board on the back wall for arrows, a narrow corridor with pillars and a hazard strip, and an arena with pillars, a ramp, platforms and three training dummies to lock on to.",
+  "description": "The default scene: a room with an ivy-covered climbing wall up to a ledge, a wooden target board on the back wall for arrows and a locked closet in the east wall whose key lies nearby, a narrow corridor with pillars and a hazard strip, and an arena with pillars, a ramp, platforms and three training dummies to lock on to.",
   "grid": 1,
   "camera": {
     "position": [-14, 20, -14],
@@ -27,9 +27,31 @@
     },
     {
       "piece": "wall",
-      "at": [5, 0, 0],
+      "at": [5, 0, -1],
       "yaw": 90,
-      "scale": [5, 1, 1]
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [5, 0, 4],
+      "yaw": 90
+    },
+    {
+      "piece": "floor",
+      "at": [6, 0, 4]
+    },
+    {
+      "piece": "wall",
+      "at": [6, 0, 3]
+    },
+    {
+      "piece": "wall",
+      "at": [6, 0, 5]
+    },
+    {
+      "piece": "wall",
+      "at": [7, 0, 4],
+      "yaw": 90
     },
     {
       "piece": "wall",
@@ -235,6 +257,20 @@
       "id": "testbed-draught",
       "at": [1, 0, -1],
       "item": { "id": "healing-draught" }
+    },
+    {
+      "id": "closet-door",
+      "at": [5, 0, 4],
+      "yaw": 90,
+      "door": {
+        "profile": "wooden-door",
+        "lock": "testbed-closet"
+      }
+    },
+    {
+      "id": "closet-key",
+      "at": [3.5, 0, 3],
+      "item": { "id": "testbed-closet-key" }
     },
     {
       "id": "arena-plank",

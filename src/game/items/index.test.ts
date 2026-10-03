@@ -41,7 +41,9 @@ function testbed(withPlayer = true) {
   const loaded = loader.load('testbed');
   const items = prepareWorldItems(content);
   const player = withPlayer ? world.spawn() : undefined;
-  const placed = startWorldItems(world, items, loaded.spawns, player);
+  // The draught alone: the closet key (mw-e17.5, tests/integration/keyring.test.ts) is left out.
+  const spawns = loaded.spawns.filter(({ spawn }) => spawn.id !== 'closet-key');
+  const placed = startWorldItems(world, items, spawns, player);
   return { content, world, sync, items, player, placed, loaded };
 }
 

@@ -3,9 +3,12 @@
 // through a channel other systems already use, never a pairing of object types:
 //
 // - Interact (`interacted`): open or close a manual door; unlock it with a key from the actor's
-//   keyring (the `keys` finder reads the inventory, mw-e17.3) or pick it (the `pick-lock`
+//   keyring (the `keys` keyring reads the inventory, mw-e17.3; keys.ts) or pick it (the `pick-lock`
 //   affordance is gated on the lockpick capability; the `pick` hook is where the mw-e10 minigame
 //   plugs in), and it opens straight away; pull a lever, press a button, turn a crank or wheel.
+//   Unlock is gated on the keyring (mw-e17.5): without a fitting key (or on a sealed lock) it is
+//   offered greyed with the lock's hint, so Interact moves on to Pick lock or does nothing. A key
+//   that opens its lock fires `lock.opened` with the key, and a single-use key is used up.
 // - Signals (`signalReceived`): a `door` or `mechanism` receiver bound to a door opens it while its
 //   input is on and closes it when it goes off (a lever, a pressure plate, a shot bell, mw-e05.13);
 //   one bound to a switch sets it. A switch drives every lever and button node bound to it.
@@ -32,7 +35,13 @@ import type { System, World } from '../core/world';
 import { breakableBroken } from '../breakables/events';
 import { fireBurntOut } from '../elements/fire';
 import { ElementFieldComponent, elementFieldOf } from '../field/install';
-import { InteractableComponent, interacted, interactableOf } from '../interaction/system';
+import {
+  addAffordanceGate,
+  InteractableComponent,
+  interacted,
+  interactableOf,
+  type AffordanceGate,
+} from '../interaction/system';
 import type { AffordanceSpec } from '../interaction/affordance';
 import { noiseEmitted } from '../noise/events';
 import { bodyMaterialOf, PhysicsColliderComponent, rigidBodiesOf } from '../physics/objects';
@@ -65,6 +74,7 @@ import {
 import {
   doorBlocked,
   doorStateChanged,
+  lockOpened,
   lockRefused,
   lockUnlocked,
   mechanismJammed,
@@ -73,15 +83,13 @@ import {
   type LockRefusal,
 } from './events';
 import { closedBox, contactOpenness, leafBox, leafCentre } from './geometry';
+import type { Keyring } from './keys';
 
 /** Noise of a switch moving, dB 1 m away. */
 export const SWITCH_LOUDNESS = 45;
 
 /** Lockpicks' capability (ADR-0004): what the Pick lock affordance asks of the actor. */
 export const LOCKPICK_CAPABILITY = 'tool.lockpick';
-
-/** The key item in `actor`'s keyring that opens `lock`, or undefined (see keys.ts). */
-export type KeyFinder = (world: World<never>, actor: EntityId, lock: Lock) => string | undefined;
 
 /** Whether `actor` picks `lock` (the mw-e10 minigame plugs in here). */
 export type LockPick = (world: World<never>, actor: EntityId, lock: Lock) => boolean;
@@ -91,8 +99,8 @@ export interface MechanismsOptions {
   readonly colliders?: StaticColliderSink;
   /** Where closed doors' light occluders go: the light field's statics. None: no light occlusion. */
   readonly occluders?: StaticColliderSink;
-  /** Finds an actor's key for a lock; none: keys open nothing. */
-  readonly keys?: KeyFinder;
+  /** Actors' keys for locks (keys.ts); none: keys open nothing. */
+  readonly keys?: Keyring;
   /** Decides a pick attempt; none: a pickable lock always yields to someone with lockpicks. */
   readonly pick?: LockPick;
 }
@@ -513,18 +521,45 @@ export function setSwitch(
 interface Rules {
   readonly colliders: StaticColliderSink | undefined;
   readonly occluders: StaticColliderSink | undefined;
-  readonly keys: KeyFinder | undefined;
+  readonly keys: Keyring | undefined;
   readonly pick: LockPick | undefined;
 }
 
-/** Tries `actor`'s keyring on `entity`'s lock. */
+/**
+ * Tries `actor`'s keyring on `entity`'s lock: the first fitting key unlocks it (`lockUnlocked`, then
+ * `lock.opened`), and a single-use one is used up.
+ */
 function tryKey(world: World<never>, entity: EntityId, actor: EntityId, rules: Rules): boolean {
   const lock = lockOf(world, entity);
   if (!lock?.locked) return lock !== undefined;
   if (lock.sealed) return refuse(world, entity, lock, 'sealed', actor);
-  const key = rules.keys?.(world, actor, lock);
-  if (key === undefined) return refuse(world, entity, lock, 'no-key', actor);
-  return unlockDoor(world, entity, { by: 'key', source: actor, key });
+  const match = rules.keys?.find(world, actor, lock);
+  if (match === undefined) return refuse(world, entity, lock, 'no-key', actor);
+  unlockDoor(world, entity, { by: 'key', source: actor, key: match.key });
+  const consumed = known(rules.keys).use(world, actor, match);
+  world.events.emit(lockOpened, {
+    tick: world.tick,
+    entity,
+    lock: lock.lock,
+    keyId: match.key,
+    actor,
+    consumed,
+  });
+  return true;
+}
+
+/**
+ * The keyring's gate on Unlock: a locked door's Unlock is unavailable, with the lock's hint as the
+ * reason, while the lock is sealed or the actor holds no key that fits it.
+ */
+function keyGate(rules: Rules): AffordanceGate {
+  return (world, actor, target, affordance) => {
+    if (affordance.verb !== 'unlock') return undefined;
+    const lock = lockOf(world, target);
+    if (!lock?.locked) return undefined;
+    if (!lock.sealed && rules.keys?.find(world, actor, lock) !== undefined) return undefined;
+    return lock.hint;
+  };
 }
 
 /** `actor` tries to pick `entity`'s lock. */
@@ -730,6 +765,7 @@ export function installMechanisms<TInput>(
     }
   });
   const offs = [
+    addAffordanceGate(world, keyGate(rules)),
     world.events.on(interacted, ({ actor, target, verb }) => {
       if (w.has(target, SwitchComponent)) {
         useSwitch(w, target, actor);

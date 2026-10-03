@@ -1,0 +1,14 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "testbed-closet-key",
+  "category": "key",
+  "notes": "A plain iron key lying on the grey-box testbed's floor near the east closet (mw-e17.5): take it and Interact on the closet door to open it straight from the keyring. Reusable, so it stays on the ring.",
+  "icon": "icon-item-iron-key-01",
+  "value": 0,
+  "worldProperties": {
+    "material": "iron"
+  },
+  "key": {
+    "opens": ["testbed-closet"]
+  }
+}

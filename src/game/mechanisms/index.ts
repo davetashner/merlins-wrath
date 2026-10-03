@@ -21,7 +21,7 @@ import {
   installMechanisms,
   installSignals,
   InventoryRules,
-  keyringFinder,
+  keyring,
   leafPose,
   SceneSpawnComponent,
   SignalGraphComponent,
@@ -109,7 +109,7 @@ export function startMechanisms<T>(
   installMechanisms(world, {
     colliders: options.colliders,
     occluders: options.occluders,
-    keys: keyringFinder(new InventoryRules(content.all('item'))),
+    keys: keyring(new InventoryRules(content.all('item'))),
   });
   return addSceneMechanisms(world, loaded, {
     doors: doorProfiles(content),

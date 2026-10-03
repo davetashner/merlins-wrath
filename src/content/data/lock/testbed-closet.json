@@ -1,0 +1,9 @@
+{
+  "$schema": "../lock.schema.json",
+  "id": "testbed-closet",
+  "name": "Testbed closet lock",
+  "notes": "The locked wooden door into the grey-box testbed's east closet (mw-e17.5): the testbed closet key lying on the floor nearby opens it from the keyring, with no menu. Without the key the Unlock prompt is greyed with the hint. A tier-1 latch a thief could pick at pick tier 1 (the minigame is mw-e10).",
+  "tier": 1,
+  "pickTier": 1,
+  "hint": "Locked. The key can't be far."
+}

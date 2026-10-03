@@ -11,8 +11,10 @@
 //    early, losing focus or losing the affordance cancels it and nothing fires.
 //
 // Owning systems (doors, containers, carrying, hiding, talking) subscribe to `interacted` and act
-// through properties and the stimulus API; this system never knows what an affordance does. The UI
-// reads `interactionPrompt` (text, availability, reason, hold progress) and adds the binding glyph.
+// through properties and the stimulus API; this system never knows what an affordance does. An owning
+// system can also gate its affordances on world state the actor's kit doesn't carry (`addAffordanceGate`:
+// a locked door's Unlock needs a fitting key on the keyring, mw-e17.5). The UI reads
+// `interactionPrompt` (text, availability, reason, hold progress) and adds the binding glyph.
 //
 // Candidates are entities with a placement (`spatial.placement`) that have an `Interactable`, or a
 // property that implies an affordance (affordance.ts), and are not `hidden`. Setup: register the
@@ -162,9 +164,63 @@ export function affordancesOf(world: World<never>, entity: EntityId): readonly A
 
 const NO_KIT: InteractorKit = Object.freeze({ capabilities: [], items: [] });
 
-/** Index of the first affordance `kit` can use, or −1. */
-function primaryIndex(affordances: readonly Affordance[], kit: InteractorKit): number {
-  return affordances.findIndex((affordance) => unavailableReason(kit, affordance) === undefined);
+/**
+ * A rule an owning system adds to the Interact verb: why `actor` can't use `affordance` on `target`
+ * right now (the reason the prompt shows), or undefined when this rule does not stop it. Gates are
+ * checked after the affordance's own requirements, in the order they were added. They are rules, not
+ * state (like systems, they are set up again when a world is made), and must only read the world.
+ */
+export type AffordanceGate = (
+  world: World<never>,
+  actor: EntityId,
+  target: EntityId,
+  affordance: Affordance,
+) => string | undefined;
+
+const gates = new WeakMap<World<never>, AffordanceGate[]>();
+
+/** Adds `gate` to `world`'s Interact verb (see `AffordanceGate`). Returns a function that removes it. */
+export function addAffordanceGate<TInput>(world: World<TInput>, gate: AffordanceGate): () => void {
+  const w: World<never> = world;
+  let own = gates.get(w);
+  if (own === undefined) gates.set(w, (own = []));
+  const list = own;
+  list.push(gate);
+  return () => {
+    const at = list.indexOf(gate);
+    if (at >= 0) list.splice(at, 1);
+  };
+}
+
+/** Why `actor` (bringing `kit`) can't use `affordance` on `target`, or undefined when it can. */
+function reasonFor(
+  world: World<never>,
+  actor: EntityId,
+  kit: InteractorKit,
+  target: EntityId,
+  affordance: Affordance,
+): string | undefined {
+  const own = unavailableReason(kit, affordance);
+  if (own !== undefined) return own;
+  for (const gate of gates.get(world) ?? []) {
+    const reason = gate(world, actor, target, affordance);
+    if (reason !== undefined) return reason;
+  }
+  return undefined;
+}
+
+/** Index of the first affordance `actor` can use on `target`, or −1. */
+function primaryIndex(
+  world: World<never>,
+  actor: EntityId,
+  kit: InteractorKit,
+  target: EntityId | null,
+  affordances: readonly Affordance[],
+): number {
+  if (target === null) return -1;
+  return affordances.findIndex(
+    (affordance) => reasonFor(world, actor, kit, target, affordance) === undefined,
+  );
 }
 
 export interface InteractionOptions<TInput> {
@@ -286,7 +342,7 @@ export function interactionSystem<TInput>(
         const target = focus?.entity ?? null;
         const button = inputOf(inputs, actor);
         const affordances = target === null ? [] : affordancesOf(world, target);
-        const index = primaryIndex(affordances, kit);
+        const index = primaryIndex(world, actor, kit, target, affordances);
         const chosen = affordances[index];
 
         // A hold carries on only while Interact stays down on the same target and affordance.
@@ -386,7 +442,7 @@ export function interactionPrompt(
   const affordances = affordancesOf(world, target);
   const kit = world.get(actor, InteractorComponent) ?? NO_KIT;
   const option = (affordance: Affordance): PromptOption => {
-    const reason = unavailableReason(kit, affordance);
+    const reason = reasonFor(world, actor, kit, target, affordance);
     return {
       verb: affordance.verb,
       label: affordance.label,
@@ -394,7 +450,7 @@ export function interactionPrompt(
       reason: reason ?? '',
     };
   };
-  const primary = Math.max(0, primaryIndex(affordances, kit));
+  const primary = Math.max(0, primaryIndex(world, actor, kit, target, affordances));
   const affordance = affordances[primary];
   if (affordance === undefined) return undefined;
   const needed = holdTicks(affordance, world.clock.hz);
