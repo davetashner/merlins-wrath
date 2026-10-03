@@ -422,7 +422,9 @@ describe('the six-state alert machine (mw-e11.7)', () => {
     // Not vacuous: the sequences visited every state and took every move in the table.
     expect(report.states.size).toBe(6);
     expect([...report.taken.keys()].sort()).toEqual([...table].sort());
-  });
+    // ~80k thinks: about 0.5 s alone, but several seconds under coverage instrumentation on a busy
+    // runner (the scaffold test re-runs src/sim with coverage), so it gets a CPU budget, not 5 s.
+  }, 30_000);
 
   it('AC-6: a move absent from the table would be caught (control: the table without its timeouts)', () => {
     const compiled = compileBehaviour(GUARD);
