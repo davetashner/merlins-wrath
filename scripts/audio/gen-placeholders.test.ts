@@ -51,9 +51,11 @@ describe('placeholder pack, as committed (mw-e28.2)', () => {
     expect(PACK_BUDGET_BYTES).toBe(2 * 1024 * 1024);
   });
 
-  it('every manifest entry is flagged placeholder: true, keyed by final ids with -NN variants', () => {
-    expect(committed.length).toBe(placeholderSpecs().length);
-    for (const entry of committed) {
+  it('every placeholder entry is flagged placeholder: true, keyed by final ids with -NN variants', () => {
+    // Final entries (the slice music, mw-0j5) sit beside the placeholders and keep their own ids.
+    const placeholders = committed.filter((entry) => entry.placeholder === true);
+    expect(placeholders.length).toBe(placeholderSpecs().length);
+    for (const entry of placeholders) {
       expect(entry.placeholder).toBe(true);
       entry.variants.forEach((variant, i) => {
         expect(variant).toBe(`${entry.id}-${String(i + 1).padStart(2, '0')}`);
@@ -169,7 +171,7 @@ describe('gen-placeholders main', () => {
     expect(console.log).toHaveBeenCalledWith(
       expect.stringMatching(/^wrote \d+ placeholder sounds/),
     );
-    expect(readFileSync(join(dir, MANIFEST_PATH), 'utf8')).toBe(pack.manifest);
+    expect(readFileSync(join(dir, MANIFEST_PATH), 'utf8')).toBe(buildPack([]).manifest);
     expect(main(['--check'], dir)).toBe(0);
   }, 30_000);
 
