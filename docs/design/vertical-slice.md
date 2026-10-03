@@ -366,7 +366,7 @@ at the left edge to +10 at the right. Rows with nothing new are left out.
 | `skeleton`         | creature `forgotten-miner`         | (2.5, 0, 32.5), yaw 180 | Resting idle; leash 25 m around this post; carries `rusted-gallery-key` |
 | `torch-arena-west` | light (burning)                    | (−5.75, 2.25, 31)   | |
 | `torch-arena-east` | light (burning)                    | (5.75, 2.25, 29)    | |
-| `arena-brazier`    | light + hazard (burning, fuel 3600) | (−4.5, 0, 35.5)    | 8 fire/s within 0.75 m |
+| `arena-brazier`    | light + hazard (burning, fuel 3600) | (−4.5, 0.75, 35.5) | 8 fire/s within 0.75 m; y is the height of the coals in the bowl (the model stands on the floor), so the flame burns in the bowl |
 | `step-crate`       | physics prop `crate`               | (5.5, 0, 34)        | |
 | `alcove-chest`     | container, slice loot table        | (8, 1.4, 36), yaw 270 | Faces the arena |
 | `exit-door`        | door, hinged, iron                 | (0, 0, 37)          | Lock `slice-exit`, key `rusted-gallery-key` |

@@ -296,3 +296,34 @@ test('mw-e01.6 AC-3: loot the alcove chest, save, close the tab, load the save: 
   expect(await alcoveChest(second)).toEqual({ opened: true, items: [], gold: 0 });
   expect(later).toEqual([]);
 });
+
+// mw-546: the slice's set pieces wear their art. The two door fronts are painted on the leaves, and the
+// torch and brazier models replace the bracket stand-ins; each is requested and loads with no console
+// errors (the models and textures are placeholders, see assets/prompts/model).
+test('mw-546: the slice loads its door fronts, torch and brazier with no console errors', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  const problems: string[] = [];
+  page.on('console', (msg) => {
+    if (msg.type() !== 'error' && msg.type() !== 'warning') return;
+    if (/^\[\.WebGL-[^\]]+\]GL Driver Message/.test(msg.text())) return;
+    problems.push(`${msg.type()}: ${msg.text()}`);
+  });
+  page.on('pageerror', (err) => problems.push(`pageerror: ${err.message}`));
+  const assets = [
+    'door-wood-01.webp',
+    'door-iron-01.webp',
+    'model-prop-wall-torch-01.glb',
+    'model-prop-brazier-floor-01.glb',
+  ];
+  const loaded = assets.map((name) =>
+    page.waitForResponse((response) => response.url().endsWith(name) && response.ok()),
+  );
+  await page.goto('/?scene=slice');
+  await expect(page.locator('#app')).toHaveAttribute('data-scene', 'slice', { timeout: 10_000 });
+  await Promise.all(loaded);
+  // A few frames, so a texture or model that failed to build would raise its error here.
+  await page.waitForTimeout(1_500);
+  expect(problems).toEqual([]);
+});
