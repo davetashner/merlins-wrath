@@ -149,6 +149,27 @@ openOptionsMenu(ui, settings, { category: 'audio' });
 - Settings are per-browser, not per-save. The sim never reads the store: difficulty assists reach it
   as injected config.
 
+## Class selection and the kit panel (`src/ui/class-select.ts`, `src/game/classes.ts`, mw-e19.5)
+
+```ts
+openClassSelect(ui, {
+  cards: classCards(content), // knight, archer, sorcerer, thief: pitch, 3 verbs, kit preview
+  onConfirm: (id) => applyClass(world, player, id, createClassRules(content, capabilities)),
+});
+kitPanel.update(kitModel(world, player, content)); // HUD: class, gold, carried items
+```
+
+- **Cards** are a radio group (`role="radio"`, `aria-checked`). Directions move focus spatially;
+  confirm or a click highlights the focused card and moves focus to Confirm, so a gamepad picks a
+  class with A, A. Confirm is disabled, and so never a focus target, until a class is highlighted.
+  The screen pauses the sim and captures input; Back does not close it.
+- **Card text** comes from class data: `name`, `pitch` and the three `verbs`, plus the starting kit.
+  Items have no localised names yet, so `itemLabel` shows `mana-draught` as "Mana draught".
+- **In the game**: `?newgame` opens the screen over the testbed once the player has spawned;
+  `?class=<id>` applies a class at boot without it. Without either, the testbed boots with no class,
+  as before. `#app[data-player-class]` publishes the sim's `player.class`. The title screen flow is
+  mw-e01.2, locking classes the slice can't play is mw-e01.15, and the card art is mw-e37.125.
+
 ## Testing
 
 - **Unit tests:** put `// @vitest-environment happy-dom` at the top of the file. happy-dom has no

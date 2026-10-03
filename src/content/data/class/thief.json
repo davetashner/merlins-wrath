@@ -3,6 +3,8 @@
   "id": "thief",
   "name": "Thief",
   "notes": "Manipulates awareness, shadows, locks, pickpocketing and alternate routes (CONSTITUTION): climbs rough stone where others need a rope. Grows through tools on the belt, tricks from contacts and deeds (ADR-0004). Lockpicks in the kit grant tool.lockpick while carried. Grey-box kit: knife, leather and lockpicks.",
+  "pitch": "A shadow the city pays well. Slip past, climb where others cannot, take what you like.",
+  "verbs": ["Pick locks", "Pickpocket", "Climb rough stone"],
   "dialogueTag": "thief",
   "iconId": "ui-emblem-class-thief-01",
   "portraitId": "keyart-class-card-thief-01",
