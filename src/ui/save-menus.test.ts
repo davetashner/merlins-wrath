@@ -119,6 +119,29 @@ describe('title menu', () => {
     });
     expect(description(menu.continueButton)).toBe('Saves could not be read');
   });
+
+  it('shows the build SHA when given one (mw-e01.2)', () => {
+    openTitleMenu(ui, {
+      last: undefined,
+      build: 'abc1234',
+      onContinue: vi.fn(),
+      onNewGame: vi.fn(),
+      onLoad: vi.fn(),
+    });
+    expect(document.querySelector('[data-testid="title-build"]')?.textContent).toBe(
+      'Build abc1234',
+    );
+  });
+
+  it('shows no build line without one', () => {
+    openTitleMenu(ui, {
+      last: undefined,
+      onContinue: vi.fn(),
+      onNewGame: vi.fn(),
+      onLoad: vi.fn(),
+    });
+    expect(document.querySelector('[data-testid="title-build"]')).toBeNull();
+  });
 });
 
 describe('slot list', () => {

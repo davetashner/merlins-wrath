@@ -6,6 +6,7 @@ import {
 } from '@audio/index';
 import {
   controllerTuningFor,
+  GAME_CONFIG_ID,
   loadGameContent,
   materialPresets,
   PLAYER_CAMERA_ID,
@@ -140,8 +141,9 @@ import {
   type PendingLoadStorage,
 } from '@game/save/death/index';
 import {
+  bootMenuRequest,
+  opensTitle,
   SaveMenus,
-  saveMenuRequest,
   searchWithoutMenu,
   type SaveMenuReadout,
 } from '@game/save/menus/index';
@@ -746,6 +748,17 @@ function startRenderer(
     // death screen. Set up once the player and the death screen exist (below).
     let deathBeat: DeathBeat | undefined;
     let captureAfterRender: ((capture: Promise<CapturedThumbnail>) => void) | undefined;
+    // The title screen is the front door (mw-e01.2): a page naming no scene, new-game choice or menu
+    // boots the game's start scene with the title menu over it, and its New Game opens class
+    // selection right there (`startNewGame`), with no reload. The e2e reads the timings (page-relative
+    // milliseconds) from #app[data-front-door]: the title shown, New Game pressed, the class applied.
+    const titleFirst = opensTitle(location.search);
+    let startNewGame: (() => void) | undefined;
+    const frontDoor: { titleMs?: number; newGameMs?: number; playableMs?: number } = {};
+    const markFrontDoor = (step: keyof typeof frontDoor): void => {
+      frontDoor[step] = Math.round(performance.now());
+      root.dataset['frontDoor'] = JSON.stringify(frontDoor);
+    };
     let lastFrameMs: number | undefined;
     const interactions: { tick: number; verb: string; spawn: string | null }[] = [];
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
@@ -843,7 +856,9 @@ function startRenderer(
     });
     // How creature AI travels (mw-e11.21): the loaded scene's navmesh, when it has one.
     const navigation = new SceneNavigation();
-    const request = resolveSceneRequest(location.search, scenes.available());
+    // No ?scene= boots the game's start scene (game.startScene, mw-e01.2): the slice in m1.
+    const startScene = content.get('game', GAME_CONFIG_ID).startScene.id;
+    const request = resolveSceneRequest(location.search, scenes.available(), startScene);
     if (request.kind === 'scene') {
       const scene = content.get('scene', request.id);
       const loaded = scenes.load(scene.id);
@@ -954,9 +969,10 @@ function startRenderer(
         });
         focus.entity = player.entity; // bodies near the player never get forced to sleep
         // The player's capabilities (mw-e19.2). A new game grants the chosen class's own (mw-e19.5,
-        // below); the testbed's default boot has no class, so ledge hangs come as a class grant.
+        // below), as does one started from the title; a scene booted straight from its URL has no
+        // class, so ledge hangs come as a class grant.
         addCapabilities(world, player.entity);
-        if (newGame.kind === 'none') {
+        if (newGame.kind === 'none' && !titleFirst) {
           capabilities.grant(world, player.entity, LEDGE_HANG_CAPABILITY, 'class');
         }
         // Dev hot reload (mw-e02.3): a saved player controller file retunes the player from the
@@ -1098,7 +1114,7 @@ function startRenderer(
       // once its inventory exists, and the player then moves on the class's controller tuning. The
       // kit panel shows the class and the pack; #app[data-player-class] is the sim's player.class
       // (the e2e reads both).
-      if (player !== undefined && newGame.kind !== 'none') {
+      if (player !== undefined && (newGame.kind !== 'none' || titleFirst)) {
         const hero = player.entity;
         const classRules = createClassRules(content, capabilities);
         const profile = content.get('controller', PLAYER_CONTROLLER_ID);
@@ -1124,16 +1140,20 @@ function startRenderer(
           commands.push(tuneCommand(hero, controllerTuningFor(profile, classId)));
           root.dataset['playerClass'] = classOf(world, hero) ?? '';
           drawKit();
+          if (frontDoor.newGameMs !== undefined) markFrontDoor('playableMs');
         };
-        if (newGame.kind === 'class') choose(newGame.classId);
-        else if (newGame.kind === 'select') {
+        const selectClass = (): void => {
           openClassSelect(ui, {
             cards: classCards(content, playable),
             onConfirm: (id) => {
               if (isPlayerClass(id) && playable.has(id)) choose(id);
             },
           });
-        } else if (newGame.kind === 'locked-class') {
+        };
+        if (newGame.kind === 'class') choose(newGame.classId);
+        else if (newGame.kind === 'select') selectClass();
+        else if (newGame.kind === 'none') startNewGame = selectClass;
+        else if (newGame.kind === 'locked-class') {
           console.warn(
             `?class=${newGame.classId}: not playable in this build (?allclasses unlocks)`,
           );
@@ -1413,11 +1433,13 @@ function startRenderer(
           now: () => Date.now(),
           session,
           areaId,
-          // A reload leaves the menus (?menu=) behind.
+          // A reload leaves the menus (?menu=) behind and names its scene, so restarting the area
+          // from the front door (no ?scene=) restarts the scene rather than showing the title.
           navigate: (area) => {
+            const scene = area ?? areaId;
             location.search = searchWithoutMenu(
               location.search,
-              area === undefined ? {} : { scene: area },
+              scene === undefined ? {} : { scene },
             );
           },
           describe: describeSave,
@@ -1446,8 +1468,9 @@ function startRenderer(
     );
     // The title menu and the Load / Save screens (mw-e30.11): Continue and Load reload into the
     // save's area through the death screen's hand-off; while saves live only in memory every slot
-    // screen warns. `?menu=title|load|save` opens one at boot (the title screen as the front door is
-    // mw-e01.2, the pause menu's Save and Load mw-e01.3). The e2e reads #app[data-save-menu-*].
+    // screen warns. `?menu=title|load|save` opens one at boot, and a page with no scene, new-game or
+    // menu parameter opens the title (the front door, mw-e01.2); the pause menu's Save and Load are
+    // mw-e01.3. The e2e reads #app[data-save-menu-*].
     const saveMenus = Promise.all([saves, deathReload]).then(
       ([{ store, warning }, reload]) =>
         new SaveMenus({
@@ -1472,11 +1495,18 @@ function startRenderer(
           load: (load) => {
             reload.reload(load);
           },
+          // New Game opens class selection over the scene behind the title; a scene with no player
+          // to give a class to reloads into a new game instead.
           newGame: () => {
-            location.search = searchWithoutMenu(location.search, { newgame: '' });
+            markFrontDoor('newGameMs');
+            if (startNewGame !== undefined) startNewGame();
+            else location.search = searchWithoutMenu(location.search, { newgame: '' });
           },
           publish: (readout: SaveMenuReadout) => {
             root.dataset[SAVE_MENU_ATTRIBUTE[readout.kind]] = JSON.stringify(readout);
+            if (readout.kind === 'title' && frontDoor.titleMs === undefined) {
+              markFrontDoor('titleMs');
+            }
           },
           warn: (message) => {
             console.warn(message);
@@ -1484,7 +1514,7 @@ function startRenderer(
         }),
     );
     const openRequestedMenu = (): void => {
-      const menu = saveMenuRequest(location.search);
+      const menu = bootMenuRequest(location.search);
       if (menu.kind === 'unknown')
         console.warn(`?menu=${menu.value}: not a menu (title, load, save)`);
       if (menu.kind !== 'open') return;

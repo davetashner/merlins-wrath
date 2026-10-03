@@ -60,7 +60,9 @@ Each beat lists what the player does, then the systems it exercises with their o
 The game boots to a grey-box title: New Game, Continue, Load, and the build SHA. With no saves,
 Continue is **disabled with an accessible "no saves yet" reason** (mw-e01.2 AC-2). mw-e30.11 AC-2 says
 "hidden"; this spec picks disabled-with-reason for the same reason locked class cards stay visible
-(B1), and a note on mw-e30.11 asks for its AC to be reconciled.
+(B1), and a note on mw-e30.11 asks for its AC to be reconciled. **Owner decision, 2026-10-03:** `/`
+is the front door (the title over `game.startScene`); dev and e2e URLs with `?scene=` and friends
+skip it, and the testbed is `?scene=testbed` (docs/design/ui.md, "The front door").
 
 | System                                  | Bead                                           | Status |
 | --------------------------------------- | ---------------------------------------------- | ------ |

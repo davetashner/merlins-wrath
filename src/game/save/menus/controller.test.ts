@@ -194,8 +194,7 @@ describe('title menu', () => {
     expect(s.readouts.at(-1)).toEqual({ kind: 'title', saves: 0, last: null });
     menu.continueButton.click();
     expect(s.loads).toEqual([]);
-    (document.activeElement as HTMLElement).click();
-    expect(s.newGame).toHaveBeenCalledOnce();
+    expect(text('title-build')).toBe('Build abc1234');
     document.querySelector<HTMLElement>('[data-action="load"]')?.click();
     await flush();
     expect(s.ui.top?.id).toBe(SAVE_SLOTS_SCREEN);
@@ -203,6 +202,20 @@ describe('title menu', () => {
     // Back returns to the title menu.
     s.ui.intent('back', 'keyboard');
     expect(s.ui.top?.id).toBe(TITLE_SCREEN);
+  });
+
+  it('mw-e01.2: New Game closes the title menu, then hands over to class selection', async () => {
+    const s = setup();
+    let topWhenCalled: string | undefined = 'unset';
+    s.newGame.mockImplementation(() => {
+      topWhenCalled = s.ui.top?.id;
+    });
+    await s.menus.openTitle();
+    expect(document.activeElement?.textContent).toBe('New Game');
+    s.ui.intent('confirm', 'keyboard');
+    expect(s.newGame).toHaveBeenCalledOnce();
+    expect(topWhenCalled).toBeUndefined();
+    expect(s.ui.top).toBeUndefined();
   });
 
   it('when saves cannot be read, Continue is disabled with that reason and a warning is logged', async () => {

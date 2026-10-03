@@ -7,8 +7,13 @@
 //   playable in this build yet". m2 unlocks classes by editing this list, with no code change. A build
 //   must offer at least one class, and a listed id with no class file fails the load's reference check.
 //
-// The start scene (`startScene`, mw-e01.2) joins this file next. Debug builds can widen the list with
-// `?allclasses` (src/game/classes.ts) so per-class tests still run.
+// - `startScene` (mw-e01.2): the scene a new game starts in, and the scene the title screen shows behind
+//   it, a ref into src/content/data/scene/. m1 starts in the slice; E24 switches the start to the
+//   mountain road at m3 by editing this field, with no code change. An id with no scene file fails the
+//   load's reference check, naming the missing id.
+//
+// Debug builds can widen the class list with `?allclasses` (src/game/classes.ts) so per-class tests
+// still run.
 
 import { z } from 'zod';
 import type { Frozen } from '../loader.ts';
@@ -36,6 +41,9 @@ export const gameSchema = z.strictObject({
     .describe(
       'The classes the class select screen lets the player confirm; the rest show locked (mw-e01.15).',
     ),
+  startScene: ref('scene').describe(
+    'The scene a new game starts in and the title screen shows behind it (mw-e01.2).',
+  ),
 });
 
 /** The game configuration as written in JSON. */

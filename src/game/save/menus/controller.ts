@@ -64,7 +64,7 @@ export interface SaveMenusOptions {
   readonly warning?: string | undefined;
   /** Loads a save: in the game, DeathReload.reload (the page reloads into the save's area). */
   readonly load: (load: Omit<PendingLoad, 'requestedAt'>) => void;
-  /** New Game on the title menu. */
+  /** New Game on the title menu, called once the title menu has closed. */
   readonly newGame: () => void;
   readonly publish?: (readout: SaveMenuReadout) => void;
   readonly warn?: (message: string) => void;
@@ -155,7 +155,8 @@ export class SaveMenus {
 
   /**
    * Opens the title menu. Continue loads the most recent save of any kind (as "Load last save" does);
-   * with none, or when saves cannot be read, it is disabled with the reason.
+   * with none, or when saves cannot be read, it is disabled with the reason. New Game closes the menu
+   * and hands over to `newGame` (class selection, mw-e01.2). The build SHA shows under the menu.
    */
   async openTitle(): Promise<TitleMenu> {
     let saves: SaveChoice[] = [];
@@ -167,13 +168,15 @@ export class SaveMenus {
       this.warn(`title menu: could not list saves (${String(error)})`);
     }
     const last = saves[0];
-    const menu = openTitleMenu(this.options.ui, {
+    const menu: TitleMenu = openTitleMenu(this.options.ui, {
       last: last === undefined ? undefined : { ...deathSaveEntry(last, this.options.now()), last },
       unavailable,
+      build: this.options.build.buildSha,
       onContinue: (entry) => {
         this.loadSave(entry.last);
       },
       onNewGame: () => {
+        menu.screen.close();
         this.options.newGame();
       },
       onLoad: () => {
