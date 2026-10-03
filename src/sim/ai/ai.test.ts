@@ -24,6 +24,7 @@ import { CombatFacingComponent } from '../combat/melee/components';
 import type { EntityId } from '../core/component';
 import { World, type WorldSnapshot } from '../core/world';
 import { CreatureComponent, type Creature } from '../creatures/components';
+import { entitySource, perceived, percept } from '../perception/percept';
 import { hashWorld } from '../snapshot';
 import { PlacementComponent, placeEntity } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
@@ -39,8 +40,10 @@ import {
   type Brain,
 } from './components';
 import { resolveInput } from './inputs';
+import { installAwareness } from './awareness';
 import { introspectBrain } from './introspect';
 import { face, straightLineNavigation, type AiNavigation } from './navigation';
+import { observePercepts } from './memory';
 import { isPrimitive } from './primitives';
 import {
   aiBehaviour,
@@ -188,6 +191,31 @@ const must = <T>(value: T | undefined): T => {
 
 const brain = (world: World<never>, entity: EntityId): Readonly<Brain> =>
   must(brainOf(world, entity));
+
+/**
+ * `hunter` sees `prey` where it stands now and makes it its target, as awareness does from a
+ * perception report (mw-e11.8: target primitives aim at that memory, not at the prey itself).
+ */
+function sees(world: World<never>, hunter: EntityId, prey: EntityId): void {
+  const at = must(world.get(prey, PlacementComponent));
+  const source = entitySource(prey);
+  const position = { x: at.x, y: at.y, z: at.z };
+  const seen = percept({
+    source,
+    kind: 'seen-target',
+    sense: 'sight',
+    position,
+    strength: 1,
+    certainty: 1,
+  });
+  observePercepts(
+    must(world.get(hunter, BrainComponent)).memory,
+    [seen],
+    world.tick,
+    world.clock.hz,
+  );
+  writeBlackboard(world, hunter, { target: prey, targetSource: source, lkp: position });
+}
 
 /** One activity that waits for a long time, in Unaware. */
 const idle = behaviour({
@@ -600,15 +628,21 @@ describe('steps and failure', () => {
     const world = aiWorld([def], { navigation });
     const hunter = agent(world);
     const prey = agent(world, { x: 0, y: 0, z: 30 });
-    writeBlackboard(world, hunter, { target: prey });
+    // Its memory of the prey forgets it once the prey is gone (awareness's `present` port).
+    installAwareness(world, { present: () => world.isAlive(prey) });
+    sees(world, hunter, prey);
     writeBlackboard(world, prey, { stimulus: { x: 0, y: 0, z: 90 } });
     run(world, 30);
     expect(calls.filter((e) => e === prey).length).toBeGreaterThan(20);
+    expect(calls.filter((e) => e === hunter).length).toBeGreaterThan(20); // chasing
     world.destroy(prey);
+    world.step();
     const before = calls.length;
     expect(() => {
+      world.events.emit(perceived, { tick: world.tick, agent: hunter, seconds: 0.1, percepts: [] });
       run(world, 60);
     }).not.toThrow();
+    expect(brain(world, hunter).blackboard).toMatchObject({ target: null, targetSource: null });
     expect(calls.slice(before)).not.toContain(prey);
     expect(brain(world, hunter).retry.map(([a]) => a)).toContain('chase');
   });
@@ -725,9 +759,14 @@ describe('primitives', () => {
     const chase = to('target', { x: 0, y: 0, z: 0 });
     const prey = chase.w.spawn();
     placeEntity(chase.w, prey, { x: 0, y: 0, z: -3 });
-    writeBlackboard(chase.w, chase.e, { target: prey });
+    sees(chase.w, chase.e, prey);
+    placeEntity(chase.w, prey, { x: 0, y: 0, z: 30 }); // unseen, it moves away: no leak (mw-e11.8)
     run(chase.w, 90);
-    expect(chase.w.get(chase.e, PlacementComponent)?.z).toBeCloseTo(-2, 1); // within 1 m
+    expect(chase.w.get(chase.e, PlacementComponent)?.z).toBeCloseTo(-2, 1); // within 1 m of where seen
+    const unremembered = to('target', { x: 0, y: 0, z: 0 });
+    writeBlackboard(unremembered.w, unremembered.e, { target: prey }); // a target, but no memory
+    run(unremembered.w, 2);
+    expect(brain(unremembered.w, unremembered.e).ended?.ok).toBe(false);
     const unset = to('target', { x: 0, y: 0, z: 0 });
     run(unset.w, 2);
     expect(brain(unset.w, unset.e).ended?.ok).toBe(false);
@@ -886,7 +925,7 @@ describe('primitives', () => {
       if (options.attacker !== false) giveAttacker(world, guard);
       const foe = world.spawn();
       placeEntity(world, foe, options.at ?? { x: 1, y: 0, z: 0 });
-      writeBlackboard(world, guard, { target: foe });
+      sees(world, guard, foe);
       return { world, guard };
     };
     const { world, guard } = setup();

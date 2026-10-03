@@ -5,6 +5,11 @@
 // taken mid-step resumes identically. Timing is in sim ticks; randomness comes from the world's `ai`
 // stream; nothing reads the wall clock.
 //
+// No omniscience (mw-e11.8): a primitive reads only its own agent's placement. `target` aims at the
+// bounded prediction of the target's memory (memory.ts), never at the target entity, so a target
+// that slips out of sight is hunted where it was last seen heading; `lkp` aims at the same
+// prediction while there is a target memory, else at the blackboard's guess.
+//
 // The compiler table is typed against the content vocabulary (BEHAVIOUR_PRIMITIVES), so a primitive
 // added to the schema without a runner here fails the typecheck.
 
@@ -17,11 +22,11 @@ import type {
 import { AttackerComponent } from '../combat/attacks/components';
 import { currentAttack } from '../combat/attacks/components';
 import { canStartAttack, startAttack } from '../combat/attacks/executor';
-import type { EntityId } from '../core/component';
 import { cos, sin } from '../math';
 import { PlacementComponent } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import { AiCuePlayed, AiNoiseEmitted, RouteBlocked } from './components';
+import { recall } from './memory';
 import { face, type AiStatus } from './navigation';
 import {
   activeRoute,
@@ -68,7 +73,15 @@ const HOLD = Number.MAX_SAFE_INTEGER;
 
 const ticks = (seconds: number, hz: number): number => Math.round(seconds * hz);
 
-const placementOf = (v: AgentView, entity: EntityId) => getIf(v.world, entity, PlacementComponent);
+/** The agent's own placement (the only one a primitive may read). */
+const selfAt = (v: AgentView) => getIf(v.world, v.entity, PlacementComponent);
+
+/** Where the agent believes its target is (mw-e11.8), or undefined with no target memory. */
+function believed(v: AgentView): Vec3 | undefined {
+  const source = v.brain.blackboard.targetSource;
+  if (source === null) return undefined;
+  return recall(v.brain.memory, source, v.tick, v.hz, v.ports.memory)?.predicted;
+}
 
 /** Where `target` is for this agent now, or undefined when it has none or it is gone. */
 function targetPoint(v: AgentView, target: BehaviourTarget): Vec3 | undefined {
@@ -77,9 +90,9 @@ function targetPoint(v: AgentView, target: BehaviourTarget): Vec3 | undefined {
     case 'stimulus':
       return bb.stimulus ?? undefined;
     case 'target':
-      return bb.target === null ? undefined : placementOf(v, bb.target);
+      return bb.target === null ? undefined : believed(v);
     case 'lkp':
-      return bb.lkp ?? undefined;
+      return bb.targetSource === null ? (bb.lkp ?? undefined) : believed(v);
     case 'origin':
       return v.creature?.origin.at;
     case 'nearest-waypoint':
@@ -215,7 +228,7 @@ const COMPILERS: Compilers = {
       ...(start !== undefined && { start }),
       update(v) {
         const point = targetPoint(v, step.target);
-        const at = placementOf(v, v.entity);
+        const at = selfAt(v);
         if (point === undefined || at === undefined) return 'failure';
         face(v.world, v.entity, point.x - at.x, point.z - at.z);
         return elapsed(v) >= ticks(seconds(v), v.hz) ? 'success' : 'running';
@@ -260,7 +273,7 @@ const COMPILERS: Compilers = {
     return {
       primitive: 'emit-noise',
       update(v) {
-        const at = placementOf(v, v.entity);
+        const at = selfAt(v);
         if (at === undefined) return 'failure';
         const point = Object.freeze({ x: at.x, y: at.y, z: at.z });
         v.world.events.emit(AiNoiseEmitted, {
@@ -284,9 +297,8 @@ const COMPILERS: Compilers = {
           return currentAttack(world, entity) === undefined ? 'success' : 'running';
         }
         const attack = v.ports.attacks?.get(id);
-        const target = v.brain.blackboard.target;
-        const from = placementOf(v, entity);
-        const to = target === null ? undefined : placementOf(v, target);
+        const from = selfAt(v);
+        const to = targetPoint(v, 'target');
         if (attack === undefined || from === undefined || to === undefined) return 'failure';
         if (getIf(world, entity, AttackerComponent) === undefined) return 'failure';
         const dx = to.x - from.x;

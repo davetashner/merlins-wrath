@@ -22,11 +22,19 @@
 //
 // Awareness then writes the blackboard the behaviour reads: `awareness` is the highest record's
 // level; `stimulus` is where that record's cause was perceived, when it was stimulated in this think;
-// a seen source the `target` port resolves becomes the `target`, visible while its record is at the
-// Detected threshold, and where it was seen becomes the last-known position (`lkp`). Alert
+// a seen source the `target` port resolves becomes the `target` (and its source the `targetSource`),
+// visible while its record is at the Detected threshold. Alert
 // transitions read `awareness` against the behaviour's `suspiciousAt` / `investigateAt` tuning,
 // whose built-in defaults (content ALERT_TUNING_DEFAULTS) equal these thresholds — one set, pinned
 // by a test; the Detected threshold is awareness's alone (it decides `targetVisible`).
+//
+// The same report updates the agent's target memory (memory.ts, mw-e11.8), with the memory tuning
+// of the world's AI: every percept gives its source a fix, and records that are forgotten, or whose
+// source is gone, are dropped. While the target's memory lasts, its last-known position is the
+// blackboard's `lkp` (kept in step with each fresh fix); once it is forgotten, `target`,
+// `targetSource` and `lkp` are cleared. Losing the awareness record of the target clears only
+// `target`: the memory of where it was outlasts the agent's sense that something is there. Ally
+// reports reach memory through `hearReport`.
 // The tuning is PLACEHOLDER, to tune in play; moving it into content is mw-e11.16.
 
 import type { Frozen, SenseProfile } from '@content/index';
@@ -43,7 +51,8 @@ import {
 import type { Vec3 } from '../stimulus/shapes';
 import { isPostAlert } from './alert';
 import { BrainComponent, type Brain } from './components';
-import { writeBlackboard } from './runtime';
+import { applyReport, observePercepts, recall, type AllyReport, type Recollection } from './memory';
+import { memoryTuning, writeBlackboard, type BlackboardPatch } from './runtime';
 import { getIf } from './util';
 
 /** How fast one sense builds awareness: per second while it lasts, or per percept. */
@@ -337,17 +346,69 @@ export function installAwareness(world: World<never>, options: AwarenessOptions 
     const visible = brain.awareness.some(
       (r) => r.source === sighting?.source && r.level >= tuning.thresholds.detected,
     );
+    const memory = memoryTuning(world);
+    const hz = world.clock.hz;
+    const remembered = observePercepts(
+      brain.memory,
+      percepts,
+      world.tick,
+      hz,
+      memory,
+      options.present,
+    );
+    const targetSource = sighting?.source ?? board.targetSource;
+    const fix =
+      targetSource !== null && remembered.updated.includes(targetSource)
+        ? recall(brain.memory, targetSource, world.tick, hz, memory)
+        : undefined;
+    const forgotten =
+      targetSource !== null &&
+      remembered.removed.includes(targetSource) &&
+      !remembered.updated.includes(targetSource);
     writeBlackboard(world, agent, {
       awareness: top?.level ?? 0,
       ...(top !== undefined && think.stimulated.includes(top.source)
         ? { stimulus: top.cause.position }
         : {}),
       ...(sighting !== undefined
-        ? { target: sighting.target, lkp: sighting.position }
+        ? { target: sighting.target, targetSource: sighting.source }
         : lost
           ? { target: null }
           : {}),
+      ...(fix !== undefined ? { lkp: fix.lkp } : {}),
+      ...(forgotten ? { target: null, targetSource: null, lkp: null } : {}),
       targetVisible: visible,
     });
   });
+}
+
+/**
+ * An ally's report reaches `listener`'s memory (memory.ts `applyReport`: second-hand, at the
+ * reporter's confidence × the tuning's `secondHand`). A report of its target's source, or of a seen
+ * target while it has no target memory, also becomes its target memory and last-known position.
+ * Returns whether the report was taken (false without a brain, or when its own memory is surer).
+ */
+export function hearReport(world: World<never>, listener: EntityId, report: AllyReport): boolean {
+  const brain = getIf(world, listener, BrainComponent);
+  if (brain === undefined) return false;
+  const tuning = memoryTuning(world);
+  const taken = applyReport(brain.memory, report, world.tick, world.clock.hz, tuning);
+  const board = brain.blackboard;
+  const target =
+    board.targetSource === null
+      ? (report.kind ?? 'seen-target') === 'seen-target'
+      : board.targetSource === report.source;
+  if (taken && target) {
+    const patch: BlackboardPatch = { targetSource: report.source, lkp: report.position };
+    writeBlackboard(world, listener, patch);
+  }
+  return taken;
+}
+
+/** What `agent` remembers of its target now (`brain.blackboard.targetSource`), or undefined. */
+export function recallTarget(world: World<never>, agent: EntityId): Recollection | undefined {
+  const brain = getIf(world, agent, BrainComponent);
+  const source = brain?.blackboard.targetSource ?? null;
+  if (brain === undefined || source === null) return undefined;
+  return recall(brain.memory, source, world.tick, world.clock.hz, memoryTuning(world));
 }

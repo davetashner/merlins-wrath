@@ -13,8 +13,9 @@
 // - The eye is perception's: the feet raised by the tuning's eye height × the nav agent height (the
 //   default eye height without one); the facing is the combat facing on the ground plane, unit
 //   length (+z without one).
-// - LKP confidence: the awareness of the record whose source is the target (entity source), else the
-//   blackboard's overall awareness. Target memory (mw-e11.8) may refine it.
+// - LKP confidence: the target memory's current confidence (mw-e11.8) while the agent has one; else
+//   the awareness of the record whose source is the target (entity source), else the blackboard's
+//   overall awareness.
 // - The route is the remaining part of the agent's `nav.route` (from its next point on), with the
 //   goal and status; null without one.
 // - `detail` names one agent (the overlay's selection) whose full brain readout (`introspectBrain`:
@@ -25,7 +26,7 @@ import type { EntityId } from '../core/component';
 import type { Query } from '../core/query';
 import type { World } from '../core/world';
 import { isPostAlert } from '../ai/alert';
-import { DEFAULT_AWARENESS_TUNING, type AwarenessThresholds } from '../ai/awareness';
+import { DEFAULT_AWARENESS_TUNING, recallTarget, type AwarenessThresholds } from '../ai/awareness';
 import { BrainComponent, type Brain } from '../ai/components';
 import { introspectBrain, type BrainReadout } from '../ai/introspect';
 import { aiBehaviour } from '../ai/runtime';
@@ -193,9 +194,11 @@ function awarenessOf(brain: Brain): AiAwarenessReadout[] {
     .sort((a, b) => b.level - a.level);
 }
 
-function lkpOf(brain: Brain): AiLkpReadout | null {
+function lkpOf(world: World<never>, entity: EntityId, brain: Brain): AiLkpReadout | null {
   const { lkp, target, awareness } = brain.blackboard;
   if (lkp === null) return null;
+  const remembered = recallTarget(world, entity);
+  if (remembered !== undefined) return { position: copy(lkp), confidence: remembered.confidence };
   const source = target === null ? undefined : entitySource(target);
   const record = brain.awareness.find((r) => r.source === source);
   return { position: copy(lkp), confidence: record?.level ?? awareness };
@@ -251,7 +254,7 @@ export function aiSnapshotter(world: World<never>, options: AiSnapshotOptions = 
         hearing === undefined ? null : { thresholdDb: hearing.thresholdDb, range: hearing.range },
       brain: brain === undefined ? null : glance(world, brain),
       awareness: brain === undefined ? EMPTY : awarenessOf(brain),
-      lkp: brain === undefined ? null : lkpOf(brain),
+      lkp: brain === undefined ? null : lkpOf(world, entity, brain),
       route: routeOf(getIf(world, entity, NavRouteComponent)),
       ...(readout !== undefined && { detail: readout }),
     };
