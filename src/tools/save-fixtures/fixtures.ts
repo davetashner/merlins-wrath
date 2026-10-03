@@ -13,7 +13,6 @@ import {
   InventoryRules,
   levelDeltasOf,
   QuickSlotsComponent,
-  replayScenarios,
   Rng,
   type DifficultyOverrides,
   type FactValue,
@@ -22,6 +21,7 @@ import {
 } from '@sim/index';
 import type { SaveLoadError, SaveRegistry } from '@game/save/format';
 import { z } from 'zod';
+import { FIXTURE_SCENARIOS, knockOutSleeper } from './scenarios';
 
 /** A representative world to save as a fixture. */
 export interface FixtureWorld {
@@ -190,6 +190,15 @@ export const FIXTURE_WORLDS: readonly FixtureWorld[] = [
     },
     prepare: visitLevels,
   },
+  {
+    name: 'creature-guards',
+    description:
+      'guard hall after 15 s (mw-e12.14): a guard searching the spot an alarm named, aware of a thrown stone, and a guard knocked out for 2 min',
+    scenario: 'creature-guards',
+    seed: 23,
+    ticks: 900,
+    prepare: knockOutSleeper,
+  },
 ];
 
 /** Build info stamped on every fixture, so fixture bytes never depend on the commit. */
@@ -249,7 +258,7 @@ function scenarioNamed(name: string, scenarios: ScenarioRegistry): ReplayScenari
 /** Runs a fixture world's scenario and returns the world to save. */
 export function buildFixtureWorld(
   spec: FixtureWorld,
-  scenarios: ScenarioRegistry = replayScenarios,
+  scenarios: ScenarioRegistry = FIXTURE_SCENARIOS,
 ): World {
   const scenario = scenarioNamed(spec.scenario, scenarios);
   const world = scenario.create({ seed: spec.seed, hz: FIXTURE_HZ });
@@ -270,7 +279,7 @@ export function createFixture(
   spec: FixtureWorld,
   revision: number,
   registry: SaveRegistry,
-  scenarios: ScenarioRegistry = replayScenarios,
+  scenarios: ScenarioRegistry = FIXTURE_SCENARIOS,
 ): SaveFixture {
   const world = buildFixtureWorld(spec, scenarios);
   const bytes = registry.write(world, {
@@ -371,7 +380,7 @@ export function loadFixture(
   path: string,
   fixture: SaveFixture,
   registry: SaveRegistry,
-  scenarios: ScenarioRegistry = replayScenarios,
+  scenarios: ScenarioRegistry = FIXTURE_SCENARIOS,
 ): LoadedFixture {
   const fail = (message: string, cause?: unknown): FixtureLoadError =>
     new FixtureLoadError(path, message, undefined, cause);

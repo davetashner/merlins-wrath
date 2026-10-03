@@ -86,6 +86,7 @@ describe('pnpm save:fixture / save:check', () => {
     expect(real.registry().sections.map((s) => s.id)).toEqual([
       'world',
       'inventory',
+      'creatures',
       'world-facts',
       'level-deltas',
     ]);

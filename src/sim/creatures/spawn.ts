@@ -17,7 +17,8 @@
 //   sandbox's attacker dummy swings (mw-e04.20: parried, blocked and staggered by the player's rules);
 // - a lock-on target when the world has lock-on (mw-e02.16), lock points up its body;
 // - a member of its faction (or the spawn's override) with its disposition toward the player;
-// - its creature state: origin (for respawn), behaviour profile, needs, senses and nav agent;
+// - its creature state: origin (for respawn), behaviour profile, needs, senses, nav agent and
+//   condition (full morale, awake);
 // - a brain running its behaviour profile, with its personality and gait speeds, when the world runs
 //   AI (`installAi`, mw-e11.2) and that AI knows the profile. Without one it stands where it spawned. Spawning never throws for bad
 // data: an unknown creature or faction comes back as a typed SpawnError and nothing is created.
@@ -67,6 +68,7 @@ import {
   type Creature,
   type CreatureOrigin,
 } from './components';
+import { CreatureConditionComponent, FRESH_CONDITION } from './condition';
 
 /** What to spawn, and where. */
 export interface CreatureSpawnRequest {
@@ -261,6 +263,7 @@ export function spawnCreature(
   world.add(entity, CreatureComponent, creatureState(creature, originOf(request, facing)));
   world.add(entity, CreatureSensesComponent, creature.senses);
   world.add(entity, CreatureNavComponent, nav);
+  world.add(entity, CreatureConditionComponent, FRESH_CONDITION);
   const profile = def.behaviour.profile;
   if (aiBehaviour(world, profile) !== undefined) {
     giveBrain(world, entity, {

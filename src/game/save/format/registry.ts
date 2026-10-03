@@ -30,9 +30,12 @@ export const WORLD_SECTION_ID = 'world';
  * (mw-e27.4): when a section owns facts (`ownsFacts`), the world section no longer holds them. The
  * shape is unchanged, so the migration is the identity: an older save's facts stay here and the
  * owning section reads them (`SectionLoadContext.worldFacts`); the bump keeps older builds from
- * loading a save whose facts they would not find.
+ * loading a save whose facts they would not find. v5 (mw-e12.14): the same for creatures, whose
+ * runtime state (creature, condition, brain and perception components) the `creatures` section now
+ * holds; an older save's creatures stay here (identity migration) and that section's `missing` hook
+ * upgrades them.
  */
-export const WORLD_SECTION_VERSION = 4;
+export const WORLD_SECTION_VERSION = 5;
 
 const worldSnapshotSchema = z.strictObject({
   seed: z.number(),
@@ -116,7 +119,7 @@ export class SaveRegistry {
         id: WORLD_SECTION_ID,
         version: WORLD_SECTION_VERSION,
         schema: worldSnapshotSchema,
-        migrations: { 1: (data) => data, 2: (data) => data, 3: (data) => data },
+        migrations: { 1: (data) => data, 2: (data) => data, 3: (data) => data, 4: (data) => data },
         serialize: (world) => {
           const { facts, ...snapshot } = world.snapshot();
           const components = Object.fromEntries(

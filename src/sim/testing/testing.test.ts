@@ -23,6 +23,7 @@ import { buildSoundGraph } from '../noise/graph';
 import { installNoisePropagation } from '../noise/system';
 import { FakeSightWorld } from '../sight/fake-sight-world';
 import { LineOfSight } from '../sight/line-of-sight';
+import { hashWorld } from '../snapshot';
 import { registerCreatureComponents, spawnCreature } from '../creatures/spawn';
 import { aiScenario, ScenarioFailedError, type ScenarioDeps, type ScenarioSpec } from './scenario';
 import { ScenarioLoadError, type ScenarioLayoutInput } from './layout';
@@ -308,6 +309,25 @@ describe('running a scenario', () => {
     const other = aiScenario(spec({ player: script, seed: 9, hz: 30, hashEvery: 30 }), deps).run();
     expect(other.replay.stepHz).toBe(30);
     expect(other.hashes).toHaveLength(7);
+  });
+
+  it('mw-e12.14: start() hands out the world before its first tick and the player script, as run() drives them', () => {
+    const script = [{ to: [6, 4] }, { throw: [0, 0, 5], db: 70 }];
+    const scenario = aiScenario(spec({ player: script }), deps);
+    const { replay } = scenario.run();
+    const start = scenario.start();
+    expect(start.world.tick).toBe(0);
+    expect([...start.agents.keys()]).toEqual(scenario.layout.fixtures.map((f) => f.id));
+    const commands: unknown[] = [];
+    while (start.world.tick < scenario.ticks) {
+      const tick = start.drive(start.world.tick);
+      commands.push(tick);
+      start.world.step(tick);
+    }
+    const recorded = replay.inputs.flatMap(([n, c]) => Array.from({ length: n }, () => c));
+    expect(JSON.parse(JSON.stringify(commands))).toEqual(recorded);
+    expect(hashWorld(start.world)).toBe(replay.finalHash);
+    expect(scenario.start().world).not.toBe(start.world);
   });
 
   it('expects states, activities and positions at moments and over windows', () => {

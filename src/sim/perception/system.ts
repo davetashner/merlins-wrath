@@ -29,14 +29,19 @@
 //   and from any side, as a `touched` percept (mw-e11.6). It costs no work units beyond the agent's.
 //
 // The agent's eye is its placement raised by the tuning's eye height × its nav agent height; its
-// facing is its combat facing (+z without one). The queue, the per-agent hearing buffers and the
-// evaluation times live in this system, not in components: they are rebuilt within one period.
+// facing is its combat facing (+z without one).
+//
+// What an agent carries between evaluations (the noises it heard since its last one, when that was,
+// and since when it has waited in the queue) lives in its `perception.agent` component, not in this
+// system, so a save carries it and a loaded world evaluates exactly as one never saved (mw-e12.14).
+// The queue is rebuilt from those components every tick: waiting agents by the tick they fell due,
+// then by id.
 
 import type { ControllerTuning, Frozen, SenseProfile, VisibilityTuning } from '@content/index';
 import { CharacterController } from '../character/system';
 import { movementProfileOf } from '../character/profile';
 import { CombatFacingComponent, FORWARD_FACING } from '../combat/melee/components';
-import type { EntityId } from '../core/component';
+import { defineComponent, type EntityId } from '../core/component';
 import type { System, World } from '../core/world';
 import { CreatureNavComponent, CreatureSensesComponent } from '../creatures/components';
 import type { LightField } from '../light/field';
@@ -159,6 +164,22 @@ export interface PerceptionSystem<TInput> extends System<TInput> {
   uninstall(): void;
 }
 
+/** What perception keeps for an agent between evaluations (see the file header). */
+export interface PerceptionAgent {
+  /** Noises it heard since its last evaluation, in arrival order. */
+  heard: NoiseHeard[];
+  /** The tick it was last evaluated, -1 = never. */
+  evaluated: number;
+  /** The tick it fell due and joined the queue, while it waits there; -1 = not waiting. */
+  queued: number;
+}
+
+/**
+ * An agent's perception bookkeeping (`perception.agent`; a snapshot and save key, never renamed).
+ * The perception system registers it, gives it to every agent and changes it in place.
+ */
+export const PerceptionAgentComponent = defineComponent<PerceptionAgent>('perception.agent');
+
 /** A target's body this tick (sampled once per tick, on first use). */
 interface TargetBody extends SenseTarget {
   readonly entity: EntityId;
@@ -188,21 +209,18 @@ export function perceptionSystem<TInput>(
   if (!(unitsPerTick >= 1)) throw new RangeError('unitsPerTick must be at least 1');
   if (!(tuning.rateHz > 0)) throw new RangeError('perception rateHz must be positive');
   const { lineOfSight, light, trace } = options;
+  if (!w.isRegistered(PerceptionAgentComponent)) w.register(PerceptionAgentComponent);
   const agents = w.query(CreatureSensesComponent, PlacementComponent);
+  const bookkeeping = w.query(PerceptionAgentComponent);
 
-  const heardBy = new Map<EntityId, NoiseHeard[]>();
-  const queue: EntityId[] = [];
-  const queued = new Set<EntityId>();
-  const lastEvaluated = new Map<EntityId, number>();
   let installed = true;
   let lastUnits = 0;
 
   const unsubscribe = w.events.on(noiseHeard, (heard) => {
     const senses = w.get(heard.listener, CreatureSensesComponent);
     if (senses?.hearing === undefined) return;
-    const list = heardBy.get(heard.listener);
-    if (list === undefined) heardBy.set(heard.listener, [heard]);
-    else list.push(heard);
+    // An agent hears only once perception has given it a listener, which comes with its bookkeeping.
+    w.get(heard.listener, PerceptionAgentComponent)?.heard.push(heard);
   });
 
   const syncListener = (agent: EntityId, hearing: Hearing | undefined): void => {
@@ -229,14 +247,16 @@ export function perceptionSystem<TInput>(
       return lastUnits;
     },
     get pending() {
-      return queue.length;
+      let waiting = 0;
+      bookkeeping.forEach((_, state) => {
+        if (state.queued >= 0) waiting++;
+      });
+      return waiting;
     },
     uninstall() {
       installed = false;
       unsubscribe();
-      queue.length = 0;
-      queued.clear();
-      heardBy.clear();
+      for (const agent of [...bookkeeping.ids()]) w.remove(agent, PerceptionAgentComponent);
     },
     run(ctx) {
       if (!installed) return;
@@ -244,13 +264,28 @@ export function perceptionSystem<TInput>(
       const hz = ctx.clock.hz;
       const period = Math.max(1, Math.round(hz / tuning.rateHz));
       const listening = w.isRegistered(NoiseListenerComponent);
-      agents.forEach((agent, senses) => {
+      // The queue: waiting agents by the tick they fell due, then by id.
+      const queue: [EntityId, PerceptionAgent, Frozen<SenseProfile>, Placement][] = [];
+      agents.forEach((agent, senses, at) => {
         if (listening) syncListener(agent, senses.hearing);
-        if ((tick + agent) % period === 0 && !queued.has(agent)) {
-          queue.push(agent);
-          queued.add(agent);
+        let state = w.get(agent, PerceptionAgentComponent);
+        if (state === undefined) {
+          // Inside a step it is stored at the tick's end: this tick works on the same object.
+          state = { heard: [], evaluated: -1, queued: -1 };
+          w.add(agent, PerceptionAgentComponent, state);
+        }
+        if ((tick + agent) % period === 0 && state.queued < 0) state.queued = tick;
+        if (state.queued >= 0) queue.push([agent, state, senses, at]);
+      });
+      // Bookkeeping left on an entity that is no longer an agent (it lost its senses or placement).
+      const stale: EntityId[] = [];
+      bookkeeping.forEach((agent) => {
+        if (!w.has(agent, CreatureSensesComponent) || !w.has(agent, PlacementComponent)) {
+          stale.push(agent);
         }
       });
+      for (const agent of stale) w.remove(agent, PerceptionAgentComponent);
+      queue.sort(([a, x], [b, y]) => x.queued - y.queued || a - b);
 
       // Everything below is sampled at most once per tick, on first use.
       let units = 0;
@@ -375,7 +410,12 @@ export function perceptionSystem<TInput>(
         );
       };
 
-      const evaluate = (agent: EntityId, senses: Frozen<SenseProfile>, at: Placement): void => {
+      const evaluate = (
+        agent: EntityId,
+        state: PerceptionAgent,
+        senses: Frozen<SenseProfile>,
+        at: Placement,
+      ): void => {
         units += 1;
         const percepts: Percept[] = [];
         const nav = w.isRegistered(CreatureNavComponent)
@@ -404,8 +444,8 @@ export function perceptionSystem<TInput>(
           }
         }
 
-        const heard = heardBy.get(agent) ?? EMPTY;
-        heardBy.delete(agent);
+        const { heard } = state;
+        state.heard = [];
         if (hearing !== undefined) {
           for (const noise of heard) {
             const sound = hearingPercept(hearing, noise, tuning);
@@ -436,28 +476,20 @@ export function perceptionSystem<TInput>(
           if (touched !== undefined) percepts.push(touched);
         }
 
-        const last = lastEvaluated.get(agent);
-        lastEvaluated.set(agent, tick);
+        const last = state.evaluated;
+        state.evaluated = tick;
         w.events.emit(perceived, {
           tick,
           agent,
-          seconds: (last === undefined ? period : tick - last) / hz,
+          seconds: (last < 0 ? period : tick - last) / hz,
           percepts: Object.freeze(percepts),
         });
       };
 
-      while (units < unitsPerTick) {
-        const agent = queue.shift();
-        if (agent === undefined) break;
-        queued.delete(agent);
-        const senses = w.get(agent, CreatureSensesComponent);
-        const at = w.get(agent, PlacementComponent);
-        if (senses === undefined || at === undefined) {
-          heardBy.delete(agent);
-          lastEvaluated.delete(agent);
-          continue;
-        }
-        evaluate(agent, senses, at);
+      for (const [agent, state, senses, at] of queue) {
+        if (units >= unitsPerTick) break;
+        state.queued = -1;
+        evaluate(agent, state, senses, at);
       }
       lastUnits = units;
     },

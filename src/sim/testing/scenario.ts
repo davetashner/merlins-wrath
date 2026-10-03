@@ -203,6 +203,15 @@ type ScenarioCommand =
     }
   | { readonly kind: 'scenario.extinguish'; readonly light: string };
 
+/** A scenario's world before its first tick, with its driver (`AiScenario.start`). */
+export interface ScenarioStart {
+  readonly world: World;
+  /** The commands for tick `tick`: the player's script (call once per tick, in order). */
+  readonly drive: (tick: number) => readonly unknown[];
+  /** Each fixture's entity, by fixture id. */
+  readonly agents: ReadonlyMap<string, EntityId>;
+}
+
 interface Built {
   readonly world: World;
   readonly drive: (tick: number) => readonly unknown[];
@@ -347,6 +356,17 @@ export class AiScenario {
     const result = this.run();
     if (!result.passed) throw new ScenarioFailedError(result);
     return result;
+  }
+
+  /**
+   * A fresh start of this scenario, as `run` begins: the world at tick 0 with its systems installed
+   * and its fixtures spawned, the fixtures' entities, and the player's script as each tick's commands
+   * (call it once per tick, in order). For driving a scenario by hand: saving it part way, loading
+   * the save into another start's world and going on from there (mw-e12.14).
+   */
+  start(): ScenarioStart {
+    const { world, drive, agents } = this.build();
+    return { world, drive, agents };
   }
 
   private tickOf(t: number): number {

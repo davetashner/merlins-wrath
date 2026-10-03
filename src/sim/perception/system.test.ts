@@ -23,10 +23,12 @@ import { FakeSightWorld } from '../sight/fake-sight-world';
 import { LineOfSight } from '../sight/line-of-sight';
 import { partial } from '../sight/occlusion';
 import { VisibilityProfileComponent } from '../stealth/self-visibility';
+import { hashWorld } from '../snapshot';
 import { PlacementComponent } from '../stimulus/placement';
 import type { Vec3 } from '../stimulus/shapes';
 import { entitySource, perceived, type Percept, type PerceptionReport } from './percept';
 import {
+  PerceptionAgentComponent,
   perceptionBudgetUnits,
   perceptionSystem,
   PERCEPTION_UNITS_PER_MS,
@@ -417,6 +419,17 @@ describe('perception: hearing (mw-e11.5)', () => {
     expect(world.get(guard, NoiseListenerComponent)).toBeUndefined();
   });
 
+  it('an agent hears only once perception has set it up', () => {
+    const { world, reports, step } = hearingWorld();
+    const guard = addAgent(world, HUMANOID, LISTENER);
+    world.add(guard, NoiseListenerComponent, HEARING); // listening before perception saw it
+    emitNoise(world, { position: LISTENER, loudness: 80, kind: 'early' });
+    step(1);
+    emitNoise(world, { position: LISTENER, loudness: 80, kind: 'late' });
+    step();
+    expect(perceptsOf(reports, guard).map((p) => p.source)).toEqual(['sound:late']);
+  });
+
   it('ignores listeners that are not creatures, and noises an agent went deaf to before it listened', () => {
     const { world, reports, step } = hearingWorld();
     const microphone = world.spawn();
@@ -543,13 +556,66 @@ describe('perception: schedule and budget (mw-e11.5)', () => {
     expect(reports.map((r) => r.agent)).toEqual([a, a]);
   });
 
-  it('stops when uninstalled', () => {
+  it('stops when uninstalled, dropping its bookkeeping', () => {
     const { world, system, reports, step } = setup();
-    addAgent(world);
+    const guard = addAgent(world);
+    step(1);
+    expect(world.get(guard, PerceptionAgentComponent)).toBeDefined();
     system.uninstall();
     step();
     expect(reports).toEqual([]);
     expect(system.pending).toBe(0);
+    expect(world.get(guard, PerceptionAgentComponent)).toBeUndefined();
+  });
+
+  it('mw-e12.14: keeps its queue, hearing buffers and evaluation times in components, so a restored world perceives exactly as one never saved', () => {
+    const build = () => {
+      const s = setup({ unitsPerTick: 12, tuning: { ...DEFAULT_PERCEPTION_TUNING, rateHz: 60 } });
+      installNoisePropagation(s.world, { graph: buildSoundGraph({ rooms: [], portals: [] }) });
+      addPlayer(s.world, ahead(5));
+      for (let i = 0; i < 4; i++) addAgent(s.world, HUMANOID, { x: i, y: 0, z: 0 });
+      return s;
+    };
+    const noise = (world: World<never>, tick: number) => {
+      if (tick % 3 === 1)
+        emitNoise(world, { position: ahead(2), loudness: 60, kind: `n${String(tick)}` });
+    };
+    const report = (r: PerceptionReport) => [r.tick, r.agent, r.seconds, r.percepts.length];
+    const uninterrupted = build();
+    for (let tick = 0; tick < 12; tick++) {
+      noise(uninterrupted.world, tick);
+      uninterrupted.step(1);
+    }
+    const tail = uninterrupted.reports.filter((r) => r.tick >= 5).map(report);
+
+    const saved = build();
+    for (let tick = 0; tick < 5; tick++) {
+      noise(saved.world, tick);
+      saved.step(1);
+    }
+    // Mid-queue, with noises heard and not yet perceived.
+    expect(saved.system.pending).toBe(2);
+    const waiting = saved.world.query(PerceptionAgentComponent).ids();
+    expect(
+      waiting.some((id) => (saved.world.get(id, PerceptionAgentComponent)?.heard.length ?? 0) > 0),
+    ).toBe(true);
+    const restored = build();
+    restored.world.restore(saved.world.snapshot());
+    expect(restored.system.pending).toBe(2);
+    for (let tick = 5; tick < 12; tick++) {
+      noise(restored.world, tick);
+      restored.step(1);
+    }
+    expect(restored.reports.map(report)).toEqual(tail);
+    expect(hashWorld(restored.world)).toBe(hashWorld(uninterrupted.world));
+  });
+
+  it('registers its bookkeeping once, for a world that already has it too', () => {
+    const world = registerCreatureComponents(new World<never>({ seed: 1 }));
+    world.register(PerceptionAgentComponent);
+    const lineOfSight = new LineOfSight({ world: new FakeSightWorld() });
+    expect(() => perceptionSystem(world, { lineOfSight, light: lit(1) })).not.toThrow();
+    expect(world.isRegistered(PerceptionAgentComponent)).toBe(true);
   });
 
   it('refuses a budget under one unit and a rate that is not positive', () => {
