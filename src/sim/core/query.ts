@@ -104,6 +104,7 @@ export class Query<Ts extends ComponentList> {
   private refresh(): void {
     if (this.seen === this.structure.version) return;
     const { stores } = this;
+    for (const store of stores) store.sort(); // stores sort lazily (see World.settle)
     let driver = at(stores, 0); // a query has at least one component
     for (const store of stores) if (store.size < driver.size) driver = store;
     const matched: EntityId[] = [];

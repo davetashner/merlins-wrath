@@ -348,6 +348,7 @@ export class World<TInput = unknown> {
     this.requireIdle('snapshot');
     const components: Record<string, (readonly [EntityId, unknown])[]> = {};
     for (const [name, store] of [...this.stores].sort(byKey)) {
+      store.sort();
       const { type, values } = store;
       const alias = options.shared === true && usesDefaultSerialize(type);
       components[name] = store.ids.map((id, slot) => [
@@ -479,9 +480,12 @@ export class World<TInput = unknown> {
     for (const listener of listeners) listener(id, value);
   }
 
-  /** Re-sorts stores and invalidates cached queries after structural changes. */
+  /**
+   * Invalidates cached queries after structural changes. Stores are re-sorted lazily, by the next
+   * query or snapshot that reads them, so a run of changes between steps (a level's deltas, mw-e27.3)
+   * sorts each store once rather than once per change.
+   */
   private settle(): void {
-    for (const store of this.stores.values()) store.sort();
     this.structure.version++;
   }
 

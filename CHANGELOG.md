@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- The world can now remember what you did to it: smashed walls, charred crates, boxes you moved,
+  doors and levers you left open, looted chests, dead creatures and items you dropped stay that way
+  when a level is left and loaded again. Only the changes are kept, not the whole level. You will
+  see it once area transitions and saves use it.
 - How visible you are now depends on the light on your body, your stance, how fast you move and
   how far away a watcher is. Shadows hide you, sprinting through torchlight gives you away, and a
   dark figure against a bright window stands out.

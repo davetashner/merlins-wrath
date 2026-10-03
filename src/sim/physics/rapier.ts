@@ -288,7 +288,7 @@ export class RapierPhysics implements RigidBodyPort {
     this.bodyOf(handle).sleep();
   }
 
-  moveBody(handle: ColliderHandle, position: Vec3): void {
+  moveBody(handle: ColliderHandle, position: Vec3, rotation?: Quat): void {
     if (!(
       Number.isFinite(position.x) &&
       Number.isFinite(position.y) &&
@@ -296,8 +296,15 @@ export class RapierPhysics implements RigidBodyPort {
     )) {
       throw new RangeError('body position must be finite');
     }
+    if (
+      rotation !== undefined &&
+      ![rotation.x, rotation.y, rotation.z, rotation.w].every(Number.isFinite)
+    ) {
+      throw new RangeError('body rotation must be finite');
+    }
     const body = this.bodyOf(handle);
     body.setTranslation(vec(position), true);
+    if (rotation !== undefined) body.setRotation(quat(rotation), true);
     body.setLinvel(vec(ZERO), true);
     body.setAngvel(vec(ZERO), true);
   }

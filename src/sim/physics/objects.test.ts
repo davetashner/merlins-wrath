@@ -541,6 +541,18 @@ describe('teleporting a physics object (mw-e33.17)', () => {
     expect(objectOf(world, crate)).toMatchObject({ sleeping: false, awakeSince: world.tick });
   });
 
+  it('turns the body to a given rotation (mw-e27.3: a saved pose)', () => {
+    const { world, physics } = setup();
+    const crate = spawnObject(world, v(0, HALF, 0));
+    const rotation = { x: 0, y: Math.SQRT1_2, z: 0, w: Math.SQRT1_2 };
+    teleportPhysicsObject(world, crate, v(2, HALF, 0), rotation);
+    expect(objectOf(world, crate)).toMatchObject({ position: v(2, HALF, 0), rotation });
+    expect(physics.poseOf(objectOf(world, crate).body as ColliderHandle).rotation.y).toBeCloseTo(
+      Math.SQRT1_2,
+      6,
+    );
+  });
+
   it('refuses an entity that is not a physics object, and a non-finite position', () => {
     const { world, floor } = setup();
     expect(() => {
