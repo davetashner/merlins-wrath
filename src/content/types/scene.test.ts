@@ -229,6 +229,127 @@ describe('scene acoustics (mw-e09.3)', () => {
   });
 });
 
+describe('scene patrol routines (mw-e11.9)', () => {
+  const guard = (routine: unknown, extra: object = {}) => ({
+    id: 'guard',
+    at: [0, 0, 0],
+    creature: 'fixture-guard',
+    routine,
+    ...extra,
+  });
+  const yard = {
+    ...room,
+    waypoints: [
+      { id: 'gate', at: [0, 0, 0], dwellS: 2, look: 90, scanArc: 90, idle: 'guard-lean' },
+      { id: 'well', at: [4, 0, 0] },
+      { id: 'tower', at: [4, 0, 4] },
+    ],
+    routes: [
+      { id: 'yard-loop', kind: 'loop', waypoints: ['gate', 'well', 'tower'] },
+      { id: 'yard-walk', kind: 'ping-pong', waypoints: ['gate', 'well', 'tower'] },
+      { id: 'gate-post', kind: 'post', waypoints: ['gate'] },
+      {
+        id: 'yard-wander',
+        kind: 'random',
+        waypoints: ['gate', 'well'],
+        links: [
+          { from: 'gate', to: 'well', weight: 3 },
+          { from: 'well', to: 'gate' },
+        ],
+      },
+    ],
+    spawns: [guard([{ route: 'yard-loop', hours: [6, 18] }, { route: 'gate-post' }])],
+  };
+
+  it('takes waypoints, routes of every kind and a windowed routine, filling defaults', () => {
+    expect(problems(yard)).toEqual([]);
+    const scene = sceneSchema.parse(yard);
+    expect(scene.waypoints[0]).toEqual({
+      id: 'gate',
+      at: [0, 0, 0],
+      dwellS: 2,
+      look: 90,
+      scanArc: 90,
+      scanS: 6,
+      idle: 'guard-lean',
+    });
+    expect(scene.routes[3]?.links?.[1]).toEqual({ from: 'well', to: 'gate', weight: 1 });
+    expect(scene.spawns[0]?.routine).toEqual([
+      { route: 'yard-loop', hours: [6, 18] },
+      { route: 'gate-post' },
+    ]);
+  });
+
+  it('AC-5: a route referencing a nonexistent waypoint id fails validation', () => {
+    const broken = {
+      ...yard,
+      routes: [{ id: 'yard-loop', kind: 'loop', waypoints: ['gate', 'stable', 'tower'] }],
+      spawns: [],
+    };
+    expect(problems(broken)).toEqual([
+      'routes.0.waypoints.1: route "yard-loop" names waypoint "stable", which this scene does not have',
+    ]);
+    // Through the content loader too: the file and path are named.
+    const load = () =>
+      loadContent(
+        contentTypes,
+        [...gameContentSources(), source('fixtures/scene/yard.json', broken)],
+        contentChecks,
+      );
+    expect(load).toThrow(ContentLoadError);
+    expect(load).toThrow(/fixtures\/scene\/yard\.json[\s\S]*routes\/0\/waypoints\/1/);
+  });
+
+  it('rejects repeated names, misshapen posts, ping-pongs and random graphs, and bad routines', () => {
+    expect(
+      problems({
+        ...room,
+        waypoints: [
+          { id: 'a', at: [0, 0, 0] },
+          { id: 'a', at: [1, 0, 0], scanArc: 45 },
+          { id: 'b', at: [2, 0, 0] },
+        ],
+        routes: [
+          { id: 'post', kind: 'post', waypoints: ['a', 'b'] },
+          { id: 'post', kind: 'ping-pong', waypoints: ['a'] },
+          { id: 'loop', kind: 'loop', waypoints: ['a', 'b'], links: [{ from: 'a', to: 'b' }] },
+          {
+            id: 'wander',
+            kind: 'random',
+            waypoints: ['a', 'b', 'a'],
+            links: [
+              { from: 'a', to: 'c' },
+              { from: 'd', to: 'a' },
+            ],
+          },
+          { id: 'alone', kind: 'random', waypoints: ['b'] },
+        ],
+        spawns: [
+          guard([{ route: 'loop', hours: [6, 6] }, { route: 'gone' }], { patrol: [[0, 0, 0]] }),
+          { id: 'marker', at: [0, 0, 0], routine: [{ route: 'loop' }] },
+          guard([], { id: 'idle' }),
+        ],
+      }),
+    ).toEqual([
+      'spawns.0.routine.0.hours: the window is empty: from equals to',
+      'spawns.2.routine: Too small: expected array to have >=1 items',
+      'waypoints.1.scanArc: a scan arc needs a look direction to centre on',
+      'spawns.1.routine: spawn "marker" sets routine but spawns no creature',
+      'waypoints.1.id: waypoint id "a" is used twice',
+      'routes.0.waypoints: route "post" is a post: it holds exactly one waypoint',
+      'routes.1.id: route id "post" is used twice',
+      'routes.1.waypoints: route "post" is a ping-pong: it needs at least two waypoints',
+      'routes.2.links: route "loop" is a loop: only a random route has links',
+      'routes.3.waypoints.2: route "wander" lists waypoint "a" twice',
+      'routes.3.links.0.to: route "wander" links waypoint "c", which it does not list',
+      'routes.3.links.1.from: route "wander" links waypoint "d", which it does not list',
+      'routes.3.waypoints.1: route "wander" has no link leaving waypoint "b"',
+      'spawns.0.routine: spawn "guard" sets both patrol and routine',
+      'spawns.0.routine.1.route: spawn "guard" names route "gone", which this scene does not have',
+    ]);
+  });
+});
+
 describe('scene schema (mw-e00.21)', () => {
   it('fills defaults: 1 m grid, no yaw, unit scale, no spawns', () => {
     expect(sceneSchema.parse(room)).toEqual({
@@ -240,6 +361,8 @@ describe('scene schema (mw-e00.21)', () => {
       ],
       spawns: [],
       signals: [],
+      waypoints: [],
+      routes: [],
     });
   });
 

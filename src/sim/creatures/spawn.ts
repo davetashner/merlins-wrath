@@ -27,6 +27,7 @@
 // tick; between steps at once.
 
 import type { CreatureTable, RuntimeCreature } from '@content/index';
+import type { PatrolRoutine } from '../ai/routes';
 import { aiBehaviour, giveBrain } from '../ai/runtime';
 import { giveAttacker, AttackerComponent } from '../combat/attacks/components';
 import {
@@ -81,6 +82,8 @@ export interface CreatureSpawnRequest {
   readonly faction?: string;
   /** Its patrol route, metres. */
   readonly patrol?: readonly Vec3[];
+  /** The routes it walks, each in its window of hours (mw-e11.9). */
+  readonly routine?: readonly PatrolRoutine[];
 }
 
 /** What spawning needs: the creatures it can spawn and the world's faction table. */
@@ -174,7 +177,7 @@ export function creatureLockProfile(height: number) {
 const vec = ({ x, y, z }: Vec3): Vec3 => Object.freeze({ x: x + 0, y: y + 0, z: z + 0 });
 
 function originOf(request: CreatureSpawnRequest, facing: Vec3): CreatureOrigin {
-  const { point, faction, patrol } = request;
+  const { point, faction, patrol, routine } = request;
   return Object.freeze({
     creature: request.creature,
     at: vec(request.at),
@@ -182,6 +185,7 @@ function originOf(request: CreatureSpawnRequest, facing: Vec3): CreatureOrigin {
     ...(point !== undefined && { point }),
     ...(faction !== undefined && { faction }),
     ...(patrol !== undefined && { patrol: Object.freeze(patrol.map(vec)) }),
+    ...(routine !== undefined && { routine }),
   });
 }
 
@@ -295,7 +299,7 @@ export function despawnAllCreatures(world: World<never>): number {
 
 /**
  * Removes creature `entity` and spawns it again, fresh, from its origin (same creature, place,
- * facing, spawn point, faction override and patrol) under a new entity id.
+ * facing, spawn point, faction override, patrol and routine) under a new entity id.
  */
 export function respawnCreature(
   world: World<never>,
@@ -318,7 +322,7 @@ export interface SceneCreatures {
 
 /**
  * Spawns the creature of every scene spawn that names one, facing the spawn's yaw, with its faction
- * override and patrol route. A failed spawn is reported, not thrown; the rest still spawn.
+ * override, patrol route and routine. A failed spawn is reported, not thrown; the rest still spawn.
  */
 export function spawnSceneCreatures(
   world: World<never>,
@@ -336,6 +340,7 @@ export function spawnSceneCreatures(
       point: spawn.id,
       ...(spawn.faction !== undefined && { faction: spawn.faction }),
       ...(spawn.patrol !== undefined && { patrol: spawn.patrol }),
+      ...(spawn.routine !== undefined && { routine: spawn.routine }),
     });
     if (result.ok) entities.push(result.entity);
     else errors.push({ point: spawn.id, error: result.error });

@@ -109,6 +109,9 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].creature` | ref → creature | — | Creature to spawn here (mw-e12.4); faces the spawn’s yaw. |
 | `spawns[].faction` | ref → faction | — | Faction the spawned creature joins instead of its definition’s (needs creature). |
 | `spawns[].patrol` | list of list of any (at least 3) (at least 1) | — | Patrol route for the spawned creature: waypoints in grid cells, walked in order (needs creature; AI, e11, walks it). |
+| `spawns[].routine` | list of object (at least 1) | — | Routes the spawned creature walks (mw-e11.9): the first whose window holds the hour runs (needs creature; not with patrol). |
+| `spawns[].routine[].route` | id | required | Route id of this scene. |
+| `spawns[].routine[].hours` | list of any (at least 2) | — | From and to, hours of the day (wraps past midnight when from > to); omit for always. |
 | `spawns[].properties` | object | — | World properties of the spawned entity, e.g. a torch: { "burning": true, "fuel": 3600 } (mw-e03.37). A spawn with properties is placed in the sim, so the light field and stimuli reach it. |
 | `spawns[].properties.material` | ref → material | — | Material preset id (a material content entry). |
 | `spawns[].properties.temperature` | number -273.15–10000 | — | Current temperature, °C. |
@@ -187,6 +190,22 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].container.contents[].count` | integer 1–9999 | `1` | Units of it; default 1. |
 | `spawns[].container.lock` | ref → lock | — | The lock it carries: unlocked and picked like a door’s (mw-e03.18). |
 | `spawns[].container.locked` | boolean | — | Starts locked; defaults to true when it has a lock (needs one). |
+| `waypoints` | list of object | `[]` | Named points patrol routes walk through (mw-e11.9). |
+| `waypoints[].id` | id | required | Name of the waypoint, unique in the scene, e.g. yard-gate. |
+| `waypoints[].at` | list of any (at least 3) | required | Position in grid cells (x, y, z), snapped to SCENE_SNAP_STEP. |
+| `waypoints[].dwellS` | number ≥ 0 | — | Seconds a guard stands here; default: the follow-route step’s dwellS (a post holds forever). |
+| `waypoints[].look` | number ≥ 0 < 360 | — | Direction it faces while it stands here, degrees: 0 faces +z, 90 faces +x. |
+| `waypoints[].scanArc` | number > 0 ≤ 360 | — | Degrees it sweeps its gaze across, centred on look, while it stands here. |
+| `waypoints[].scanS` | number > 0 | `6` | Seconds one full sweep of the scan arc takes (there and back). |
+| `waypoints[].idle` | id | — | Idle action cue played on arrival (e.g. guard-lean, guard-warm-hands, guard-check-door). |
+| `routes` | list of object | `[]` | Patrol routes and guard posts over the waypoints (mw-e11.9). |
+| `routes[].id` | id | required | Name of the route, unique in the scene, e.g. yard-loop. |
+| `routes[].kind` | `"loop"` \| `"ping-pong"` \| `"random"` \| `"post"` | required | loop, ping-pong, random (weighted graph) or post. |
+| `routes[].waypoints` | list of id (at least 1) | required | Waypoint ids in walking order (random: the graph’s waypoints, each once). |
+| `routes[].links` | list of object | — | Random routes only: the weighted ways between its waypoints. |
+| `routes[].links[].from` | id | required | Waypoint it leaves. |
+| `routes[].links[].to` | id | required | Waypoint it goes to. |
+| `routes[].links[].weight` | integer ≥ 1 | `1` | Relative chance of taking this way; default 1. |
 | `light` | object | — | Static lighting: ambient level, ambient zones, directional lights (mw-e03.37). |
 | `light.ambient` | number 0–1 | — | Ambient level wherever no ambient zone applies, 0–1. |
 | `light.ambientZones` | list of object | `[]` | Boxes with their own ambient level; later zones win where they overlap. |

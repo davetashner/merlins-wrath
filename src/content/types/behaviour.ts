@@ -109,7 +109,7 @@ export type BehaviourEvent = (typeof BEHAVIOUR_EVENTS)[number];
 
 /**
  * Where a step moves or looks: the stimulus, the target, the target's last-known position, the
- * nearest patrol waypoint, the spawn.
+ * waypoint of its route nearest by path (mw-e11.9), the spawn.
  */
 export const BEHAVIOUR_TARGETS = [
   'stimulus',
@@ -210,10 +210,14 @@ const stepSchema = z.discriminatedUnion(
     z
       .strictObject({
         do: z.literal('follow-route'),
-        dwellS: seconds.default(0).describe('Seconds it stands at each waypoint.'),
+        dwellS: seconds
+          .default(0)
+          .describe('Seconds it stands at each waypoint that sets no dwell of its own.'),
         gait,
       })
-      .describe('Walks its patrol route in a loop (never ends); fails without a route.'),
+      .describe(
+        'Walks its routine’s route (loop, ping-pong, random or post; never ends), resuming at the waypoint nearest by path; skips an unreachable waypoint (RouteBlocked); fails without a route or when every waypoint is blocked.',
+      ),
     z
       .strictObject({
         do: z.literal('look-at'),

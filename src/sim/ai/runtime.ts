@@ -54,6 +54,11 @@ export interface AiOptions {
   readonly attacks?: AttackLookup;
   /** The most agents that think in one tick (default: no limit). */
   readonly maxThinksPerTick?: number;
+  /**
+   * The hour of the day, 0–24, that routine windows are read against (the world clock, mw-e27.12);
+   * without it windows are not read and every creature walks the first route of its routine.
+   */
+  readonly hourOfDay?: (world: World<never>) => number;
 }
 
 interface AiRuntime {
@@ -271,6 +276,7 @@ export function installAi<TInput>(world: World<TInput>, options: AiOptions): voi
     ports: {
       navigation: options.navigation ?? straightLineNavigation,
       attacks: options.attacks,
+      hourOfDay: options.hourOfDay,
     },
     maxThinks,
   };
@@ -338,6 +344,7 @@ export function giveBrain(world: World<never>, entity: EntityId, spec: BrainSpec
     awareness: [],
     postAlertUntil: -1,
     postAlertRate: 1,
+    routeDir: 1,
   });
 }
 

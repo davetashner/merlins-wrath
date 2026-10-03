@@ -8,5 +8,6 @@ export * from './inputs';
 export * from './introspect';
 export * from './navigation';
 export * from './primitives';
+export * from './routes';
 export * from './runtime';
 export type { AgentView, AiPorts, Num } from './view';

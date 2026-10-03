@@ -205,4 +205,35 @@ describe('navmesh travel for AI (mw-e11.4)', () => {
     w.travel(e1, { x: corner[0], y: 0, z: corner[1] + 3 });
     expect(mesh.locate(w.place(e1), 0.45, 0.45)).toBeGreaterThanOrEqual(0);
   });
+
+  it('mw-e11.9: measures the path length to a point, Infinity when it cannot get there', () => {
+    let gate: NavDoorState = 'open';
+    const t = setup({ doors: () => gate });
+    const guard = t.spawn(IN_A);
+    const distance = (goal: Vec3, entity = guard) => {
+      const measure = t.nav.distance;
+      if (measure === undefined) throw new Error('navmesh travel measures distance');
+      return measure(t.world, entity, goal);
+    };
+    // Within one room: the straight line.
+    expect(distance({ x: 2, y: 0, z: 1 })).toBeCloseTo(2, 6);
+    // To the other room: round through the doorway, longer than the straight line.
+    const through = distance(IN_B);
+    expect(through).toBeGreaterThan(IN_B.x - IN_A.x + 0.5);
+    expect(through).toBeLessThan(20);
+    // It is what travel walks.
+    const { status, trail } = walk(t, guard, IN_B);
+    expect(status).toBe('success');
+    let walked = 0;
+    trail.forEach((p, i) => {
+      const prev = trail[i - 1] ?? IN_A;
+      walked += Math.sqrt((p.x - prev.x) ** 2 + (p.z - prev.z) ** 2);
+    });
+    expect(walked).toBeCloseTo(through, 0);
+    gate = 'locked';
+    const back = t.spawn(IN_A);
+    expect(distance(IN_B, back)).toBe(Infinity);
+    const ghost = t.world.spawn();
+    expect(distance(IN_B, ghost)).toBe(Infinity);
+  });
 });

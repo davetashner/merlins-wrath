@@ -131,6 +131,26 @@ describe('creatures in the grey-box scenes (mw-e12.4)', () => {
         { x: 4, y: 0, z: 3 },
       ],
     });
+    // mw-e11.9: the sentinel's routine comes from the scene's waypoints and routes, in metres.
+    const sentinel = g.sceneCreatures.entities[3] ?? 0;
+    expect(g.world.get(sentinel, CreatureComponent)?.origin.routine).toEqual([
+      {
+        route: {
+          id: 'corner-watch',
+          kind: 'post',
+          waypoints: [
+            {
+              id: 'corner',
+              at: { x: 4, y: 0, z: 4 },
+              look: 180,
+              scanArc: 90,
+              scanS: 8,
+              idle: 'sentinel-scan',
+            },
+          ],
+        },
+      },
+    ]);
   });
 
   it('AC-1 (game wiring): two pens with the same seed step to the same state hash', () => {

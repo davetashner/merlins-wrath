@@ -480,7 +480,7 @@
                     },
                     "dwellS": {
                       "default": 0,
-                      "description": "Seconds it stands at each waypoint.",
+                      "description": "Seconds it stands at each waypoint that sets no dwell of its own.",
                       "anyOf": [
                         {
                           "type": "number",
@@ -518,7 +518,7 @@
                     "do"
                   ],
                   "additionalProperties": false,
-                  "description": "Walks its patrol route in a loop (never ends); fails without a route."
+                  "description": "Walks its routine’s route (loop, ping-pong, random or post; never ends), resuming at the waypoint nearest by path; skips an unreachable waypoint (RouteBlocked); fails without a route or when every waypoint is blocked."
                 },
                 {
                   "type": "object",

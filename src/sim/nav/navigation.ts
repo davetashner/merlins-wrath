@@ -13,6 +13,10 @@
 // them on the mesh. An unreachable goal or a start off the mesh is a failure, which the behaviour
 // handles (ADR-0005 §4).
 //
+// `distance` (patrol routines picking the nearest waypoint, mw-e11.9) measures the length of the path
+// to a point with one search run to completion, outside the queue's budget: it is asked rarely (when
+// a creature resumes its route), and a resume must not wait ticks for its answer.
+//
 // The queue's search progress is not saved: a save taken while a request waits resubmits it on load.
 
 import type { EntityId } from '../core/component';
@@ -26,7 +30,7 @@ import type { Vec3 } from '../stimulus/shapes';
 import { DEFAULT_NAV_AGENT } from './capabilities';
 import { ALL_DOORS_CLOSED, type NavDoorLookup } from './doors';
 import type { NavMesh } from './mesh';
-import type { NavPathPoint } from './path';
+import { NavMeshQuery, type NavPathPoint } from './path';
 import { NavPathQueue, type NavQueueOptions } from './queue';
 import { separation, type NavNeighbour } from './steering';
 import { at } from './util';
@@ -72,6 +76,7 @@ export function navmeshNavigation(options: NavmeshNavigationOptions): NavmeshNav
   const { mesh } = options;
   const doors = options.doors ?? ALL_DOORS_CLOSED;
   const queue = new NavPathQueue(mesh, options.queue);
+  const query = new NavMeshQuery(mesh);
   const pumped = new WeakMap<World<never>, number>();
 
   const pump = (world: World<never>) => {
@@ -166,6 +171,20 @@ export function navmeshNavigation(options: NavmeshNavigationOptions): NavmeshNav
 
   return Object.freeze({
     queue,
+    distance(world: World<never>, entity: EntityId, goal: Vec3): number {
+      const here = getIf(world, entity, PlacementComponent);
+      if (here === undefined) return Infinity;
+      const agent = getIf(world, entity, CreatureNavComponent) ?? DEFAULT_NAV_AGENT;
+      const result = query.findPath({ start: here, goal, agent, doors });
+      if (result.status !== 'found') return Infinity;
+      let length = 0;
+      for (let i = 1; i < result.points.length; i++) {
+        const a = at(result.points, i - 1);
+        const b = at(result.points, i);
+        length += Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2 + (b.z - a.z) ** 2);
+      }
+      return length;
+    },
     travel(world: World<never>, entity: EntityId, request: TravelRequest): AiStatus {
       const here = getIf(world, entity, PlacementComponent);
       if (here === undefined) return 'failure';

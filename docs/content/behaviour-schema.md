@@ -55,7 +55,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `activities.<key>.steps[].within.tuning` | string | required | Tuning key. |
 | `activities.<key>.steps[].gait` | `"sneak"` \| `"walk"` \| `"run"` | `"walk"` | Gait (its speed comes from the creature). |
 | `activities.<key>.steps[].do` | `"follow-route"` | required |  |
-| `activities.<key>.steps[].dwellS` | number ≥ 0 or object | `0` | Seconds it stands at each waypoint. |
+| `activities.<key>.steps[].dwellS` | number ≥ 0 or object | `0` | Seconds it stands at each waypoint that sets no dwell of its own. |
 | `activities.<key>.steps[].dwellS.tuning` | string | required | Tuning key. |
 | `activities.<key>.steps[].do` | `"look-at"` | required |  |
 | `activities.<key>.steps[].target` | `"stimulus"` \| `"target"` \| `"lkp"` \| `"nearest-waypoint"` \| `"origin"` | required | What to face. |

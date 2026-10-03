@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- Guards keep routines you can watch and time. A guard can walk a loop, pace back and forth, wander
+  between spots at random, or stand at a post sweeping its gaze across an arc. It pauses at each
+  stop for a set time, faces a set way, and may lean on a wall or warm its hands while it waits.
+  After a search, it heads for whichever stop it can reach soonest, not the next one in line. When a
+  locked door cuts off a stop, it skips that stop and carries on.
 - Health and stamina bars in the bottom-left corner. When you take a hit, the health you lost stays
   visible in a lighter colour for half a second before it drains away. The health bar pulses when
   you are below a quarter of your health, and the stamina bar flashes when you try something you

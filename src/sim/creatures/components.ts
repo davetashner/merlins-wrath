@@ -8,6 +8,7 @@
 
 import type { Frozen, NavAgent, SenseProfile } from '@content/index';
 import { defineComponent } from '../core/component';
+import type { PatrolRoutine } from '../ai/routes';
 import type { Vec3 } from '../stimulus/shapes';
 
 /** Where and how a creature was spawned: enough to spawn it again (`respawnCreature`). */
@@ -24,6 +25,8 @@ export interface CreatureOrigin {
   readonly faction?: string;
   /** Its patrol route, metres, walked in order by AI (e11); absent = none. */
   readonly patrol?: readonly Vec3[];
+  /** The routes it walks, each in its window of hours (mw-e11.9); absent = none. */
+  readonly routine?: readonly PatrolRoutine[];
 }
 
 /** A spawned creature. */

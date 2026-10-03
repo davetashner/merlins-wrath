@@ -7,7 +7,8 @@
 // Coordinates: metres, +y up; yaw turns counter-clockwise seen from above (a right-handed rotation
 // about +y, the same as Three.js `rotation.y`), so yaw 90 turns local +z into world +x.
 
-import type { KitPurpose, KitShape, SceneYaw } from '@content/index';
+import type { KitPurpose, KitShape, RouteKind, SceneYaw } from '@content/index';
+import type { PatrolRoute, PatrolRoutine, PatrolWaypoint } from '../ai/routes';
 import type { RampRise } from '../character/greybox';
 import type { InteractableSpec } from '../interaction/affordance';
 import type { LightEnvironment } from '../light/field';
@@ -177,6 +178,8 @@ export interface SceneSpawnSpec {
   readonly faction?: { readonly id: string } | undefined;
   /** The creature's patrol route, grid cells. */
   readonly patrol?: readonly Triple[] | undefined;
+  /** The routes the creature walks, by route id, each in its window of hours (mw-e11.9). */
+  readonly routine?: readonly SceneRoutineSpec[] | undefined;
   /** World properties of the spawned entity (mw-e03.37: a torch that burns). */
   readonly properties?: ScenePropertiesSpec | undefined;
   /** Makes the spawned entity breakable (mw-e03.11). */
@@ -187,6 +190,32 @@ export interface SceneSpawnSpec {
   readonly switch?: SceneSwitchSpec | undefined;
   /** Makes the spawned entity a lootable container (mw-e18.3). */
   readonly container?: SceneContainerSpec | undefined;
+}
+
+/** A named point routes walk through, grid cells (mw-e11.9). */
+export interface SceneWaypointSpec {
+  readonly id: string;
+  readonly at: Triple;
+  readonly dwellS?: number | undefined;
+  readonly look?: number | undefined;
+  readonly scanArc?: number | undefined;
+  readonly scanS?: number | undefined;
+  readonly idle?: string | undefined;
+}
+
+/** A patrol route over a scene's waypoints, by id (mw-e11.9). */
+export interface SceneRouteSpec {
+  readonly id: string;
+  readonly kind: RouteKind;
+  readonly waypoints: readonly string[];
+  readonly links?:
+    readonly { readonly from: string; readonly to: string; readonly weight: number }[] | undefined;
+}
+
+/** One entry of a spawn's routine (mw-e11.9). */
+export interface SceneRoutineSpec {
+  readonly route: string;
+  readonly hours?: readonly [number, number] | undefined;
 }
 
 /** A box with its own ambient level, in grid cells (mw-e03.37). */
@@ -223,6 +252,10 @@ export interface SceneSpec {
   readonly light?: SceneLightSpec | undefined;
   /** Signal graphs wiring the scene's switches, volumes and doors (mw-e03.18). */
   readonly signals?: readonly SceneSignalSpec[] | undefined;
+  /** Named points patrol routes walk through (mw-e11.9). */
+  readonly waypoints?: readonly SceneWaypointSpec[] | undefined;
+  /** Patrol routes and guard posts over the waypoints (mw-e11.9). */
+  readonly routes?: readonly SceneRouteSpec[] | undefined;
 }
 
 /** Finds a kit piece by id (undefined when there is none). */
@@ -286,6 +319,8 @@ export interface SceneSpawnPlacement {
   readonly faction?: string;
   /** That creature's patrol route, world metres. */
   readonly patrol?: readonly Vec3[];
+  /** The routes that creature walks, world metres (mw-e11.9). */
+  readonly routine?: readonly PatrolRoutine[];
   /** Its world properties, when the spawn sets any (mw-e03.37). */
   readonly properties?: ScenePropertiesSpec;
   /** Its breakable profile and instance data, when it is breakable (mw-e03.11). */
@@ -439,8 +474,92 @@ function containerOf(spec: SceneContainerSpec): SceneContainer {
 }
 
 /**
+ * The scene's routes in world metres by id (mw-e11.9): each waypoint resolved from its id, and a
+ * random route's links to indices into its waypoints.
+ * @throws SceneLayoutError when a route names a waypoint the scene does not have.
+ */
+function sceneRoutes(scene: SceneSpec): Map<string, PatrolRoute> {
+  const points = new Map<string, PatrolWaypoint>();
+  for (const wp of scene.waypoints ?? []) {
+    points.set(
+      wp.id,
+      Object.freeze({
+        id: wp.id,
+        at: gridToWorld(wp.at, scene.grid),
+        ...(wp.dwellS !== undefined && { dwellS: wp.dwellS }),
+        ...(wp.look !== undefined && { look: wp.look }),
+        ...(wp.scanArc !== undefined && { scanArc: wp.scanArc }),
+        ...(wp.scanS !== undefined && { scanS: wp.scanS }),
+        ...(wp.idle !== undefined && { idle: wp.idle }),
+      }),
+    );
+  }
+  const routes = new Map<string, PatrolRoute>();
+  for (const route of scene.routes ?? []) {
+    const waypoints = route.waypoints.map((id) => {
+      const wp = points.get(id);
+      if (wp === undefined) {
+        throw new SceneLayoutError(
+          `scene "${scene.id}" route "${route.id}" names unknown waypoint "${id}"`,
+        );
+      }
+      return wp;
+    });
+    const index = (id: string) => {
+      const i = route.waypoints.indexOf(id);
+      if (i < 0) {
+        throw new SceneLayoutError(
+          `scene "${scene.id}" route "${route.id}" links waypoint "${id}", which it does not list`,
+        );
+      }
+      return i;
+    };
+    routes.set(
+      route.id,
+      Object.freeze({
+        id: route.id,
+        kind: route.kind,
+        waypoints: Object.freeze(waypoints),
+        ...(route.links !== undefined && {
+          links: Object.freeze(
+            route.links.map((link) =>
+              Object.freeze({ from: index(link.from), to: index(link.to), weight: link.weight }),
+            ),
+          ),
+        }),
+      }),
+    );
+  }
+  return routes;
+}
+
+/** A spawn's routine with its routes resolved (mw-e11.9). */
+function routineOf(
+  scene: SceneSpec,
+  routes: ReadonlyMap<string, PatrolRoute>,
+  spawn: SceneSpawnSpec,
+  entries: readonly SceneRoutineSpec[],
+): readonly PatrolRoutine[] {
+  return Object.freeze(
+    entries.map(({ route: id, hours }) => {
+      const route = routes.get(id);
+      if (route === undefined) {
+        throw new SceneLayoutError(
+          `scene "${scene.id}" spawn "${spawn.id}" names unknown route "${id}"`,
+        );
+      }
+      return Object.freeze({
+        route,
+        ...(hours !== undefined && { hours: Object.freeze([hours[0], hours[1]] as const) }),
+      });
+    }),
+  );
+}
+
+/**
  * Lays out every placement and spawn of `scene` in world space, in scene order.
- * @throws SceneLayoutError when a placement names a piece `kit` does not have.
+ * @throws SceneLayoutError when a placement names a piece `kit` does not have, or a route or
+ * routine names a waypoint or route the scene does not have.
  */
 export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
   const pieces: ScenePiecePlacement[] = [];
@@ -474,6 +593,7 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       }),
     );
   });
+  const routes = sceneRoutes(scene);
   const spawns = scene.spawns.map((spawn) =>
     Object.freeze({
       id: spawn.id,
@@ -491,6 +611,9 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       ...(spawn.faction !== undefined && { faction: spawn.faction.id }),
       ...(spawn.patrol !== undefined && {
         patrol: Object.freeze(spawn.patrol.map((at) => gridToWorld(at, scene.grid))),
+      }),
+      ...(spawn.routine !== undefined && {
+        routine: routineOf(scene, routes, spawn, spawn.routine),
       }),
       ...(spawn.properties !== undefined && { properties: spawn.properties }),
       ...(spawn.breakable !== undefined && { breakable: breakableOf(spawn.breakable) }),

@@ -375,11 +375,21 @@ describe('creature spawner (mw-e12.4)', () => {
       ...over,
     });
     const route = [{ x: 3, y: 0, z: 3 }];
+    const routine = Object.freeze([
+      Object.freeze({
+        route: Object.freeze({
+          id: 'yard-post',
+          kind: 'post' as const,
+          waypoints: Object.freeze([Object.freeze({ id: 'gate', at: { x: 1, y: 0, z: 1 } })]),
+        }),
+      }),
+    ]);
     const result = spawnSceneCreatures(w, options, [
       spawn({ id: 'start' }), // no creature: a marker
       spawn({ id: 'den', creature: 'hound', yaw: 90 }),
       spawn({ id: 'gate', creature: 'guard', yaw: 180, faction: 'bandits', patrol: route }),
       spawn({ id: 'nest', creature: 'wyvern' }),
+      spawn({ id: 'yard', creature: 'hound', routine }),
     ]);
     expect(result.errors).toEqual([
       { point: 'nest', error: { kind: 'unknown-creature', creature: 'wyvern' } },
@@ -398,6 +408,13 @@ describe('creature spawner (mw-e12.4)', () => {
       patrol: route,
     });
     expect(facingFromYaw(270)).toEqual({ x: -1, y: 0, z: 0 });
+    // mw-e11.9: a routine goes into the origin as laid out, and a respawn keeps it.
+    const yard = result.entities[2];
+    if (yard === undefined) throw new Error('missing creature');
+    expect(w.get(yard, CreatureComponent)?.origin.routine).toBe(routine);
+    const again = respawnCreature(w, options, yard);
+    if (!again.ok) throw new Error('respawn failed');
+    expect(w.get(again.entity, CreatureComponent)?.origin.routine).toBe(routine);
   });
 
   it('the debug console spawns creatures by id, facing the player, and `despawn all` removes them', () => {

@@ -154,6 +154,130 @@ describe('scene layout (mw-e00.21)', () => {
     expect(Object.isFrozen(den?.patrol)).toBe(true);
   });
 
+  it('mw-e11.9: resolves a spawn’s routine to its routes in metres, links by index', () => {
+    const scene: SceneSpec = {
+      ...TEST_SCENE,
+      grid: 2,
+      waypoints: [
+        {
+          id: 'gate',
+          at: [1, 0, 1],
+          dwellS: 2,
+          look: 90,
+          scanArc: 60,
+          scanS: 4,
+          idle: 'guard-lean',
+        },
+        { id: 'well', at: [3, 0, 1] },
+        { id: 'tower', at: [3, 0, 3] },
+      ],
+      routes: [
+        { id: 'post', kind: 'post', waypoints: ['gate'] },
+        {
+          id: 'wander',
+          kind: 'random',
+          waypoints: ['well', 'tower'],
+          links: [
+            { from: 'well', to: 'tower', weight: 2 },
+            { from: 'tower', to: 'well', weight: 1 },
+          ],
+        },
+      ],
+      spawns: [
+        {
+          id: 'guard',
+          at: [1, 0, 1],
+          yaw: 0,
+          tags: [],
+          creature: { id: 'fixture-guard' },
+          routine: [{ route: 'post', hours: [20, 6] }, { route: 'wander' }],
+        },
+      ],
+    };
+    const [guard] = layoutScene(scene, testKit).spawns;
+    const routine = guard?.routine ?? [];
+    expect(routine).toEqual([
+      {
+        route: {
+          id: 'post',
+          kind: 'post',
+          waypoints: [
+            {
+              id: 'gate',
+              at: { x: 2, y: 0, z: 2 },
+              dwellS: 2,
+              look: 90,
+              scanArc: 60,
+              scanS: 4,
+              idle: 'guard-lean',
+            },
+          ],
+        },
+        hours: [20, 6],
+      },
+      {
+        route: {
+          id: 'wander',
+          kind: 'random',
+          waypoints: [
+            { id: 'well', at: { x: 6, y: 0, z: 2 } },
+            { id: 'tower', at: { x: 6, y: 0, z: 6 } },
+          ],
+          links: [
+            { from: 0, to: 1, weight: 2 },
+            { from: 1, to: 0, weight: 1 },
+          ],
+        },
+      },
+    ]);
+    expect(Object.isFrozen(routine)).toBe(true);
+    expect(Object.isFrozen(routine[1]?.route.links)).toBe(true);
+    expect(layoutScene(TEST_SCENE, testKit).spawns.every((s) => s.routine === undefined)).toBe(
+      true,
+    );
+  });
+
+  it('mw-e11.9: throws for a route naming an unknown waypoint, a link off the route or an unknown route', () => {
+    const base: SceneSpec = {
+      ...TEST_SCENE,
+      waypoints: [{ id: 'a', at: [0, 0, 0] }],
+      routes: [{ id: 'loop', kind: 'loop', waypoints: ['a'] }],
+    };
+    const guard = (route: string) => ({
+      id: 'guard',
+      at: [0, 0, 0] as const,
+      yaw: 0 as const,
+      tags: [],
+      creature: { id: 'fixture-guard' },
+      routine: [{ route }],
+    });
+    expect(() =>
+      layoutScene({ ...base, routes: [{ id: 'r', kind: 'loop', waypoints: ['a', 'b'] }] }, testKit),
+    ).toThrow(new SceneLayoutError('scene "test-room" route "r" names unknown waypoint "b"'));
+    expect(() =>
+      layoutScene(
+        {
+          ...base,
+          routes: [
+            {
+              id: 'r',
+              kind: 'random',
+              waypoints: ['a'],
+              links: [{ from: 'a', to: 'z', weight: 1 }],
+            },
+          ],
+        },
+        testKit,
+      ),
+    ).toThrow('route "r" links waypoint "z", which it does not list');
+    expect(() => layoutScene({ ...base, spawns: [guard('nowhere')] }, testKit)).toThrow(
+      'scene "test-room" spawn "guard" names unknown route "nowhere"',
+    );
+    expect(layoutScene({ ...base, spawns: [guard('loop')] }, testKit).spawns[0]?.routine).toEqual([
+      { route: { id: 'loop', kind: 'loop', waypoints: [{ id: 'a', at: { x: 0, y: 0, z: 0 } }] } },
+    ]);
+  });
+
   it('lays out an item spawn with its item and count (mw-e17.7)', () => {
     const scene: SceneSpec = {
       ...TEST_SCENE,

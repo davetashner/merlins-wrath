@@ -6,6 +6,12 @@
 // Grid snapping: `at` is in grid cells (`grid` metres each) and must be a multiple of
 // SCENE_SNAP_STEP; rotation is a yaw in quarter turns. Every piece and prop a scene names must exist
 // (checked by the content loader through `ref`).
+//
+// Patrol routines (mw-e11.9) are level data too: a scene names its `waypoints` (a point with a dwell,
+// a look direction, a scan arc and an idle cue) and its `routes` over them (loop, ping-pong,
+// random-weighted graph, or a guard post), and a creature spawn's `routine` lists the routes it
+// walks, each in an optional window of hours. Every name is checked within the scene, like signal
+// bindings: a route naming a waypoint the scene does not have fails validation.
 
 import { z } from 'zod';
 import { contentId, ref } from '../schema.ts';
@@ -173,6 +179,91 @@ export const sceneSignalSchema = z.strictObject({
     ),
 });
 
+/** How a route is walked (mw-e11.9). */
+export const ROUTE_KINDS = ['loop', 'ping-pong', 'random', 'post'] as const;
+export type RouteKind = (typeof ROUTE_KINDS)[number];
+
+/** A named point of a scene that routes walk through (mw-e11.9). */
+export const sceneWaypointSchema = z
+  .strictObject({
+    id: contentId.describe('Name of the waypoint, unique in the scene, e.g. yard-gate.'),
+    at: gridPosition,
+    dwellS: z
+      .number()
+      .nonnegative()
+      .optional()
+      .describe(
+        'Seconds a guard stands here; default: the follow-route step’s dwellS (a post holds forever).',
+      ),
+    look: z
+      .number()
+      .min(0)
+      .lt(360)
+      .optional()
+      .describe('Direction it faces while it stands here, degrees: 0 faces +z, 90 faces +x.'),
+    scanArc: z
+      .number()
+      .positive()
+      .max(360)
+      .optional()
+      .describe('Degrees it sweeps its gaze across, centred on look, while it stands here.'),
+    scanS: z
+      .number()
+      .positive()
+      .default(6)
+      .describe('Seconds one full sweep of the scan arc takes (there and back).'),
+    idle: contentId
+      .optional()
+      .describe(
+        'Idle action cue played on arrival (e.g. guard-lean, guard-warm-hands, guard-check-door).',
+      ),
+  })
+  .refine((wp) => wp.scanArc === undefined || wp.look !== undefined, {
+    message: 'a scan arc needs a look direction to centre on',
+    path: ['scanArc'],
+  });
+
+/** A weighted way from one waypoint to another of a random route (mw-e11.9). */
+export const sceneRouteLinkSchema = z.strictObject({
+  from: contentId.describe('Waypoint it leaves.'),
+  to: contentId.describe('Waypoint it goes to.'),
+  weight: z.int().min(1).default(1).describe('Relative chance of taking this way; default 1.'),
+});
+
+/**
+ * A patrol route over the scene's waypoints (mw-e11.9): a loop (A→B→C→A), a ping-pong (A→B→C→B→A),
+ * a random-weighted graph (each next waypoint drawn by link weight from the creature's own seeded
+ * stream) or a post (one waypoint, held, scanning).
+ */
+export const sceneRouteSchema = z.strictObject({
+  id: contentId.describe('Name of the route, unique in the scene, e.g. yard-loop.'),
+  kind: z.enum(ROUTE_KINDS).describe('loop, ping-pong, random (weighted graph) or post.'),
+  waypoints: z
+    .array(contentId)
+    .min(1)
+    .describe('Waypoint ids in walking order (random: the graph’s waypoints, each once).'),
+  links: z
+    .array(sceneRouteLinkSchema)
+    .optional()
+    .describe('Random routes only: the weighted ways between its waypoints.'),
+});
+
+/** A route a creature walks, in a window of hours of the day (mw-e11.9). */
+export const sceneRoutineSchema = z
+  .strictObject({
+    route: contentId.describe('Route id of this scene.'),
+    hours: z
+      .tuple([z.number().min(0).max(24), z.number().min(0).max(24)])
+      .optional()
+      .describe(
+        'From and to, hours of the day (wraps past midnight when from > to); omit for always.',
+      ),
+  })
+  .refine(({ hours }) => hours === undefined || hours[0] !== hours[1], {
+    message: 'the window is empty: from equals to',
+    path: ['hours'],
+  });
+
 export const scenePlacementSchema = z.strictObject({
   piece: ref('kit').describe('Id of the kit piece.'),
   at: gridPosition,
@@ -234,6 +325,13 @@ export const sceneSpawnSchema = z.strictObject({
     .optional()
     .describe(
       'Patrol route for the spawned creature: waypoints in grid cells, walked in order (needs creature; AI, e11, walks it).',
+    ),
+  routine: z
+    .array(sceneRoutineSchema)
+    .min(1)
+    .optional()
+    .describe(
+      'Routes the spawned creature walks (mw-e11.9): the first whose window holds the hour runs (needs creature; not with patrol).',
     ),
   properties: worldPropertiesSchema
     .optional()
@@ -372,6 +470,14 @@ export const sceneSchema = z
     camera: cameraSchema.describe('Where the view camera starts.'),
     placements: z.array(scenePlacementSchema).min(1).describe('Kit pieces in the scene.'),
     spawns: z.array(sceneSpawnSchema).default([]).describe('Entity spawns: markers and props.'),
+    waypoints: z
+      .array(sceneWaypointSchema)
+      .default([])
+      .describe('Named points patrol routes walk through (mw-e11.9).'),
+    routes: z
+      .array(sceneRouteSchema)
+      .default([])
+      .describe('Patrol routes and guard posts over the waypoints (mw-e11.9).'),
     light: sceneLightSchema
       .optional()
       .describe('Static lighting: ambient level, ambient zones, directional lights (mw-e03.37).'),
@@ -396,7 +502,7 @@ export const sceneSchema = z
       seen.add(spawn.id);
       checkMechanism(spawn, index, ctx);
       if (spawn.creature !== undefined) return;
-      for (const key of ['faction', 'patrol'] as const) {
+      for (const key of ['faction', 'patrol', 'routine'] as const) {
         if (spawn[key] === undefined) continue;
         ctx.addIssue({
           code: 'custom',
@@ -424,11 +530,93 @@ export const sceneSchema = z
       }
     });
     if (scene.acoustics !== undefined) checkAcoustics(scene.spawns, scene.acoustics, ctx);
+    checkRoutes(scene, ctx);
   });
 
 type SpawnDef = z.output<typeof sceneSpawnSchema>;
 
 type AcousticsDef = z.output<typeof sceneAcousticsSchema>;
+
+/**
+ * Waypoint and route names are unique, routes name waypoints the scene has (mw-e11.9 AC-5) in the
+ * shape their kind needs, and routines name routes the scene has.
+ */
+function checkRoutes(
+  scene: {
+    readonly spawns: readonly SpawnDef[];
+    readonly waypoints: readonly z.output<typeof sceneWaypointSchema>[];
+    readonly routes: readonly z.output<typeof sceneRouteSchema>[];
+  },
+  ctx: z.RefinementCtx,
+): void {
+  const issue = (path: (string | number)[], message: string) => {
+    ctx.addIssue({ code: 'custom', path, message });
+  };
+  const waypoints = new Set<string>();
+  scene.waypoints.forEach((wp, i) => {
+    if (waypoints.has(wp.id)) issue(['waypoints', i, 'id'], `waypoint id "${wp.id}" is used twice`);
+    waypoints.add(wp.id);
+  });
+  const routes = new Set<string>();
+  scene.routes.forEach((route, i) => {
+    const at = (...path: (string | number)[]) => ['routes', i, ...path];
+    const name = `route "${route.id}"`;
+    if (routes.has(route.id)) issue(at('id'), `route id "${route.id}" is used twice`);
+    routes.add(route.id);
+    route.waypoints.forEach((id, w) => {
+      if (!waypoints.has(id)) {
+        issue(at('waypoints', w), `${name} names waypoint "${id}", which this scene does not have`);
+      }
+    });
+    const count = route.waypoints.length;
+    if (route.kind === 'post' && count !== 1) {
+      issue(at('waypoints'), `${name} is a post: it holds exactly one waypoint`);
+    }
+    if (route.kind === 'ping-pong' && count < 2) {
+      issue(at('waypoints'), `${name} is a ping-pong: it needs at least two waypoints`);
+    }
+    if (route.kind !== 'random') {
+      if (route.links !== undefined)
+        issue(at('links'), `${name} is a ${route.kind}: only a random route has links`);
+      return;
+    }
+    route.waypoints.forEach((id, w) => {
+      if (route.waypoints.indexOf(id) !== w) {
+        issue(at('waypoints', w), `${name} lists waypoint "${id}" twice`);
+      }
+    });
+    const links = route.links ?? [];
+    const own = new Set(route.waypoints);
+    links.forEach((link, l) => {
+      for (const end of ['from', 'to'] as const) {
+        if (!own.has(link[end])) {
+          issue(
+            at('links', l, end),
+            `${name} links waypoint "${link[end]}", which it does not list`,
+          );
+        }
+      }
+    });
+    if (count < 2) return;
+    route.waypoints.forEach((id, w) => {
+      if (links.some((link) => link.from === id)) return;
+      issue(at('waypoints', w), `${name} has no link leaving waypoint "${id}"`);
+    });
+  });
+  scene.spawns.forEach((spawn, s) => {
+    if (spawn.routine === undefined) return;
+    if (spawn.patrol !== undefined) {
+      issue(['spawns', s, 'routine'], `spawn "${spawn.id}" sets both patrol and routine`);
+    }
+    spawn.routine.forEach((entry, r) => {
+      if (routes.has(entry.route)) return;
+      issue(
+        ['spawns', s, 'routine', r, 'route'],
+        `spawn "${spawn.id}" names route "${entry.route}", which this scene does not have`,
+      );
+    });
+  });
+}
 
 /** Room, portal and partition names must be unique and name what the scene has. */
 function checkAcoustics(
@@ -529,3 +717,6 @@ export type SceneSwitchDef = z.output<typeof sceneSwitchSchema>;
 export type SceneSignalDef = z.output<typeof sceneSignalSchema>;
 export type SceneContainerDef = z.output<typeof sceneContainerSchema>;
 export type SceneAcousticsDef = z.output<typeof sceneAcousticsSchema>;
+export type SceneWaypointDef = z.output<typeof sceneWaypointSchema>;
+export type SceneRouteDef = z.output<typeof sceneRouteSchema>;
+export type SceneRoutineDef = z.output<typeof sceneRoutineSchema>;
