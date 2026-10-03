@@ -13,6 +13,8 @@ check enforces this).
 
 ### Added
 
+- The knight has a model. Your character now walks, crouches and fights as the armoured knight
+  from the concept art instead of a grey box. It is a placeholder until the final model is approved.
 - You can pause. Esc, P or the controller's Menu button stops the game and opens the pause menu:
   Resume, Settings, Save, Load and Quit to Title. Save is greyed out with "Can't save during combat"
   while a fight is on. Quit to Title asks first if you have played on since your last save, then

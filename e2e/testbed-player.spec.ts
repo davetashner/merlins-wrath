@@ -20,6 +20,8 @@ const BACK_WALL_FACE_Z = -4.9;
 const RADIUS = 0.35;
 /** The W key, for helpers/player holdKey. */
 const KEY_W = { code: 'KeyW', key: 'w' };
+/** The S key, for helpers/player holdKey. */
+const KEY_S = { code: 'KeyS', key: 's' };
 
 interface PlayerData {
   tick: number;
@@ -123,11 +125,10 @@ test('AC-1: holding W for 1 s moves the player capsule at least 4 m forward, wit
 test('AC-2: walking into the testbed wall stops the capsule in front of it', async ({ page }) => {
   const problems = collectProblems(page);
   await play(page);
-  // Back towards the wall behind the start, 3.9 m away: 2 s is more than enough to reach it.
-  await page.keyboard.down('KeyS');
-  await page.waitForTimeout(2_000);
-  const pressing = await player(page);
-  await page.keyboard.up('KeyS');
+  // Back towards the wall behind the start, 3.9 m away: 120 sim ticks (2 s of sim time) are more than
+  // enough to reach it. Held for ticks, not wall-clock time, so a slow runner costs frames, not the
+  // walk (helpers/player holdKey).
+  const pressing = await holdKey(page, KEY_S, 120);
   const rest = await waitTicks(page, 10);
   for (const { position } of [pressing, rest]) {
     // Stopped by the wall: the capsule's back is at the wall face, not beyond it.
