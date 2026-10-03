@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "description": "Unique table id; the game reads \"stealth\"."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Where the numbers come from (bead, tuning status)."
+    },
+    "visibility": {
+      "type": "object",
+      "properties": {
+        "light": {
+          "type": "object",
+          "properties": {
+            "curve": {
+              "minItems": 2,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Light level seen by the observer, 0–1 (after dark vision)."
+                  },
+                  "term": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 2,
+                    "description": "Light term at that level, 0–2."
+                  }
+                },
+                "required": [
+                  "level",
+                  "term"
+                ],
+                "additionalProperties": false,
+                "description": "One point of the light curve."
+              },
+              "description": "Light term by seen light level: points in rising level order, from level 0 to level 1."
+            },
+            "peakWeight": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "How the target’s light samples combine, 0–1: 0 = their mean, 1 = the brightest; a lit head on a body in shadow still shows."
+            }
+          },
+          "required": [
+            "curve",
+            "peakWeight"
+          ],
+          "additionalProperties": false,
+          "description": "Light term: the target’s light samples, combined, then lifted by the observer’s dark vision (seen = level + (1 − level) × darkVision, so dark vision 1 sees full light), read on the curve."
+        },
+        "stance": {
+          "type": "object",
+          "properties": {
+            "prone": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Lying flat."
+            },
+            "crouched": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Crouched."
+            },
+            "standing": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Standing (1 = neutral)."
+            }
+          },
+          "required": [
+            "prone",
+            "crouched",
+            "standing"
+          ],
+          "additionalProperties": false,
+          "description": "Stance term per stance, 0–2."
+        },
+        "motion": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "fromSpeed": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 50,
+                "description": "Horizontal speed at which this band starts, m/s; the first band starts at 0."
+              },
+              "term": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 2,
+                "description": "Motion term in this band, 0–2."
+              }
+            },
+            "required": [
+              "fromSpeed",
+              "term"
+            ],
+            "additionalProperties": false,
+            "description": "One speed band."
+          },
+          "description": "Motion term by horizontal speed: bands in rising fromSpeed order; the fastest band the speed reaches applies."
+        },
+        "profile": {
+          "type": "object",
+          "properties": {
+            "cloak": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Multiplier while a cloak or other concealing garment is worn."
+            },
+            "disguise": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Multiplier while disguised."
+            }
+          },
+          "required": [
+            "cloak",
+            "disguise"
+          ],
+          "additionalProperties": false,
+          "description": "Profile modifiers on top of the equipment brightness the target supplies (both multiply)."
+        },
+        "distance": {
+          "minItems": 2,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "metres": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 500,
+                "description": "Observer-to-target distance, m."
+              },
+              "term": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 2,
+                "description": "Distance falloff at that distance, 0–2."
+              }
+            },
+            "required": [
+              "metres",
+              "term"
+            ],
+            "additionalProperties": false,
+            "description": "One point of the distance falloff curve."
+          },
+          "description": "Distance falloff: points in rising distance order from 0 m, never rising; flat past the last."
+        },
+        "contrast": {
+          "type": "object",
+          "properties": {
+            "backgroundThreshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Background light at or above which a target is silhouetted against it, 0–1."
+            },
+            "darkTargetMax": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "The target counts as dark (a silhouette) when its own combined light is at or below this, 0–1."
+            },
+            "bonus": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 2,
+              "description": "Added to a silhouetted target’s light term (capped at the full-light term), 0–2."
+            }
+          },
+          "required": [
+            "backgroundThreshold",
+            "darkTargetMax",
+            "bonus"
+          ],
+          "additionalProperties": false,
+          "description": "Contrast rule: a dark figure against bright background light stands out."
+        }
+      },
+      "required": [
+        "light",
+        "stance",
+        "motion",
+        "profile",
+        "distance",
+        "contrast"
+      ],
+      "additionalProperties": false,
+      "description": "Visibility model weights (mw-e09.2)."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "visibility"
+  ],
+  "additionalProperties": false
+}

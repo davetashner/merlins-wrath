@@ -1,0 +1,33 @@
+{
+  "$schema": "../stealth.schema.json",
+  "id": "stealth",
+  "notes": "PLACEHOLDER TUNING (mw-e09.2) — starting numbers for the visibility model, to tune in play (mw-e09.6 authors the full stealth table). Light: the target's samples blend halfway between their mean and their brightest (a lit head shows), then dark vision lifts what the observer sees; the curve keeps deep shadow nearly invisible (level 0.15 reads 0.05) and is close to linear from half light to full (0.5 → 0.45, 1 → 1). A humanoid (dark vision 0.2) sees 0.05 light as 0.24. Stance: standing 1, crouched 0.5, prone 0.25. Motion bands match the controller's gaits (mw-e02.10) so stance × motion reproduces its visibility table: still 0.8 below 0.2 m/s, slow walk 0.85 from 0.2, walk 0.9 from 1.6 (above the 1.2 slow walk and 1.5 light-stick speeds), run 1.0 from 2.5 and sprint 1.0 from 6.0. Profile: a cloak hides to 0.7, a disguise to 0.8 (on top of the equipment brightness the wearer supplies). Distance: no falloff to 8 m, 0.75 at 20 m (the humanoid far range), 0.4 at 40 m and 0.1 at 80 m and beyond. Contrast: a target at or below 0.2 light against background light of 0.7 or more gains 0.3 on its light term (never above the full-light term).",
+  "visibility": {
+    "light": {
+      "curve": [
+        { "level": 0, "term": 0 },
+        { "level": 0.15, "term": 0.05 },
+        { "level": 0.5, "term": 0.45 },
+        { "level": 1, "term": 1 }
+      ],
+      "peakWeight": 0.5
+    },
+    "stance": { "prone": 0.25, "crouched": 0.5, "standing": 1 },
+    "motion": [
+      { "fromSpeed": 0, "term": 0.8 },
+      { "fromSpeed": 0.2, "term": 0.85 },
+      { "fromSpeed": 1.6, "term": 0.9 },
+      { "fromSpeed": 2.5, "term": 1 },
+      { "fromSpeed": 6, "term": 1 }
+    ],
+    "profile": { "cloak": 0.7, "disguise": 0.8 },
+    "distance": [
+      { "metres": 0, "term": 1 },
+      { "metres": 8, "term": 1 },
+      { "metres": 20, "term": 0.75 },
+      { "metres": 40, "term": 0.4 },
+      { "metres": 80, "term": 0.1 }
+    ],
+    "contrast": { "backgroundThreshold": 0.7, "darkTargetMax": 0.2, "bonus": 0.3 }
+  }
+}

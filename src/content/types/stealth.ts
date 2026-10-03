@@ -1,0 +1,185 @@
+// The stealth tuning content type (mw-e09.2): the weights of the visibility model, one file per table
+// at `src/content/data/stealth/<id>.json` (the game has one, `stealth`). The sim's visibility rule
+// (src/sim/stealth/visibility.ts) multiplies
+//   light term × stance term × motion term × profile term × line-of-sight fraction × distance falloff
+// so any zero term hides the target; a dark target silhouetted against bright background light gets
+// the contrast bonus on its light term. mw-e09.6 extends this file with the noise, door and hiding
+// tables and the difficulty override whitelist.
+//
+// Every weight (a term or multiplier this file sets) is 0–2: 1 is neutral, below 1 hides, above 1
+// reveals. Curves are piecewise-linear point lists, held flat beyond their ends; motion is banded
+// (the fastest band the speed reaches applies). Light levels are the light field's 0–1 (mw-e03.15),
+// speeds m/s and distances metres. The field reference in docs/content/stealth-schema.md is
+// generated (`pnpm content:docs`).
+
+import { z } from 'zod';
+import type { Frozen } from '../loader.ts';
+import { contentId } from '../schema.ts';
+
+/** The game's stealth tuning (`src/content/data/stealth/stealth.json`). */
+export const STEALTH_ID = 'stealth';
+
+/** The most any visibility weight may be (AC-7: weights are validated 0–2). */
+export const MAX_STEALTH_WEIGHT = 2;
+
+/** The stances the visibility model weighs, lowest first. */
+export const VISIBILITY_STANCES = ['prone', 'crouched', 'standing'] as const;
+
+/** A stance the visibility model weighs. */
+export type VisibilityStance = (typeof VISIBILITY_STANCES)[number];
+
+const weight = z.number().min(0).max(MAX_STEALTH_WEIGHT);
+const level = z.number().min(0).max(1);
+
+const lightPointSchema = z
+  .strictObject({
+    level: level.describe('Light level seen by the observer, 0–1 (after dark vision).'),
+    term: weight.describe('Light term at that level, 0–2.'),
+  })
+  .describe('One point of the light curve.');
+
+const motionBandSchema = z
+  .strictObject({
+    fromSpeed: z
+      .number()
+      .min(0)
+      .max(50)
+      .describe('Horizontal speed at which this band starts, m/s; the first band starts at 0.'),
+    term: weight.describe('Motion term in this band, 0–2.'),
+  })
+  .describe('One speed band.');
+
+const distancePointSchema = z
+  .strictObject({
+    metres: z.number().min(0).max(500).describe('Observer-to-target distance, m.'),
+    term: weight.describe('Distance falloff at that distance, 0–2.'),
+  })
+  .describe('One point of the distance falloff curve.');
+
+const visibilitySchema = z
+  .strictObject({
+    light: z
+      .strictObject({
+        curve: z
+          .array(lightPointSchema)
+          .min(2)
+          .describe(
+            'Light term by seen light level: points in rising level order, from level 0 to level 1.',
+          ),
+        peakWeight: level.describe(
+          'How the target’s light samples combine, 0–1: 0 = their mean, 1 = the brightest; a lit head ' +
+            'on a body in shadow still shows.',
+        ),
+      })
+      .describe(
+        'Light term: the target’s light samples, combined, then lifted by the observer’s dark vision ' +
+          '(seen = level + (1 − level) × darkVision, so dark vision 1 sees full light), read on the curve.',
+      ),
+    stance: z
+      .strictObject({
+        prone: weight.describe('Lying flat.'),
+        crouched: weight.describe('Crouched.'),
+        standing: weight.describe('Standing (1 = neutral).'),
+      } satisfies Record<VisibilityStance, typeof weight>)
+      .describe('Stance term per stance, 0–2.'),
+    motion: z
+      .array(motionBandSchema)
+      .min(1)
+      .describe(
+        'Motion term by horizontal speed: bands in rising fromSpeed order; the fastest band the speed ' +
+          'reaches applies.',
+      ),
+    profile: z
+      .strictObject({
+        cloak: weight.describe('Multiplier while a cloak or other concealing garment is worn.'),
+        disguise: weight.describe('Multiplier while disguised.'),
+      })
+      .describe(
+        'Profile modifiers on top of the equipment brightness the target supplies (both multiply).',
+      ),
+    distance: z
+      .array(distancePointSchema)
+      .min(2)
+      .describe(
+        'Distance falloff: points in rising distance order from 0 m, never rising; flat past the last.',
+      ),
+    contrast: z
+      .strictObject({
+        backgroundThreshold: level.describe(
+          'Background light at or above which a target is silhouetted against it, 0–1.',
+        ),
+        darkTargetMax: level.describe(
+          'The target counts as dark (a silhouette) when its own combined light is at or below this, 0–1.',
+        ),
+        bonus: weight.describe(
+          'Added to a silhouetted target’s light term (capped at the full-light term), 0–2.',
+        ),
+      })
+      .describe('Contrast rule: a dark figure against bright background light stands out.'),
+  })
+  .describe('Visibility model weights (mw-e09.2).');
+
+type VisibilityFields = z.output<typeof visibilitySchema>;
+
+const whenValid = {
+  when: (payload: { issues: readonly unknown[] }) => payload.issues.length === 0,
+};
+
+/** Adds an issue for every curve or band out of order, naming it. */
+function checkVisibility(v: VisibilityFields, ctx: z.RefinementCtx): void {
+  const issue = (path: (string | number)[], message: string) => {
+    ctx.addIssue({ code: 'custom', path: ['visibility', ...path], message });
+  };
+  const curve = v.light.curve;
+  if (curve[0]?.level !== 0 || curve.at(-1)?.level !== 1) {
+    issue(['light', 'curve'], 'light.curve must start at level 0 and end at level 1');
+  }
+  curve.forEach((point, i) => {
+    const before = curve[i - 1];
+    if (before !== undefined && point.level <= before.level) {
+      issue(['light', 'curve', i, 'level'], 'light.curve levels must rise');
+    }
+  });
+  if (v.motion[0]?.fromSpeed !== 0) {
+    issue(['motion', 0, 'fromSpeed'], 'the first motion band must start at 0 m/s');
+  }
+  v.motion.forEach((band, i) => {
+    const before = v.motion[i - 1];
+    if (before !== undefined && band.fromSpeed <= before.fromSpeed) {
+      issue(['motion', i, 'fromSpeed'], 'motion bands must start at rising speeds');
+    }
+  });
+  if (v.distance[0]?.metres !== 0) {
+    issue(['distance', 0, 'metres'], 'the distance curve must start at 0 m');
+  }
+  v.distance.forEach((point, i) => {
+    const before = v.distance[i - 1];
+    if (before === undefined) return;
+    if (point.metres <= before.metres) {
+      issue(['distance', i, 'metres'], 'distance points must rise');
+    }
+    if (point.term > before.term) {
+      issue(['distance', i, 'term'], 'distance falloff must never rise with distance');
+    }
+  });
+}
+
+/** Schema of one stealth tuning file, `src/content/data/stealth/<id>.json`. */
+export const stealthSchema = z
+  .strictObject({
+    id: contentId.describe('Unique table id; the game reads "stealth".'),
+    notes: z.string().min(1).describe('Where the numbers come from (bead, tuning status).'),
+    visibility: visibilitySchema,
+  })
+  .superRefine((def, ctx) => {
+    checkVisibility(def.visibility, ctx);
+  }, whenValid);
+
+/** A stealth tuning table as written in JSON. */
+export type StealthDefInput = z.input<typeof stealthSchema>;
+/** A validated stealth tuning table. */
+export type StealthDef = z.output<typeof stealthSchema>;
+/** A loaded (deeply frozen) stealth tuning table. */
+export type StealthEntry = Frozen<StealthDef>;
+/** The visibility weights the sim's visibility rule reads (frozen). */
+export type VisibilityTuning = Frozen<VisibilityFields>;
