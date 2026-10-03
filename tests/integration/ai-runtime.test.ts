@@ -97,7 +97,7 @@ describe('behaviour runtime on the fixture guard', () => {
   }) => {
     markExercised(task, 'behaviour', 'fixture-guard');
     // On the scenario harness (mw-e11.3): the player stands far out of sight and hearing and throws a
-    // stone that lands 10 m off the square at 10 s; the guard hears it through the stand-in senses.
+    // stone that lands 10 m off the square at 10 s; the guard hears it through perception (mw-e11.5).
     const scenario = aiScenario(
       {
         name: 'guard-patrol',

@@ -1,8 +1,8 @@
 // mw-e11.3: the AI scenario harness's example scenario on the frozen fixture guard's content. The
 // guard stands at its post in a lit hall (fixtures/ai-scenarios/guard-hall.json); the player, hidden
 // behind a wall, walks across the hall in front of it through the torchlight and out behind the other
-// wall. Through the harness's stand-in senses (until perception, mw-e11.5) the guard notices the
-// player and climbs the alert ladder.
+// wall. Through the harness’s senses (perception, mw-e11.5, with a stand-in awareness) the guard notices
+// the player and climbs the alert ladder.
 import { describe, expect, it } from 'vitest';
 import { compileCreatures, controllerTuningFor, PLAYER_CONTROLLER_ID } from '@content/index';
 import { loadFixtureContent } from '@content/test-fixtures';

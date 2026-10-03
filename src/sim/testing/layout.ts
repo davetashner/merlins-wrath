@@ -1,5 +1,5 @@
 // Scenario layouts and player scripts (mw-e11.3): the JSON half of an AI scenario. A layout is a
-// small grey-box room in metres: wall boxes (they block the player, light and the stand-in senses'
+// small grey-box room in metres: wall boxes (they block the player, light and perception's
 // line of sight), the light (ambient, ambient zones, point lights by id), where the player starts and
 // the fixtures (creatures by id, with patrol routes) the scenario is about. A player script is the
 // path the player takes: walk/crouch/sprint to points, wait, throw something that lands with a noise,

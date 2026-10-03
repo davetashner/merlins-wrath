@@ -1,5 +1,5 @@
 // The AI scenario harness (mw-e11.3): layout and script validation, the DSL, the headless run and its
-// report, hash recording, and the stand-in senses. Content is written tersely here (sim tests may not
+// report, hash recording, and the scenario senses (real perception, stand-in awareness). Content is written tersely here (sim tests may not
 // load content); the fixture guard's own content runs in tests/integration/ai-scenarios.test.ts.
 
 import type {
@@ -18,10 +18,14 @@ import { installFactions } from '../factions/runtime';
 import { buildFactionTable, UNALIGNED_FACTION } from '../factions/table';
 import { LightField } from '../light/field';
 import { noiseEmitted } from '../noise/events';
+import { buildSoundGraph } from '../noise/graph';
+import { installNoisePropagation } from '../noise/system';
+import { FakeSightWorld } from '../sight/fake-sight-world';
+import { LineOfSight } from '../sight/line-of-sight';
 import { registerCreatureComponents, spawnCreature } from '../creatures/spawn';
 import { aiScenario, ScenarioFailedError, type ScenarioDeps, type ScenarioSpec } from './scenario';
 import { ScenarioLoadError, type ScenarioLayoutInput } from './layout';
-import { standInSenses, type ScenarioSenses, type SensedStimulus } from './senses';
+import { perceptionSenses, type ScenarioSenses, type SensedStimulus } from './senses';
 
 const TUNING: Frozen<ControllerTuning> = {
   capsule: { radius: 0.35, height: 1.8, crouchHeight: 1.0 },
@@ -265,7 +269,7 @@ describe('running a scenario', () => {
       '  FAIL  at 3.00 s: w is suspicious: was unaware at 3.00 s',
       'timeline:',
     ]);
-    expect(result.report).toContain('hears a noise at (0.00, 0.00, 5.00), 55.6 dB');
+    expect(result.report).toContain('hears a noise at (0.00, 0.00, 5.00), 56.0 dB');
     expect(result.report).toContain('player  throw to (0.00, 0.00, 5.00), 70 dB');
     expect(() => s.check()).toThrow(ScenarioFailedError);
     expect(() => s.check()).toThrow(result.report);
@@ -345,7 +349,7 @@ describe('running a scenario', () => {
       [false, 'was doing idle at 5.00 s'],
       [false, 'it did not'],
       [false, 'it has no brain at 2.00 s'],
-      [false, 'was combat at 4.97 s'],
+      [false, 'was combat at 4.87 s'],
     ]);
     expect(result.expectations.map((e) => e.label).slice(2, 8)).toEqual([
       'during 0.00 s–5.00 s: w enters suspicious from unaware',
@@ -415,7 +419,7 @@ describe('running a scenario', () => {
   });
 });
 
-describe('stand-in senses', () => {
+describe('scenario senses', () => {
   it('see within far range and the vertical half-angle, by the light of ambient zones', () => {
     // The room is dark but for a lit zone around the player, who stands in front of all three.
     const result = aiScenario(
@@ -441,13 +445,21 @@ describe('stand-in senses', () => {
   function sensed(
     kinds: readonly string[],
     player: number,
-    senses: ScenarioSenses = standInSenses,
+    senses: ScenarioSenses = perceptionSenses,
   ) {
     const world = installFactions(registerCreatureComponents(new World<never>({ seed: 1 })));
     world.register(CharacterController);
+    installNoisePropagation(world, { graph: buildSoundGraph({ rooms: [], portals: [] }) });
     installAi(world, { behaviours: deps.behaviours });
     const notes: SensedStimulus[] = [];
-    world.addSystem(senses(world, { player, light: new LightField(), note: (s) => notes.push(s) }));
+    world.addSystem(
+      senses(world, {
+        player,
+        light: new LightField(),
+        lineOfSight: new LineOfSight({ world: new FakeSightWorld() }),
+        note: (s) => notes.push(s),
+      }),
+    );
     const agents = kinds.map((kind, i) => {
       const result = spawnCreature(
         world,
@@ -465,6 +477,7 @@ describe('stand-in senses', () => {
 
   it('hear noises above their threshold within range, and see nothing without a player body', () => {
     const { world, agents, notes } = sensed(['watcher', 'deaf', 'blind'], 999);
+    world.step(); // the agents become listeners
     const noise = (x: number, loudness: number) => {
       world.events.emit(noiseEmitted, {
         tick: world.tick,
@@ -474,15 +487,15 @@ describe('stand-in senses', () => {
         entity: null,
         source: null,
       });
-      world.step();
+      for (let i = 0; i < 6; i++) world.step(); // every agent is evaluated once in 6 ticks
     };
     noise(40, 120); // beyond hearing range
     noise(4, 20); // below threshold everywhere
     expect(notes).toEqual([]);
     noise(4, 70);
     expect(notes.map((n) => [n.kind, n.agent])).toEqual([
+      ['hearing', agents[2]], // staggered by entity id: (tick + id) mod 6 = 0
       ['hearing', agents[0]],
-      ['hearing', agents[2]],
     ]);
     expect(brainOf(world, agents[2] ?? -1)?.blackboard).toMatchObject({
       stimulus: { x: 4, y: 0, z: 0 },
