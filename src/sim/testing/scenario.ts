@@ -17,8 +17,9 @@
 // regression test. A failed run's report lists every expectation and a timeline of every alert state
 // change, what each agent saw and heard, and each step of the player's script, with times.
 //
-// Until perception (mw-e11.5) and awareness (mw-e11.6) exist, agents perceive through the stand-in
-// senses (./senses.ts); `deps.senses` swaps them.
+// Agents perceive through the real perception system (mw-e11.5) with a stand-in awareness until
+// mw-e11.6 exists (./senses.ts); `deps.senses` swaps them. Noises are propagated in the open (the
+// layout has no rooms); walls block sight and light.
 
 import type { AlertState, ControllerTuning, CreatureTable, Frozen } from '@content/index';
 import type { BehaviourTable } from '../ai/behaviour';
@@ -49,9 +50,13 @@ import { LightField } from '../light/field';
 import { installLightField, lightFieldSystem } from '../light/install';
 import { cos, sin } from '../math';
 import { noiseEmitted } from '../noise/events';
+import { buildSoundGraph } from '../noise/graph';
+import { installNoisePropagation } from '../noise/system';
 import { installPlayer, PLAYER_START_TAG, PlayerLook } from '../player/player';
 import { addProperties, registerWorldProperties, removeProperty } from '../properties/components';
 import type { Replay } from '../replay/format';
+import { FakeSightWorld } from '../sight/fake-sight-world';
+import { LineOfSight } from '../sight/line-of-sight';
 import { ReplayRecorder } from '../replay/recorder';
 import { yawRotation } from '../scene/layout';
 import { PlacementComponent, placeEntity, type Placement } from '../stimulus/placement';
@@ -65,7 +70,7 @@ import {
   type ScenarioLayout,
   type PlayerStance,
 } from './layout';
-import { standInSenses, type ScenarioSenses, type SensedStimulus } from './senses';
+import { perceptionSenses, type ScenarioSenses, type SensedStimulus } from './senses';
 
 /** What a scenario runs on: content compiled by the caller (the sim does not load content). */
 export interface ScenarioDeps {
@@ -76,7 +81,7 @@ export interface ScenarioDeps {
   readonly behaviours: BehaviourTable;
   /** The player's controller tuning. */
   readonly controller: Frozen<ControllerTuning>;
-  /** How agents perceive; defaults to `standInSenses`. */
+  /** How agents perceive; defaults to `perceptionSenses`. */
   readonly senses?: ScenarioSenses;
 }
 
@@ -429,6 +434,7 @@ export class AiScenario {
     const collision = new FakeCollisionWorld([
       box({ x: -1000, y: -1, z: -1000 }, { x: 1000, y: 0, z: 1000 }),
     ]);
+    const sight = new FakeSightWorld();
     const light = new LightField();
     light.setEnvironment({
       ambient: layout.light.ambient,
@@ -443,6 +449,7 @@ export class AiScenario {
       const shape = box(vec3(wall.min), vec3(wall.max));
       collision.add(shape);
       light.statics.add(shape);
+      sight.add(shape);
     }
     installLightField(w, light);
     const lights = new Map<string, EntityId>();
@@ -474,11 +481,13 @@ export class AiScenario {
     world.addSystem(lightFieldSystem(light));
 
     const names = new Map<EntityId, string>();
-    const senses = deps.senses ?? standInSenses;
+    installNoisePropagation(w, { graph: buildSoundGraph({ rooms: [], portals: [] }) });
+    const senses = deps.senses ?? perceptionSenses;
     world.addSystem(
       senses(w, {
         player,
         light,
+        lineOfSight: new LineOfSight({ world: sight }),
         note: (stimulus: SensedStimulus) => {
           const { agent: entity, ...rest } = stimulus;
           log({ ...now(), ...rest, agent: got(names, entity) });

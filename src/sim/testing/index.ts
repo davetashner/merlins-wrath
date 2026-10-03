@@ -24,10 +24,9 @@ export {
   type WindowExpectation,
 } from './scenario';
 export {
-  STAND_IN_DB_PER_AWARENESS,
+  perceptionSenses,
   STAND_IN_DECAY_PER_S,
   STAND_IN_HEARD_BASE,
-  standInSenses,
   type ScenarioSenses,
   type SensedStimulus,
   type SensesContext,

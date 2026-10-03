@@ -13,6 +13,12 @@ check enforces this).
 
 ### Added
 
+- Creatures now only know what their senses tell them. A guard sees you only inside its field of
+  view, sees you better straight ahead than out of the corner of its eye, and struggles to make you
+  out far away, crouched or in shadow. A wall between you hides you completely. Guards hear noises
+  from the doorway the sound came through, not from where you really are behind the wall. Some
+  creatures have stranger senses: the undead can feel the living through stone. Creatures in the
+  game will start using this once their alertness and the game loop are wired up.
 - Saves now keep the whole world, not just you: doors you opened, things you picked up and the
   story's facts come back exactly as you left them, and the changes to places you have already left
   are kept for when you return. A save made before a fact was renamed still loads with its value,
