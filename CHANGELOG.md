@@ -28,6 +28,10 @@ check enforces this).
   1.8 times as hard and breaks far more poise, full after a second and swung on its own if you keep
   holding. While it winds up and charges the knight shrugs off light blows, but a hard enough hit
   staggers it and the charge is lost. A full charge costs a little more stamina than a plain heavy.
+- Creatures guarding a post chase you only so far. Run far enough from a leashed creature's post in
+  the middle of a fight and it gives up at the edge of its ground, looks around for a moment, then
+  lurches back to its post and stands guard again, still carrying every wound you gave it. Step
+  back into its ground and the fight picks up where you left it.
 - Loot in the vertical slice. The Rusted gallery key lies by the far pillar in the arena: take it
   and the iron exit door unlocks and opens with one press of Interact, straight from your keyring,
   so you can walk through and finish the slice. The key is a quest item and can't be dropped or

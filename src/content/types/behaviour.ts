@@ -69,6 +69,11 @@ export const ALERT_TUNING_DEFAULTS: Readonly<Record<string, number>> = Object.fr
   postAlertS: 300,
   /** Awareness accumulation multiplier during the heightened baseline. */
   postAlertAwarenessRate: 1.5,
+  /**
+   * Seconds a leashed creature searches at its leash edge before walking home (mw-e01.17), in place
+   * of `searchingTimeoutS`.
+   */
+  leashSearchS: 3,
 });
 
 /** Tuning keys that are durations and so must be positive, wherever they are used. */
@@ -79,6 +84,7 @@ export const ALERT_TIMER_KEYS = [
   'alertedTimeoutS',
   'combatLostS',
   'postAlertS',
+  'leashSearchS',
 ] as const;
 
 /** What a state's timeout counts from: entering it, or its last stimulus (whichever is later). */
@@ -90,6 +96,7 @@ export const ALERT_TIMEOUT_FROM = ['entered', 'stimulus'] as const;
  * The combat inputs (mw-e11.13): `targetDistance` is metres to where it believes its target is
  * (1000 with none); `attackToken` is 1 while it holds, or could take, one of its target's attack
  * tokens; `targetUnreachableS` is seconds its target has stood where it cannot path (0 when it can).
+ * `fromPost` is metres, on the level, from its leash post (mw-e01.17; 0 without a leash).
  */
 export const BEHAVIOUR_INPUTS = [
   'awareness',
@@ -102,6 +109,7 @@ export const BEHAVIOUR_INPUTS = [
   'targetDistance',
   'attackToken',
   'targetUnreachableS',
+  'fromPost',
 ] as const;
 
 /** A fixed input name. */
@@ -115,7 +123,8 @@ export type BehaviourEvent = (typeof BEHAVIOUR_EVENTS)[number];
 
 /**
  * Where a step moves or looks: the stimulus, the target, the target's last-known position, the
- * waypoint of its route nearest by path (mw-e11.9), the spawn.
+ * waypoint of its route nearest by path (mw-e11.9), the spawn, its leash post (mw-e01.17: the spawn
+ * without a leash; a `move-to` that arrives there turns it the way it was placed).
  */
 export const BEHAVIOUR_TARGETS = [
   'stimulus',
@@ -123,6 +132,7 @@ export const BEHAVIOUR_TARGETS = [
   'lkp',
   'nearest-waypoint',
   'origin',
+  'post',
 ] as const;
 
 /** A step target. */

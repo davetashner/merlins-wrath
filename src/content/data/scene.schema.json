@@ -811,6 +811,39 @@
               "additionalProperties": false
             }
           },
+          "leash": {
+            "description": "Ties the spawned creature to a post (mw-e01.17): in Combat it chases only this far from the post, then searches and walks home (needs creature).",
+            "type": "object",
+            "properties": {
+              "radius": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "Metres from the post, measured on the level, past which a chase ends."
+              },
+              "post": {
+                "description": "The post, grid cells; absent = the spawn point.",
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "items": false,
+                "minItems": 3,
+                "maxItems": 3
+              }
+            },
+            "required": [
+              "radius"
+            ],
+            "additionalProperties": false
+          },
           "properties": {
             "description": "World properties of the spawned entity, e.g. a torch: { \"burning\": true, \"fuel\": 3600 } (mw-e03.37). A spawn with properties is placed in the sim, so the light field and stimuli reach it.",
             "type": "object",

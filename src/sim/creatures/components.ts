@@ -13,6 +13,18 @@ import type { PatrolRoutine } from '../ai/routes';
 import type { Vec3 } from '../stimulus/shapes';
 import { CreatureConditionComponent } from './condition';
 
+/**
+ * How far a creature may chase from its post (mw-e01.17, src/sim/ai/leash.ts): in Combat, past
+ * `radius` metres from `post` (measured on the level) it drops its target, searches at the leash edge
+ * and walks home.
+ */
+export interface CreatureLeash {
+  /** Metres. */
+  readonly radius: number;
+  /** World metres. */
+  readonly post: Vec3;
+}
+
 /** Where and how a creature was spawned: enough to spawn it again (`respawnCreature`). */
 export interface CreatureOrigin {
   /** Creature id (content `creature`). */
@@ -29,6 +41,8 @@ export interface CreatureOrigin {
   readonly patrol?: readonly Vec3[];
   /** The routes it walks, each in its window of hours (mw-e11.9); absent = none. */
   readonly routine?: readonly PatrolRoutine[];
+  /** Its leash (mw-e01.17); absent = it chases as far as it likes. */
+  readonly leash?: CreatureLeash;
 }
 
 /** A spawned creature. */

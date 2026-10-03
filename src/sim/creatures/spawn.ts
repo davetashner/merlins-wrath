@@ -17,8 +17,8 @@
 //   sandbox's attacker dummy swings (mw-e04.20: parried, blocked and staggered by the player's rules);
 // - a lock-on target when the world has lock-on (mw-e02.16), lock points up its body;
 // - a member of its faction (or the spawn's override) with its disposition toward the player;
-// - its creature state: origin (for respawn), behaviour profile, needs, senses, nav agent and
-//   condition (full morale, awake);
+// - its creature state: origin (for respawn, with its patrol, routine and leash: mw-e01.17),
+//   behaviour profile, needs, senses, nav agent and condition (full morale, awake);
 // - a brain running its behaviour profile, with its personality and gait speeds, when the world runs
 //   AI (`installAi`, mw-e11.2) and that AI knows the profile. Without one it stands where it spawned. Spawning never throws for bad
 // data: an unknown creature or faction comes back as a typed SpawnError and nothing is created.
@@ -87,6 +87,8 @@ export interface CreatureSpawnRequest {
   readonly patrol?: readonly Vec3[];
   /** The routes it walks, each in its window of hours (mw-e11.9). */
   readonly routine?: readonly PatrolRoutine[];
+  /** Its leash (mw-e01.17): a radius in metres around a post, by default where it spawns. */
+  readonly leash?: { readonly radius: number; readonly post?: Vec3 };
 }
 
 /** What spawning needs: the creatures it can spawn and the world's faction table. */
@@ -180,7 +182,7 @@ export function creatureLockProfile(height: number) {
 const vec = ({ x, y, z }: Vec3): Vec3 => Object.freeze({ x: x + 0, y: y + 0, z: z + 0 });
 
 function originOf(request: CreatureSpawnRequest, facing: Vec3): CreatureOrigin {
-  const { point, faction, patrol, routine } = request;
+  const { point, faction, patrol, routine, leash } = request;
   return Object.freeze({
     creature: request.creature,
     at: vec(request.at),
@@ -189,6 +191,9 @@ function originOf(request: CreatureSpawnRequest, facing: Vec3): CreatureOrigin {
     ...(faction !== undefined && { faction }),
     ...(patrol !== undefined && { patrol: Object.freeze(patrol.map(vec)) }),
     ...(routine !== undefined && { routine }),
+    ...(leash !== undefined && {
+      leash: Object.freeze({ radius: leash.radius, post: vec(leash.post ?? request.at) }),
+    }),
   });
 }
 
@@ -303,7 +308,7 @@ export function despawnAllCreatures(world: World<never>): number {
 
 /**
  * Removes creature `entity` and spawns it again, fresh, from its origin (same creature, place,
- * facing, spawn point, faction override, patrol and routine) under a new entity id.
+ * facing, spawn point, faction override, patrol, routine and leash) under a new entity id.
  */
 export function respawnCreature(
   world: World<never>,
@@ -326,7 +331,7 @@ export interface SceneCreatures {
 
 /**
  * Spawns the creature of every scene spawn that names one, facing the spawn's yaw, with its faction
- * override, patrol route and routine. A failed spawn is reported, not thrown; the rest still spawn.
+ * override, patrol route, routine and leash. A failed spawn is reported, not thrown; the rest still spawn.
  */
 export function spawnSceneCreatures(
   world: World<never>,
@@ -345,6 +350,7 @@ export function spawnSceneCreatures(
       ...(spawn.faction !== undefined && { faction: spawn.faction }),
       ...(spawn.patrol !== undefined && { patrol: spawn.patrol }),
       ...(spawn.routine !== undefined && { routine: spawn.routine }),
+      ...(spawn.leash !== undefined && { leash: spawn.leash }),
     });
     if (result.ok) entities.push(result.entity);
     else errors.push({ point: spawn.id, error: result.error });

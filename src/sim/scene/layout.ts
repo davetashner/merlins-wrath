@@ -10,6 +10,7 @@
 import type { KitPurpose, KitShape, RouteKind, SceneYaw } from '@content/index';
 import type { PatrolRoute, PatrolRoutine, PatrolWaypoint } from '../ai/routes';
 import type { RampRise } from '../character/greybox';
+import type { CreatureLeash } from '../creatures/components';
 import type { InteractableSpec } from '../interaction/affordance';
 import type { LightEnvironment } from '../light/field';
 import type { DoorHinge, DoorSwing, SwitchKind } from '../mechanisms/components';
@@ -180,6 +181,8 @@ export interface SceneSpawnSpec {
   readonly patrol?: readonly Triple[] | undefined;
   /** The routes the creature walks, by route id, each in its window of hours (mw-e11.9). */
   readonly routine?: readonly SceneRoutineSpec[] | undefined;
+  /** The creature's leash (mw-e01.17): metres around its post, grid cells (default the spawn). */
+  readonly leash?: { readonly radius: number; readonly post?: Triple | undefined } | undefined;
   /** World properties of the spawned entity (mw-e03.37: a torch that burns). */
   readonly properties?: ScenePropertiesSpec | undefined;
   /** Makes the spawned entity breakable (mw-e03.11). */
@@ -321,6 +324,8 @@ export interface SceneSpawnPlacement {
   readonly patrol?: readonly Vec3[];
   /** The routes that creature walks, world metres (mw-e11.9). */
   readonly routine?: readonly PatrolRoutine[];
+  /** That creature's leash, world metres (mw-e01.17): the post defaults to the spawn point. */
+  readonly leash?: CreatureLeash;
   /** Its world properties, when the spawn sets any (mw-e03.37). */
   readonly properties?: ScenePropertiesSpec;
   /** Its breakable profile and instance data, when it is breakable (mw-e03.11). */
@@ -614,6 +619,12 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       }),
       ...(spawn.routine !== undefined && {
         routine: routineOf(scene, routes, spawn, spawn.routine),
+      }),
+      ...(spawn.leash !== undefined && {
+        leash: Object.freeze({
+          radius: spawn.leash.radius,
+          post: gridToWorld(spawn.leash.post ?? spawn.at, scene.grid),
+        }),
       }),
       ...(spawn.properties !== undefined && { properties: spawn.properties }),
       ...(spawn.breakable !== undefined && { breakable: breakableOf(spawn.breakable) }),
