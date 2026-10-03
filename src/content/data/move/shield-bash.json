@@ -1,7 +1,7 @@
 {
   "$schema": "../move.schema.json",
   "id": "shield-bash",
-  "notes": "Knight shield bash (mw-e04.14): attack while blocking, 14/4/20 ticks, 18 stamina, 5 blunt, 45 poise, forward impulse. The 150 N·s impulse, 1200 N impactForce and staminaDamage 30 are placeholders until e04.14 tunes shoving and barricades.",
+  "notes": "Knight shield bash (mw-e04.14): attack while blocking (block + attack), 14/4/20 ticks, 18 stamina, 5 blunt, 45 poise, a 150 N·s forward impulse. Its hits are tagged interrupt (a target in a move flagged interruptible, e.g. a spell windup, has it cancelled and flinches) and guard-crush (a shieldless guard breaks outright for 60 ticks). World impact: a 150 N·s shove along the facing that moves things up to 60 kg (5 m/s for a 30 kg barrel; anything heavier resists, ImpactResisted) and 60 J of blunt impact for breakables (a flimsy barricade). staminaDamage 30, impactForce 1200 N and the 60 J are placeholders until e04-smash-breakables and the combat sandbox tune them.",
   "verb": "attack",
   "frames": {
     "startup": 14,
@@ -27,7 +27,8 @@
       "y": 0,
       "z": 150
     },
-    "impactForce": 1200
+    "impactForce": 1200,
+    "tags": ["interrupt", "guard-crush"]
   },
   "hitbox": {
     "track": "knight-shield-bash",
@@ -46,6 +47,11 @@
     },
     "reach": "close",
     "swing": "thrust"
+  },
+  "worldImpact": {
+    "blunt": 60,
+    "force": 150,
+    "maxWeight": 60
   },
   "presentation": {
     "anim": "anim-knight-shield-bash",

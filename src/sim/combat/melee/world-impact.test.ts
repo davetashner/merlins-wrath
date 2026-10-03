@@ -57,9 +57,20 @@ describe('melee world impact (mw-e03.11)', () => {
         duration: 0,
         source: knight,
         falloff: 'none',
+        sparesSource: true,
       },
       expect.objectContaining({ element: 'force', intensity: 20, direction: FORWARD }),
     ]);
+  });
+
+  it('a shove’s weight limit (mw-e04.14) goes with its force stimulus, not its blunt knock', () => {
+    const { world, knight } = setup();
+    const bash = move({ worldImpact: { blunt: 60, force: 150, maxWeight: 60 } });
+    expect(strikeWorld(world, knight, bash, TRACK, FORWARD)).toBe(2);
+    const [blunt, force] = pendingStimuli(world).map((p) => p.stimulus);
+    expect(blunt).toMatchObject({ element: 'blunt', intensity: 60, sparesSource: true });
+    expect(blunt).not.toHaveProperty('maxWeight');
+    expect(force).toMatchObject({ element: 'force', intensity: 150, maxWeight: 60 });
   });
 
   it('a box hitbox strikes as its bounding sphere; the last key stands in for a short track', () => {

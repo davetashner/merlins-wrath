@@ -16,14 +16,18 @@
 // - heat / cold [°C]: raise / lower `temperature` of entities that have one (clamped to its range).
 // - water [wetness 0–1]: raise `wetness` of entities that have one (clamped at 1).
 // - charge [charge]: raise `charge` of entities that have one.
-// - force [N·s]: an impulse on pushable, liftable or breakable entities with weight > 0, delivered
-//   through `impulseApplied` (velocity change = impulse / weight) for the physics layer to integrate;
-//   a breakable's structure takes the shove too (mw-e03.11: a blast brings an old wall down).
+// - force [N·s]: an impulse on pushable, liftable, breakable or bashable entities with weight > 0,
+//   delivered through `impulseApplied` (velocity change = impulse / weight) for the physics layer to
+//   integrate; a breakable's structure takes the shove too (mw-e03.11: a blast brings an old wall
+//   down). A force with a `maxWeight` (a shield bash's 60 kg, mw-e04.14) moves nothing heavier: such
+//   an entity resists — `ImpactResisted`, no impulse, and it is not among the stimulus's hits.
 // - blunt / slash / pierce [J]: impact energy on entities with `hp` or `fragile`, reported as hits
 //   for breakables to consume.
 // - gas [concentration], light [light units]: no entity targets; they act on the element field and
 //   light field, which read them from `stimulusResolved`.
-// Every property write carries the stimulus's source for attribution (quests, crime, telemetry).
+// Every property write carries the stimulus's source for attribution (quests, crime, telemetry). A
+// stimulus that `sparesSource` never reaches its own source (a knight's swing does not shove the
+// knight).
 
 import type { EntityId } from '../core/component';
 import { defineComponent } from '../core/component';
@@ -102,6 +106,10 @@ export interface StimulusInput {
   readonly direction?: Vec3;
   /** Gas only, required: gas type id (e.g. `smoke`, `marsh-gas`). */
   readonly gas?: string;
+  /** Force only: the heaviest entity it moves, kg (> 0); heavier ones resist. Omitted: no limit. */
+  readonly maxWeight?: number;
+  /** The source itself is never reached (a swing's shove spares the swinger). Defaults to false. */
+  readonly sparesSource?: boolean;
 }
 
 /** A validated stimulus with every default filled in (plain data, snapshot-safe). */
@@ -115,6 +123,9 @@ export interface Stimulus {
   /** Unit length when present. */
   readonly direction?: Vec3;
   readonly gas?: string;
+  readonly maxWeight?: number;
+  /** Present (true) only when the source is spared. */
+  readonly sparesSource?: true;
 }
 
 /**
@@ -160,6 +171,14 @@ export function normalizeStimulus(input: StimulusInput): Stimulus {
   } else if (input.gas !== undefined) {
     throw new RangeError(`only gas stimuli take a gas id, not ${element}`);
   }
+  if (input.maxWeight !== undefined) {
+    if (element !== 'force') throw new RangeError(`only force stimuli take a maxWeight`);
+    if (!Number.isFinite(input.maxWeight) || input.maxWeight <= 0) {
+      throw new RangeError(`maxWeight must be a finite number > 0, got ${String(input.maxWeight)}`);
+    }
+    stimulus.maxWeight = input.maxWeight;
+  }
+  if (input.sparesSource === true) stimulus.sparesSource = true;
   return stimulus;
 }
 
@@ -238,6 +257,25 @@ export interface ImpulseApplied {
 /** Fired for every entity a force stimulus pushes; the physics layer integrates it. */
 export const impulseApplied = defineEvent<ImpulseApplied>('impulseApplied');
 
+/** A force stimulus met something heavier than its `maxWeight` (mw-e04.14). */
+export interface ImpactResistance {
+  readonly tick: number;
+  readonly entity: EntityId;
+  /** The entity's weight, kg. */
+  readonly weight: number;
+  /** The stimulus's limit, kg. */
+  readonly maxWeight: number;
+  /** The push it did not get, N·s. */
+  readonly impulse: Vec3;
+  readonly source: EntityId | null;
+}
+
+/**
+ * Fired for every entity too heavy for a force stimulus's `maxWeight` (a 100 kg crate under a shield
+ * bash): it is not pushed. Audio and the HUD read it as the thud of something that will not budge.
+ */
+export const ImpactResisted = defineEvent<ImpactResistance>('ImpactResisted');
+
 /**
  * Makes `world` accept stimuli: registers the placement, placement centre and queue components and
  * creates the queue. Call once at setup, after `registerWorldProperties` and outside a step.
@@ -298,7 +336,8 @@ function isTarget(world: World<never>, effect: TargetEffect, entity: EntityId): 
       return (
         (readProperty(world, entity, 'pushable') ||
           readProperty(world, entity, 'liftable') ||
-          readProperty(world, entity, 'breakable')) &&
+          readProperty(world, entity, 'breakable') ||
+          readProperty(world, entity, 'bashable')) &&
         readProperty(world, entity, 'weight') > 0
       );
     case 'impact':
@@ -314,13 +353,17 @@ function reach(
 ): { entity: EntityId; falloff: number }[] {
   const { shape } = stimulus;
   if (effect.kind === 'field') return [];
+  const spared = stimulus.sparesSource === true ? stimulus.source : null;
   if (shape.kind === 'contact') {
-    const alive = world.isAlive(shape.target) && isTarget(world, effect, shape.target);
+    const alive =
+      shape.target !== spared &&
+      world.isAlive(shape.target) &&
+      isTarget(world, effect, shape.target);
     return alive ? [{ entity: shape.target, falloff: 1 }] : [];
   }
   const found: { entity: EntityId; falloff: number }[] = [];
   world.query(PlacementComponent).forEach((entity, placement) => {
-    if (!isTarget(world, effect, entity)) return;
+    if (entity === spared || !isTarget(world, effect, entity)) return;
     const at = boundingSphereOf(world, entity, placement);
     const falloff = shapeFalloff(shape, stimulus.falloff, at, at.radius);
     if (falloff !== undefined) found.push({ entity, falloff });
@@ -342,7 +385,7 @@ function applyProperty(
   setProperty(world, entity, key, value, source === null ? {} : { source });
 }
 
-/** The push on `entity`, or false when there is no direction to push it in. */
+/** The push on `entity`, or false when there is no direction to push it in or it resists. */
 function applyImpulse(
   world: World<never>,
   stimulus: Stimulus,
@@ -354,8 +397,21 @@ function applyImpulse(
   const direction =
     stimulus.direction ?? (at === undefined ? undefined : shapePush(stimulus.shape, at));
   if (direction === undefined) return false;
-  const inverseMass = 1 / readProperty(world, entity, 'weight');
+  const weight = readProperty(world, entity, 'weight');
   const impulse = { x: direction.x * amount, y: direction.y * amount, z: direction.z * amount };
+  const { maxWeight } = stimulus;
+  if (maxWeight !== undefined && weight > maxWeight) {
+    world.events.emit(ImpactResisted, {
+      tick: world.tick,
+      entity,
+      weight,
+      maxWeight,
+      impulse,
+      source: stimulus.source,
+    });
+    return false;
+  }
+  const inverseMass = 1 / weight;
   world.events.emit(impulseApplied, {
     entity,
     impulse,

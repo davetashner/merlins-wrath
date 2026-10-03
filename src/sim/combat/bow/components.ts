@@ -123,7 +123,11 @@ export function toggledBow(world: World<never>, entity: EntityId, bow: BowState)
       ? { ...rest, ...(bow.stowed !== null && { primaryAttack: bow.stowed }) }
       : rest;
     if (!bow.equipped) stowed = primaryAttack ?? null;
-    world.set(entity, ActionInputComponent, Object.freeze({ bindings: Object.freeze(bindings) }));
+    world.set(
+      entity,
+      ActionInputComponent,
+      Object.freeze({ ...input, bindings: Object.freeze(bindings) }),
+    );
   }
   return Object.freeze({ ...bow, equipped: !bow.equipped, draw: null, stowed });
 }

@@ -250,6 +250,15 @@ const worldImpactSchema = z
     slash: joules.optional().describe('Slash impact energy, J.'),
     pierce: joules.optional().describe('Pierce impact energy, J.'),
     force: joules.optional().describe('Shove, N·s (pushes and strains whatever it reaches).'),
+    maxWeight: z
+      .number()
+      .positive()
+      .max(100_000)
+      .optional()
+      .describe(
+        'Heaviest thing the shove moves, kg: anything heavier resists it (ImpactResisted) and stays ' +
+          'put, e.g. the shield bash’s 60 kg (mw-e04.14). Only with `force`; absent = no limit.',
+      ),
   })
   .describe(
     'What the swing does to the world (mw-e03.11): on its first active tick its hitbox, at the ' +
@@ -401,6 +410,9 @@ export const moveSchema = z
     }
     if (move.worldImpact !== undefined && move.hitbox === undefined) {
       fail(['worldImpact'], 'only a move with a hitbox strikes the world');
+    }
+    if (move.worldImpact?.maxWeight !== undefined && move.worldImpact.force === undefined) {
+      fail(['worldImpact', 'maxWeight'], 'a weight limit needs a force to limit');
     }
     if (move.motion !== undefined && move.motion.distance > 0 && active === 0) {
       fail(['motion'], 'a move with motion needs at least one active tick to travel on');
@@ -566,7 +578,12 @@ export interface RuntimeMove {
   /** Hit-stop tier of its hits (light unless the move names one), or null for a move that cannot hit. */
   readonly hitStop: HitStopTier | null;
   /** Energy per kind of hit its swing delivers to the world (mw-e03.11); absent: none. */
-  readonly worldImpact?: Readonly<Partial<Record<WorldImpactKind, number | undefined>>>;
+  readonly worldImpact?: Readonly<
+    Partial<Record<WorldImpactKind, number | undefined>> & {
+      /** Heaviest thing its shove moves, kg (mw-e04.14); absent: no limit. */
+      readonly maxWeight?: number | undefined;
+    }
+  >;
   readonly presentation: MoveEntry['presentation'];
 }
 

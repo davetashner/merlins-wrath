@@ -73,10 +73,11 @@ interface MoveSpec {
   readonly id: string;
   readonly frames: readonly [number, number, number];
   readonly hyperarmor?: TickRange & { readonly poiseCap: number };
+  readonly interruptible?: boolean;
 }
 
 /** A RuntimeMove as compileMove would build it, with only the fields these rules read varied. */
-function move({ id, frames, hyperarmor }: MoveSpec): RuntimeMove {
+function move({ id, frames, hyperarmor, interruptible = false }: MoveSpec): RuntimeMove {
   const [startup, active, recovery] = frames;
   return Object.freeze({
     id,
@@ -94,7 +95,7 @@ function move({ id, frames, hyperarmor }: MoveSpec): RuntimeMove {
     parryable: false,
     blockable: false,
     unblockable: false,
-    interruptible: false,
+    interruptible,
     hyperarmor: hyperarmor ?? null,
     iframes: null,
     telegraphTick: 0,
@@ -113,7 +114,14 @@ const HEAVY = move({
   frames: [24, 5, 26],
   hyperarmor: { from: 10, to: 29, poiseCap: 40 },
 });
-const MOVES: MoveTable = new Map([SWING, HEAVY].map((m) => [m.id, m]));
+// A spell windup a shield bash can interrupt (mw-e04.14): 30/5/20, armoured through its cast.
+const CAST = move({
+  id: 'cast',
+  frames: [30, 5, 20],
+  hyperarmor: { from: 0, to: 34, poiseCap: 100 },
+  interruptible: true,
+});
+const MOVES: MoveTable = new Map([SWING, HEAVY, CAST].map((m) => [m.id, m]));
 
 const TROLL: ReactionProfile = {
   ...DEFAULT_REACTION_PROFILE,
@@ -416,6 +424,120 @@ describe('hit reactions: direction', () => {
       { moves: MOVES, facing: () => v(0, 0, -1) },
     );
     expect(info?.direction).toBe('front');
+  });
+});
+
+describe('hit reactions: interrupts (mw-e04.14)', () => {
+  const BASH = { amounts: { blunt: 5 }, poiseDamage: 45, tags: ['interrupt'] };
+
+  it('an interrupt hit cancels an interruptible windup through its hyperarmor: it flinches', () => {
+    const s = setup();
+    const caster = s.creature({ poise: 60 });
+    const t0 = startMove(s, caster, 'cast');
+    s.stepTo(t0 + 11); // the hit lands on move tick 11: winding up, armoured
+    s.hit(caster, BASH);
+    const T = s.world.tick;
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({
+      reaction: 'flinch',
+      ticks: 12,
+      interrupted: true,
+      suppressed: null,
+    });
+    expect(s.actionsEnded).toEqual([
+      { tick: T, entity: caster, move: 'cast', reason: 'interrupted', moveTick: 11 },
+    ]);
+    expect(poiseOf(s.world, caster)?.current).toBe(60); // the armour still soaked the poise
+  });
+
+  it('it interrupts even once the move is committed (recovery ticks), and a stronger tier stands', () => {
+    const s = setup();
+    const caster = s.creature({ poise: 500 });
+    const t0 = startMove(s, caster, 'cast');
+    s.stepTo(t0 + 36); // recovery, past the armour: committed
+    s.hit(caster, { ...BASH, poiseDamage: 5 });
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({ reaction: 'flinch', interrupted: true });
+    s.steps(13); // the flinch's lock runs out
+    const t1 = startMove(s, caster, 'cast');
+    s.stepTo(t1 + 36); // recovery again, unarmoured
+    s.hit(caster, { ...BASH, impulse: v(0, 0, 400) }); // a knockback's worth
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({ reaction: 'knockback', interrupted: true });
+  });
+
+  it('it overrides a reaction already playing; a profile that never flinches still flinches', () => {
+    const s = setup();
+    const stoic: ReactionProfile = { ...DEFAULT_REACTION_PROFILE, replace: { flinch: 'none' } };
+    const caster = s.creature({ poise: 500, profile: stoic });
+    const t0 = startMove(s, caster, 'cast');
+    s.stepTo(t0 + 36); // recovery: committed
+    s.hit(caster, { ...BASH, tags: [] }); // a plain hit: replaced by none
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({ reaction: 'none', suppressed: 'replaced' });
+    expect(actionOf(s.world, caster)?.move).toBe('cast');
+    s.hit(caster, BASH);
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({ reaction: 'flinch', interrupted: true });
+    expect(actionOf(s.world, caster)).toBeUndefined();
+  });
+
+  it('a move not flagged interruptible ignores the tag: the heavy’s hyperarmor soaks the bash', () => {
+    const s = setup();
+    const knight = s.creature({ poise: 60 });
+    const t0 = startMove(s, knight, 'heavy');
+    s.stepTo(t0 + 11);
+    s.hit(knight, { ...BASH, poiseDamage: 30 });
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({ reaction: 'none', suppressed: 'hyperarmor' });
+    expect(actionOf(s.world, knight)?.move).toBe('heavy');
+  });
+
+  it('a plain hit (no interrupt tag) on the windup is soaked by its hyperarmor', () => {
+    const s = setup();
+    const caster = s.creature({ poise: 60 });
+    const t0 = startMove(s, caster, 'cast');
+    s.stepTo(t0 + 11);
+    s.hit(caster, { ...BASH, tags: [] });
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({ reaction: 'none', suppressed: 'hyperarmor' });
+    expect(actionOf(s.world, caster)?.move).toBe('cast');
+  });
+
+  it('blocked, invulnerable, idle and timeline-less targets interrupt nothing', () => {
+    const s = setup();
+    const caster = s.creature({ poise: 60 });
+    const idle = s.creature({ poise: 60 });
+    const statue = s.creature({ poise: 60, timeline: false });
+    const t0 = startMove(s, caster, 'cast');
+    s.stepTo(t0 + 5);
+    s.hit(caster, { ...BASH, tags: ['interrupt', 'invulnerable'] });
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({ reaction: 'none', suppressed: 'invulnerable' });
+    s.hit(caster, { ...BASH, tags: ['interrupt', 'blocked'] });
+    s.steps(1);
+    expect(last(s.reactions)).toMatchObject({ reaction: 'none', suppressed: 'blocked' });
+    expect(actionOf(s.world, caster)?.move).toBe('cast');
+    s.hit(idle, { ...BASH, poiseDamage: 0 });
+    s.hit(statue, { ...BASH, poiseDamage: 0 });
+    s.steps(1);
+    expect(s.reactions.slice(-2).map((r) => r.reaction)).toEqual(['none', 'none']);
+  });
+
+  it('a move missing from the reaction rules’ table is not interruptible', () => {
+    const s = setup();
+    const ghost = s.creature({ poise: 60 });
+    s.steps(1);
+    const line = s.world.get(ghost, ActionTimelineComponent) ?? expect.fail('no timeline');
+    s.world.set(ghost, ActionTimelineComponent, {
+      ...line,
+      current: { move: 'unknown', tick: 3, startedAt: 0 },
+    });
+    const result = s.damage.apply(s.world, ghost, { ...BASH, poiseDamage: 0 });
+    const info = resolveHitReaction(s.world, result ?? expect.fail('no result'), {
+      moves: MOVES,
+    });
+    expect(info).toMatchObject({ reaction: 'none', interrupted: false });
   });
 });
 
@@ -839,6 +961,7 @@ describe('hit reactions: choosing and profiles', () => {
 describe('hit reactions: blocks and guard breaks (mw-e04.31)', () => {
   const WOOD = Object.freeze({
     id: 'wood',
+    kind: 'shield' as const,
     absorption: { slash: 85 },
     stability: 60,
     raiseTicks: 6,

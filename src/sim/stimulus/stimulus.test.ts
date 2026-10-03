@@ -15,6 +15,7 @@ import { placeEntity, setPlacementCentre } from './placement';
 import { ORIGIN, STIMULUS_EDGE_FALLOFF, type Vec3 } from './shapes';
 import {
   applyStimulus,
+  ImpactResisted,
   impulseApplied,
   installStimuli,
   normalizeStimulus,
@@ -22,6 +23,7 @@ import {
   resolveStimuli,
   STIMULUS_ELEMENTS,
   stimulusSystem,
+  type ImpactResistance,
   type ImpulseApplied,
   type StimulusInput,
 } from './stimulus';
@@ -143,6 +145,56 @@ describe('applyStimulus / resolveStimuli', () => {
       { entity: barrel, impulse: v(-50), velocityChange: v(-2.5), source: crate },
     ]);
     expect(log.entries[0]?.hits.map((hit) => hit.entity)).toEqual([crate, barrel]);
+  });
+
+  it('mw-e04.14: a bashable thing is pushed too; a force with a maxWeight moves nothing heavier', () => {
+    const w = world();
+    const barrel = thing(w, { bashable: true, weight: 30 }, v(1));
+    const limit = thing(w, { pushable: true, weight: 60 }, v(-1));
+    const crate = thing(w, { pushable: true, weight: 100 }, v(0, 0, 1));
+    const seen = impulses(w);
+    const resisted: ImpactResistance[] = [];
+    w.events.on(ImpactResisted, (e) => resisted.push(e));
+    const log = recordStimulusLog(w);
+    run(w, {
+      shape: { kind: 'sphere', center: ORIGIN, radius: 2 },
+      element: 'force',
+      intensity: 150,
+      falloff: 'none',
+      direction: v(0, 0, 1),
+      maxWeight: 60,
+    });
+    expect(seen).toEqual([
+      { entity: barrel, impulse: v(0, 0, 150), velocityChange: v(0, 0, 5), source: null },
+      { entity: limit, impulse: v(0, 0, 150), velocityChange: v(0, 0, 2.5), source: null },
+    ]);
+    expect(resisted).toEqual([
+      { tick: 0, entity: crate, weight: 100, maxWeight: 60, impulse: v(0, 0, 150), source: null },
+    ]);
+    // The crate is not among the hits: nothing pushed it.
+    expect(log.entries[0]?.hits.map((hit) => hit.entity)).toEqual([barrel, limit]);
+  });
+
+  it('mw-e04.14: a stimulus that spares its source never reaches it, by shape or by contact', () => {
+    const w = world();
+    const knight = thing(w, { pushable: true, weight: 90 }, v(0.5));
+    const barrel = thing(w, { pushable: true, weight: 30 }, v(1));
+    const seen = impulses(w);
+    const shove = (shape: StimulusInput['shape']): StimulusInput => ({
+      shape,
+      element: 'force',
+      intensity: 30,
+      falloff: 'none',
+      direction: v(1),
+      source: knight,
+      sparesSource: true,
+    });
+    run(
+      w,
+      shove({ kind: 'sphere', center: ORIGIN, radius: 2 }),
+      shove({ kind: 'contact', target: knight }),
+    );
+    expect(seen.map((i) => i.entity)).toEqual([barrel]);
   });
 
   it('mw-e04.34: a placement centre is what a force reaches and pushes, not the frame origin', () => {
@@ -406,6 +458,9 @@ describe('normalizeStimulus', () => {
       direction: v(0, 1),
     });
     expect(STIMULUS_ELEMENTS).toHaveLength(10);
+    const shove = { ...base, element: 'force' as const, maxWeight: 60, sparesSource: true };
+    expect(normalizeStimulus(shove)).toMatchObject({ maxWeight: 60, sparesSource: true });
+    expect(normalizeStimulus({ ...shove, sparesSource: false })).not.toHaveProperty('sparesSource');
   });
 
   it('rejects invalid stimuli', () => {
@@ -424,6 +479,9 @@ describe('normalizeStimulus', () => {
       [{ ...base, element: 'gas' }, /gas id/],
       [{ ...base, element: 'gas', gas: 'Marsh Gas' }, /gas id/],
       [{ ...base, gas: 'smoke' }, /only gas stimuli/],
+      [{ ...base, maxWeight: 60 }, /only force stimuli take a maxWeight/],
+      [{ ...base, element: 'force', maxWeight: 0 }, /maxWeight/],
+      [{ ...base, element: 'force', maxWeight: Infinity }, /maxWeight/],
     ];
     for (const [stimulus, error] of bad) expect(() => normalizeStimulus(stimulus)).toThrow(error);
   });

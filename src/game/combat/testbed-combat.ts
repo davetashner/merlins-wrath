@@ -4,7 +4,8 @@
 //
 // 1. `prepareTestbedCombat` (before the player is installed): the knight's moves (with the combat
 //    sandbox's attacker variants, mw-e04.9), socket tracks and wood shield from content, its heavy
-//    attack on ability 1 (held, it charges: mw-e04.13), the damage
+//    attack on ability 1 (held, it charges: mw-e04.13), its shield bash on attack while blocking
+//    (mw-e04.14; with no shield it kicks instead), the damage
 //    model with the shield rule in its guard stage, and the sandbox tuning. Its `moves` and `melee` go
 //    to setupTestbedPlayer, its `spawners` to the debug commands.
 // 1b. `installSandboxRules` (with the debug commands, before the player): the combat sandbox's
@@ -84,8 +85,10 @@ import {
   installMeleeStrikes,
   installParry,
   KNIGHT_HEAVY_ATTACK,
+  KNIGHT_KICK,
   KNIGHT_PARRY,
   KNIGHT_RIPOSTE,
+  KNIGHT_SHIELD_BASH,
   makePushable,
   MELEE_COMPONENTS,
   noAllies,
@@ -192,6 +195,8 @@ export function prepareTestbedCombat(content: GameContent): TestbedCombat {
       heavyAttack: KNIGHT_HEAVY_ATTACK,
       parry: KNIGHT_PARRY,
       riposte: KNIGHT_RIPOSTE,
+      bash: KNIGHT_SHIELD_BASH,
+      bashFallback: KNIGHT_KICK,
     },
     damage,
     hitStop: compileHitStop(content.get('hit-stop', HIT_STOP_ID)),

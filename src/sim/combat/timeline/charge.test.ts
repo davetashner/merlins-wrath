@@ -275,6 +275,18 @@ describe('charged moves: the data (mw-e04.13)', () => {
     expect(none.damage).toBeNull();
     expect(none.worldImpact).toBeUndefined();
   });
+
+  it('a shove’s weight limit (mw-e04.14) is the charged move’s own, never lerped', () => {
+    const shove = move('charged', {
+      charge: CHARGED.charge,
+      worldImpact: { force: 200, maxWeight: 60 },
+    });
+    const pushy = move('heavy', { worldImpact: { force: 100, maxWeight: 20 } });
+    expect(chargedMove(table(pushy, shove), shove, 0.5).worldImpact).toEqual({
+      maxWeight: 60,
+      force: 150,
+    });
+  });
 });
 
 describe('charged moves: holding the heavy (mw-e04.13)', () => {

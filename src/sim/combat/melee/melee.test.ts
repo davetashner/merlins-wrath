@@ -86,6 +86,7 @@ const v3 = (x: number, y: number, z: number): Vec3 => ({ x, y, z });
 // The wood shield (src/content/data/shield/wood-shield.json).
 const WOOD: RuntimeShield = Object.freeze({
   id: 'wood-shield',
+  kind: 'shield',
   absorption: Object.freeze({ slash: 85, pierce: 85, blunt: 85, fire: 30 }),
   stability: 60,
   raiseTicks: 6,

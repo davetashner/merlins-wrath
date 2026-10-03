@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- The knight can bash with its shield: hold block and press attack (right click then left click, or
+  LT then RT). The bash cuts a spellcaster's windup short and makes them flinch, knocks aside a foe
+  guarding with only a blade so they reel for a second, shoves barrels and other light things across
+  the floor (anything too heavy just thuds and stays put) and batters flimsy barricades. Without a
+  shield the same buttons throw a kick.
 - The knight has a heavy attack you can charge (ability 1: 1, Y or D-pad Up). Tap it for a slow,
   heavy overhead; hold it and the knight holds the blade high, building a charge that hits up to
   1.8 times as hard and breaks far more poise, full after a second and swung on its own if you keep

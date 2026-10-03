@@ -109,9 +109,11 @@ function lerpImpact(
   to: NonNullable<RuntimeMove['worldImpact']>,
   t: number,
 ): NonNullable<RuntimeMove['worldImpact']> {
-  const impact: Record<string, number> = {};
-  for (const [kind, energy] of Object.entries(to)) {
-    const key = kind as keyof typeof to;
+  // A weight limit (mw-e04.14) is the charged move's own, not lerped.
+  const { maxWeight, ...kinds } = to;
+  const impact: Record<string, number> = maxWeight === undefined ? {} : { maxWeight };
+  for (const [kind, energy] of Object.entries(kinds)) {
+    const key = kind as keyof typeof kinds;
     impact[kind] = lerp(from?.[key] ?? 0, energy ?? 0, t);
   }
   return Object.freeze(impact);
