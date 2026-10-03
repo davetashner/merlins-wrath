@@ -27,6 +27,40 @@ describe('restSegments', () => {
     expect(segments[2]?.head).toEqual([0, 1.5, 0]);
   });
 
+  it('gives a long thin limb a wider radius than a torso bone, and a point none', () => {
+    const rig = compileRig(parseGraph(TEST_GRAPH));
+    const segments = restSegments(rig);
+    for (const [i, def] of rig.defs.entries()) {
+      const radius = segments[i]?.radius ?? -1;
+      if (def.shape === undefined) {
+        expect(radius).toBe(0);
+        continue;
+      }
+      const side = Math.max(def.shape.size[0], def.shape.size[2]);
+      const limb = def.shape.size[1] >= 3 * side;
+      expect(radius).toBeCloseTo((side / 2) * (limb ? 1.8 : 1), 10);
+    }
+  });
+
+  it('keeps a bone on the midline unrestricted and fences a side bone off the midline', () => {
+    const rig = compileRig({
+      id: 'side-rig',
+      masks: {},
+      skeleton: [
+        { bone: 'root', parent: null, offset: [0, 1, 0] },
+        {
+          bone: 'arm-r',
+          parent: 'root',
+          offset: [0.3, 0, 0],
+          shape: { size: [0.1, 0.4, 0.1], center: [0, -0.2, 0] },
+        },
+      ],
+    } as unknown as Parameters<typeof compileRig>[0]);
+    const segments = restSegments(rig);
+    expect(segments[0]?.lateral).toBe(0);
+    expect(segments[1]?.lateral).toBeCloseTo(0.27, 10);
+  });
+
   it('makes a bone without a shape a point at its joint', () => {
     const rig = compileRig(parseGraph(TEST_GRAPH));
     const segments = restSegments(rig);
@@ -67,6 +101,28 @@ describe('autoSkin', () => {
     const skin = autoSkin([1, 1, 1], [point, LEG]);
     expect(weightOf(skin, 0, 0)).toBeGreaterThan(0.99);
     expect(Number.isFinite(skin.weights[0])).toBe(true);
+  });
+
+  it('binds a vertex inside a thick bone to it, though a thin bone is nearer its axis', () => {
+    const thin: BoneSegment = { head: [0, 0, 0], tail: [0, 2, 0] };
+    const thick: BoneSegment = { head: [0.3, 0, 0], tail: [0.3, 2, 0], radius: 0.25 };
+    const skin = autoSkin([0.1, 1, 0], [thin, thick]);
+    expect(weightOf(skin, 0, 1)).toBeGreaterThan(0.99);
+  });
+
+  it('keeps a vertex nearer the midline than a bone lateral limit out of that bone', () => {
+    const side: BoneSegment = { head: [0.3, 0, 0], tail: [0.3, 2, 0], lateral: 0.2 };
+    const centre: BoneSegment = { head: [0, 0, 0], tail: [0, 2, 0] };
+    const near = autoSkin([0.15, 1, 0], [side, centre]);
+    expect(weightOf(near, 0, 0)).toBe(0);
+    const far = autoSkin([0.25, 1, 0], [side, centre]);
+    expect(weightOf(far, 0, 0)).toBeGreaterThan(0.5);
+  });
+
+  it('never binds a vertex to a skipped bone, even when it sits right on it', () => {
+    const skin = autoSkin([0.02, 0.5, 0], [LEG, ARM], new Set([0]));
+    expect(weightOf(skin, 0, 0)).toBe(0);
+    expect(weightOf(skin, 0, 1)).toBeCloseTo(1, 5);
   });
 
   it('clamps to the segment ends rather than extending the bone to infinity', () => {

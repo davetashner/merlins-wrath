@@ -172,7 +172,7 @@ import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { createLightRig } from '@render/light/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
-import { createPlayerBody, loadKnightModel, projectToNdc } from '@render/player/index';
+import { createPlayerBody, loadKnight, projectToNdc } from '@render/player/index';
 import { createVfxRenderer } from '@render/vfx/index';
 import { captureCanvasThumbnail, type CapturedThumbnail } from '@render/thumbnail';
 import {
@@ -942,7 +942,7 @@ function startRenderer(
           content.all('anim-clip'),
         );
         // The knight's model (mw-e37.21) takes the boxes' place once it has loaded.
-        const body = createPlayerBody(graph.rig, loadKnightModel());
+        const body = createPlayerBody(graph.rig, loadKnight());
         let publishedPlayerProbe = '';
         player = setupTestbedPlayer({
           world,
