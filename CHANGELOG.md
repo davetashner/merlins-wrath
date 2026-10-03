@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- The slice's torches, brazier and doors look the part: iron-and-wood torches on the walls, an iron brazier
+  full of coals (its flame now burns in the bowl), a painted plank door with iron hinges in the first room,
+  and a heavy riveted iron door at the exit. They are placeholders until approved.
 - The skeleton in the arena has a model: a bony miner in a leather cap with a pick, with eyes that glow
   cold blue. There are four different looks, and each game picks one at random for each miner. They do not
   walk or swing yet (animation is still to come) and are placeholders until approved.

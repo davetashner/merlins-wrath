@@ -23,6 +23,7 @@ import type {
   Vec3,
 } from '@sim/index';
 import { renderIntensity } from '../light/index.ts';
+import { loadBrazier, loadTorch } from '../props/set-pieces';
 import {
   BoxGeometry,
   BufferGeometry,
@@ -311,6 +312,30 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);
+      // A torch or a brazier (mw-546): its model takes the bracket's place once loaded (the bracket
+      // stays if it never loads). The flame and light are the light rig's, at this spawn point.
+      const isTorch = spawn.tags.includes('torch');
+      if (spawn.prop === undefined && (isTorch || spawn.tags.includes('brazier'))) {
+        const loaded = isTorch ? loadTorch() : loadBrazier(spawn.position.y);
+        void loaded.then(
+          (model) => {
+            mesh.visible = false;
+            const piece = new Mesh(model.geometry, model.material);
+            piece.name = isTorch ? 'torch' : 'brazier';
+            piece.castShadow = true;
+            piece.receiveShadow = true;
+            // Its wall plate is on −x; a torch on the east side of the room turns to put it on +x.
+            if (isTorch && spawn.position.x > 0) piece.rotation.y = Math.PI;
+            group.add(piece);
+          },
+          (error: unknown) => {
+            console.warn(
+              `The ${isTorch ? 'torch' : 'brazier'} model did not load; keeping the stand-in.`,
+              error,
+            );
+          },
+        );
+      }
       scene.add(group);
       return group;
     },
