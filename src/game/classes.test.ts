@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { controllerTuningFor, loadGameContent, PLAYER_CONTROLLER_ID } from '@content/index';
+import {
+  controllerTuningFor,
+  loadGameContent,
+  PLAYER_CLASSES,
+  PLAYER_CONTROLLER_ID,
+} from '@content/index';
 import { describeContent, markExercised } from '@content/testing';
 import {
   capabilitiesOf,
@@ -16,6 +21,7 @@ import {
 } from '@sim/index';
 import { createCapabilityRegistry } from './capabilities';
 import {
+  ALL_CLASSES_PARAM,
   applyClass,
   classCards,
   createClassRules,
@@ -24,10 +30,13 @@ import {
   kitLines,
   kitModel,
   newGameRequest,
+  playableClasses,
 } from './classes';
 import { installFactRegistry } from './facts';
 
 const content = loadGameContent();
+/** Every class playable: what a debug build's ?allclasses gives. */
+const ALL = new Set<string>(PLAYER_CLASSES);
 
 function freshPlayer(): { world: World; actor: number; rules: ClassRules } {
   const world = new World({ seed: 5 });
@@ -115,7 +124,7 @@ describeContent('class', 'applies its capabilities, kit and stats from data', (d
 
 describe('class cards and the kit panel model', () => {
   it('lists the four classes in order with pitch, three verbs and the kit preview', ({ task }) => {
-    const cards = classCards(content);
+    const cards = classCards(content, ALL);
     expect(cards.map(({ id }) => id)).toEqual(['knight', 'archer', 'sorcerer', 'thief']);
     for (const card of cards) {
       markExercised(task, 'class', card.id);
@@ -129,7 +138,23 @@ describe('class cards and the kit panel model', () => {
       '30 gold',
     ]);
     expect(kitLines(content.get('class', 'thief'))).toContain('Lockpicks (equipped)');
-    expect(classCards({ all: () => [] } as never)).toEqual([]);
+    expect(classCards({ all: () => [] } as never, ALL)).toEqual([]);
+    expect(cards.some(({ locked }) => locked === true)).toBe(false);
+  });
+
+  it('AC-1: locks every card outside the playable classes', () => {
+    const cards = classCards(content, new Set(['knight']));
+    expect(cards.map(({ id, locked }) => [id, locked === true])).toEqual([
+      ['knight', false],
+      ['archer', true],
+      ['sorcerer', true],
+      ['thief', true],
+    ]);
+    // A locked card keeps its name, pitch, verbs and kit.
+    const thief = cards.find(({ id }) => id === 'thief');
+    expect(thief?.name).toBe('Thief');
+    expect(thief?.verbs).toHaveLength(3);
+    expect(thief?.kit).toContain('Lockpicks (equipped)');
   });
 
   it('turns item ids into readable names', () => {
@@ -165,14 +190,37 @@ describe('class cards and the kit panel model', () => {
 
 describe('new game request', () => {
   it('reads ?newgame and ?class=<id>, ?class winning', () => {
-    expect(newGameRequest('')).toEqual({ kind: 'none' });
-    expect(newGameRequest('?scene=testbed&newgame')).toEqual({ kind: 'select' });
-    expect(newGameRequest('?class=sorcerer&newgame')).toEqual({
+    expect(newGameRequest('', ALL)).toEqual({ kind: 'none' });
+    expect(newGameRequest('?scene=testbed&newgame', ALL)).toEqual({ kind: 'select' });
+    expect(newGameRequest('?class=sorcerer&newgame', ALL)).toEqual({
       kind: 'class',
       classId: 'sorcerer',
     });
-    expect(newGameRequest('?class=bard')).toEqual({ kind: 'unknown-class', classId: 'bard' });
+    expect(newGameRequest('?class=bard', ALL)).toEqual({ kind: 'unknown-class', classId: 'bard' });
     expect(isPlayerClass('thief')).toBe(true);
     expect(isPlayerClass('bard')).toBe(false);
+  });
+});
+
+describe('playable classes (mw-e01.15)', () => {
+  it('reads game.playableClasses: the Knight only in m1', ({ task }) => {
+    markExercised(task, 'game', 'game');
+    expect([...playableClasses(content, '?newgame', true)]).toEqual(['knight']);
+    expect([...playableClasses(content, '', false)]).toEqual(['knight']);
+  });
+
+  it('a debug build unlocks every class with ?allclasses; a release build ignores it', () => {
+    const search = `?newgame&${ALL_CLASSES_PARAM}`;
+    expect([...playableClasses(content, search, true)]).toEqual([...PLAYER_CLASSES]);
+    expect([...playableClasses(content, search, false)]).toEqual(['knight']);
+  });
+
+  it('AC-2: ?class=<locked id> is refused as locked-class, so nothing starts', () => {
+    const playable = playableClasses(content, '', false);
+    expect(newGameRequest('?class=sorcerer', playable)).toEqual({
+      kind: 'locked-class',
+      classId: 'sorcerer',
+    });
+    expect(newGameRequest('?class=knight', playable)).toEqual({ kind: 'class', classId: 'knight' });
   });
 });

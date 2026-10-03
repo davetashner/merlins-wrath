@@ -13,6 +13,10 @@ check enforces this).
 
 ### Added
 
+- The class select screen still shows all four classes, but in this build only the Knight can be
+  chosen. Archer, Sorcerer and Thief are marked locked with "Not playable in this build yet", so you
+  can see what's coming; they unlock in a later build. The Knight is selected first when the screen
+  opens.
 - Creatures now only know what their senses tell them. A guard sees you only inside its field of
   view, sees you better straight ahead than out of the corner of its eye, and struggles to make you
   out far away, crouched or in shadow. A wall between you hides you completely. Guards hear noises

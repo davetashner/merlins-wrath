@@ -366,6 +366,16 @@ ${tokens}
 .vb-class-card p, .vb-class-card ul { margin: 0; }
 .vb-class-card ul { padding-left: 1.2em; }
 .vb-class-card[aria-checked='true'] { border-color: var(--ui-color-text); background: var(--ui-color-accent); }
+.vb-class-card[data-locked] { border-style: dashed; background: var(--ui-color-panel); cursor: not-allowed; }
+.vb-class-lock {
+  align-self: flex-start;
+  padding: 0 var(--ui-space-1);
+  border: 1px solid currentColor;
+  border-radius: var(--ui-radius);
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
 .vb-kit {
   position: absolute;
   right: var(--ui-space-3);

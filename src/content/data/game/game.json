@@ -1,0 +1,6 @@
+{
+  "$schema": "../game.schema.json",
+  "id": "game",
+  "notes": "The m1 vertical slice supports the Knight only (owner decision 2026-10-02, docs/design/vertical-slice.md §3 beat B1): the other three classes show on the class select screen, locked. m2 unlocks them by adding their ids here.",
+  "playableClasses": ["knight"]
+}

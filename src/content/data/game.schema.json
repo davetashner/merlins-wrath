@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Editor hint only; ignored by the loader."
+    },
+    "id": {
+      "type": "string",
+      "const": "game",
+      "description": "Always \"game\": there is one game configuration."
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What this build offers and why."
+    },
+    "playableClasses": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "description": "A class from src/content/data/class/.",
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+        "x-contentRef": "class"
+      },
+      "description": "The classes the class select screen lets the player confirm; the rest show locked (mw-e01.15)."
+    }
+  },
+  "required": [
+    "id",
+    "notes",
+    "playableClasses"
+  ],
+  "additionalProperties": false
+}

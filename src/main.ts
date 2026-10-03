@@ -64,6 +64,7 @@ import {
   isPlayerClass,
   kitModel,
   newGameRequest,
+  playableClasses,
 } from '@game/classes';
 import { attachGameAudio, attachGameVfx, soundPositions } from '@game/cues/index';
 import { layers } from '@game/index';
@@ -747,8 +748,11 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
       // which queries the same world read-only to stay out of walls.
       // The controller, the camera and arrows (mw-e05.21) all collide with the sim's Rapier world.
       const collision = new RapierCollisionWorld(physics);
-      // New game (mw-e19.5): ?newgame opens class selection, ?class=<id> applies that class.
-      const newGame = newGameRequest(location.search);
+      // New game (mw-e19.5): ?newgame opens class selection, ?class=<id> applies that class. Only the
+      // game configuration's playable classes can start a run (mw-e01.15); a debug build's
+      // ?allclasses unlocks every class.
+      const playable = playableClasses(content, location.search, __DEBUG_CONSOLE__);
+      const newGame = newGameRequest(location.search, playable);
       const capabilities = createCapabilityRegistry(content);
       if (playerStart(loaded.layout.spawns) !== undefined) {
         // No class is chosen yet (mw-e19.5), so the player moves on the base profile.
@@ -935,11 +939,15 @@ function startRenderer(root: HTMLElement, saves: Promise<OpenedSaveStore>): void
         if (newGame.kind === 'class') choose(newGame.classId);
         else if (newGame.kind === 'select') {
           openClassSelect(ui, {
-            cards: classCards(content),
+            cards: classCards(content, playable),
             onConfirm: (id) => {
-              if (isPlayerClass(id)) choose(id);
+              if (isPlayerClass(id) && playable.has(id)) choose(id);
             },
           });
+        } else if (newGame.kind === 'locked-class') {
+          console.warn(
+            `?class=${newGame.classId}: not playable in this build (?allclasses unlocks)`,
+          );
         } else
           console.warn(`?class=${newGame.classId}: not a class (${PLAYER_CLASSES.join(', ')})`);
       }

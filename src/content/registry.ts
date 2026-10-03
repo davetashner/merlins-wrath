@@ -9,7 +9,7 @@
 // the capability registry, the items and the proficiency tags items call for (mw-e19.4), and the
 // spawns the signal graphs a scene places bind (mw-e03.18), loot tables' references, nesting and
 // unique items across the world (mw-e18.2), and baked navmeshes against their scenes' door spawns
-// (mw-e11.4).
+// (mw-e11.4). The `game` type is the one game configuration file (playable classes, mw-e01.15).
 
 import { checkAnimation } from './anim-checks.ts';
 import { checkCreatureAttacks } from './attack-checks.ts';
@@ -37,6 +37,7 @@ import { doorSchema } from './types/door.ts';
 import { environmentDamageSchema } from './types/environment-damage.ts';
 import { factSchema } from './types/fact.ts';
 import { factionSchema } from './types/faction.ts';
+import { gameSchema } from './types/game.ts';
 import { checkItems, itemSchema } from './types/item.ts';
 import { hitStopSchema } from './types/hit-stop.ts';
 import { kitSchema } from './types/kit.ts';
@@ -82,6 +83,7 @@ export const contentTypes = {
   'environment-damage': environmentDamageSchema,
   fact: factSchema,
   faction: factionSchema,
+  game: gameSchema,
   'hit-stop': hitStopSchema,
   item: itemSchema,
   kit: kitSchema,
