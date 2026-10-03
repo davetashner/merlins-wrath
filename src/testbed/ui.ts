@@ -2,6 +2,8 @@
 // hooks on window.__ui for the Playwright helpers (e2e/helpers/ui.ts). Query parameters:
 //   ?scale=2       sets --ui-text-scale
 //   ?hudbench=30   updates the vitals HUD every tick for N seconds and reports per-frame UI cost
+// Screens: `gallery` (opened at load) and `options` (the settings menu, mw-e31.1, on localStorage).
+import { createSettingsStore, OPTIONS_SCREEN, openOptionsMenu } from '@game/settings/index';
 import {
   browserGeometry,
   findClippedText,
@@ -29,10 +31,16 @@ let gallery: Gallery = openGallery(ui, {
   reducedMotion: () => reducedMotion(ui.element, matchMedia),
 });
 
+const settings = createSettingsStore({ storage: () => window.localStorage });
+
 /** Opens a screen by id, closing everything else first (the Playwright `openScreen` helper). */
 function openScreen(id: string): void {
-  if (id !== 'gallery') throw new Error(`unknown screen ${id}`);
+  if (id !== 'gallery' && id !== OPTIONS_SCREEN) throw new Error(`unknown screen ${id}`);
   ui.clear();
+  if (id === OPTIONS_SCREEN) {
+    openOptionsMenu(ui, settings);
+    return;
+  }
   gallery = openGallery(ui, { reducedMotion: () => reducedMotion(ui.element, matchMedia) });
 }
 

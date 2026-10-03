@@ -13,6 +13,11 @@ check enforces this).
 
 ### Added
 
+- An options menu: settings for controls, camera, display, audio, accessibility and gameplay, one
+  tab each, all reachable by keyboard or gamepad. Changes apply at once and are remembered by your
+  browser; each tab can be reset to its defaults without touching the others. If your browser blocks
+  storage the game still starts, and your settings last for that session. The menu opens from the
+  pause menu once that arrives; the individual options take effect as their features land.
 - Loot is now checked before the game ships: a chest that names an item or table that doesn't exist,
   tables that roll each other in a loop, or a one-of-a-kind artifact promised in two places fails the
   build instead of leaving you an empty chest or a second copy of a unique treasure.
