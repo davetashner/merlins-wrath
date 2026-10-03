@@ -81,6 +81,14 @@ the inventory (I, View; mw-e17.10), pick the item and choose Drop or Throw. That
 drops and throws, so those actions have no pad button. The inventory screen pauses the game; I or
 View closes it again, as do Esc and B.
 
+**Pause.** Esc or P (Menu on the pad) opens the pause menu while you play (mw-e01.3): Resume,
+Settings, Save, Load and Quit to Title, with the game stopped behind it. The browser also ends
+pointer lock on Esc, and losing the lock while playing pauses too (alt-tab does the same). Menus
+stack: with another screen open (the inventory, a chest, the options) Esc and B close that screen
+first, and only with nothing open does Esc pause. In the menu, P or Menu resumes, as do Esc, B and
+Resume. Up and down (arrows, d-pad, left stick) move between the options and Enter or A picks one.
+After resuming, click the game to take the mouse again; the pad plays at once.
+
 **Quick slots.** Four quick slots use consumables without a menu (mw-e17.6): drink a draught, throw
 an oil flask. They have no default buttons yet: 1–4 and the d-pad are the
 abilities', so the bindings wait on the owner's layout decision (mw-e17.17). The inventory screen
@@ -142,8 +150,8 @@ Keyboard movement is not quantised (its values are the exact constants 0, ±1 an
 The pad is polled once per sim tick (`src/game/input/gamepad-dom.ts`); the first connected pad with the
 standard mapping is used. It needs no click or pointer lock, only page focus; without focus it reads
 idle. When the pad being read disconnects, the next frame releases every action the pad held and, per
-`GamepadSettings.pauseOnDisconnect` (default on), taps the `pause` action. The pause screen that
-answers it is mw-e01.3; until then the testbed says "Controller disconnected".
+`GamepadSettings.pauseOnDisconnect` (default on), taps the `pause` action, which opens the pause
+menu (mw-e01.3) while the player is in play; the controls hint also says "Controller disconnected".
 
 ## Persisting bindings
 
