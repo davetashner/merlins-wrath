@@ -542,7 +542,7 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room and the slice', () => {
+  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room, the slice and the perf baseline', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
@@ -552,10 +552,24 @@ describe('scene content', () => {
       'kit-gallery',
       'lighting-room',
       'mechanism-room',
+      'perf-baseline',
       'slice',
       'testbed',
       'weak-wall-room',
     ]);
+  });
+
+  it('mw-e32.1: the perf baseline has 64 pushable crates, agitator markers and more lamps than the renderer draws', () => {
+    const scene = loadContent(contentTypes, gameContentSources(), contentChecks).get(
+      'scene',
+      'perf-baseline',
+    );
+    const crates = scene.spawns.filter((s) => s.prop?.id === 'crate');
+    expect(crates).toHaveLength(64);
+    expect(crates.every((s) => s.properties?.pushable === true)).toBe(true);
+    expect(scene.spawns.filter((s) => s.tags.includes('perf-agitator'))).toHaveLength(9);
+    expect(scene.spawns.filter((s) => s.properties?.lightEmitter !== undefined)).toHaveLength(8);
+    expect(scene.spawns.some((s) => s.tags.includes('player-start'))).toBe(false); // fixed camera
   });
 
   it('mw-e03.18: the mechanism room places a prefab of every door kind and wires its switches', () => {
