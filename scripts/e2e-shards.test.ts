@@ -81,7 +81,7 @@ describe('mw-e41.1 e2e shard planning', () => {
     expect(listShardSpecs(dir)).toEqual(['a.spec.ts', 'b.spec.ts']);
   });
 
-  it('sums chromium result durations per spec file from a Playwright JSON report', () => {
+  it('sums the final attempt of each chromium test per spec file from a Playwright JSON report', () => {
     const report = {
       suites: [
         {
@@ -90,7 +90,8 @@ describe('mw-e41.1 e2e shard planning', () => {
             {
               file: 'audio.spec.ts',
               tests: [
-                { projectName: 'chromium', results: [{ duration: 1500 }, { duration: 500 }] },
+                { projectName: 'chromium', results: [{ duration: 90_000 }, { duration: 1500 }] },
+                { projectName: 'chromium', results: [{ duration: 500 }] },
                 { projectName: 'firefox', results: [{ duration: 9000 }] },
               ],
             },

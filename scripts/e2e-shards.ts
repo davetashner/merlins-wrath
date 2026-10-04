@@ -85,9 +85,10 @@ interface JsonSuite {
 }
 
 /**
- * Per-spec-file seconds from a Playwright JSON report: the sum of every test result's duration in
- * that file (tests within a file run one after another, so the sum is the file's cost). Retried
- * attempts count, because they cost real time on the runner.
+ * Per-spec-file seconds from a Playwright JSON report: the sum of each test's final attempt in that
+ * file (tests within a file run one after another, so the sum is the file's cost). Earlier failed
+ * attempts are left out: retries are flake noise, and weighting by them would pile weight onto the
+ * flakiest specs instead of the slowest.
  */
 export function durationsFromReport(report: unknown, project = 'chromium'): Record<string, number> {
   const totals = new Map<string, number>();
@@ -97,7 +98,7 @@ export function durationsFromReport(report: unknown, project = 'chromium'): Reco
       if (!file) continue;
       for (const test of spec.tests ?? []) {
         if (test.projectName !== undefined && test.projectName !== project) continue;
-        for (const result of test.results ?? []) {
+        for (const result of (test.results ?? []).slice(-1)) {
           totals.set(file, (totals.get(file) ?? 0) + (result.duration ?? 0) / 1000);
         }
       }
