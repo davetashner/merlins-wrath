@@ -1,0 +1,82 @@
+{
+  "id": "vfx-guard-break",
+  "notes": "Guard break (mw-e29.4): a wide shattering ring and shards where a guard gives way. Priority above any impact so it is seen even in a crowd; one brief flash, well under the photosensitivity limits.",
+  "priority": 88,
+  "duration": 0.5,
+  "emitters": [
+    {
+      "id": "ring",
+      "texture": "vfx-base-ring-01",
+      "blend": "additive",
+      "bursts": [
+        {
+          "at": 0,
+          "count": 1
+        }
+      ],
+      "lifetime": {
+        "min": 0.3
+      },
+      "size": [
+        {
+          "t": 0,
+          "v": 0.3
+        },
+        {
+          "t": 1,
+          "v": 1.4
+        }
+      ],
+      "color": "#C8D4E8",
+      "alpha": [
+        {
+          "t": 0,
+          "v": 0.9
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    },
+    {
+      "id": "shards",
+      "texture": "vfx-base-shard-01",
+      "blend": "alpha",
+      "bursts": [
+        {
+          "at": 0,
+          "count": 10
+        }
+      ],
+      "lifetime": {
+        "min": 0.35,
+        "max": 0.65
+      },
+      "speed": {
+        "min": 3,
+        "max": 6
+      },
+      "coneDeg": 80,
+      "spawnRadius": 0.05,
+      "gravity": 9.8,
+      "drag": 0.8,
+      "size": 0.09,
+      "color": "#C8D4E8",
+      "alpha": [
+        {
+          "t": 0,
+          "v": 1
+        },
+        {
+          "t": 0.75,
+          "v": 1
+        },
+        {
+          "t": 1,
+          "v": 0
+        }
+      ]
+    }
+  ]
+}

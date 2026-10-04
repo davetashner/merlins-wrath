@@ -13,6 +13,7 @@ check enforces this).
 
 ### Added
 
+- Hits now burst with an effect that matches what they hit — bone chips and dust off the skeleton, splinters off wood, grit off stone — wooden shields throw chips, a broken guard shatters in a ring, and a critical hit adds a bright burst. Struck creatures also flash white for a moment.
 - The Forgotten skeleton now dies properly: it stops fighting the moment its health runs out, falls onto its back and stays there.
 - Your knight now turns see-through while he stands between the camera and a nearby creature, so you can see what you are fighting.
 - The Forgotten skeleton now moves: it idles, walks and swings its pick instead of sliding about as a statue.

@@ -31,7 +31,7 @@ async function dummy(page: Page): Promise<DummyData> {
   return JSON.parse(json ?? 'null') as DummyData;
 }
 
-async function play(page: Page): Promise<void> {
+async function play(page: Page, query = ''): Promise<void> {
   await page.addInitScript(() => {
     const lock: { element: Element | null } = { element: null };
     const change = () => document.dispatchEvent(new Event('pointerlockchange'));
@@ -49,7 +49,7 @@ async function play(page: Page): Promise<void> {
       change();
     };
   });
-  await page.goto('/?scene=testbed');
+  await page.goto(`/?scene=testbed${query}`);
   const app = page.locator('#app');
   await expect(app).toHaveAttribute('data-scene', 'testbed', { timeout: 5_000 });
   await expect(app).toHaveAttribute('data-player', /"grounded":true/);
@@ -121,5 +121,28 @@ test('AC-7: three attacks run the light chain and take 20 + 22 + 30 = 72 from th
   await expect.poll(async () => (await dummy(page)).health).toBe(200 - 72);
   // mw-e04.21: the fighter the player hit had its health bar up, reading what the dummy lost.
   expect(barValues).toEqual(['180', '158', '128']);
+  expect(problems).toEqual([]);
+});
+
+test('mw-e29.4: a landed hit spawns an impact effect in the live game, with no console errors', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  const problems = collectProblems(page);
+  // ?vfx publishes the effect system's counters on #app[data-vfx] (allocations: effects ever spawned).
+  await play(page, '&vfx');
+  const spawned = async () =>
+    (
+      JSON.parse((await page.locator('#app').getAttribute('data-vfx')) ?? '{}') as {
+        allocations?: number;
+      }
+    ).allocations ?? 0;
+  const before = await spawned();
+  await page.evaluate(() => {
+    window.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
+    window.setTimeout(() => window.dispatchEvent(new MouseEvent('mouseup', { button: 0 })), 50);
+  });
+  await expect.poll(spawned, { timeout: 30_000 }).toBeGreaterThan(before);
+  expect((await dummy(page)).health).toBeLessThan(200);
   expect(problems).toEqual([]);
 });
