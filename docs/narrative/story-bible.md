@@ -250,9 +250,16 @@ books under the counter and keeps one forbidden book she will not sell to anyone
 ### 3.5 Locations (MVP)
 
 **Briar Glen (town)** — Market Green and the notice board; **the Sleeping Ox** inn (Dot's); **the Lamplit
-Stacks** bookshop (Mirela's); Brand's Forge; Fenn's Fletchery & Simples; Pell's Bakery; the Watch House
+Stacks** bookshop (Mirela's); Brand's Forge; Fenn's Fletchery & Simples; Pell's Bakery; **Marsh's General Store** (placeholder, §5.15); the Watch House
 and its one-cell jail; Vane House on the rise; the schoolhouse (empty; its teacher is missing); the Glen
 Well (a loose ladder-rung leads to the old cistern); the lychgate cemetery with Vesperine graves.
+
+**Marsh's General Store (placeholder, Briar Glen)** — the first building a traveller reaches after crossing the
+stone bridge into town. A crooked three-storey timber-framed shop with a slate roof: the ground floor is the
+shop (clothes, boots, gloves, basic arms and armour, food, simple potions and jars, herbs); the shopkeeper,
+Ottilie Marsh (§5.15), lives upstairs, reached by a wooden stair inside and an outside gallery stair. Painted
+sign: a lantern and a barrel, pictures only. Concept art: `concept-marsh-store-*` (mw-ju8.8). Placeholder
+pending owner confirmation of the name and of how its stock sits beside Brand's Forge and Fenn's Fletchery.
 
 **The Briarwood (wilderness)** — the Sleepers' Path (a line of trampled ferns only visible at night or to a
 sharp eye); the Standing Horn (a Hornfolk menhir, hands over its ears); the wolf den; the woodcutter's
@@ -783,6 +790,16 @@ mimic); historical: **Sergeant Aldric Mooring**, **Ysolde Thorne**. Harbour and 
 gossip); **Captain Hesketh** of the *Gilded Tern*; **"Mr. S—'s agent"** (a veiled passenger who never
 leaves the Tern's locked berth in the MVP).
 
+### 5.15 Ottilie Marsh — shopkeeper (merchant, placeholder)
+**Placeholder name and entry, pending owner confirmation.** Middle-aged, stout, capable and unhurried, with
+rosy cheeks, greying auburn hair under a linen cap and spectacles pushed up on her forehead. Keeps Marsh's
+General Store (§3.5), the first shop past the bridge, and lives in the rooms above it. Friendly and shrewd;
+her brass scales are known to be honest. No voice acting in the MVP (text only).
+- **Want:** a shop that stays open and a town that keeps coming in to it.
+- **Hooks (no plot-changing canon):** she hears everything that crosses the bridge, so she can be a source
+  for a rumour (§6.2) or a pointer to who has come and gone lately. She is a general merchant for basics.
+- **Art:** `char-ottilie-marsh-base-01`, `portrait-npc-ottilie-marsh-01`, `prop-marsh-store-set-01`.
+
 ---
 
 ## 6. Side quests and rumours
@@ -1200,3 +1217,4 @@ is beyond "a dream that hungers". All three are post-MVP hooks (§10).
 | v0.2 | 2026-09-27 | Owner extension: the River Wend, Kestrel Lock and the optional harbour town of Wendmouth, with harbour cast, quests and rumours. | owner |
 | v0.3 | 2026-09-27 | Retitled *The Vesper Bell* (ADR-0002). Stone-first economy: glenstone barged down the Wend for export built the valley and Wendmouth's monumental stone harbour; silver, struck ~35 years ago, is the empire's cash cow and drives Vane below the Bell Line (PR #13). | owner |
 | **CANON v1** | 2026-09-27 | Owner sign-off. Canon counts, ages and deliberately open questions added to §11.3. | owner |
+| v1.1 (placeholder) | 2026-10-04 | Added Marsh's General Store (§3.5) and Ottilie Marsh (§5.15) as placeholders pending owner confirmation, from owner-approved concept art (mw-ju8.8). No plot-changing canon. | owner (concept images only; names pending) |
