@@ -104,6 +104,8 @@ export {
   BEHAVIOUR_PRIMITIVES,
   BEHAVIOUR_SCHEMA_VERSION,
   BEHAVIOUR_TARGETS,
+  BEHAVIOUR_INPUT_RANGES,
+  behaviourInputRange,
   behaviourSchema,
   isBehaviourInput,
   type AlertState,
@@ -118,6 +120,7 @@ export {
   type BehaviourStateDef,
   type BehaviourStepDef,
   type BehaviourTarget,
+  type InputRange,
   type Tunable,
 } from './types/behaviour.ts';
 export {
