@@ -86,8 +86,24 @@ export function loadSettings(text: string | null, warn: SettingsWarn): Settings 
   }
 }
 
+/**
+ * The stored input bindings (mw-e02.22), raw and unvalidated, from a stored settings document: the
+ * document's `bindings` member, kept beside `settings` because bindings are a structured, versioned
+ * value of their own (BindingsData) rather than a menu control. `undefined` when there are none.
+ */
+export function loadStoredBindings(text: string | null): unknown {
+  if (text === null) return undefined;
+  try {
+    const doc: unknown = JSON.parse(text);
+    return isRecord(doc) ? doc['bindings'] : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export class SettingsStore {
   readonly #values: Settings;
+  #bindings: unknown;
   readonly #key: string;
   readonly #warn: SettingsWarn;
   #storage: SettingsStorage | undefined;
@@ -110,6 +126,18 @@ export class SettingsStore {
       this.#warn(`storage unavailable (${errorText(error)}); settings last this session only`);
     }
     this.#values = loadSettings(text, this.#warn);
+    this.#bindings = loadStoredBindings(text);
+  }
+
+  /** The persisted input bindings as stored (unvalidated; see src/game/settings/bindings.ts). */
+  get storedBindings(): unknown {
+    return this.#bindings;
+  }
+
+  /** Stores the input bindings document beside the settings and persists it. */
+  setStoredBindings(data: unknown): void {
+    this.#bindings = data;
+    this.#persist();
   }
 
   /** False when settings live only in memory (no storage, or it refused a read or write). */
@@ -202,7 +230,11 @@ export class SettingsStore {
     try {
       this.#storage.setItem(
         this.#key,
-        JSON.stringify({ version: SETTINGS_VERSION, settings: this.#values }),
+        JSON.stringify({
+          version: SETTINGS_VERSION,
+          settings: this.#values,
+          ...(this.#bindings === undefined ? {} : { bindings: this.#bindings }),
+        }),
       );
     } catch (error) {
       this.#storage = undefined;

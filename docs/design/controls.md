@@ -160,4 +160,12 @@ menu (mw-e01.3) while the player is in play; the controls hint also says "Contro
 `serializeBindings(keyboard, gamepad)` writes version 2 data with both sets; `deserializeBindings`
 reads version 2 and version 1 (keyboard only, with the default pad layout). Each set is validated on
 its own: keyboard sets take no pad codes, pad sets only pad codes (`PadA`…`PadGuide`), and a set with
-a conflict falls back to its defaults. The settings store wiring is mw-e02.22.
+a conflict falls back to its defaults. Unknown keyboard codes (anything that is not a standard
+`KeyboardEvent.code` or `Mouse0`…`Mouse4`) count as invalid like unknown actions: that action's entry is
+dropped and its default fills the gap.
+
+`saveBindings(store, keyboard, gamepad)` and `loadBindings(store)` (`src/game/settings/bindings.ts`,
+mw-e02.22) keep the data in the settings store's document, under `bindings` beside `settings` (same
+localStorage key, same in-memory fallback). It keeps its own version, so `SETTINGS_VERSION` is
+unaffected. `main.ts` loads it before building the sampler, so saved bindings apply at startup. Repairs
+are logged with `console.warn`. The rebind UI that calls `saveBindings` is mw-e31.2.
