@@ -159,6 +159,14 @@ describe('the slice-complete card over a running game (mw-e01.18)', () => {
     expect(returnToTitle).toHaveBeenCalledOnce();
   });
 
+  it('a completion autosave that landed before the first frame opens the card already saved', async () => {
+    const { fake, scheduler, world, complete } = game({ blocked: "Can't save during combat" });
+    complete();
+    await scheduler.update(world);
+    fake.frame(FRAME_MS);
+    expect(saveLine()).toBe(SLICE_COMPLETE_TEXT.saved);
+  });
+
   it('AC-4: a vetoed completion autosave says the run was not saved, until one lands', async () => {
     const { fake, scheduler, world, complete, unblock } = game({
       blocked: "Can't save during combat",
