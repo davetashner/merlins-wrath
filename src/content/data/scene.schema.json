@@ -1818,6 +1818,158 @@
         }
       },
       "additionalProperties": false
+    },
+    "environment": {
+      "description": "Outdoor look: sky colour, distance fog and a painted backdrop (mw-ju8.1).",
+      "type": "object",
+      "properties": {
+        "sky": {
+          "description": "Flat sky colour behind everything, #RRGGBB.",
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "fog": {
+          "description": "Distance fog that blends the level into the backdrop.",
+          "type": "object",
+          "properties": {
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$",
+              "description": "Fog colour, #RRGGBB."
+            },
+            "near": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Distance where fog starts, m."
+            },
+            "far": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Distance where the fog is solid, m."
+            }
+          },
+          "required": [
+            "color",
+            "near",
+            "far"
+          ],
+          "additionalProperties": false
+        },
+        "backdrop": {
+          "description": "Painted backdrop layer behind the level.",
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9._/-]*\\.(png|webp|jpg)$",
+              "description": "Image path under the backdrop folder (assets/_incoming in dev)."
+            },
+            "bearing": {
+              "default": 0,
+              "description": "Compass direction the card is centred on, degrees: 0 faces +z, 90 faces +x.",
+              "type": "number",
+              "minimum": 0,
+              "exclusiveMaximum": 360
+            },
+            "arc": {
+              "default": 100,
+              "description": "How much of the horizon the card spans, degrees; its height follows the image.",
+              "type": "number",
+              "minimum": 20,
+              "maximum": 360
+            },
+            "radius": {
+              "default": 150,
+              "description": "Distance from the camera, m; must stay inside the camera far plane.",
+              "type": "number",
+              "minimum": 20,
+              "maximum": 190
+            },
+            "centreY": {
+              "default": 25,
+              "description": "Height of the image centre above the camera plane, m.",
+              "type": "number"
+            },
+            "follow": {
+              "default": 1,
+              "description": "Share of the camera movement the card follows: 1 never parallaxes, 0 stays put.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "required": [
+            "image"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "regions": {
+      "default": [],
+      "description": "Tagged boxes, e.g. a river (mw-ju8.1); data only until a system reads them.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Name of the region, unique in the scene, e.g. river."
+          },
+          "min": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Lower corner, grid cells."
+          },
+          "max": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Upper corner, grid cells; above min on every axis."
+          },
+          "tags": {
+            "default": [],
+            "description": "Free-form tags, e.g. water.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "min",
+          "max"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "required": [

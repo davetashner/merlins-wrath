@@ -414,6 +414,8 @@ export {
   type SceneRouteDef,
   type SceneRoutineDef,
   type SceneSpawnDef,
+  type SceneEnvironmentDef,
+  type SceneBackdropDef,
   type SceneWaypointDef,
   type SceneYaw,
 } from './types/scene.ts';

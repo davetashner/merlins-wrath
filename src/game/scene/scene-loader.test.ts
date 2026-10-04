@@ -89,6 +89,9 @@ describe('scene loader glue (mw-e00.21)', () => {
       'perf-baseline',
       'slice',
       'testbed',
+      'valley-01',
+      'valley-02',
+      'valley-03',
       'weak-wall-room',
     ]);
     expect(loader.available()).toContain(DEFAULT_SCENE);
@@ -159,7 +162,7 @@ describe('scene loader glue (mw-e00.21)', () => {
     const current = loader.load('testbed');
     expect(() => loader.load('does-not-exist')).toThrow(UnknownSceneError);
     expect(() => loader.load('does-not-exist')).toThrow(
-      'unknown scene "does-not-exist"; available scenes: combat-sandbox, kit-gallery, lighting-room, mechanism-room, perf-baseline, slice, testbed, weak-wall-room',
+      'unknown scene "does-not-exist"; available scenes: combat-sandbox, kit-gallery, lighting-room, mechanism-room, perf-baseline, slice, testbed, valley-01, valley-02, valley-03, weak-wall-room',
     );
     expect(loader.current).toBe(current);
   });

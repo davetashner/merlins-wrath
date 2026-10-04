@@ -195,6 +195,7 @@ import { creatureLocomotion } from '@game/creatures/animation';
 import { AnimationDriver, simAnimReader } from '@game/animation/index';
 import { pickVariant, randomSalt, variantFromSearch } from '@render/creatures/variant';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
+import { applyEnvironment } from '@render/environment/index';
 import { createGreyboxView } from '@render/greybox/index';
 import { createLightRig } from '@render/light/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
@@ -414,6 +415,8 @@ function startRenderer(
             const report = probe.frame(start, performance.now() - start);
             if (report !== undefined) {
               root.dataset['perf'] = JSON.stringify(report);
+              const { calls, triangles } = view.renderer.info.render;
+              root.dataset['renderInfo'] = JSON.stringify({ calls, triangles });
               console.info(formatPerfReport(report));
             }
           }),
@@ -983,6 +986,9 @@ function startRenderer(
     if (request.kind === 'scene') {
       const scene = content.get('scene', request.id);
       const loaded = scenes.load(scene.id);
+      // Sky, fog and the painted backdrop of outdoor scenes (mw-ju8.1). The unapproved backdrop images
+      // are not in production builds, so only dev loads them.
+      applyEnvironment(view.scene, scene.environment, { load: import.meta.env.DEV });
       // Volume sliders drive the buses; the slice's ambience and music beds play from the first
       // gesture on (mw-0j5), a stand-in for the adaptive controller (mw-e28.11).
       const volumes = bindVolumes(audio, settings);

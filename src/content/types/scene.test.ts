@@ -439,6 +439,7 @@ describe('scene schema (mw-e00.21)', () => {
       signals: [],
       waypoints: [],
       routes: [],
+      regions: [],
     });
   });
 
@@ -618,7 +619,7 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room, the slice and the perf baseline', () => {
+  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room, the slice, the perf baseline and the valley spike scenes', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
@@ -631,6 +632,9 @@ describe('scene content', () => {
       'perf-baseline',
       'slice',
       'testbed',
+      'valley-01',
+      'valley-02',
+      'valley-03',
       'weak-wall-room',
     ]);
   });
@@ -677,5 +681,55 @@ describe('scene content', () => {
   it('mw-e03.11: rejects a breakable naming no profile or an unknown key', () => {
     expect(sceneBreakableSchema.safeParse({}).success).toBe(false);
     expect(sceneBreakableSchema.safeParse({ profile: 'old-wall', hp: 3 }).success).toBe(false);
+  });
+});
+
+describe('scene environment and regions (mw-ju8.1)', () => {
+  it('AC-1: an environment fills the backdrop defaults and accepts sky, fog and regions', () => {
+    const scene = sceneSchema.parse({
+      ...room,
+      environment: {
+        sky: '#6A5A86',
+        fog: { color: '#8a7a94', near: 10, far: 100 },
+        backdrop: { image: 'backdrop-valley-01/far-mountains-castle.png' },
+      },
+      regions: [{ id: 'river', min: [0, -6, 0], max: [4, -2, 4], tags: ['water'] }],
+    });
+    expect(scene.environment?.backdrop).toEqual({
+      image: 'backdrop-valley-01/far-mountains-castle.png',
+      bearing: 0,
+      arc: 100,
+      radius: 150,
+      centreY: 25,
+      follow: 1,
+    });
+    expect(scene.regions[0]?.tags).toEqual(['water']);
+    expect(sceneSchema.parse(room).regions).toEqual([]);
+    expect(sceneSchema.parse(room).environment).toBeUndefined();
+  });
+
+  it('AC-1: rejects a bad colour, fog that ends before it starts and a backdrop outside the camera', () => {
+    expect(problems({ ...room, environment: { sky: 'blue' } })).toEqual([
+      'environment.sky: must be a #RRGGBB colour',
+    ]);
+    expect(
+      problems({ ...room, environment: { fog: { color: '#aaaaaa', near: 50, far: 20 } } }),
+    ).toEqual(['environment.fog.far: far must be beyond near']);
+    expect(
+      problems({ ...room, environment: { backdrop: { image: 'a/b.png', radius: 400 } } }),
+    ).toHaveLength(1);
+    expect(problems({ ...room, environment: { backdrop: { image: '../secret.txt' } } })).toEqual([
+      'environment.backdrop.image: must be a relative image path such as backdrop-valley-01/far-mountains-castle.png',
+    ]);
+  });
+
+  it('AC-1: rejects duplicate region ids and a region whose max is not above its min', () => {
+    const region = { id: 'river', min: [0, 0, 0], max: [1, 1, 1] };
+    expect(problems({ ...room, regions: [region, region] })).toEqual([
+      'regions.1.id: region id "river" is used twice in this scene',
+    ]);
+    expect(problems({ ...room, regions: [{ ...region, max: [1, 0, 1] }] })).toEqual([
+      'regions.0.max: max must be above min on every axis',
+    ]);
   });
 });
