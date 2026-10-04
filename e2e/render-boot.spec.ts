@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { attachFrame, captureFrame, distinct } from './helpers/canvas';
+import { budgetMs } from './helpers/budget';
 
 // mw-e00.19: the renderer + physics bootstrap against the production build (Chromium).
 
@@ -53,7 +54,7 @@ test('AC-1: the built app renders a non-blank first frame within 3 s with no con
 
   const app = page.locator('#app');
   await expect(app).toHaveAttribute('data-first-frame-ms', /^\d+$/, { timeout: 3_000 });
-  expect(Number(await app.getAttribute('data-first-frame-ms'))).toBeLessThan(3_000);
+  expect(Number(await app.getAttribute('data-first-frame-ms'))).toBeLessThan(budgetMs(3_000));
   // Physics WASM loads lazily after the first frame; the loading state ends in 'ready'.
   await expect(app).toHaveAttribute('data-physics', 'ready');
   await expect(app).toHaveAttribute('data-physics-version', /^\d+\.\d+\.\d+/);

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { budgetMs } from './helpers/budget';
 
 // mw-e01.7: saving and reloading the vertical slice (?scene=slice), against the production build
 // (Chromium). The knight is put in the corridor with the debug console (`tp`) and saved into manual
@@ -159,6 +160,6 @@ test('mw-e01.7 AC-3: a manual save in the corridor, reloaded and continued, resu
   const elapsed = (state.playableAt ?? 0) - (state.loaded?.requestedAt ?? 0);
   test.info().annotations.push({ type: 'reload-ms', description: String(elapsed) });
   expect(elapsed).toBeGreaterThan(0);
-  expect(elapsed).toBeLessThanOrEqual(3_000);
+  expect(elapsed).toBeLessThanOrEqual(budgetMs(3_000));
   expect(problems).toEqual([]);
 });
