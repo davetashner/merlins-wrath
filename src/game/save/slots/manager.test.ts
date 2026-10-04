@@ -244,6 +244,19 @@ describe('SaveSlots', () => {
     });
   });
 
+  it('mw-e01.9: a save with no thumbnail capture writes the world the moment it is called', async () => {
+    const store = new MemorySaveStore();
+    const manager = slots(store);
+    const w = world(120);
+    const pending = manager.overwrite('manual-1', w, input);
+    // The world moves on before the save settles; what was written is the world as it was called.
+    w.restore({ ...w.snapshot(), clock: { tick: 125, hz: 60 } });
+    await pending;
+    const target = world();
+    await manager.load('manual-1', target);
+    expect(target.tick).toBe(120);
+  });
+
   it('renames a slot, changing only its label, and clears the label with a blank name', async () => {
     const store = new MemorySaveStore();
     const manager = slots(store);

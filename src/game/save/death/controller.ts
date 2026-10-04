@@ -217,13 +217,17 @@ export class DeathReload {
 
   /**
    * Debug `save [slot]`: writes the world into `slot` (overwriting) and publishes the tick and state
-   * hash it saved. Call between sim steps.
+   * hash it saved. Call between sim steps. It draws no thumbnail, so the world is written at once, at
+   * the tick it published: a recorded run (mw-e01.9) saves the same state however slowly frames draw.
    */
   async debugSave(slot: SlotId): Promise<void> {
     const { world } = this.options;
     const tick = world.tick;
     const hash = hashWorld(world);
-    await this.slots.overwrite(slot, world, this.options.describe());
+    // The game's describe() also carries its thumbnail capture; a debug save leaves it out.
+    const { characterName, classId, areaId } = this.options.describe();
+    const input = { characterName, classId, areaId };
+    await this.slots.overwrite(slot, world, input);
     this.options.publish?.({ kind: 'saved', slot, tick, hash });
   }
 

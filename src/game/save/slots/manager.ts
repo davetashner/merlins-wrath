@@ -120,14 +120,16 @@ function assertSlot(slot: string): asserts slot is SlotId {
   if (!isSlotId(slot)) throw new RangeError(`"${slot}" is not a save slot`);
 }
 
+const placeholder = (reason: string) => ({
+  stored: null,
+  outcome: { status: 'placeholder', reason } as const,
+});
+
+const noThumbnail = placeholder('no thumbnail capture was supplied');
+
 async function captureThumbnail(
-  capture: ThumbnailCapture | undefined,
+  capture: ThumbnailCapture,
 ): Promise<{ stored: StoredThumbnail | null; outcome: ThumbnailOutcome }> {
-  const placeholder = (reason: string) => ({
-    stored: null,
-    outcome: { status: 'placeholder', reason } as const,
-  });
-  if (capture === undefined) return placeholder('no thumbnail capture was supplied');
   try {
     const thumbnail = await capture();
     const problem = checkThumbnail(thumbnail);
@@ -203,7 +205,12 @@ export class SaveSlots {
     world: World,
     input: SaveSlotInput,
   ): Promise<SavedSlotOutcome> {
-    const thumbnail = await captureThumbnail(input.captureThumbnail);
+    // Without a capture there is nothing to wait for: the world is written the moment `save` is called
+    // (a debug save's tick and state hash are the ones it published, mw-e01.9).
+    const thumbnail =
+      input.captureThumbnail === undefined
+        ? noThumbnail
+        : await captureThumbnail(input.captureThumbnail);
     const metadata: StoredSlotMetadata = {
       characterName: input.characterName,
       classId: input.classId,

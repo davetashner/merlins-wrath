@@ -2,6 +2,7 @@
 export * from './browser';
 export * from './command-queue';
 export * from './fixed-step';
+export * from './input-log';
 export * from './render-sync';
 export * from './three-binding';
 export * from './fake-frames';

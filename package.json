@@ -19,6 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "bench": "vitest bench --run",
     "e2e": "playwright test",
+    "slice:record": "SLICE_RECORD=1 playwright test e2e/slice-record.spec.ts --project=chromium --retries=0",
     "perf": "playwright test -c playwright.perf.config.ts --project=ci",
     "perf:ref": "playwright test -c playwright.perf.config.ts --project=reference",
     "perf:budgets": "node scripts/perf/budgets-cli.ts",
