@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- Walking through the exit now ends the slice with a "Slice complete" card showing your run time and class and the
+  state of the completion save, with Return to title focused (keyboard or controller) and the knight no longer
+  moving.
 - A Forgotten miner stands guard in the slice's arena by the second pillar. It wakes when it sees you or
   hears a clatter, fights you, and drops the rusted gallery key that opens the exit when it falls.
 - The controller's combat layout moves to the shoulder buttons: RB attacks, RT is the strong attack, LB is

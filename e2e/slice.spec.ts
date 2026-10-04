@@ -276,6 +276,40 @@ test('mw-e01.6 AC-2: holding the gallery key, Interact on the exit door unlocks 
       timeout: 10_000,
     })
     .toBe(true);
+
+  // mw-e01.18 AC-1: the next frame shows the slice-complete card with Return to title focused, and
+  // the knight stops: walking on changes nothing.
+  const card = page.getByTestId('slice-complete');
+  await expect(card).toBeVisible({ timeout: 10_000 });
+  await expect(card).toContainText('Slice complete');
+  await expect(page.getByTestId('slice-complete-return')).toBeFocused();
+  // The completion autosave (mw-e01.7) lands before Return to title leaves, and the card says so.
+  await expect(page.getByTestId('slice-complete-save')).toHaveText('Progress saved.', {
+    timeout: 30_000,
+  });
+  const completion = await data<{ type: string; kind: string; slot: string }>(page, 'autosave');
+  expect(completion).toMatchObject({ type: 'saved', kind: 'quest' });
+  const stopped = await playerState(page);
+  await holdKey(page, W, 30);
+  expect((await playerState(page)).position.z).toBeCloseTo(stopped.position.z, 1);
+
+  // mw-e01.18 AC-3: Return to title shows the title with no console errors, and Continue loads the
+  // completion save.
+  await page.keyboard.press('Enter');
+  const title = page.locator('[data-screen="title"]');
+  await expect(title).toBeVisible({ timeout: 30_000 });
+  await expect(title.getByRole('button', { name: 'Continue' })).toBeFocused();
+  await expect(title).toContainText('Last save:');
+  await page.keyboard.press('Enter');
+  await expect(app).toHaveAttribute('data-loaded-save', /"hash"/, { timeout: 30_000 });
+  expect((await data<{ slot: string; status: string }>(page, 'loaded-save')).slot).toBe(
+    completion.slot,
+  );
+  // Back in the vestibule behind the open door, with no card: the fact was loaded, not flipped.
+  await expect
+    .poll(async () => (await playerState(page)).position.z, { timeout: 30_000 })
+    .toBeGreaterThan(37.5);
+  await expect(page.getByTestId('slice-complete')).toHaveCount(0);
   expect(problems).toEqual([]);
 });
 

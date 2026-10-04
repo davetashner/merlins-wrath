@@ -322,6 +322,16 @@ await menus.openLoad();   // every save, most recent first
   reads `#app[data-front-door]`: page-relative milliseconds when the title showed (`titleMs`), New Game
   was pressed (`newGameMs`) and the class was applied (`playableMs`).
 
+## Slice-complete card (`src/ui/slice-complete.ts`, `src/game/ui/slice-complete.ts`, mw-e01.18)
+
+When the fact `slice.complete` turns true, the next rendered frame opens a modal card: "Slice complete", the
+run time (world ticks / tick rate, as `m:ss`), the class, and the completion autosave's state, with
+"Return to title" focused. It captures input (the knight stops) but does not pause the sim, because the
+sim loop writes the autosave. The save line reads "Progress saved." only once the write landed; a vetoed or
+twice-failed write reads "This run was not saved." (and flips if a save lands later). Return to title waits
+for a write in flight and then reloads into the front door. Loading a completed save restores the fact
+without an event, so Continue does not show the card again. `#app[data-slice-complete]` is `shown`.
+
 ## Pause menu (`src/ui/pause-menu.ts`, `src/game/ui/pause.ts`, mw-e01.3)
 
 ```ts
