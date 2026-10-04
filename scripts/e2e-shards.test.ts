@@ -99,7 +99,7 @@ describe('mw-e41.1 e2e shard planning', () => {
           suites: [
             {
               specs: [
-                { file: 'e2e/nested.spec.ts', tests: [{ results: [{ duration: 2250 }, {}] }] },
+                { file: 'e2e/nested.spec.ts', tests: [{ results: [{}, { duration: 2250 }] }] },
               ],
             },
           ],
@@ -119,10 +119,19 @@ describe('mw-e41.1 e2e shard planning', () => {
       suites: [
         {},
         { file: 'suite-file.spec.ts', specs: [{ tests: [{ results: [{ duration: 4000 }] }] }] },
-        { specs: [{ file: 'no-tests.spec.ts' }, { file: 'no-results.spec.ts', tests: [{}] }] },
+        {
+          specs: [
+            { file: 'no-tests.spec.ts' },
+            { file: 'no-results.spec.ts', tests: [{}] },
+            { file: 'no-duration.spec.ts', tests: [{ results: [{}] }] },
+          ],
+        },
       ],
     };
-    expect(durationsFromReport(report)).toEqual({ 'suite-file.spec.ts': 4 });
+    expect(durationsFromReport(report)).toEqual({
+      'no-duration.spec.ts': 0,
+      'suite-file.spec.ts': 4,
+    });
   });
 });
 
