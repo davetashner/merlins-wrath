@@ -1,0 +1,105 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-knight-riposte",
+  "rig": "greybox-humanoid",
+  "notes": "Grey-box placeholder for move sword-riposte (8/4/24 ticks): the sword drawn back at the hip, then a quick thrust straight ahead on the first active tick. Torso: spine, chest and head point up, so a positive x tilts them BACK and a positive y turns the right shoulder FORWARD (left); arms and legs hang down, so a positive x swings them forward. ",
+  "duration": 0.6,
+  "markers": [
+    {
+      "kind": "hit",
+      "t": 0.1333
+    }
+  ],
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.07,
+        "rot": [3.0, -10.0, 0.0]
+      },
+      {
+        "t": 0.1333,
+        "rot": [-8.0, 10.0, 0.0]
+      },
+      {
+        "t": 0.6,
+        "rot": [0.0, 0.0, 0.0]
+      }
+    ],
+    "chest": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.07,
+        "rot": [4.0, -20.0, 0.0]
+      },
+      {
+        "t": 0.1333,
+        "rot": [-10.0, 22.0, 0.0]
+      },
+      {
+        "t": 0.6,
+        "rot": [0.0, 0.0, 0.0]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 6.0]
+      },
+      {
+        "t": 0.07,
+        "rot": [-25.0, 0.0, 14.0]
+      },
+      {
+        "t": 0.1333,
+        "rot": [88.0, 0.0, 6.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [60.0, 0.0, 6.0]
+      },
+      {
+        "t": 0.6,
+        "rot": [0.0, 0.0, 6.0]
+      }
+    ],
+    "forearm-r": [
+      {
+        "t": 0,
+        "rot": [8.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.07,
+        "rot": [95.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.1333,
+        "rot": [5.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.6,
+        "rot": [8.0, 0.0, 0.0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, -6.0]
+      },
+      {
+        "t": 0.1333,
+        "rot": [-20.0, 0.0, -20.0]
+      },
+      {
+        "t": 0.6,
+        "rot": [0.0, 0.0, -6.0]
+      }
+    ]
+  }
+}

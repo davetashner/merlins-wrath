@@ -1,143 +1,143 @@
 {
   "$schema": "../anim-clip.schema.json",
-  "id": "anim-knight-sword-light-1",
+  "id": "anim-forgotten-slash-1",
   "rig": "greybox-humanoid",
-  "notes": "Grey-box placeholder for move sword-light-1 (12/4/18 ticks): the sword is raised on the right (torso leaning back, turning right), held a beat at the top, then cut down across the body, the hit marker on the first active tick, and followed through low on the left. Torso: spine, chest and head point up, so a positive x tilts them BACK and a positive y turns the right shoulder FORWARD (left); arms and legs hang down, so a positive x swings them forward. ",
-  "duration": 0.5667,
+  "notes": "The Forgotten's first slash (18/4/14 ticks): a diagonal cut from the right, as the knight's light 1.",
+  "duration": 0.6667,
   "markers": [
     {
       "kind": "hit",
-      "t": 0.2
+      "t": 0.3
     }
   ],
   "tracks": {
     "spine": [
       {
-        "t": 0,
+        "t": 0.0,
         "rot": [0.0, 0.0, 0.0]
       },
       {
-        "t": 0.09,
+        "t": 0.135,
         "rot": [3.0, -6.0, 0.0]
       },
       {
-        "t": 0.13,
+        "t": 0.195,
         "rot": [4.0, -8.0, 0.0]
       },
       {
-        "t": 0.2,
+        "t": 0.3,
         "rot": [-5.0, 8.0, 0.0]
       },
       {
-        "t": 0.32,
+        "t": 0.42,
         "rot": [-7.0, 14.0, 0.0]
       },
       {
-        "t": 0.5667,
+        "t": 0.6667,
         "rot": [0.0, 0.0, 0.0]
       }
     ],
     "chest": [
       {
-        "t": 0,
+        "t": 0.0,
         "rot": [0.0, 0.0, 0.0]
       },
       {
-        "t": 0.09,
+        "t": 0.135,
         "rot": [6.0, -14.0, 0.0]
       },
       {
-        "t": 0.13,
+        "t": 0.195,
         "rot": [8.0, -26.0, 0.0]
       },
       {
-        "t": 0.2,
+        "t": 0.3,
         "rot": [-8.0, 20.0, 0.0]
       },
       {
-        "t": 0.32,
+        "t": 0.42,
         "rot": [-10.0, 30.0, 0.0]
       },
       {
-        "t": 0.5667,
+        "t": 0.6667,
         "rot": [0.0, 0.0, 0.0]
       }
     ],
     "upper-arm-r": [
       {
-        "t": 0,
+        "t": 0.0,
         "rot": [0.0, 0.0, 6.0]
       },
       {
-        "t": 0.04,
+        "t": 0.06,
         "rot": [20.0, 0.0, 40.0]
       },
       {
-        "t": 0.09,
+        "t": 0.135,
         "rot": [60.0, -6.0, 48.0]
       },
       {
-        "t": 0.13,
+        "t": 0.195,
         "rot": [118.0, -8.0, 20.0]
       },
       {
-        "t": 0.2,
+        "t": 0.3,
         "rot": [82.0, -12.0, 6.0]
       },
       {
-        "t": 0.32,
+        "t": 0.42,
         "rot": [35.0, -10.0, 2.0]
       },
       {
-        "t": 0.5667,
+        "t": 0.6667,
         "rot": [0.0, 0.0, 6.0]
       }
     ],
     "forearm-r": [
       {
-        "t": 0,
+        "t": 0.0,
         "rot": [8.0, 0.0, 0.0]
       },
       {
-        "t": 0.04,
+        "t": 0.06,
         "rot": [40.0, 0.0, 0.0]
       },
       {
-        "t": 0.09,
+        "t": 0.135,
         "rot": [80.0, 0.0, 0.0]
       },
       {
-        "t": 0.13,
+        "t": 0.195,
         "rot": [100.0, 0.0, 0.0]
       },
       {
-        "t": 0.2,
+        "t": 0.3,
         "rot": [15.0, 0.0, 0.0]
       },
       {
-        "t": 0.32,
+        "t": 0.42,
         "rot": [10.0, 0.0, 0.0]
       },
       {
-        "t": 0.5667,
+        "t": 0.6667,
         "rot": [8.0, 0.0, 0.0]
       }
     ],
     "upper-arm-l": [
       {
-        "t": 0,
+        "t": 0.0,
         "rot": [0.0, 0.0, -6.0]
       },
       {
-        "t": 0.13,
+        "t": 0.195,
         "rot": [-22.0, 0.0, -14.0]
       },
       {
-        "t": 0.2,
+        "t": 0.3,
         "rot": [25.0, 0.0, -22.0]
       },
       {
-        "t": 0.5667,
+        "t": 0.6667,
         "rot": [0.0, 0.0, -6.0]
       }
     ]

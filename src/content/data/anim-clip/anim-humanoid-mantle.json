@@ -3,16 +3,16 @@
   "id": "anim-humanoid-mantle",
   "rig": "greybox-humanoid",
   "duration": 0.6,
-  "notes": "Grey-box placeholder (mw-e02.12): a mantle, played once over the sim-driven move: arms reach up to the edge, pull and push down past the chest while the lead knee comes up onto the top, then stand. The sim times the move (0.4–0.7 s); the clip only reads it.",
+  "notes": "Grey-box placeholder (mw-e02.12): a mantle, played once over the sim-driven move: arms reach up to the edge, pull and push down past the chest while the lead knee comes up onto the top, then stand. The sim times the move (0.4\u20130.7 s); the clip only reads it.",
   "tracks": {
     "spine": [
       {
         "t": 0,
-        "rot": [-5, 0, 0]
+        "rot": [5.0, 0, 0]
       },
       {
         "t": 0.3,
-        "rot": [25, 0, 0]
+        "rot": [-25.0, 0, 0]
       },
       {
         "t": 0.6,
