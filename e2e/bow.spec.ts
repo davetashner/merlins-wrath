@@ -112,8 +112,10 @@ test('AC-3: the bow out, an arrow loosed at the back wall renders stuck in its t
   await page.evaluate(() => {
     window.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
   });
+  // The draw counts sim ticks, and CI's software renderer runs the sim at about ten ticks a second (at most
+  // five steps a frame), so 48 ticks take about five seconds there: wait for the ticks, not for the clock.
   await expect
-    .poll(async () => (await data<PlayerData>(page, 'player')).bow?.draw ?? 0, { timeout: 5_000 })
+    .poll(async () => (await data<PlayerData>(page, 'player')).bow?.draw ?? 0, { timeout: 20_000 })
     .toBeGreaterThanOrEqual(48);
   await expect
     .poll(async () => (await data<{ fov: number }>(page, 'orbit-camera')).fov)
