@@ -1,0 +1,21 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "open-helm",
+  "category": "armor",
+  "name": "Open helm",
+  "description": "A plain iron cap that leaves the face free to wince. Better than a hat.",
+  "notes": "Light helmet at the top of the leather reference weight. Weight 1.25 kg (ADR-0003 reference weights). Catalogue tier common (economy doc, helmets light 35-60). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-open-helm-01",
+  "value": 45,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "head",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 1.25
+  }
+}

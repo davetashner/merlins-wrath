@@ -1,0 +1,22 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "kite-shield",
+  "category": "shield",
+  "name": "Kite shield",
+  "description": "Long, tapering and painted with a device nobody remembers. Covers the left leg all the way to the boot.",
+  "notes": "A medium shield, heavier than the 3 kg wooden shield. Blocks as the wood-shield profile (no separate shield data yet). Weight 4 kg. Catalogue tier common (economy doc, medium class 70-120). The economy doc has no shield band; priced as a helmet of the matching class. Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-kite-shield-01",
+  "value": 100,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "wood"
+  },
+  "equip": {
+    "slot": "off-hand",
+    "proficiencies": ["shields"]
+  },
+  "shield": {
+    "weightKg": 4,
+    "profile": "wood-shield"
+  }
+}

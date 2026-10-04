@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "leather-gloves",
+  "category": "armor",
+  "name": "Leather gloves",
+  "description": "Soft, supple and sized for someone with smaller hands than yours. They will stretch.",
+  "notes": "Light gloves at the leather reference weight. Weight 1 kg (ADR-0003 reference weights). Catalogue tier common (economy doc, gloves 25-45). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-leather-gloves-01",
+  "value": 30,
+  "worldProperties": {
+    "material": "cloth"
+  },
+  "equip": {
+    "slot": "hands",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 1
+  }
+}

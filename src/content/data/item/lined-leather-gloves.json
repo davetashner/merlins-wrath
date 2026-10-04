@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "lined-leather-gloves",
+  "category": "armor",
+  "name": "Lined leather gloves",
+  "description": "Fur-lined, double-stitched and fit for a winter in the Glen.",
+  "notes": "Fine light gloves. Weight 1 kg (ADR-0003 reference weights). Catalogue tier fine (economy doc, gloves 25-45 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-lined-leather-gloves-01",
+  "value": 85,
+  "worldProperties": {
+    "material": "cloth"
+  },
+  "equip": {
+    "slot": "hands",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 1
+  }
+}

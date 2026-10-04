@@ -1,0 +1,21 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "nasal-helm",
+  "category": "armor",
+  "name": "Nasal helm",
+  "description": "A conical helm with a bar down the face. It protects the nose and gives you the look of a man with opinions.",
+  "notes": "Medium helmet at the mail reference weight. Weight 2 kg (ADR-0003 reference weights). Catalogue tier common (economy doc, helmets medium 70-120). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-nasal-helm-01",
+  "value": 80,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "head",
+    "proficiencies": ["medium-armor"]
+  },
+  "armor": {
+    "weightKg": 2
+  }
+}

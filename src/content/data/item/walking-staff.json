@@ -1,0 +1,19 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "walking-staff",
+  "category": "weapon",
+  "name": "Walking staff",
+  "description": "Staff-high and shod in iron. Equally useful on a muddy hill or on a man who has left the hill too late.",
+  "notes": "A quarterstaff-style walking staff; no moves of its own yet, like the ash staff. Catalogue tier common (economy doc, staves 60-140). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-walking-staff-01",
+  "value": 60,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "wood"
+  },
+  "equip": {
+    "slot": "both-hands",
+    "proficiencies": ["staves"]
+  },
+  "weapon": {}
+}

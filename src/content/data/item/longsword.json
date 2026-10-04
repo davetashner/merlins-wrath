@@ -1,0 +1,28 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "longsword",
+  "category": "weapon",
+  "name": "Longsword",
+  "description": "Hand-and-a-half, well balanced, and honest about its price. It prefers to be drawn on purpose.",
+  "notes": "A fine sword; reuses the arming sword move set (no longer reach or heft modelled yet). Catalogue tier fine (economy doc, swords 60-140 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-longsword-01",
+  "value": 300,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "main-hand",
+    "proficiencies": ["blades"]
+  },
+  "weapon": {
+    "moves": [
+      "sword-light-1",
+      "sword-light-2",
+      "sword-light-3",
+      "sword-heavy",
+      "sword-heavy-charged",
+      "sword-riposte"
+    ]
+  }
+}

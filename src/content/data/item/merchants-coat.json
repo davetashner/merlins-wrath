@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "merchants-coat",
+  "category": "armor",
+  "name": "Merchant’s coat",
+  "description": "Good cloth, brass buttons, plenty of pockets. Looks as if it has never been caught short.",
+  "notes": "Clothes: a fine coat for the well-off. Weight 2.5 kg (ADR-0003 reference weights). Catalogue tier fine (economy doc, clothes 20-80 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-merchants-coat-01",
+  "value": 120,
+  "worldProperties": {
+    "material": "cloth"
+  },
+  "equip": {
+    "slot": "body",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 2.5
+  }
+}

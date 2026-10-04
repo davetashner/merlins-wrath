@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "reinforced-gambeson",
+  "category": "armor",
+  "name": "Reinforced gambeson",
+  "description": "A gambeson with leather panels stitched over the ribs. A tailor’s answer to an armourer’s question.",
+  "notes": "Fine light body armor. Weight 2.5 kg (ADR-0003 reference weights). Catalogue tier fine (economy doc, body armor light 90-140 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-reinforced-gambeson-01",
+  "value": 250,
+  "worldProperties": {
+    "material": "cloth"
+  },
+  "equip": {
+    "slot": "body",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 2.5
+  }
+}

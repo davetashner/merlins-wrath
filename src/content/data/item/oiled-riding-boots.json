@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "oiled-riding-boots",
+  "category": "armor",
+  "name": "Oiled riding boots",
+  "description": "Tall, supple and better kept than their owner. They squeak only on the stairs.",
+  "notes": "Fine light boots. Weight 1 kg (ADR-0003 reference weights). Catalogue tier fine (economy doc, boots light 25-45 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-oiled-riding-boots-01",
+  "value": 100,
+  "worldProperties": {
+    "material": "cloth"
+  },
+  "equip": {
+    "slot": "feet",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 1
+  }
+}

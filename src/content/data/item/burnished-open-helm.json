@@ -1,0 +1,21 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "burnished-open-helm",
+  "category": "armor",
+  "name": "Burnished open helm",
+  "description": "An open helm rubbed to a mirror finish by someone with time on their hands.",
+  "notes": "Fine light helmet. Weight 1.25 kg (ADR-0003 reference weights). Catalogue tier fine (economy doc, helmets light 35-60 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-burnished-open-helm-01",
+  "value": 120,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "head",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 1.25
+  }
+}
