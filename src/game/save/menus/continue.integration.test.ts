@@ -69,6 +69,8 @@ function page(store: SaveStore, session: PendingLoadStorage, clock: { now: numbe
     session,
     areaId: AREA,
     navigate: (area) => navigations.push(area),
+    chosenClass: () => 'knight',
+    toTitle: () => undefined,
     describe: () => ({ characterName: 'Knight', classId: 'knight', areaId: AREA }),
     publish: (readout) => readouts.push(readout),
   });

@@ -232,6 +232,7 @@ import {
   WorldPersistence,
   worldItemSpawner,
   zeroHealth,
+  hashWorld,
   type ActionFrame,
   type DebugCommand,
   type DifficultyCommand,
@@ -1548,6 +1549,12 @@ function startRenderer(
     };
     // Every save names the player's class (mw-e30.14), the one class selection applied.
     const describe = () => describeSave(world, player?.entity, content, areaId ?? '');
+    // Leaves for the title screen: the page reloads into the front door (Quit to Title, the slice's
+    // completion card, Restart area with no class chosen).
+    const leaveForTitle = (): void => {
+      const search = titleSearch(location.search);
+      location.assign(`${location.pathname}${search === '' ? '' : `?${search}`}`);
+    };
     const deathReload = saves.then(
       ({ store }) =>
         new DeathReload({
@@ -1561,13 +1568,17 @@ function startRenderer(
           areaId,
           // A reload leaves the menus (?menu=) behind and names its scene, so restarting the area
           // from the front door (no ?scene=) restarts the scene rather than showing the title.
-          navigate: (area) => {
+          // Restart area names the session's class too (?class=), so the boot is a New Game as that
+          // class (mw-e01.16): the same hand-off as the title's, with fresh world facts.
+          navigate: (area, classId) => {
             const scene = area ?? areaId;
-            location.search = searchWithoutMenu(
-              location.search,
-              scene === undefined ? {} : { scene },
-            );
+            location.search = searchWithoutMenu(location.search, {
+              ...(scene !== undefined && { scene }),
+              ...(classId !== undefined && { class: classId }),
+            });
           },
+          chosenClass: () => (player === undefined ? undefined : classOf(world, player.entity)),
+          toTitle: leaveForTitle,
           describe,
           publish: (readout) => {
             root.dataset[READOUT_ATTRIBUTE[readout.kind]] = JSON.stringify(readout);
@@ -1632,12 +1643,6 @@ function startRenderer(
           },
         }),
     );
-    // Leaves for the title screen: the page reloads into the front door (Quit to Title, the slice's
-    // completion card).
-    const leaveForTitle = (): void => {
-      const search = titleSearch(location.search);
-      location.assign(`${location.pathname}${search === '' ? '' : `?${search}`}`);
-    };
     // Autosaves (mw-e01.7, mw-e30.5): in a scene with a player, entering a checkpoint volume (the
     // slice's CP-1 and CP-2) and finishing the slice write the autosave ring once it is safe, never
     // while a creature is in Combat. The e2e reads each attempt from #app[data-autosave].
@@ -1945,6 +1950,9 @@ function startRenderer(
     // A save chosen on the death screen (mw-e30.7) reloaded the page into its area; it loads into the
     // freshly built world before the first sim step.
     if (pending === undefined) {
+      // The world as booted, before its first step: a Restart area and a New Game as the same class
+      // publish the same state hash (mw-e01.16 AC-2, read by the e2e).
+      root.dataset['bootState'] = JSON.stringify({ tick: world.tick, hash: hashWorld(world) });
       loop.start();
       inPlay = true;
       openRequestedMenu();

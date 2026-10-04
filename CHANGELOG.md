@@ -14,6 +14,8 @@ check enforces this).
 ### Added
 
 - A health bar for the fighter you are locked onto (or last hit) now sits at the top of the screen with its name, and damage numbers show what you deal and take. Turn the numbers off under Settings → Gameplay → Damage numbers.
+- Dying before any save exists and choosing "Restart area" now puts you back at the start of the slice as the class
+  you chose, with its kit equipped and the world's facts reset; with no class chosen it returns to the title.
 - You can now walk while swinging (at 60% speed; jump and sprint stay locked until the swing ends).
 - Walking through the exit now ends the slice with a "Slice complete" card showing your run time and class and the
   state of the completion save, with Return to title focused (keyboard or controller) and the knight no longer
