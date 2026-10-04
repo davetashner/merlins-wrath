@@ -76,6 +76,7 @@ import {
   DEFAULT_BLOCK_BUTTON,
   GUARD_BREAK_STAGGER_TICKS,
   inGuardArc,
+  ATTACK_MOVE_SCALE,
   locomotionScale,
   shieldGuard,
 } from './guard';
@@ -630,13 +631,13 @@ describe('knight block (mw-e04.6)', () => {
     }).toThrow('has no guard');
   });
 
-  it('locomotion: planted while attacking, the shield’s speed while it is up, else full', () => {
+  it('locomotion: slowed (not planted) while attacking, the shield’s speed while it is up, else full', () => {
     const s = setup();
     expect(locomotionScale(s.world, s.knight, MOVES)).toBe(1);
     s.blockTo(1);
     expect(locomotionScale(s.world, s.knight, MOVES)).toBe(0.5);
     s.pressAt(5, 'primaryAttack');
-    expect(locomotionScale(s.world, s.knight, MOVES)).toBe(0);
+    expect(locomotionScale(s.world, s.knight, MOVES)).toBe(ATTACK_MOVE_SCALE);
     s.stepTo(40);
     s.pressAt(40, 'ability1');
     expect(locomotionScale(s.world, s.knight, MOVES)).toBe(1);
