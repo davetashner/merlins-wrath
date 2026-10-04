@@ -344,12 +344,13 @@ describe('the knight player (mw-e04.6)', () => {
     expect(k.speed()).toBeCloseTo(5, 9);
   });
 
-  it('a swing plants the knight: it stops walking and cannot jump until the move ends', () => {
+  it('a swing slows the knight: it still walks (at the attack scale) but cannot jump until the move ends', () => {
     const k = knight();
     k.run(30, frame([], [], [0, 1]));
     k.run(1, frame(['primaryAttack'], [], [0, 1]));
     k.run(15, frame(['jump'], [], [0, 1]));
-    expect(k.speed()).toBe(0);
+    expect(k.speed()).toBeGreaterThan(0);
+    expect(k.speed()).toBeLessThan(5 * 0.6 + 1e-6);
     expect(k.state().grounded).toBe(true);
     k.run(40, frame([], [], [0, 1]));
     expect(k.speed()).toBeCloseTo(5, 9);
