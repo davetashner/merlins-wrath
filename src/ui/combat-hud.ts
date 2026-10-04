@@ -1,4 +1,4 @@
-// The combat HUD (mw-e04.10): health and stamina bars bottom-left (style bible §9) with the feedback
+// The combat HUD (mw-e04.10): health and stamina bars top-right with the feedback
 // a fight needs at a glance, and no numbers on screen.
 //
 // - Health shows a delayed "chip": lost health stays in a lighter colour for CHIP_HOLD_MS, then
@@ -36,7 +36,7 @@ export const MAX_HUD_SCALE = 2;
 
 /** Bar sizes at 100 % HUD scale, CSS pixels (designed against a 1280×720 viewport and up). */
 export const COMBAT_HUD_BASE = Object.freeze({
-  /** Gap from the viewport's left and bottom edges. */
+  /** Gap from the viewport's top and right edges. */
   margin: 24,
   /** Gap between the bars. */
   gap: 6,
@@ -101,18 +101,18 @@ export function combatHudLayout(scale: number): CombatHudLayout {
   };
 }
 
-/** Where the bars' block sits in a `viewport`-sized HUD layer (bottom-left), CSS pixels. */
+/** Where the bars' block sits in a `viewport`-sized HUD layer (top-right), CSS pixels. */
 export function combatHudBounds(
   layout: CombatHudLayout,
   viewport: Size,
 ): { left: number; top: number; right: number; bottom: number } {
-  const left = layout.margin;
-  const bottom = viewport.height - layout.margin;
+  const right = viewport.width - layout.margin;
+  const top = layout.margin;
   return {
-    left,
-    top: bottom - layout.block.height,
-    right: left + layout.block.width,
-    bottom,
+    left: right - layout.block.width,
+    top,
+    right,
+    bottom: top + layout.block.height,
   };
 }
 
@@ -281,8 +281,8 @@ export class CombatHud implements HudWidget<CombatHudModel> {
     sizeOf('health', this.health.element, health);
     sizeOf('stamina', this.stamina.element, stamina);
     c.set('place', `${String(margin)} ${String(gap)}`, () => {
-      this.#bars.style.left = `${String(margin)}px`;
-      this.#bars.style.bottom = `${String(margin)}px`;
+      this.#bars.style.right = `${String(margin)}px`;
+      this.#bars.style.top = `${String(margin)}px`;
       this.#bars.style.gap = `${String(gap)}px`;
     });
     this.indicator.resize(ring);

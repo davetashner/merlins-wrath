@@ -193,17 +193,17 @@ describe('gamepad bindings (mw-e02.9)', () => {
   it('the default Xbox layout binds every button action but cycle target, slow walk (a light stick), drop and throw (on the inventory screen, mw-e17.10), with no conflicts', () => {
     expect(findConflicts(DEFAULT_PAD_BINDINGS)).toEqual([]);
     expect(DEFAULT_PAD_BINDINGS.jump).toEqual(['PadA']);
-    expect(DEFAULT_PAD_BINDINGS.crouch).toEqual(['PadDown']);
+    expect(DEFAULT_PAD_BINDINGS.crouch).toEqual(['PadRS']);
     expect(DEFAULT_PAD_BINDINGS.dodge).toEqual(['PadB']);
     expect(DEFAULT_PAD_BINDINGS.ability3).toEqual(['PadLB']);
     expect(DEFAULT_PAD_BINDINGS.interact).toEqual(['PadX']);
-    expect(DEFAULT_PAD_BINDINGS.primaryAttack).toEqual(['PadRT']);
+    expect(DEFAULT_PAD_BINDINGS.primaryAttack).toEqual(['PadRB']);
     expect(DEFAULT_PAD_BINDINGS.secondaryAttack).toEqual(['PadLT']);
     expect(DEFAULT_PAD_BINDINGS.sprint).toEqual(['PadLS']);
-    expect(DEFAULT_PAD_BINDINGS.lockOn).toEqual(['PadRS']);
+    expect(DEFAULT_PAD_BINDINGS.lockOn).toEqual(['PadY']);
     expect(DEFAULT_PAD_BINDINGS.pause).toEqual(['PadMenu']);
     expect(DEFAULT_PAD_BINDINGS.inventory).toEqual(['PadView']);
-    expect(DEFAULT_PAD_BINDINGS.ability1).toEqual(['PadY', 'PadUp']);
+    expect(DEFAULT_PAD_BINDINGS.ability1).toEqual(['PadRT']);
     const unbound = BINDABLE_ACTIONS.filter((action) => DEFAULT_PAD_BINDINGS[action].length === 0);
     expect(unbound).toEqual([
       'moveForward',
@@ -231,7 +231,7 @@ describe('gamepad bindings (mw-e02.9)', () => {
 
   it('round-trips both devices through JSON (version 2)', () => {
     const keys = rebound(DEFAULT_BINDINGS, 'jump', 'KeyF');
-    const pad = rebound(unbind(DEFAULT_PAD_BINDINGS, 'ability1'), 'jump', 'PadY', 1);
+    const pad = rebound(unbind(DEFAULT_PAD_BINDINGS, 'lockOn'), 'jump', 'PadY', 1);
     const data = JSON.parse(JSON.stringify(serializeBindings(keys, pad))) as unknown;
     expect(data).toMatchObject({ version: BINDINGS_DATA_VERSION });
     const { bindings, gamepad, issues } = deserializeBindings(data);
@@ -264,7 +264,7 @@ describe('gamepad bindings (mw-e02.9)', () => {
       'jump: invalid codes; using defaults',
       'gamepad jump: invalid codes; using defaults',
       'gamepad wave: unknown action ignored',
-      'gamepad conflicting bindings PadY (crouch, ability1); using defaults',
+      'gamepad conflicting bindings PadY (crouch, lockOn); using defaults',
     ]);
     const missing = deserializeBindings({ version: 2, actions: {} });
     expect(missing.bindings).toEqual(DEFAULT_BINDINGS);

@@ -9,58 +9,61 @@ conflict rules (`src/game/input/bindings.ts`). Prompts show the glyphs of the de
 
 The gamepad layout is the W3C "standard" mapping, labelled for an Xbox controller (the owner's test
 device; Xbox glyphs are the default). The same positions work on a PlayStation pad (A = Cross,
-B = Circle, X = Square, Y = Triangle). Defaults: `DEFAULT_BINDINGS` and `DEFAULT_PAD_BINDINGS`.
+B = Circle, X = Square, Y = Triangle, RB = R1, RT = R2, LB = L1, LT = L2, RS = R3).
+Defaults: `DEFAULT_BINDINGS` and `DEFAULT_PAD_BINDINGS`.
 
 | Action           | Xbox controller                    | Keyboard + mouse         |
 | ---------------- | ---------------------------------- | ------------------------ |
 | Move             | Left stick                         | W A S D (or arrows)      |
 | Look             | Right stick                        | Mouse                    |
 | Jump             | A                                  | Space                    |
-| Crouch           | D-pad Down                         | C                        |
+| Crouch           | RS click (R3; toggle)              | C (hold)                 |
 | Slow walk        | Light left-stick push              | X (hold)                 |
 | Dodge            | B                                  | R                        |
 | Interact         | X                                  | E                        |
 | Sprint           | LS click (toggle)                  | Left Shift (hold)        |
-| Lock on          | RS click                           | Q, middle click          |
+| Lock on          | Y (Triangle)                       | Q, middle click          |
 | Cycle target     | RS flick left/right (while locked) | Tab (right); fast mouse swipe left/right |
-| Primary attack   | RT                                 | Left click               |
-| Secondary / block | LT                                | Right click              |
-| Shield bash (knight) | Hold LT, press RT              | Hold right click, left click |
-| Ability 1 / heavy attack (knight) | Y, D-pad Up               | 1                        |
-| Ability 2        | RB, D-pad Right                    | 2                        |
-| Ability 3 / parry (knight) | LB                       | 3                        |
+| Right-hand attack | RB (R1)                           | Left click               |
+| Strong attack (knight) | RT (R2)                      | 1                        |
+| Left-hand action / parry (knight) | LB (L1)           | 3                        |
+| Hold shield / block | LT (L2)                         | Right click              |
+| Shield bash (knight) | Hold LT/L2, press RB/R1        | Hold right click, left click |
+| Ability 2        | D-pad Right                        | 2                        |
 | Ability 4        | D-pad Left                         | 4                        |
 | Inventory        | View                               | I                        |
 | Drop item        | (inventory screen)                 | G                        |
 | Throw item       | (inventory screen)                 | T                        |
 | Pause            | Menu                               | Esc, P                   |
 
-B is the souls-like dodge button (mw-e04.8), which moved crouch to D-pad Down; the rest of the d-pad
-mirrors the number row (abilities 1, 2 and 4), and Y, RB and LB reach abilities 1–3 without taking
-the thumb off the face buttons or the stick. On the keyboard, R dodges: F stays free (it is the
-remapping example) and Ctrl or Alt would trip browser shortcuts (Ctrl+W closes the tab).
+B is the souls-like dodge button (mw-e04.8). The shoulder controls form the combat cluster selected
+in mw-e04.39: RB/R1 attacks with the right hand, RT/R2 performs the strong attack, LB/L1 uses the
+left hand, and holding LT/L2 raises the equipped shield. RS/R3 toggles crouch; jump, sprint or a
+second R3 click returns to standing when headroom permits. Lock-on therefore moved to Y/Triangle.
+On the keyboard, R dodges: F stays free (it is the remapping example) and Ctrl or Alt
+would trip browser shortcuts (Ctrl+W closes the tab).
 
 **Dodge.** A dodge with a direction held rolls that way (relative to the camera; while locked on
 the view faces the target, so relative to it); with no direction held it backsteps. Timing and i-frames:
 `src/content/data/move/dodge-roll.json` and `backstep.json`; the rules: `src/sim/combat/dodge`. Cycle target has no pad button: flicking the right stick sideways
 while locked on cycles instead (see Lock-on below), the usual convention.
 
-**Parry.** The knight parries with ability 3 (LB, 3) while the owner settles the knight's layout
-(`DEFAULT_PARRY_BUTTON`, mw-e04.12); block stays on LT / right click. Attack while a parried foe
+**Left hand / parry.** L1/LB is the left-hand action. With the knight's current shield it parries
+(ability 3; `DEFAULT_PARRY_BUTTON`, mw-e04.12); holding L2/LT blocks. Attack while a parried foe
 reels within 2 m in front of you and the light attack becomes a riposte. Timing and numbers:
 `src/content/data/move/shield-parry.json` and `sword-riposte.json`; the rules: `src/sim/combat/parry`.
 
-**Heavy attack.** The knight's heavy attack is on ability 1 (Y, D-pad Up, 1) while the owner settles
-the knight's layout (`DEFAULT_HEAVY_BUTTON`, mw-e04.13). Tap it for a heavy; hold it to charge: the
+**Strong attack.** The knight's strong/heavy attack is on R2/RT (ability 1; 1 on keyboard,
+`DEFAULT_HEAVY_BUTTON`, mw-e04.13). Tap it for a heavy; hold it to charge: the
 windup holds, the charge is full after 1 s (ChargeReady) and swings itself at 1.5 s. Let go before
 12 ticks (0.2 s) and it is a plain heavy. While it winds up and charges the knight has hyperarmor (it
 shrugs off up to 40 poise; a harder hit staggers it and the charge is lost). Timing and numbers:
 `src/content/data/move/sword-heavy.json` and `sword-heavy-charged.json`; the rules:
 `src/sim/combat/timeline/charge.ts`.
 
-**Shield bash.** Attack while blocking bashes with the shield (mw-e04.14): hold block (LT, right
-click) and press attack (RT, left click). It is a chord on the knight's existing buttons, not a
-button of its own, so it costs no slot while the owner settles the knight's layout (the chord is
+**Shield bash.** Attack while blocking bashes with the shield (mw-e04.14): hold block (L2/LT, right
+click) and press attack (R1/RB, left click). It is a chord on the knight's existing buttons, not a
+button of its own, so it costs no slot (the chord is
 `meleeChords` in `src/sim/player/player.ts`). The bash interrupts a foe's interruptible move (spell
 windups), breaks a shieldless guard outright, shoves things up to 60 kg and knocks breakables. With
 no shield equipped the same chord kicks instead. With the testbed bow out the attack button draws,
@@ -69,8 +72,8 @@ so there is no bash. Timing and numbers: `src/content/data/move/shield-bash.json
 
 **Bow (testbed).** Until class kits bind the archer's buttons (mw-e02.3), the testbed knight also
 carries the shortbow (mw-e05.21): ability 4 (4, D-pad Left) takes it out or puts it away; while it is
-out the attack button (left click, RT) draws instead of swinging (hold to draw, let go to loose) and
-ability 2 (2, RB) cycles the arrow type. Cycle stays off ability 3, the knight's parry
+out the attack button (left click, R1/RB) draws instead of swinging (hold to draw, let go to loose)
+and ability 2 (2, D-pad Right) cycles the arrow type. Cycle stays off ability 3, the knight's parry
 (`TESTBED_BOW_BUTTONS`, src/game/combat/testbed-combat.ts). While drawn the camera narrows from 70° to
 the bow's aim field of view; `?frames` shows the selected arrow type and how many are left.
 
@@ -90,8 +93,7 @@ Resume. Up and down (arrows, d-pad, left stick) move between the options and Ent
 After resuming, click the game to take the mouse again; the pad plays at once.
 
 **Quick slots.** Four quick slots use consumables without a menu (mw-e17.6): drink a draught, throw
-an oil flask. They have no default buttons yet: 1–4 and the d-pad are the
-abilities', so the bindings wait on the owner's layout decision (mw-e17.17). The inventory screen
+an oil flask. They have no default buttons yet; assigning controls for them remains mw-e17.17. The inventory screen
 assigns items to them (pick an item, Assign to quick slot), and the strip at the bottom of the screen
 shows them. Until the bindings land, the sim's `useQuickSlotCommand` uses a slot, and so does the
 debug console's `quickslot <1–4>`.
@@ -107,7 +109,7 @@ held like the Shift key.
 
 ## Lock-on
 
-Lock on (RS click, Q or middle click) picks the target nearest the centre of the view, weighted by
+Lock on (Y/Triangle, Q or middle click) picks the target nearest the centre of the view, weighted by
 distance, and presses again to release (mw-e02.16; rules in `src/sim/targeting/lock-on.ts`, numbers in
 `src/content/data/lock-on/player.json`). While locked:
 
