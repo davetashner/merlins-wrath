@@ -1,6 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { attachFrame, captureFrame, distinct } from './helpers/canvas';
+import { budgetMs } from './helpers/budget';
 
 // mw-e00.21: greybox scenes, the ?scene= picker and the debug fly camera, against the production
 // build (Chromium).
@@ -80,7 +81,7 @@ test('AC-1: ?scene=testbed renders the room → corridor → arena with zero con
   const app = page.locator('#app');
   await expect(app).toHaveAttribute('data-scene', 'testbed', { timeout: 5_000 });
   await expect(app).toHaveAttribute('data-first-frame-ms', /^\d+$/, { timeout: 5_000 });
-  expect(Date.now() - started).toBeLessThan(5_000);
+  expect(Date.now() - started).toBeLessThan(budgetMs(5_000));
   await expect(page.getByTestId('scene-label')).toHaveText(
     /^Greybox testbed \(testbed\) · build ([0-9a-f]{7}|unknown)$/,
   );

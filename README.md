@@ -158,6 +158,7 @@ Dying plays a death beat, then the death screen lets you reload a save or restar
 | `pnpm test`          | Vitest unit + integration tests                                  |
 | `pnpm test:coverage` | Vitest with v8 coverage into `coverage/` (text, json-summary, lcov) |
 | `pnpm e2e`           | Playwright smoke tests against the production build              |
+| `pnpm e2e:shards <n> <of>` | Spec files for CI shard n of `of` (weights in `e2e/shards.json`) |
 | `pnpm bench`         | Vitest benchmarks (`*.bench.ts`) that assert sim perf budgets    |
 | `pnpm perf`          | Perf budget suite, CI mode (see [Perf budgets](#perf-budgets)); `PERF_HEAP_IDLE_S=30` shortens the 5-minute heap idle |
 | `pnpm perf:ref`      | Perf budget suite, reference mode: absolute frame-time budgets on the reference machine only |

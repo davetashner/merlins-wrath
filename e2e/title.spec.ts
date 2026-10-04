@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { holdKey, playerState, stubPointerLock, takeControl } from './helpers/player';
 import { seriousAxeViolations } from './helpers/ui';
+import { budgetMs } from './helpers/budget';
 
 // mw-e01.2: the title screen is the game's front door, against the production build (Chromium). A
 // page with no ?scene=, ?newgame, ?class= or ?menu= boots the game's start scene (game.startScene:
@@ -195,7 +196,9 @@ test('AC-1: on a clean profile, New Game → Knight → Confirm makes the slice 
   if (titleMs === undefined || newGameMs === undefined || playableMs === undefined) {
     throw new Error(`front door timings missing: ${JSON.stringify(state.frontDoor)}`);
   }
-  expect(titleMs + (playableMs - newGameMs)).toBeLessThan(10_000);
+  const loadMs = titleMs + (playableMs - newGameMs);
+  test.info().annotations.push({ type: 'load-ms', description: String(loadMs) });
+  expect(loadMs).toBeLessThan(budgetMs(10_000));
   await walksFromSpawn(page);
   expect(problems).toEqual([]);
 });
