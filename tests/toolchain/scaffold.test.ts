@@ -42,7 +42,9 @@ describe('repo scaffold', () => {
 
   it(
     'AC-4: test:coverage writes coverage-summary.json and lcov.info',
-    { timeout: 60_000 },
+    // The child run covers all of src/sim while the outer suite is running on the same CI runner,
+    // and src/sim keeps growing: 60 s timed out on PRs #224 and #226 (mw-cge).
+    { timeout: 180_000 },
     async () => {
       const reports = tmp('coverage');
       // Child run over the sim layer only (tests and coverage scope), so it does not recurse into
