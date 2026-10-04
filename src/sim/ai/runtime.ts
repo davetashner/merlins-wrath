@@ -37,6 +37,7 @@
 
 import type { AlertState, BehaviourEvent } from '@content/index';
 import type { AttackLookup } from '../combat/attacks/executor';
+import { HealthComponent } from '../combat/damage/components';
 import type { EntityId } from '../core/component';
 import type { System, World } from '../core/world';
 import { CreatureComponent } from '../creatures/components';
@@ -271,6 +272,9 @@ function aiSystem<TInput>(runtime: AiRuntime): System<TInput> {
       const focus = (entity: EntityId, brain: Brain): CompiledBehaviour | undefined => {
         const behaviour = runtime.behaviours.get(brain.behaviour);
         if (behaviour === undefined) return undefined;
+        // A creature at zero health is dead: it does not think, move, leash or fight on.
+        const health = getIf(world, entity, HealthComponent);
+        if (health !== undefined && health.current <= 0) return undefined;
         view.entity = entity;
         view.brain = brain;
         view.creature = getIf(world, entity, CreatureComponent);

@@ -185,7 +185,11 @@ import {
   createTrainingDummy,
   disposeArrowShaft,
 } from '@render/combat/index';
-import { createCreatureProxy, showCreatureTelegraph } from '@render/creatures/index';
+import {
+  createCreatureProxy,
+  CreatureDeaths,
+  showCreatureTelegraph,
+} from '@render/creatures/index';
 import { creatureLocomotion } from '@game/creatures/animation';
 import { AnimationDriver, simAnimReader } from '@game/animation/index';
 import { pickVariant, randomSalt, variantFromSearch } from '@render/creatures/variant';
@@ -239,6 +243,7 @@ import {
   WorldPersistence,
   worldItemSpawner,
   zeroHealth,
+  Died,
   hashWorld,
   type ActionFrame,
   type DebugCommand,
@@ -845,6 +850,7 @@ function startRenderer(
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
     let animation: AnimDemo | undefined;
     let creatureAnimation: AnimationDriver | undefined;
+    let creatureDeaths: CreatureDeaths | undefined;
     let publishedProbe = '';
     // The AI debug overlay (mw-e11.17): loaded with the debug console (below), so release builds
     // never have it. `ai.freeze` holds the sim through simPaused; it draws before each render.
@@ -907,6 +913,7 @@ function startRenderer(
         hitOverlay.sync(world);
         publishCreatures();
         publishArrows();
+        creatureDeaths?.update(Math.max(0, elapsedMs) / 1000);
         creatureAnimation?.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
         if (animation !== undefined) {
           animation.driver.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
@@ -1449,6 +1456,10 @@ function startRenderer(
       });
       const minerDriver = new AnimationDriver(world);
       creatureAnimation = minerDriver;
+      // A creature that dies falls where it stood and stays there (src/render/creatures/death.ts).
+      const deaths = new CreatureDeaths();
+      creatureDeaths = deaths;
+      const creatureHeights = new Map<EntityId, number>();
       const minerSalt = randomSalt();
       const pinnedMiner = variantFromSearch(location.search);
       const drawCreatures = (): void => {
@@ -1463,6 +1474,7 @@ function startRenderer(
             animation: {
               rig: creatureGraph.rig,
               attach: (view) => {
+                if (zeroHealth(world, entity)) return;
                 minerDriver.add(entity, {
                   name: look.id,
                   controller: new AnimationController(creatureGraph),
@@ -1476,11 +1488,14 @@ function startRenderer(
           });
           view.scene.add(object);
           creatureProxies.set(entity, object);
+          creatureHeights.set(entity, look.nav.height);
+          if (zeroHealth(world, entity)) deaths.start(object, look.nav.height, true);
           const binding = object3DBinding(object, readSandboxDummyTransform);
           return {
             ...binding,
             dispose: (target: typeof object) => {
               creatureProxies.delete(entity);
+              creatureHeights.delete(entity);
               binding.dispose(target);
             },
           };
@@ -1488,6 +1503,12 @@ function startRenderer(
       };
       drawCreatures();
       afterStep.push(drawCreatures);
+      world.events.on(Died, ({ target }) => {
+        const proxy = creatureProxies.get(target);
+        if (proxy === undefined) return;
+        minerDriver.remove(target);
+        deaths.start(proxy, creatureHeights.get(target) ?? 1.8);
+      });
       if (creaturesInstalled(world)) {
         const telegraphs = new CreatureTelegraphs(world);
         afterStep.push(() => {

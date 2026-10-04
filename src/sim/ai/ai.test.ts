@@ -306,6 +306,19 @@ describe('think scheduling', () => {
     expect(introspectBrain(world, entity)).toBeUndefined();
   });
 
+  it('a creature at zero health no longer thinks, moves or leashes', () => {
+    const world = aiWorld([idle]);
+    world.register(...DAMAGE_COMPONENTS);
+    const entity = agent(world);
+    giveCombatant(world, entity, { health: 10 });
+    run(world, 12);
+    const thought = brain(world, entity).thoughtTick;
+    expect(thought).toBeGreaterThanOrEqual(0);
+    world.set(entity, HealthComponent, { max: 10, current: 0 });
+    run(world, 60);
+    expect(brain(world, entity).thoughtTick).toBe(thought);
+  });
+
   it('rejects a second install and a think budget below one', () => {
     const world = aiWorld([idle]);
     expect(() => {
