@@ -9,7 +9,8 @@
 // the capability registry, the items and the proficiency tags items call for (mw-e19.4), and the
 // spawns the signal graphs a scene places bind (mw-e03.18), loot tables' references, nesting and
 // unique items across the world (mw-e18.2), and baked navmeshes against their scenes' door spawns
-// (mw-e11.4), and respawn-rule destinations against their scenes' spawns (mw-e01.8). The `game` type
+// (mw-e11.4), respawn-rule destinations against their scenes' spawns (mw-e01.8), and merchants' price
+// bands and stock against the economy design (mw-e20.2). The `game` type
 // is the one game configuration file (playable classes, mw-e01.15).
 
 import { checkAnimation } from './anim-checks.ts';
@@ -47,6 +48,7 @@ import { lockSchema } from './types/lock.ts';
 import { lockOnSchema } from './types/lock-on.ts';
 import { lootTableSchema } from './types/loot-table.ts';
 import { locomotionSchema } from './types/locomotion.ts';
+import { checkMerchants, merchantSchema } from './types/merchant.ts';
 import { materialSchema } from './types/material.ts';
 import { moveSchema } from './types/move.ts';
 import { checkNavmeshes, navmeshSchema } from './types/navmesh.ts';
@@ -95,6 +97,7 @@ export const contentTypes = {
   'loot-table': lootTableSchema,
   locomotion: locomotionSchema,
   material: materialSchema,
+  merchant: merchantSchema,
   move: moveSchema,
   navmesh: navmeshSchema,
   puzzle: puzzleSchema,
@@ -129,6 +132,7 @@ export const contentChecks: readonly ContentCheck[] = [
   checkClasses,
   checkSceneSignals,
   checkLootTables,
+  checkMerchants,
   checkNavmeshes,
   checkRespawnRules,
 ];

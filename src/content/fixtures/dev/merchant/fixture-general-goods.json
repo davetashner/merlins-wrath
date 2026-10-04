@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../data/merchant.schema.json",
+  "id": "fixture-general-goods",
+  "notes": "Grey-box general-goods merchant (mw-e20.2), debug builds only: sells basics from the game's items, rolls testbed-sundries for variety, buys weapons, armor, ammo and consumables, and pays a little extra for knives. Prices sit mid-band; not tuned.",
+  "npcId": "fixture-shopkeeper",
+  "personalityTags": ["gruff", "shrewd"],
+  "specialties": ["weapon"],
+  "buysCategories": ["weapon", "armor", "ammo", "consumable", "tool"],
+  "stock": [
+    { "item": "arming-sword", "count": 2 },
+    { "item": "leather-jerkin", "count": 2, "restock": { "everyHours": 48, "amount": 1 } },
+    { "item": "standard-arrow", "count": 40, "restock": { "everyHours": 24, "amount": 20 } },
+    { "item": "healing-draught", "count": 5, "restock": { "everyHours": 24, "amount": 2 } },
+    { "item": "lockpicks", "count": 3 },
+    { "lootTable": "testbed-sundries", "count": 2 }
+  ],
+  "goldReserve": 300,
+  "goldRestockPerDay": 100,
+  "markup": 1.3,
+  "buyRate": 0.4,
+  "hours": { "open": 8, "close": 20 },
+  "barkSet": "fixture-shopkeeper"
+}

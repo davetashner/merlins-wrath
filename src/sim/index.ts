@@ -53,6 +53,7 @@ export {
 } from './core/world';
 export * from './debug';
 export * from './deltas';
+export * from './economy';
 export * from './elements';
 export * from './factions';
 export * from './facts';
