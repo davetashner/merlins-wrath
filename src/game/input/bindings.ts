@@ -37,6 +37,33 @@ export function mouseCode(button: number): InputCode {
   return `Mouse${String(button)}`;
 }
 
+/** KeyboardEvent.code values (UI Events spec) that can be bound; anything else is not a key. */
+const KEY_CODES: ReadonlySet<string> = new Set([
+  ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((c) => `Key${c}`),
+  ...Array.from({ length: 10 }, (_, i) => `Digit${String(i)}`),
+  ...Array.from({ length: 10 }, (_, i) => `Numpad${String(i)}`),
+  ...Array.from({ length: 24 }, (_, i) => `F${String(i + 1)}`),
+  ...['Up', 'Down', 'Left', 'Right'].map((d) => `Arrow${d}`),
+  ...['Add', 'Subtract', 'Multiply', 'Divide', 'Decimal', 'Enter', 'Equal', 'Comma'].map(
+    (k) => `Numpad${k}`,
+  ),
+  ...['Shift', 'Control', 'Alt', 'Meta'].flatMap((m) => [`${m}Left`, `${m}Right`]),
+  ...['Backquote', 'Minus', 'Equal', 'BracketLeft', 'BracketRight', 'Backslash', 'Semicolon'],
+  ...['Quote', 'Comma', 'Period', 'Slash', 'IntlBackslash', 'IntlYen', 'IntlRo'],
+  ...['Escape', 'Backspace', 'Tab', 'Enter', 'Space', 'CapsLock', 'ContextMenu'],
+  ...['Insert', 'Delete', 'Home', 'End', 'PageUp', 'PageDown', 'PrintScreen', 'ScrollLock'],
+  ...['Pause', 'NumLock'],
+]);
+
+/** Mouse buttons a binding can name: left, middle, right, back, forward. */
+const MOUSE_BUTTONS = 5;
+
+/** Whether `code` is a keyboard or mouse code this game can bind (not a pad code). */
+export function isKeyboardMouseCode(code: string): boolean {
+  if (KEY_CODES.has(code)) return true;
+  return Array.from({ length: MOUSE_BUTTONS }, (_, i) => mouseCode(i)).includes(code);
+}
+
 export type Bindings = Readonly<Record<BindableAction, readonly InputCode[]>>;
 
 /** Default keyboard + mouse layout. */
@@ -235,7 +262,9 @@ function validCodes(value: unknown, pad: boolean): value is InputCode[] {
   return (
     Array.isArray(value) &&
     value.length <= MAX_SLOTS &&
-    value.every((code) => typeof code === 'string' && code !== '' && isPadCode(code) === pad) &&
+    value.every(
+      (code) => typeof code === 'string' && (pad ? isPadCode(code) : isKeyboardMouseCode(code)),
+    ) &&
     new Set(value).size === value.length
   );
 }

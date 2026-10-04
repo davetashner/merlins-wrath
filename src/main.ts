@@ -113,7 +113,12 @@ import {
   playerFocus,
   propBodies,
 } from '@game/physics-objects';
-import { createSettingsStore, openOptionsMenu, type SettingsStore } from '@game/settings/index';
+import {
+  createSettingsStore,
+  loadBindings,
+  openOptionsMenu,
+  type SettingsStore,
+} from '@game/settings/index';
 import {
   createUiGameBridge,
   PauseController,
@@ -446,7 +451,12 @@ function startRenderer(
   // Keyboard + mouse and gamepad → one ActionFrame per sim tick (mw-e02.1, mw-e02.9); a click on the
   // canvas takes control (pointer lock) of the player, once there is one (mw-e02.23). A gamepad needs
   // no click: the sampler polls it every tick while the page has focus.
-  const sampler = new ActionSampler();
+  // Custom bindings saved through the settings store apply at startup (mw-e02.22).
+  const savedBindings = loadBindings(settings);
+  const sampler = new ActionSampler({
+    bindings: savedBindings.bindings,
+    padBindings: savedBindings.gamepad,
+  });
 
   // The HUD/menu layer (mw-e00.23). Screens pushed onto it may capture input (gameplay action frames
   // are withheld) and pause the sim; menus need the pointer, so capture releases pointer lock.
