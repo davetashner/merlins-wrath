@@ -1,0 +1,4 @@
+{
+  "note": "Seconds per spec file in the chromium project, from a Playwright JSON report. Regenerate with pnpm e2e:shards:regenerate <report.json>. Specs missing here get the median weight.",
+  "durations": {}
+}

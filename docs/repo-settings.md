@@ -31,6 +31,9 @@ need a `gh` login with admin rights.
 `lint`, `typecheck`, `unit`, `coverage-gate`, `coverage-ratchet`, `e2e-smoke`, `build`, `beads-validate`
 (ci.yml), `secrets`, `audit`, `dependency-review` (security.yml), and `pr-lint` and `changelog` (pr-lint.yml).
 
+`unit` runs the sim benchmarks and `coverage-gate` is the one job that runs the unit and integration tests
+(mw-e41.2); `e2e-smoke` aggregates the chromium shards, the Firefox/WebKit audio job and the playthrough.
+
 Only jobs that run on **every** pull request may be required. A path-filtered job, such as plan-check's
 `validate`, would never report on unrelated PRs and would block them forever, so it runs but is not
 required. When a new check bead adds an every-PR job, add its name to `REQUIRED_CHECKS` in

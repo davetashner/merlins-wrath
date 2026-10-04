@@ -96,7 +96,7 @@ Every story/task/spike implicitly includes this DoD; beads only list **additions
 
 | Type | Use for |
 |---|---|
-| `epic` | One of E00–E40. Outcome statement + scope + exit criteria. |
+| `epic` | One of E00–E41. Outcome statement + scope + exit criteria. |
 | `feature` | A player-visible or designer-visible capability (the "story"). Fits in **one PR** (≈ ≤ 2 days). |
 | `task` | Technical/enabling work with no direct player value (CI, refactor, schema). One PR. |
 | `spike` | Time-boxed investigation producing a decision/ADR or prototype. States the question + time-box. |
