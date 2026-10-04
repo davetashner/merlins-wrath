@@ -193,7 +193,8 @@ import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { createLightRig } from '@render/light/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
-import { createPlayerBody, loadKnight, projectToNdc } from '@render/player/index';
+import { createPlayerBody, loadKnight, OcclusionFade, projectToNdc } from '@render/player/index';
+import { anyHiddenByBody } from '@game/camera/index';
 import { createVfxRenderer } from '@render/vfx/index';
 import { captureCanvasThumbnail, type CapturedThumbnail } from '@render/thumbnail';
 import {
@@ -225,6 +226,8 @@ import {
   RapierCollisionWorld,
   RapierSightWorld,
   creaturesInstalled,
+  CreatureComponent,
+  PlacementComponent,
   registerPersistence,
   installSlainFacts,
   registerSceneComponents,
@@ -845,6 +848,7 @@ function startRenderer(
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
     let animation: AnimDemo | undefined;
     let creatureAnimation: AnimationDriver | undefined;
+    let playerFade: OcclusionFade | undefined;
     let publishedProbe = '';
     // The AI debug overlay (mw-e11.17): loaded with the debug console (below), so release builds
     // never have it. `ai.freeze` holds the sim through simPaused; it draws before each render.
@@ -880,6 +884,19 @@ function startRenderer(
         sliceCard?.frame();
         containerUi?.frame(timeMs);
         player?.frame(frame);
+        if (player !== undefined && playerFade !== undefined) {
+          // The body fades while it hides a creature from the camera.
+          const at = world.get(player.entity, PlacementComponent);
+          let hiding = false;
+          if (at !== undefined && creaturesInstalled(world)) {
+            const chests: { x: number; y: number; z: number }[] = [];
+            world.query(CreatureComponent, PlacementComponent).forEach((_entity, _creature, c) => {
+              chests.push({ x: c.x, y: c.y + 1, z: c.z });
+            });
+            hiding = anyHiddenByBody(camera.position, { x: at.x, y: at.y + 1, z: at.z }, chests);
+          }
+          playerFade.update(hiding, Math.max(0, elapsedMs) / 1000);
+        }
         if (player !== undefined) {
           const glyph = inputGlyph('interact', sampler.lastDevice, {
             keyboardMouse: sampler.bindings,
@@ -1007,6 +1024,7 @@ function startRenderer(
         );
         // The knight's model (mw-e37.21) takes the boxes' place once it has loaded.
         const body = createPlayerBody(graph.rig, loadKnight());
+        playerFade = new OcclusionFade(body.root);
         let publishedPlayerProbe = '';
         player = setupTestbedPlayer({
           world,
