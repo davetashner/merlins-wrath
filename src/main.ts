@@ -66,6 +66,7 @@ import {
 } from '@game/items/index';
 import { startInventoryUi, type InventoryUi } from '@game/items/inventory-screen';
 import { startContainerUi, type ContainerUi } from '@game/items/container-window';
+import { startShopUi } from '@game/shop/shop-window';
 import {
   ContainerWatch,
   hasContainers,
@@ -1273,6 +1274,21 @@ function startRenderer(
         });
         afterStep.push(() => {
           loot.afterStep();
+        });
+        // The shop (mw-e20.10): talking to a counter tagged `merchant:<id>` opens its screen; deals go
+        // straight to the shops engine while the sim is paused. #app[data-shop] (JSON: open,
+        // merchant, crowns) is the e2e's readout.
+        const shop = startShopUi({
+          ui,
+          world,
+          content,
+          player: player.entity,
+          publish: (key, value) => {
+            root.dataset[key] = value;
+          },
+        });
+        afterStep.push(() => {
+          shop.afterStep();
         });
       }
       // Class selection (mw-e19.5): the chosen class's capabilities, kit and stats go onto the player

@@ -1,0 +1,517 @@
+// The shop screen in the game (mw-e20.10): the glue between the sim's `Shops` engine
+// (src/sim/economy/shop.ts), content's merchants and items, and the UI's shop window
+// (src/ui/shop-window.ts).
+//
+// - `ShopViews` derives the window's model: the merchant's name and greeting, the player's crowns,
+//   and the Buy, Sell and Buyback rows with prices, the tooltip's price steps (from `quote()`), the
+//   specialty badge, the stolen marker, the refusal a merchant gives an item, and, for equipment,
+//   how it compares with what the player has equipped.
+// - `ShopController` opens the window when the player talks to a counter (an interactable whose
+//   scene spawn is tagged `merchant:<merchant id>` and whose affordance is `talk`), after the step
+//   that did it, or by `open(merchantId)`. A deal is done at once with `Shops` (the sim is paused
+//   while the screen is open, so there is no step to queue it for); the engine's own events
+//   (`shop.bought`, `shop.sold`, `shop.bought-back`) report it. The window refreshes after every
+//   deal and step, and says the outcome (or the refusal) on its status line.
+// - A counter tagged `dev-crowns:<n>` tops the player up to `n` crowns the first time it opens (the
+//   grey-box shop room, so a fresh player can trade).
+// - `startShopUi` wires it into a running game and publishes `#app[data-shop]` (JSON: whether the
+//   shop is open, the merchant and the player's crowns) for the e2e.
+
+import type { GameContent, ItemEntry } from '@content/index';
+import {
+  equipmentOf,
+  interacted,
+  InventoryRules,
+  inventoryOf,
+  LootTables,
+  SceneSpawnComponent,
+  Shops,
+  type BuyFailure,
+  type EntityId,
+  type MerchantState,
+  type PriceRefusal,
+  type PriceResult,
+  type PriceStep,
+  type SellFailure,
+  type World,
+} from '@sim/index';
+import {
+  crownsText,
+  openShopWindow,
+  type ShopDeal,
+  type ShopModel,
+  type ShopRowModel,
+  type ShopWindow,
+  type UiRoot,
+} from '@ui/index';
+import { itemLabel } from '../classes';
+import { ICON_KIND, itemName } from '../items/inventory-screen';
+
+/** The content the shop reads. */
+export type ShopContent = Pick<GameContent, 'all'>;
+
+/** Prefix of the scene-spawn tag that names a counter's merchant. */
+export const MERCHANT_TAG = 'merchant:';
+/** Prefix of the dev tag that tops the player up to this many crowns on first opening. */
+export const DEV_CROWNS_TAG = 'dev-crowns:';
+
+/** What the shop reads of a merchant entry. */
+interface MerchantEntry {
+  readonly id: string;
+  readonly npcId: string;
+  readonly personalityTags: readonly string[];
+}
+
+/** The greeting for a personality, until barks (E22) give merchants their own lines. */
+const GREETINGS: Readonly<Record<string, string>> = Object.freeze({
+  greedy: 'Coin talks. What have you got?',
+  gossipy: 'Come in, come in. You will not believe what I have heard.',
+  suspicious: 'State your business.',
+  generous: 'Welcome. You look as if you could use a bargain.',
+  gruff: 'Make it quick.',
+  friendly: 'Welcome. Take your time.',
+  shrewd: 'Let us see what we can do for each other.',
+  nervous: 'Oh, hello. Do be quick, will you?',
+});
+const DEFAULT_GREETING = 'What can I do for you?';
+
+/** The greeting for a merchant: its first personality tag with a line, else the default. */
+export function greetingFor(merchant: Pick<MerchantEntry, 'personalityTags'>): string {
+  for (const tag of merchant.personalityTags) {
+    const line = GREETINGS[tag];
+    if (line !== undefined) return line;
+  }
+  return DEFAULT_GREETING;
+}
+
+/** Why a price was refused, in the merchant's terms. */
+const REFUSALS: Readonly<Record<PriceRefusal, string>> = Object.freeze({
+  hostile: 'They will not deal with you.',
+  'quest-item': 'Quest items cannot be sold.',
+  'no-sell': 'That cannot be sold.',
+  bound: 'That is bound to you.',
+  stolen: 'Only a fence buys stolen goods.',
+  'not-bought': 'They do not buy that.',
+});
+
+const FAILURES: Readonly<Record<Exclude<BuyFailure | SellFailure, PriceRefusal>, string>> =
+  Object.freeze({
+    'no-such-item': 'That is no longer here.',
+    'out-of-stock': 'There is not enough in stock.',
+    'cannot-afford': 'Not enough crowns.',
+    'cannot-carry': 'You cannot carry any more of that.',
+    'not-enough': 'You do not have that many.',
+    'merchant-cannot-afford': 'They cannot afford that just now.',
+    'gold-cap': 'You cannot carry that many crowns.',
+  });
+
+/** The status line for a failed deal. */
+export function failureText(reason: BuyFailure | SellFailure): string {
+  return reason in REFUSALS
+    ? REFUSALS[reason as PriceRefusal]
+    : FAILURES[reason as keyof typeof FAILURES];
+}
+
+/** "×1.3", "×0.95": a factor with up to two decimals. */
+const factorText = (factor: number): string => `×${String(Math.round(factor * 100) / 100)}`;
+
+const STEP_LABELS: Readonly<Record<Exclude<PriceStep['kind'], 'base'>, string>> = Object.freeze({
+  markup: 'Merchant’s markup',
+  'buy-rate': 'Merchant’s buying rate',
+  specialty: 'Specialty bonus',
+  disposition: 'Their opinion of you',
+  stolen: 'Stolen goods',
+  world: 'Local prices',
+  haggle: 'Haggling',
+  cap: 'Capped at their selling price',
+  floor: 'Minimum price',
+});
+
+/** The tooltip lines for a price: the base value, each step and the result. */
+export function breakdownLines(result: Extract<PriceResult, { ok: true }>): string[] {
+  const lines = result.breakdown.map((step) => {
+    if (step.kind === 'base') return `Base value ${crownsText(Math.round(step.amount))}`;
+    const label = STEP_LABELS[step.kind];
+    if (step.factor !== undefined) return `${label} ${factorText(step.factor)}`;
+    return `${label} ${crownsText(Math.round(step.amount))}`;
+  });
+  return [...lines, `Price ${crownsText(result.price)}`];
+}
+
+/** The player's crowns. */
+const crownsOf = (world: World<never>, player: EntityId): number =>
+  inventoryOf(world, player)?.gold ?? 0;
+
+/** Derives the shop window's model. */
+export class ShopViews {
+  readonly #items: ReadonlyMap<string, ItemEntry>;
+  readonly #merchants: ReadonlyMap<string, MerchantEntry>;
+  readonly #shops: Shops;
+
+  constructor(content: ShopContent, shops: Shops) {
+    this.#items = new Map(content.all('item').map((item) => [item.id, item]));
+    this.#merchants = new Map(content.all('merchant').map((merchant) => [merchant.id, merchant]));
+    this.#shops = shops;
+  }
+
+  /** Whether content has a merchant `id`. */
+  has(merchantId: string): boolean {
+    return this.#merchants.has(merchantId);
+  }
+
+  #item(defId: string): ItemEntry {
+    const item = this.#items.get(defId);
+    if (item === undefined) throw new RangeError(`item "${defId}" is not defined`);
+    return item;
+  }
+
+  /** The display name of item `defId`. */
+  nameOf(defId: string | undefined): string {
+    const item = defId === undefined ? undefined : this.#items.get(defId);
+    return item === undefined ? itemLabel(defId ?? 'item') : itemName(item);
+  }
+
+  /** The window's model for `merchantId` as `player` sees it. */
+  model(world: World<never>, player: EntityId, merchantId: string): ShopModel {
+    const merchant = this.#merchants.get(merchantId);
+    if (merchant === undefined) throw new RangeError(`merchant "${merchantId}" is not defined`);
+    const state = this.#shops.stateOf(world, merchantId);
+    return {
+      merchant: {
+        name: itemLabel(merchant.npcId),
+        greeting: greetingFor(merchant),
+      },
+      crowns: crownsOf(world, player),
+      buy: this.#buyRows(world, player, merchantId, state),
+      sell: this.#sellRows(world, player, merchantId),
+      buyback: this.#buybackRows(state),
+    };
+  }
+
+  #row(
+    quote: PriceResult,
+    id: number,
+    defId: string,
+    count: number,
+    flags: { readonly stolen?: boolean },
+    comparison: string | undefined,
+  ): ShopRowModel {
+    const item = this.#item(defId);
+    const base = {
+      id,
+      name: itemName(item),
+      icon: ICON_KIND[item.category],
+      count,
+      stolen: flags.stolen === true,
+      ...(comparison !== undefined && { comparison }),
+    };
+    if (!quote.ok) {
+      return { ...base, specialty: false, refusal: REFUSALS[quote.refused], breakdown: [] };
+    }
+    return {
+      ...base,
+      unitPrice: quote.price,
+      specialty: quote.breakdown.some((step) => step.kind === 'specialty'),
+      breakdown: breakdownLines(quote),
+    };
+  }
+
+  #buyRows(
+    world: World<never>,
+    player: EntityId,
+    merchantId: string,
+    state: MerchantState,
+  ): ShopRowModel[] {
+    return state.stock.map((line) =>
+      this.#row(
+        this.#shops.quote(merchantId, 'buy', line.defId, line.flags),
+        line.id,
+        line.defId,
+        line.count,
+        line.flags,
+        this.comparison(world, player, line.defId),
+      ),
+    );
+  }
+
+  /** The player's stacks the merchant would deal in; a category it does not buy is not listed. */
+  #sellRows(world: World<never>, player: EntityId, merchantId: string): ShopRowModel[] {
+    const pack = inventoryOf(world, player)?.items ?? [];
+    return [...pack].reverse().flatMap((instance) => {
+      const quote = this.#shops.quote(merchantId, 'sell', instance.defId, instance.flags);
+      if (!quote.ok && quote.refused === 'not-bought') return [];
+      return [
+        this.#row(
+          quote,
+          instance.instanceId,
+          instance.defId,
+          instance.count,
+          instance.flags,
+          undefined,
+        ),
+      ];
+    });
+  }
+
+  #buybackRows(state: MerchantState): ShopRowModel[] {
+    return [...state.buyback].reverse().map((entry) => ({
+      id: entry.id,
+      name: itemName(this.#item(entry.defId)),
+      icon: ICON_KIND[this.#item(entry.defId).category],
+      count: entry.count,
+      unitPrice: entry.unitPrice,
+      specialty: false,
+      stolen: entry.flags.stolen === true,
+      breakdown: [`Sold for ${crownsText(entry.unitPrice)}`],
+    }));
+  }
+
+  /** How `defId` compares with what the player has in the same slot, or undefined. */
+  comparison(world: World<never>, player: EntityId, defId: string): string | undefined {
+    const item = this.#items.get(defId);
+    if (item === undefined || !('equip' in item) || item.equip === undefined) return undefined;
+    const equipment = equipmentOf(world, player);
+    if (equipment === undefined) return undefined;
+    const wanted = SLOT_FOR[item.equip.slot];
+    const worn = wanted.map((slot) => equipment.slots[slot]).find((ref) => ref != null);
+    if (worn == null) return 'Nothing equipped there.';
+    const other = this.#items.get(worn.defId);
+    const name = this.nameOf(worn.defId);
+    if (worn.defId === defId) return `Same as your ${name}.`;
+    const weight = (entry: ItemEntry | undefined): number | undefined =>
+      entry?.category === 'armor'
+        ? entry.armor.weightKg
+        : entry?.category === 'shield'
+          ? entry.shield.weightKg
+          : undefined;
+    const mine = weight(item);
+    const theirs = weight(other);
+    if (mine === undefined || theirs === undefined || mine === theirs) {
+      return `Equipped: ${name}.`;
+    }
+    const diff = Math.round(Math.abs(mine - theirs) * 10) / 10;
+    return `Equipped: ${name}; ${String(diff)} kg ${mine > theirs ? 'heavier' : 'lighter'}.`;
+  }
+}
+
+/** The equipment slots to look in for an item slot (the first one held wins). */
+const SLOT_FOR = Object.freeze({
+  'main-hand': ['main-hand'],
+  'off-hand': ['off-hand'],
+  'both-hands': ['main-hand', 'off-hand'],
+  head: ['head'],
+  body: ['body'],
+  hands: ['hands'],
+  feet: ['feet'],
+  trinket: ['trinket-1', 'trinket-2'],
+  'tool-belt': ['tool-belt-1', 'tool-belt-2'],
+} as const);
+
+export interface ShopControllerOptions {
+  readonly ui: UiRoot;
+  readonly world: World<never>;
+  readonly player: EntityId;
+  readonly views: ShopViews;
+  readonly shops: Shops;
+  /** Rules for granting `dev-crowns`. */
+  readonly rules: InventoryRules;
+  /** The shop opened or closed (or its crowns changed): what the e2e reads. */
+  readonly onChange?: (reading: ShopReading) => void;
+}
+
+/** What the e2e reads of the shop. */
+export interface ShopReading {
+  readonly open: boolean;
+  readonly merchant: string | null;
+  readonly crowns: number;
+  /** The player's pack (the item readout lags while the shop pauses the sim). */
+  readonly pack: readonly { readonly item: string; readonly count: number }[];
+}
+
+/** The e2e's reading of the shop now. */
+export function readingOf(
+  world: World<never>,
+  player: EntityId,
+  open: boolean,
+  merchant: string | null,
+): ShopReading {
+  const pack = inventoryOf(world, player)?.items ?? [];
+  return {
+    open,
+    merchant,
+    crowns: crownsOf(world, player),
+    pack: pack.map(({ defId, count }) => ({ item: defId, count })),
+  };
+}
+
+/** Opens, refreshes and closes the shop screen for the player. Call `afterStep` each step. */
+export class ShopController {
+  readonly #options: ShopControllerOptions;
+  readonly #off: () => void;
+  readonly #granted = new Set<string>();
+  #pending: { merchantId: string; devCrowns: number | undefined } | undefined;
+  #session: { readonly merchantId: string; readonly window: ShopWindow } | undefined;
+  #shown = '';
+
+  constructor(options: ShopControllerOptions) {
+    this.#options = options;
+    const { world, player, views } = options;
+    this.#off = world.events.on(interacted, ({ actor, target, verb }) => {
+      if (actor !== player || verb !== 'talk') return;
+      const tags = world.get(target, SceneSpawnComponent)?.tags ?? [];
+      const merchantId = tags
+        .find((tag) => tag.startsWith(MERCHANT_TAG))
+        ?.slice(MERCHANT_TAG.length);
+      if (merchantId === undefined || !views.has(merchantId)) return;
+      const crowns = tags.find((tag) => tag.startsWith(DEV_CROWNS_TAG));
+      const devCrowns =
+        crowns === undefined ? undefined : Number(crowns.slice(DEV_CROWNS_TAG.length));
+      this.#pending = { merchantId, devCrowns: Number.isFinite(devCrowns) ? devCrowns : undefined };
+    });
+  }
+
+  /** The open window, if any. */
+  get window(): ShopWindow | undefined {
+    return this.#session?.window;
+  }
+
+  get isOpen(): boolean {
+    return this.#session !== undefined;
+  }
+
+  /** Opens `merchantId`'s shop unless a screen is open. Returns whether it opened. */
+  open(merchantId: string, devCrowns?: number): boolean {
+    const { ui, world, player, views } = this.#options;
+    if (this.#session !== undefined || ui.top !== undefined || !views.has(merchantId)) return false;
+    if (devCrowns !== undefined && !this.#granted.has(merchantId)) {
+      this.#granted.add(merchantId);
+      const have = crownsOf(world, player);
+      if (have < devCrowns) this.#options.rules.addGold(world, player, devCrowns - have);
+    }
+    const model = views.model(world, player, merchantId);
+    this.#shown = JSON.stringify(model);
+    const window = openShopWindow(ui, {
+      model,
+      onDeal: (deal) => {
+        this.#deal(deal);
+      },
+      onClose: () => {
+        this.#session = undefined;
+        this.#report(false, null);
+      },
+    });
+    this.#session = { merchantId, window };
+    this.#report(true, merchantId);
+    return true;
+  }
+
+  /** Opens a shop the player just talked to, and refreshes the open one. */
+  afterStep(): void {
+    const pending = this.#pending;
+    this.#pending = undefined;
+    if (pending !== undefined) this.open(pending.merchantId, pending.devCrowns);
+    this.#refresh();
+  }
+
+  close(): void {
+    this.#session?.window.close();
+  }
+
+  dispose(): void {
+    this.#off();
+    this.close();
+  }
+
+  #refresh(): void {
+    const session = this.#session;
+    if (session === undefined) return;
+    const { merchantId, window } = session;
+    const { world, player, views } = this.#options;
+    const model = views.model(world, player, merchantId);
+    const json = JSON.stringify(model);
+    if (json === this.#shown) return;
+    this.#shown = json;
+    window.update(model);
+    this.#report(true, merchantId);
+  }
+
+  #deal({ tab, id, count }: ShopDeal): void {
+    const { world, player, shops, views } = this.#options;
+    const session = this.#session;
+    if (session === undefined) return;
+    const { merchantId, window } = session;
+    const name = views.nameOf(
+      tab === 'buy'
+        ? shops.stateOf(world, merchantId).stock.find((l) => l.id === id)?.defId
+        : tab === 'buyback'
+          ? shops.stateOf(world, merchantId).buyback.find((e) => e.id === id)?.defId
+          : inventoryOf(world, player)?.items.find((i) => i.instanceId === id)?.defId,
+    );
+    const result =
+      tab === 'buy'
+        ? shops.buy(world, player, merchantId, id, count)
+        : tab === 'sell'
+          ? shops.sell(world, player, merchantId, id, count)
+          : shops.buyBack(world, player, merchantId, id, count);
+    const units = count > 1 ? ` ×${String(count)}` : '';
+    window.say(
+      result.ok
+        ? `${tab === 'sell' ? 'Sold' : 'Bought'} ${name}${units} for ${crownsText(result.total)}.`
+        : failureText(result.reason),
+    );
+    this.#refresh();
+  }
+
+  #report(open: boolean, merchant: string | null): void {
+    const { world, player, onChange } = this.#options;
+    onChange?.(readingOf(world, player, open, merchant));
+  }
+}
+
+export interface ShopUiOptions {
+  readonly ui: UiRoot;
+  readonly world: World<never>;
+  readonly content: ShopContent;
+  readonly player: EntityId;
+  /** Publishes a readout for the e2e: `shop` (JSON of a `ShopReading`). */
+  readonly publish?: (key: 'shop', value: string) => void;
+}
+
+/** The shop in a running game. */
+export interface ShopUi {
+  readonly controller: ShopController;
+  readonly shops: Shops;
+  /** Call after every sim step. */
+  afterStep(): void;
+}
+
+/** Builds the shops engine over content and readies the shop screen for the player. */
+export function startShopUi(options: ShopUiOptions): ShopUi {
+  const { ui, world, content, player, publish } = options;
+  const items = content.all('item');
+  const rules = new InventoryRules(items);
+  const shops = new Shops(
+    content.all('merchant'),
+    items,
+    rules,
+    new LootTables(content.all('loot-table'), items),
+  );
+  const views = new ShopViews(content, shops);
+  const controller = new ShopController({
+    ui,
+    world,
+    player,
+    views,
+    shops,
+    rules,
+    onChange: (reading) => publish?.('shop', JSON.stringify(reading)),
+  });
+  publish?.('shop', JSON.stringify(readingOf(world, player, false, null)));
+  return {
+    controller,
+    shops,
+    afterStep: () => {
+      controller.afterStep();
+    },
+  };
+}

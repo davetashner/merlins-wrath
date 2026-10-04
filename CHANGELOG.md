@@ -13,6 +13,7 @@ check enforces this).
 
 ### Added
 
+- A shop screen: a merchant's name and greeting, Buy, Sell and Buyback tabs with prices in crowns, why a price is what it is (hover or focus an item), quantities for stacks, a prompt before spending more than a quarter of your crowns, and a reason on anything a merchant refuses (stolen goods, quest items). No village has a shop yet; in development builds, load `?scene=shop-room` and talk to a counter to try it. Nothing to buy in the shipped game yet, and the Services tab is empty.
 - Groundwork for village shops: buying, selling and buying back with a merchant whose stock and gold run out and are remembered across saves. No shop is open yet, so nothing changes in play.
 - Groundwork for village shops: the economy design (what skeletons and chests pay, what wares cost), merchant data with price limits, and the price rules for buying and selling. No shop is open yet; two test merchants appear in development builds only.
 - Three new outdoor test areas — a tight mountain path, a forest path and a fenced cliff overlook with a stone bridge — show painted mountain and forest vistas behind the walls, with distance fog. (Previewable in development builds only for now.)

@@ -29,6 +29,15 @@ describe('debug-build content (mw-e12.4)', () => {
       'fixture-guard',
       'fixture-sentinel',
     ]);
+    // The shop room (mw-e20.10) has a counter for each fixture merchant, tagged with its id.
+    const room = content.get('scene', 'shop-room');
+    const counters = room.spawns.flatMap((s) =>
+      s.tags.filter((tag) => tag.startsWith('merchant:')),
+    );
+    expect(counters).toEqual(['merchant:fixture-general-goods', 'merchant:fixture-fence']);
+    for (const tag of counters)
+      expect(content.has('merchant', tag.slice('merchant:'.length))).toBe(true);
+    expect(loadGameContent().has('scene', 'shop-room')).toBe(false);
     // None of it is in the game's own content, whose creatures are the bestiary's (E13).
     expect(loadGameContent().has('scene', 'creature-pen')).toBe(false);
     const shipped = loadGameContent()
