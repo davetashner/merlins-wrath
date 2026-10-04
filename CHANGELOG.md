@@ -13,6 +13,7 @@ check enforces this).
 
 ### Added
 
+- Groundwork for village shops: buying, selling and buying back with a merchant whose stock and gold run out and are remembered across saves. No shop is open yet, so nothing changes in play.
 - Groundwork for village shops: the economy design (what skeletons and chests pay, what wares cost), merchant data with price limits, and the price rules for buying and selling. No shop is open yet; two test merchants appear in development builds only.
 - Three new outdoor test areas — a tight mountain path, a forest path and a fenced cliff overlook with a stone bridge — show painted mountain and forest vistas behind the walls, with distance fog. (Previewable in development builds only for now.)
 - Sword swings now wind up behind the shoulder and cut down instead of sweeping up from the ground, with their own motions for the heavy attack, the second and third light attacks, the riposte and the skeleton's chops; the run no longer leans back, and footsteps sound once per drawn step instead of about twice as often.

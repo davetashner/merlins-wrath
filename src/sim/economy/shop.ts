@@ -1,0 +1,446 @@
+// Merchant transactions (mw-e20.4): the player buys from, sells to and buys back from a merchant
+// whose stock and gold are finite and remembered (docs/design/economy.md). `Shops` holds the merchant
+// definitions and item definitions one game plays with; every transaction prices through `price()`
+// (src/sim/economy/price.ts) and is atomic: it checks everything first, and on any failure returns a
+// typed reason and changes nothing (expected failures never throw). Gold and items only move, never
+// appear or vanish: a buy moves gold player -> merchant and units shelf -> pack, a sell the reverse
+// with the units going to the buyback list, and the oldest buyback entry falls onto the shelf when
+// the list is full (or when `clearBuyback` runs, the hook the restock bead will call).
+//
+// State: per merchant id, created the first time the merchant is touched from its definition (gold
+// reserve and stock; a loot-table entry is rolled once with a stream derived from the world seed and
+// the merchant id, so the result does not depend on the order shops are visited) and held in the
+// world's merchant store (shop-state.ts), saved by the `merchants` section. Currency is `gold`.
+// Events: `shop.bought`, `shop.sold`, `shop.bought-back`. Out of scope: restocking, haggling (the
+// caller passes a modifier), theft and dispositions (the caller passes a band).
+
+import type { EntityId } from '../core/component';
+import { defineEvent } from '../core/events';
+import type { World } from '../core/world';
+import {
+  inventoryOf,
+  type InventoryItemDef,
+  type InventoryState,
+  type InventoryRules,
+  type ItemInstanceFlags,
+} from '../inventory/inventory';
+import type { LootTables } from '../loot/tables';
+import { Rng } from '../rng';
+import { price, type PriceInput, type PriceRefusal, type PriceResult } from './price';
+import {
+  BUYBACK_LIMIT,
+  merchantStoreOf,
+  sameFlags,
+  type BuybackEntry,
+  type MerchantState,
+  type StockLine,
+} from './shop-state';
+
+/** What shops read of an item definition: the inventory's view plus value and the no-sell flag. */
+export interface ShopItemDef extends InventoryItemDef {
+  /** Base value in gold. */
+  readonly value: number;
+  readonly flags: InventoryItemDef['flags'] & { readonly noSell?: boolean | undefined };
+}
+
+/** What shops read of a merchant definition (a loaded `MerchantDef` is one). */
+export interface ShopMerchantDef {
+  readonly id: string;
+  readonly buysCategories: readonly string[];
+  readonly specialties?: readonly string[] | undefined;
+  readonly goldReserve: number;
+  readonly markup?: number | undefined;
+  readonly buyRate?: number | undefined;
+  readonly specialtyBonus?: number | undefined;
+  readonly isFence?: boolean | undefined;
+  readonly buysStolen?: boolean | undefined;
+  readonly stolenFactor?: number | undefined;
+  readonly stock: readonly {
+    readonly item?: { readonly id: string } | undefined;
+    readonly lootTable?: { readonly id: string } | undefined;
+    readonly count: number;
+  }[];
+}
+
+/** Things the caller may pass to the price model for a transaction. */
+export type ShopPriceOptions = Pick<PriceInput, 'disposition' | 'haggleModifier' | 'worldFacts'>;
+
+/** Why a buy failed. */
+export type BuyFailure =
+  /** The stock line is not on the shelf (stale id). */
+  | 'no-such-item'
+  /** Fewer units on the shelf than asked for (including none). */
+  | 'out-of-stock'
+  | 'cannot-afford'
+  /** The pack refused the item (unit guard, a second unique). */
+  | 'cannot-carry'
+  /** The price model refused (a hostile merchant). */
+  | PriceRefusal;
+
+/** Why a sell failed. */
+export type SellFailure =
+  /** The player holds no such instance. */
+  | 'no-such-item'
+  /** The instance holds fewer units than asked for. */
+  | 'not-enough'
+  | 'merchant-cannot-afford'
+  /** The payment would take the player's gold past the cap (so gold would be lost). */
+  | 'gold-cap'
+  | PriceRefusal;
+
+/** Why a buyback failed. */
+export type BuyBackFailure = BuyFailure;
+
+export type BuyResult =
+  | { readonly ok: true; readonly unitPrice: number; readonly total: number }
+  | { readonly ok: false; readonly reason: BuyFailure };
+export type SellResult =
+  | { readonly ok: true; readonly unitPrice: number; readonly total: number }
+  | { readonly ok: false; readonly reason: SellFailure };
+export type BuyBackResult = BuyResult;
+
+/** Payload shared by the three shop events. */
+export interface ShopTransaction {
+  readonly tick: number;
+  readonly actor: EntityId;
+  readonly merchantId: string;
+  readonly defId: string;
+  readonly count: number;
+  readonly flags: ItemInstanceFlags;
+  /** Whole gold per unit. */
+  readonly unitPrice: number;
+  /** Gold that changed hands. */
+  readonly total: number;
+}
+
+export const shopBought = defineEvent<ShopTransaction>('shop.bought');
+export const shopSold = defineEvent<ShopTransaction>('shop.sold');
+export const shopBoughtBack = defineEvent<ShopTransaction>('shop.bought-back');
+
+/** Name of the seed-derived stream a merchant's loot-table stock is rolled with. */
+export const shopStockStream = (merchantId: string): string => `shop.stock.${merchantId}`;
+
+const failure = <R extends string>(reason: R) => ({ ok: false, reason }) as const;
+
+/** Adds units to the shelf, merging with a line of the same item, flags and source. */
+function shelve(
+  state: MerchantState,
+  defId: string,
+  count: number,
+  flags: ItemInstanceFlags,
+  entry: number | null,
+): MerchantState {
+  const at = state.stock.findIndex(
+    (line) => line.defId === defId && line.entry === entry && sameFlags(line.flags, flags),
+  );
+  if (at >= 0) {
+    const stock = state.stock.map((line, i) =>
+      i === at ? { ...line, count: line.count + count } : line,
+    );
+    return { ...state, stock };
+  }
+  const line: StockLine = { id: state.nextId, defId, count, flags, entry };
+  return { ...state, nextId: state.nextId + 1, stock: [...state.stock, line] };
+}
+
+/** Takes `count` units off a shelf line (the line goes when it empties). */
+function unshelve(state: MerchantState, lineId: number, count: number): MerchantState {
+  const stock = state.stock.flatMap((line) =>
+    line.id !== lineId
+      ? [line]
+      : line.count === count
+        ? []
+        : [{ ...line, count: line.count - count }],
+  );
+  return { ...state, stock };
+}
+
+export class Shops {
+  readonly #merchants: ReadonlyMap<string, ShopMerchantDef>;
+  readonly #items: ReadonlyMap<string, ShopItemDef>;
+  readonly #rules: InventoryRules;
+  readonly #loot: LootTables | undefined;
+
+  /**
+   * `merchants` and `items`: every definition (the content registry's); ids must be unique. `rules`
+   * is the inventory rules the player's pack goes through. `loot` is needed only when a merchant's
+   * stock names a loot table.
+   */
+  constructor(
+    merchants: Iterable<ShopMerchantDef>,
+    items: Iterable<ShopItemDef>,
+    rules: InventoryRules,
+    loot?: LootTables,
+  ) {
+    this.#merchants = byId(merchants, 'merchant');
+    this.#items = byId(items, 'item');
+    this.#rules = rules;
+    this.#loot = loot;
+  }
+
+  /**
+   * A merchant's runtime state, created from its definition on first use (gold reserve, authored
+   * stock, loot tables rolled once). The returned value is a snapshot; do not keep it across calls.
+   * @throws RangeError for an unknown merchant, or a loot-table stock entry without `loot`.
+   */
+  stateOf(world: World, merchantId: string): MerchantState {
+    const store = merchantStoreOf(world);
+    const existing = store.get(merchantId);
+    if (existing !== undefined) return existing;
+    const created = this.#create(world, this.#merchant(merchantId));
+    store.set(merchantId, created);
+    return created;
+  }
+
+  /** The price of one unit of `defId` in `direction` (what a UI shows), or the refusal. */
+  quote(
+    merchantId: string,
+    direction: PriceInput['direction'],
+    defId: string,
+    flags: ItemInstanceFlags = {},
+    options: ShopPriceOptions = {},
+  ): PriceResult {
+    return price({
+      item: this.#item(defId),
+      instance: { flags },
+      merchant: this.#merchant(merchantId),
+      direction,
+      ...options,
+    });
+  }
+
+  /**
+   * The player buys `count` units of shelf line `lineId`. Needs stock and gold; the units arrive in
+   * the actor's pack with the line's flags.
+   * @throws RangeError for an unknown merchant or an actor without an inventory.
+   */
+  buy(
+    world: World,
+    actor: EntityId,
+    merchantId: string,
+    lineId: number,
+    count = 1,
+    options: ShopPriceOptions = {},
+  ): BuyResult {
+    const state = this.stateOf(world, merchantId);
+    const line = state.stock.find((l) => l.id === lineId);
+    if (line === undefined) return failure('no-such-item');
+    if (line.count < count) return failure('out-of-stock');
+    const quoted = this.quote(merchantId, 'buy', line.defId, line.flags, options);
+    if (!quoted.ok) return failure(quoted.refused);
+    return this.#take(
+      world,
+      actor,
+      merchantId,
+      state,
+      quoted.price,
+      count,
+      line,
+      shopBought,
+      unshelve(state, lineId, count),
+    );
+  }
+
+  /**
+   * The player buys back `count` units of buyback entry `entryId` at the price the merchant paid.
+   * @throws RangeError for an unknown merchant or an actor without an inventory.
+   */
+  buyBack(
+    world: World,
+    actor: EntityId,
+    merchantId: string,
+    entryId: number,
+    count?: number,
+  ): BuyBackResult {
+    const state = this.stateOf(world, merchantId);
+    const entry = state.buyback.find((e) => e.id === entryId);
+    if (entry === undefined) return failure('no-such-item');
+    const units = count ?? entry.count;
+    if (entry.count < units) return failure('out-of-stock');
+    const buyback = state.buyback.flatMap((e) =>
+      e.id !== entryId ? [e] : e.count === units ? [] : [{ ...e, count: e.count - units }],
+    );
+    return this.#take(
+      world,
+      actor,
+      merchantId,
+      state,
+      entry.unitPrice,
+      units,
+      entry,
+      shopBoughtBack,
+      {
+        ...state,
+        buyback,
+      },
+    );
+  }
+
+  /**
+   * The player sells `count` units of pack instance `instanceId`. The merchant must buy the
+   * category, not refuse the item (`stolen`, `quest-item`, ...) and carry the gold; the units go to
+   * the buyback list at the price paid.
+   * @throws RangeError for an unknown merchant or an actor without an inventory.
+   */
+  sell(
+    world: World,
+    actor: EntityId,
+    merchantId: string,
+    instanceId: number,
+    count = 1,
+    options: ShopPriceOptions = {},
+  ): SellResult {
+    const state = this.stateOf(world, merchantId);
+    const pack = this.#pack(world, actor);
+    const instance = pack.items.find((i) => i.instanceId === instanceId);
+    if (instance === undefined) return failure('no-such-item');
+    if (instance.count < count) return failure('not-enough');
+    const quoted = this.quote(merchantId, 'sell', instance.defId, instance.flags, options);
+    if (!quoted.ok) return failure(quoted.refused);
+    const unitPrice = quoted.price;
+    const total = unitPrice * count;
+    if (state.gold < total) return failure('merchant-cannot-afford');
+    if (pack.gold + total > this.#rules.goldMax) return failure('gold-cap');
+    // Every check has passed, so the removal and payment below cannot fail.
+    this.#rules.remove(world, actor, { instanceId, count });
+    this.#rules.addGold(world, actor, total);
+    const entry: BuybackEntry = {
+      id: state.nextId,
+      defId: instance.defId,
+      count,
+      flags: instance.flags,
+      unitPrice,
+    };
+    let next: MerchantState = {
+      ...state,
+      gold: state.gold - total,
+      nextId: state.nextId + 1,
+      buyback: [...state.buyback, entry],
+    };
+    while (next.buyback.length > BUYBACK_LIMIT) next = this.#evictOldest(next);
+    merchantStoreOf(world).set(merchantId, next);
+    world.events.emit(shopSold, {
+      tick: world.tick,
+      actor,
+      merchantId,
+      defId: instance.defId,
+      count,
+      flags: instance.flags,
+      unitPrice,
+      total,
+    });
+    return { ok: true, unitPrice, total };
+  }
+
+  /**
+   * Ends the buyback window (the restock hook): every buyback entry goes onto the shelf. Returns
+   * the units moved.
+   * @throws RangeError for an unknown merchant.
+   */
+  clearBuyback(world: World, merchantId: string): number {
+    let state = this.stateOf(world, merchantId);
+    let moved = 0;
+    for (const entry of state.buyback) {
+      state = shelve(state, entry.defId, entry.count, entry.flags, null);
+      moved += entry.count;
+    }
+    merchantStoreOf(world).set(merchantId, { ...state, buyback: [] });
+    return moved;
+  }
+
+  /** Shared tail of buy and buyBack: the player pays `unitPrice` x `count` for units of `source`. */
+  #take(
+    world: World,
+    actor: EntityId,
+    merchantId: string,
+    state: MerchantState,
+    unitPrice: number,
+    count: number,
+    source: { readonly defId: string; readonly flags: ItemInstanceFlags },
+    event: typeof shopBought,
+    next: MerchantState,
+  ): BuyResult {
+    const total = unitPrice * count;
+    if (this.#pack(world, actor).gold < total) return failure('cannot-afford');
+    // The pack may refuse (unit guard, a second unique); it changes nothing when it does.
+    const added = this.#rules.add(world, actor, source.defId, count, source.flags);
+    if (!added.ok) return failure('cannot-carry');
+    this.#rules.spendGold(world, actor, total);
+    merchantStoreOf(world).set(merchantId, { ...next, gold: state.gold + total });
+    world.events.emit(event, {
+      tick: world.tick,
+      actor,
+      merchantId,
+      defId: source.defId,
+      count,
+      flags: source.flags,
+      unitPrice,
+      total,
+    });
+    return { ok: true, unitPrice, total };
+  }
+
+  #pack(world: World, actor: EntityId): InventoryState {
+    const pack = inventoryOf(world, actor);
+    if (pack === undefined) {
+      throw new RangeError(`entity ${String(actor)} has no inventory: call addInventory`);
+    }
+    return pack;
+  }
+
+  #evictOldest(state: MerchantState): MerchantState {
+    const [oldest, ...rest] = state.buyback as [BuybackEntry, ...BuybackEntry[]];
+    return shelve({ ...state, buyback: rest }, oldest.defId, oldest.count, oldest.flags, null);
+  }
+
+  #create(world: World, def: ShopMerchantDef): MerchantState {
+    let state: MerchantState = { gold: def.goldReserve, nextId: 1, stock: [], buyback: [] };
+    const rng = Rng.create(world.seed).stream(shopStockStream(def.id));
+    def.stock.forEach((entry, index) => {
+      if (entry.item !== undefined) {
+        this.#item(entry.item.id);
+        state = shelve(state, entry.item.id, entry.count, {}, index);
+        return;
+      }
+      const tableId = (entry.lootTable as { readonly id: string }).id;
+      if (this.#loot === undefined) {
+        throw new RangeError(
+          `merchant "${def.id}" stocks loot table "${tableId}": pass LootTables`,
+        );
+      }
+      const units = new Map<string, number>();
+      for (let roll = 0; roll < entry.count; roll++) {
+        for (const { item, count } of this.#loot.roll(tableId, rng, { facts: world.facts })
+          .stacks) {
+          units.set(item, (units.get(item) ?? 0) + count);
+        }
+      }
+      for (const [item, count] of units) state = shelve(state, item, count, {}, index);
+    });
+    return state;
+  }
+
+  #merchant(id: string): ShopMerchantDef {
+    const def = this.#merchants.get(id);
+    if (def === undefined) throw new RangeError(`merchant "${id}" is not defined`);
+    return def;
+  }
+
+  #item(id: string): ShopItemDef {
+    const def = this.#items.get(id);
+    if (def === undefined) throw new RangeError(`item "${id}" is not defined`);
+    return def;
+  }
+}
+
+function byId<T extends { readonly id: string }>(
+  defs: Iterable<T>,
+  what: string,
+): ReadonlyMap<string, T> {
+  const map = new Map<string, T>();
+  for (const def of defs) {
+    if (map.has(def.id)) throw new RangeError(`${what} "${def.id}" is defined twice`);
+    map.set(def.id, def);
+  }
+  return map;
+}

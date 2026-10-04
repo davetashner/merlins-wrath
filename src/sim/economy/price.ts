@@ -30,7 +30,10 @@ export interface PricedItem {
   readonly category: string;
   /** Base value in gold. */
   readonly value: number;
-  readonly flags?: { readonly questItem?: boolean; readonly noSell?: boolean };
+  readonly flags?: {
+    readonly questItem?: boolean | undefined;
+    readonly noSell?: boolean | undefined;
+  };
 }
 
 /** What it reads of an inventory instance (`ItemInstanceFlags`). */
@@ -40,14 +43,14 @@ export interface PricedInstance {
 
 /** What it reads of a merchant definition; absent fields take the economy-doc defaults. */
 export interface PricedMerchant {
-  readonly markup?: number;
-  readonly buyRate?: number;
-  readonly specialties?: readonly string[];
-  readonly specialtyBonus?: number;
-  readonly buysCategories?: readonly string[];
-  readonly isFence?: boolean;
-  readonly buysStolen?: boolean;
-  readonly stolenFactor?: number;
+  readonly markup?: number | undefined;
+  readonly buyRate?: number | undefined;
+  readonly specialties?: readonly string[] | undefined;
+  readonly specialtyBonus?: number | undefined;
+  readonly buysCategories?: readonly string[] | undefined;
+  readonly isFence?: boolean | undefined;
+  readonly buysStolen?: boolean | undefined;
+  readonly stolenFactor?: number | undefined;
 }
 
 /** World context. `priceMultiplier` is a regional event's effect on every price (clamped). */
