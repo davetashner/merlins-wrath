@@ -92,7 +92,12 @@ test('AC-1: from the street, open the front door and walk in: the shopkeeper is 
   });
   await expect(page.locator('[data-screen="shop"] .vb-shop-name')).toContainText(/ottilie/i);
   // Buying works: lockpicks leave the shelf for the pack and cost crowns.
-  await page.locator('[data-screen="shop"] [aria-label^="Buy Lockpicks"]').first().click();
+  // Lockpicks sit below the fold of the scrolling list, and on a software-GL runner the page draws about
+  // one frame a second, where Playwright's frame-paced click checks (visible, stable) never settle
+  // (CI timed out after 90 s). Reach the row as a keyboard player does: focus it (the browser scrolls
+  // it into view) and press Enter.
+  await page.locator('[data-screen="shop"] [aria-label^="Buy Lockpicks"]').first().focus();
+  await page.keyboard.press('Enter');
   await expect(page.getByTestId('shop-status')).toHaveText(/^Bought Lockpicks for \d+ crowns\.$/);
   const after = await data<{ crowns: number; pack: { item: string; count: number }[] }>(
     page,
