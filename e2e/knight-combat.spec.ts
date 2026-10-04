@@ -70,9 +70,9 @@ test('AC-7: three attacks run the light chain and take 20 + 22 + 30 = 72 from th
   expect((await dummy(page)).health).toBe(200);
   // In the page, so each press follows the sim tick by tick: click (down, then up a frame later),
   // wait for the swing to finish, click again — well inside the chain's 30 idle ticks — three times.
-  const moves = await page.evaluate(
+  const { moves, barValues } = await page.evaluate(
     () =>
-      new Promise<string[]>((resolve) => {
+      new Promise<{ moves: string[]; barValues: string[] }>((resolve) => {
         const app = document.querySelector<HTMLElement>('#app');
         const action = () =>
           (
@@ -84,14 +84,23 @@ test('AC-7: three attacks run the light chain and take 20 + 22 + 30 = 72 from th
           window.dispatchEvent(new MouseEvent(type, { button: 0 }));
         };
         const seen: string[] = [];
+        // mw-e04.21: the target bar's health as the page shows it, each time it changes.
+        const barValues: string[] = [];
+        const bar = () => {
+          const meter = document.querySelector<HTMLElement>('[data-testid=target-bar]');
+          const value = meter?.hidden === false ? meter.querySelector('[role=meter]') : null;
+          const now = value?.getAttribute('data-value');
+          if (now != null && barValues.at(-1) !== now) barValues.push(now);
+        };
         let presses = 0;
         let state: 'press' | 'release' | 'swinging' = 'press';
         const watch = () => {
+          bar();
           const now = action();
           if (now !== null && seen.at(-1) !== now) seen.push(now);
           if (state === 'press' && now === null) {
             if (presses === 3) {
-              resolve(seen);
+              resolve({ moves: seen, barValues });
               return;
             }
             mouse('mousedown');
@@ -110,9 +119,7 @@ test('AC-7: three attacks run the light chain and take 20 + 22 + 30 = 72 from th
   );
   expect(moves).toEqual(['sword-light-1', 'sword-light-2', 'sword-light-3']);
   await expect.poll(async () => (await dummy(page)).health).toBe(200 - 72);
-  // mw-e04.21: the fighter the player just hit has its health bar up, and it reads the same health.
-  const target = page.getByTestId('target-bar');
-  await expect(target).toBeVisible();
-  await expect(target.getByRole('meter')).toHaveAttribute('data-value', String(200 - 72));
+  // mw-e04.21: the fighter the player hit had its health bar up, reading what the dummy lost.
+  expect(barValues).toEqual(['180', '158', '128']);
   expect(problems).toEqual([]);
 });
