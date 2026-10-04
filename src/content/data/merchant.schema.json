@@ -21,6 +21,16 @@
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
       "description": "The NPC who speaks for the shop (dialogue speaker id)."
     },
+    "displayName": {
+      "description": "The keeper’s name as the shop window shows it, e.g. \"Ottilie Marsh\"; absent = the NPC id made readable.",
+      "type": "string",
+      "minLength": 1
+    },
+    "shopName": {
+      "description": "The shop’s name, e.g. \"Brand’s Forge\" (signage, shop window subtitle).",
+      "type": "string",
+      "minLength": 1
+    },
     "personalityTags": {
       "default": [],
       "description": "Personality traits that colour barks and haggling.",

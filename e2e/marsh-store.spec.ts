@@ -112,7 +112,7 @@ test('AC-1: the counter offers a trade, opens the shop for her merchant, and a p
     merchant: 'marsh-general-store',
     crowns: 400,
   });
-  await expect(page.locator('[data-screen="shop"] .vb-shop-name')).toContainText(/ottilie/i);
+  await expect(page.locator('[data-screen="shop"] .vb-shop-name')).toHaveText('Ottilie Marsh');
   // Buying works: lockpicks leave the shelf for the pack and cost crowns. Lockpicks sit below the
   // fold of the scrolling list, and Playwright's frame-paced click checks (visible, stable) never
   // settle at a frame a second: reach the row as a keyboard player does, focus it (the browser

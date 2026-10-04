@@ -176,6 +176,46 @@ describe('AC-1: specialty badge and modifier', () => {
   });
 });
 
+describe('mw-ju8.16: the merchant name in the header', () => {
+  const book = {
+    id: 'old-book',
+    name: 'Old book',
+    category: 'book',
+    value: 30,
+    stackable: false,
+    flags: { unique: false, questItem: false },
+  };
+  const merchantWith = (extra: Record<string, unknown>) => ({
+    id: 'named',
+    npcId: 'npc-named-keeper',
+    ...extra,
+    personalityTags: [],
+    specialties: [],
+    buysCategories: ['book'],
+    stock: [],
+    goldReserve: 100,
+    markup: 1.3,
+    buyRate: 0.4,
+  });
+  const open = (merchant: unknown): void => {
+    const fake = {
+      all: (type: string) => (type === 'item' ? [book] : type === 'merchant' ? [merchant] : []),
+    } as unknown as GameContent;
+    const t = setup(fake);
+    t.talk(t.counter(['merchant:named']));
+  };
+
+  it('AC-1: a merchant with a displayName shows it in the header', () => {
+    open(merchantWith({ displayName: 'Ottilie Marsh' }));
+    expect(find('.vb-shop-name').textContent).toBe('Ottilie Marsh');
+  });
+
+  it('AC-1: without a displayName the header falls back to the readable NPC id', () => {
+    open(merchantWith({}));
+    expect(find('.vb-shop-name').textContent).toBe('Npc named keeper');
+  });
+});
+
 describe('AC-3: a stolen item at a non-fence', () => {
   it('is disabled with the refusal reason, and enabled at the fence', () => {
     const t = setup();

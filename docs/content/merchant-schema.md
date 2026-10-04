@@ -10,6 +10,8 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `id` | id | required | Unique merchant id, e.g. "briar-glen-general-store". Stable once shipped. |
 | `notes` | string | required | Who runs it and why these prices and stock, for owner review. |
 | `npcId` | id | required | The NPC who speaks for the shop (dialogue speaker id). |
+| `displayName` | string | — | The keeper’s name as the shop window shows it, e.g. "Ottilie Marsh"; absent = the NPC id made readable. |
+| `shopName` | string | — | The shop’s name, e.g. "Brand’s Forge" (signage, shop window subtitle). |
 | `personalityTags` | list of `"greedy"` \| `"gossipy"` \| `"suspicious"` \| `"generous"` \| `"gruff"` \| `"friendly"` \| `"shrewd"` \| `"nervous"` | `[]` | Personality traits that colour barks and haggling. |
 | `specialties` | list of `"weapon"` \| `"armor"` \| `"shield"` \| `"ammo"` \| `"book"` \| `"key"` \| `"consumable"` \| `"tool"` \| `"quest"` \| `"artifact"` \| `"currency"` \| `"misc"` | `[]` | Item categories bought at a better rate (`specialtyBonus`); must be bought categories. |
 | `buysCategories` | list of `"weapon"` \| `"armor"` \| `"shield"` \| `"ammo"` \| `"book"` \| `"key"` \| `"consumable"` \| `"tool"` \| `"quest"` \| `"artifact"` \| `"currency"` \| `"misc"` (at least 1) | required | Item categories the merchant buys from the player. |
