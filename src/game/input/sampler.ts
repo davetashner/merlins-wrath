@@ -300,9 +300,11 @@ export class ActionSampler {
     }
     // Jumping or engaging sprint exits the crouch stance. Keyboard actions count too because both
     // devices merge into this frame; a held keyboard crouch still wins through its own binding.
-    if (this.#crouchLatched && (edges.get('jump')?.pressed === true || held.has('sprint'))) {
+    // A latch only exists when a pad crouch button is bound, so `latched` is defined exactly when crouching.
+    const latched = this.#crouchLatched ? crouchLatch : undefined;
+    if (latched !== undefined && (edges.get('jump')?.pressed === true || held.has('sprint'))) {
       this.#crouchLatched = false;
-      if (crouchLatch !== undefined) goUp(crouchLatch);
+      goUp(latched);
     }
     this.#padRaw = pad.buttons;
     if (this.#disconnected) {

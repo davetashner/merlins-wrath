@@ -65,6 +65,14 @@ describe('ActionSampler with a gamepad (mw-e02.9)', () => {
     expect(sampler.sample().crouch).toEqual(button(false, false, true));
   });
 
+  it('mw-e02.36 a pad with no crouch binding never crouches, and disconnecting it is clean', () => {
+    const sampler = new ActionSampler({ padBindings: { ...DEFAULT_PAD_BINDINGS, crouch: [] } });
+    sampler.gamepad(pad({ pressed: ['PadRS'] }));
+    expect(sampler.sample().crouch).toEqual(UP);
+    sampler.gamepad(undefined);
+    expect(sampler.sample().crouch).toEqual(UP);
+  });
+
   it('the left stick moves with the rescaled deadzone; the right stick is lookStick, raw', () => {
     const sampler = new ActionSampler();
     sampler.gamepad(pad({ left: [0, 0.575], right: [0.1, -0.5] }));
