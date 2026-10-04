@@ -24,6 +24,7 @@ export * from './item-icons';
 export * from './kit-panel';
 export * from './pause-menu';
 export * from './lock-marker';
+export * from './target-hud';
 export * from './pickup-toasts';
 export * from './quick-slots';
 export * from './save-menus';
