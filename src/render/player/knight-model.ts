@@ -24,7 +24,15 @@ import {
   type GlbModel,
   type Placement,
 } from '../models/glb';
-import { autoSkin, restSegments, type GreyboxRig, type Pose, type Rig } from '../animation/index';
+import {
+  autoSkin,
+  fitSegments,
+  restSegments,
+  type GreyboxRig,
+  type Pose,
+  type Rig,
+  type SegmentFit,
+} from '../animation/index';
 
 /** Where the optimised models are served from (public/assets/model). */
 export const KNIGHT_MODEL_URL = '/assets/model/model-char-knight-01.glb';
@@ -58,8 +66,10 @@ export const SWORD_PLACEMENT: PropPlacement = {
   rotateDeg: [37.3, 0, 0],
   length: 0.85,
   anchor: 'top',
-  // The grip, not the pommel, sits in the hand.
-  offset: [0, 0.1, 0],
+  // The grip, not the pommel, sits in the hand: the body mesh's hand is 0.18 m outboard of the rig's
+  // wrist and 0.08 m forward of it (the fitted forearm of KNIGHT_SEGMENT_FITS), so the sword is moved
+  // to it, or it floats beside the fist.
+  offset: [0.18, 0.1, -0.08],
 };
 
 /** The shield, on the left forearm. */
@@ -72,6 +82,40 @@ export const SHIELD_PLACEMENT: PropPlacement = {
   anchor: 'centre',
   offset: [-0.12, -0.1, -0.16],
 };
+
+/** Mirrors a fit from the right side to the left (x → −x, the left bone's name). */
+function mirror(fit: SegmentFit): SegmentFit {
+  const flip = (p: readonly [number, number, number]): [number, number, number] => [
+    -p[0],
+    p[1],
+    p[2],
+  ];
+  return {
+    ...fit,
+    ...(fit.head === undefined ? {} : { head: flip(fit.head) }),
+    ...(fit.tail === undefined ? {} : { tail: flip(fit.tail) }),
+  };
+}
+
+const RIGHT_FITS: Readonly<Record<string, SegmentFit>> = {
+  // Heights are the rig's joints (the bones pivot there); x follows the mesh, whose arms hang angled
+  // out and whose legs stand apart, so the cloth at the body's sides is nearer the torso than a limb.
+  'upper-arm-r': { head: [0.3, 1.52, 0], tail: [0.36, 1.22, 0], radius: 0.07, lateral: 0.2 },
+  'forearm-r': { head: [0.36, 1.22, 0], tail: [0.46, 0.8, 0], radius: 0.09, lateral: 0.28 },
+  'thigh-r': { head: [0.14, 0.92, 0], tail: [0.18, 0.48, 0], lateral: 0.1 },
+  'shin-r': { head: [0.18, 0.48, 0], tail: [0.26, 0.04, 0], lateral: 0.1 },
+};
+
+/**
+ * Where the knight mesh's limbs lie in its rest pose, per bone (a rig-space segment each; see
+ * fitSegments). The tabard and belt between and beside them then stay with the torso bones.
+ */
+export const KNIGHT_SEGMENT_FITS: Readonly<Record<string, SegmentFit>> = Object.fromEntries(
+  Object.entries(RIGHT_FITS).flatMap(([bone, fit]) => [
+    [bone, fit],
+    [bone.replace(/-r$/, '-l'), mirror(fit)],
+  ]),
+);
 
 /** Loads the knight's body and puts it in rig space (feet at y = 0, facing −z). */
 export async function loadKnightModel(url: string = KNIGHT_MODEL_URL): Promise<KnightModel> {
@@ -128,7 +172,11 @@ export function createKnightRig(rig: Rig, assets: KnightAssets): GreyboxRig {
   const position = geometry.getAttribute('position');
   // The sword is its own prop, so no body vertex binds to the sword bone.
   const held = new Set<number>(rig.index.has('sword') ? [rig.index.get('sword') ?? -1] : []);
-  const skin = autoSkin(position.array, restSegments(rig), held);
+  const skin = autoSkin(
+    position.array,
+    fitSegments(restSegments(rig), rig.index, KNIGHT_SEGMENT_FITS),
+    held,
+  );
   geometry.setAttribute('skinIndex', new Uint16BufferAttribute(skin.indices, 4));
   geometry.setAttribute('skinWeight', new Float32BufferAttribute(skin.weights, 4));
   const mesh = new SkinnedMesh(geometry, assets.body.material);

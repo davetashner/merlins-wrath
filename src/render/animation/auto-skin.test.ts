@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { autoSkin, restSegments, SKIN_INFLUENCES, type BoneSegment } from './auto-skin';
+import {
+  autoSkin,
+  fitSegments,
+  restSegments,
+  SKIN_INFLUENCES,
+  type BoneSegment,
+} from './auto-skin';
 import { compileRig } from './library';
 import { parseGraph, TEST_GRAPH } from './fixtures';
 
@@ -67,6 +73,44 @@ describe('restSegments', () => {
     const shapeless = rig.defs.findIndex((d) => d.shape === undefined);
     expect(shapeless).toBeGreaterThanOrEqual(0);
     expect(segments[shapeless]?.tail).toEqual(segments[shapeless]?.head);
+  });
+});
+
+describe('fitSegments', () => {
+  const index = new Map([
+    ['torso', 0],
+    ['arm', 1],
+  ]);
+  const TORSO: BoneSegment = { head: [0, 0, 0], tail: [0, 2, 0], radius: 0.2 };
+  // The rig's arm hangs straight down at the torso's side.
+  const RIG_ARM: BoneSegment = { head: [0.25, 1.5, 0], tail: [0.25, 0.5, 0], radius: 0.05 };
+
+  it('overrides only the fields a fit names, on only the bones it names', () => {
+    const fitted = fitSegments([TORSO, RIG_ARM], index, { arm: { tail: [0.5, 0.5, 0] } });
+    expect(fitted[0]).toEqual(TORSO);
+    expect(fitted[1]).toEqual({ head: [0.25, 1.5, 0], tail: [0.5, 0.5, 0], radius: 0.05 });
+  });
+
+  it('leaves the rig segments it was given untouched', () => {
+    fitSegments([TORSO, RIG_ARM], index, { arm: { head: [9, 9, 9] } });
+    expect(RIG_ARM.head).toEqual([0.25, 1.5, 0]);
+  });
+
+  it('rejects a fit for a bone the rig lacks, so a misspelt name is not silently skipped', () => {
+    expect(() => fitSegments([TORSO, RIG_ARM], index, { tail: { radius: 1 } })).toThrow(/tail/);
+  });
+
+  it('keeps cloth hanging beside the rig arm on the torso once the arm is fitted to a mesh that hangs outboard', () => {
+    // A tabard edge at x = 0.24, 0.9 m up: touching the rig's arm (at x = 0.25), so the arm owns it...
+    const cloth = [0.24, 0.9, 0];
+    const rig = autoSkin(cloth, [TORSO, RIG_ARM]);
+    expect(weightOf(rig, 0, 1)).toBeGreaterThan(0.5);
+    // ...but the mesh's arm hangs out at x = 0.45, and the cloth stays with the torso.
+    const fitted = fitSegments([TORSO, RIG_ARM], index, {
+      arm: { head: [0.45, 1.5, 0], tail: [0.45, 0.5, 0] },
+    });
+    const skin = autoSkin(cloth, fitted);
+    expect(weightOf(skin, 0, 0)).toBeGreaterThan(0.95);
   });
 });
 

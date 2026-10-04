@@ -392,6 +392,7 @@ check enforces this).
 
 ### Fixed
 
+- The knight's body no longer stretches into red ribbons and spikes when the sword arm swings up for a strong attack, and the sword now sits in the knight's hand.
 - If you fall out of the level, you are put back at the start instead of falling forever.
 - A hinged door you open while standing right up against it now swings open away from you,
   instead of stopping as if something were in its way. A door still stops against anyone standing
