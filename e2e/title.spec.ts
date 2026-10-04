@@ -1,15 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { holdKey, playerState, stubPointerLock, takeControl } from './helpers/player';
 import { seriousAxeViolations } from './helpers/ui';
-import { budgetMs } from './helpers/budget';
 
 // mw-e01.2: the title screen is the game's front door, against the production build (Chromium). A
 // page with no ?scene=, ?newgame, ?class= or ?menu= boots the game's start scene (game.startScene:
 // the slice) with the title menu over it, the sim paused. New Game opens class selection right
 // there, with no reload; confirming the Knight puts the knight at the slice's spawn point, playable.
 // The page publishes when the title showed, when New Game was pressed and when the class was applied
-// on #app[data-front-door] (page-relative ms), so the load budget can leave out the player's own
-// reading time.
+// on #app[data-front-door] (page-relative ms). The 10 s load budget over those is the perf suite's
+// (mw-e41.8, e2e/perf/flows.ts), not asserted here.
 //
 // CI runners draw at ~3 fps and every Playwright round trip waits on the page's main thread (~1 s
 // each, see PR #168), so these specs read the screens in one evaluate (`frontState`), click with
@@ -19,14 +18,6 @@ import { budgetMs } from './helpers/budget';
 const DRIVER_PERF_NOTICE = /^\[\.WebGL-[^\]]+\]GL Driver Message \([^)]*\bPerformance\b/;
 
 const W = { code: 'KeyW', key: 'w' };
-
-/** 50 Mbps down (AC-1), a modest uplink and a broadband round trip. */
-const BROADBAND = {
-  offline: false,
-  latency: 20,
-  downloadThroughput: (50 * 1_000_000) / 8,
-  uploadThroughput: (10 * 1_000_000) / 8,
-};
 
 /** The slice's player-start spawn (docs/design/vertical-slice.md §4). */
 const SPAWN = { x: 0, z: -2 };
@@ -159,15 +150,11 @@ async function walksFromSpawn(page: Page): Promise<void> {
   ).toBeGreaterThan(0.5);
 }
 
-test('AC-1: on a clean profile, New Game → Knight → Confirm makes the slice spawn room playable within 10 s of page load', async ({
+test('AC-1: on a clean profile, New Game → Knight → Confirm makes the slice spawn room playable', async ({
   page,
 }) => {
   test.setTimeout(120_000);
   const problems = collectProblems(page);
-  // A 50 Mbps connection (Chromium's network emulation; the cache starts empty in a new context).
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Network.enable');
-  await cdp.send('Network.emulateNetworkConditions', BROADBAND);
   await stubPointerLock(page);
 
   let state = await openTitle(page);
@@ -191,14 +178,13 @@ test('AC-1: on a clean profile, New Game → Knight → Confirm makes the slice 
   state = await inPlay(page);
   expect(state.scene).toBe('slice');
   expect(new URL(page.url()).search).toBe('');
-  // Page load to playable, leaving out the time the player spent on the title and class select.
+  // The front door published its three timestamps (the perf suite turns them into the load budget).
   const { titleMs, newGameMs, playableMs } = state.frontDoor ?? {};
-  if (titleMs === undefined || newGameMs === undefined || playableMs === undefined) {
-    throw new Error(`front door timings missing: ${JSON.stringify(state.frontDoor)}`);
-  }
-  const loadMs = titleMs + (playableMs - newGameMs);
-  test.info().annotations.push({ type: 'load-ms', description: String(loadMs) });
-  expect(loadMs).toBeLessThan(budgetMs(10_000));
+  expect([titleMs, newGameMs, playableMs].map((ms) => typeof ms)).toEqual([
+    'number',
+    'number',
+    'number',
+  ]);
   await walksFromSpawn(page);
   expect(problems).toEqual([]);
 });

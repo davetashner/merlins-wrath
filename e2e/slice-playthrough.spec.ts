@@ -2,7 +2,6 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { playerState, stubPointerLock, takeControl, turnTo } from './helpers/player';
 import { collectProblems, data, interact, ready, run, SLICE_URL, walkNorth } from './helpers/slice';
-import { budgetMs } from './helpers/budget';
 
 // mw-e01.9: the vertical slice played start to finish against the production build (Chromium), from a
 // recorded input log (e2e/logs/slice-playthrough.json, recorded by `pnpm slice:record`, see
@@ -17,8 +16,8 @@ import { budgetMs } from './helpers/budget';
 // hashes (#app[data-saved-game]); a sim, content or tuning change that moves the run changes them:
 // re-record with `pnpm slice:record` and review the diff.
 //
-// The load and reload budgets (contract §1) are measured inside the page, as e2e/title.spec.ts and
-// e2e/slice-saves.spec.ts do, so Playwright round trips never add to them.
+// The load and reload wall-clock budgets (contract §1) are not asserted here (mw-e41.8): the perf
+// suite's reference mode measures them (e2e/perf/flows.ts, perf/perf-budgets.json).
 
 interface Saved {
   slot: string;
@@ -35,26 +34,15 @@ interface Recording {
 
 const recording = JSON.parse(readFileSync('e2e/logs/slice-playthrough.json', 'utf8')) as Recording;
 
-/** 50 Mbps down, a modest uplink and a broadband round trip (contract §1). */
-const BROADBAND = {
-  offline: false,
-  latency: 20,
-  downloadThroughput: (50 * 1_000_000) / 8,
-  uploadThroughput: (10 * 1_000_000) / 8,
-};
-
 /**
  * On every page of the run: hands the page the next segment of the log (one per load, counted in
- * sessionStorage), grants pointer lock as a browser does, and stamps when the player first stands
- * grounded and when it first moves on from a loaded save.
+ * sessionStorage) and grants pointer lock as a browser does.
  */
 async function prepare(page: Page, segments: unknown[]): Promise<void> {
   await page.addInitScript(
     (log) => {
       const w = window as unknown as {
         mwInputReplay?: unknown;
-        playableAt?: number;
-        loadedPlayableAt?: number;
       };
       const index = Number(sessionStorage.getItem('mwSegment') ?? '0');
       sessionStorage.setItem('mwSegment', String(index + 1));
@@ -74,24 +62,6 @@ async function prepare(page: Page, segments: unknown[]): Promise<void> {
         subtree: true,
         attributeFilter: ['data-container-window'],
       });
-      const observer = new MutationObserver(() => {
-        const app = document.querySelector<HTMLElement>('#app');
-        const player = app?.dataset['player'];
-        if (player === undefined) return;
-        if (w.playableAt === undefined && player.includes('"grounded":true')) {
-          w.playableAt = performance.now();
-        }
-        const loaded = app?.dataset['loadedSave'];
-        if (loaded === undefined || w.loadedPlayableAt !== undefined) return;
-        if (
-          (JSON.parse(player) as { tick: number }).tick >
-          (JSON.parse(loaded) as { tick: number }).tick
-        ) {
-          w.loadedPlayableAt = Date.now();
-          observer.disconnect();
-        }
-      });
-      observer.observe(document, { attributes: true, subtree: true });
     },
     segments.map((segment) => (segment as { events: unknown[] }).events),
   );
@@ -103,7 +73,7 @@ async function replayDone(page: Page): Promise<void> {
   });
 }
 
-test('AC-1, AC-2, AC-3: the recorded slice run reaches slice.complete at the golden state hashes, within the load budgets', async ({
+test('AC-1, AC-2, AC-3: the recorded slice run reaches slice.complete at the golden state hashes', async ({
   page,
 }) => {
   // About 2 500 sim ticks with a death beat: ~4 minutes at CI's ~10 ticks a second.
@@ -112,23 +82,8 @@ test('AC-1, AC-2, AC-3: the recorded slice run reaches slice.complete at the gol
   await prepare(page, recording.segments);
   const app = page.locator('#app');
 
-  // Initial load to playable at 50 Mbps, then the network is let go so the rest is not throttled.
-  const client = await page.context().newCDPSession(page);
-  await client.send('Network.enable');
-  await client.send('Network.emulateNetworkConditions', BROADBAND);
   await page.goto(SLICE_URL);
   await ready(page);
-  const loadMs = await page.evaluate(
-    () => (window as unknown as { playableAt?: number }).playableAt ?? Infinity,
-  );
-  await client.send('Network.emulateNetworkConditions', {
-    offline: false,
-    latency: 0,
-    downloadThroughput: -1,
-    uploadThroughput: -1,
-  });
-  test.info().annotations.push({ type: 'load-ms', description: String(Math.round(loadMs)) });
-  expect(loadMs).toBeLessThanOrEqual(budgetMs(10_000));
 
   // Segment 0: fight, loot, save, deliberate death. The save's tick and state hash are the golden.
   await replayDone(page);
@@ -146,7 +101,7 @@ test('AC-1, AC-2, AC-3: the recorded slice run reaches slice.complete at the gol
   await expect(screen).toBeVisible({ timeout: 90_000 });
   const creaturesAtDeath = await data<unknown>(page, 'creatures');
 
-  // Load last save: the world is the save's, the skeleton still slain, and playable within 3 s warm.
+  // Load last save: the world is the save's, the skeleton still slain, and playable.
   await screen.getByRole('button', { name: 'Load last save' }).click();
   await ready(page);
   await expect(app).toHaveAttribute('data-loaded-save', /"hash"/, { timeout: 30_000 });
@@ -154,22 +109,10 @@ test('AC-1, AC-2, AC-3: the recorded slice run reaches slice.complete at the gol
   expect(loaded).toMatchObject({ slot: 'manual-1', status: 'loaded', tick: saved.tick });
   expect(loaded.hash).toBe(recording.golden.save.hash);
   expect(await data<unknown>(page, 'creatures')).toEqual(creaturesAtDeath);
+  // Playable: the sim steps on from the save.
   await expect
-    .poll(
-      () =>
-        page.evaluate(
-          () => (window as unknown as { loadedPlayableAt?: number }).loadedPlayableAt ?? null,
-        ),
-      { timeout: 30_000 },
-    )
-    .not.toBeNull();
-  const playableAt = await page.evaluate(
-    () => (window as unknown as { loadedPlayableAt?: number }).loadedPlayableAt ?? Infinity,
-  );
-  const reloadMs = playableAt - (loaded.requestedAt ?? 0);
-  test.info().annotations.push({ type: 'reload-ms', description: String(reloadMs) });
-  expect(reloadMs).toBeGreaterThan(0);
-  expect(reloadMs).toBeLessThanOrEqual(budgetMs(3_000));
+    .poll(async () => (await data<{ tick: number }>(page, 'player')).tick, { timeout: 30_000 })
+    .toBeGreaterThan(saved.tick);
 
   // Segment 1: the replay continues from the save, through the iron door, to the pass.
   await replayDone(page);
