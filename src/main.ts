@@ -93,10 +93,14 @@ import { bindVolumes, SliceMusic } from '@game/music/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
 import { debugConsoleEnabled } from '@game/debug-console-gate';
+import { isSlotId, type SlotId } from '@game/save/slots/ids';
 import {
   browserFrameSources,
   CommandQueue,
   createGameLoop,
+  InputPlayer,
+  InputRecorder,
+  type InputLogSegment,
   object3DBinding,
 } from '@game/loop/index';
 import { installFactRegistry } from '@game/facts';
@@ -819,11 +823,16 @@ function startRenderer(
     // The AI debug overlay (mw-e11.17): loaded with the debug console (below), so release builds
     // never have it. `ai.freeze` holds the sim through simPaused; it draws before each render.
     let aiDebug: { held(): boolean; frame(): void } | undefined;
+    // Debug pages only (mw-e01.9): the input log's recorder or replay runs just before each sample.
+    let beforeSample: ((tick: number) => void) | undefined;
     const { loop, sync } = createGameLoop({
       world,
       sources,
       // Queued debug-console commands pass even while a UI screen withholds gameplay frames.
-      sampleCommands: commands.sampler(bridge.sampleCommands),
+      sampleCommands: commands.sampler((tick) => {
+        beforeSample?.(tick);
+        return bridge.sampleCommands(tick);
+      }),
       simPaused: () => bridge.simPaused() || aiDebug?.held() === true,
       // A pausing menu's queued command (the inventory's Use, Drop…) still runs, one tick a frame;
       // while `ai.freeze` holds the sim, queued commands wait for `ai.step`.
@@ -1718,7 +1727,75 @@ function startRenderer(
       search: location.search,
     };
     const sandboxScene = request.kind === 'scene' && request.id === combat.sandbox.tuning.scene;
-    if (__DEBUG_CONSOLE__ && debugConsoleEnabled({ ...consoleGate, sandbox: sandboxScene })) {
+    const debugPage =
+      __DEBUG_CONSOLE__ && debugConsoleEnabled({ ...consoleGate, sandbox: sandboxScene });
+    // `save [slot]` (mw-e30.7): writes the world into a slot and publishes its state hash.
+    // The save reads the world when called, so a replay's save (made mid-frame, between two sim ticks of
+    // the loop) must not wait a microtask for the death-reload controller: it is kept once it is ready.
+    let reloadReady: Awaited<typeof deathReload> | undefined;
+    void deathReload.then((reload) => {
+      reloadReady = reload;
+    });
+    const debugSave = (slot: SlotId): void => {
+      const failed = (error: unknown): void => {
+        console.error(error);
+      };
+      if (reloadReady !== undefined) reloadReady.debugSave(slot).catch(failed);
+      else void deathReload.then((reload) => reload.debugSave(slot)).catch(failed);
+    };
+    // Input logs (mw-e01.9): a debug page records the inputs and console commands it is given as
+    // window.mwInputRecording, and plays a segment set as window.mwInputReplay (by the e2e's init
+    // script) back into the same sim ticks, publishing its progress on #app[data-input-replay].
+    const inputRecorder = debugPage ? new InputRecorder(() => world.tick) : undefined;
+    if (inputRecorder) {
+      // Not logged: what the console swallows (its keys, and everything while it is open), which a
+      // replay has no console to take.
+      inputRecorder.tap(
+        sampler,
+        (op) =>
+          root.dataset['debugConsole'] === 'open' ||
+          ('code' in op && (op.code === 'Backquote' || op.code === 'Escape')),
+      );
+      (window as unknown as { mwInputRecording: () => unknown }).mwInputRecording = () =>
+        inputRecorder.segment();
+      const replay = (window as unknown as { mwInputReplay?: InputLogSegment }).mwInputReplay;
+      const player =
+        replay === undefined
+          ? undefined
+          : new InputPlayer(replay, {
+              down: (code) => {
+                sampler.down(code);
+              },
+              up: (code) => {
+                sampler.up(code);
+              },
+              look: (x, y) => {
+                sampler.look(x, y);
+              },
+              releaseAll: () => {
+                sampler.releaseAll();
+              },
+              command: (command) => {
+                commands.push(command as GameCommand);
+              },
+              save: (slot) => {
+                if (isSlotId(slot)) debugSave(slot);
+              },
+            });
+      let published = '';
+      beforeSample = (tick) => {
+        inputRecorder.sampled(tick);
+        if (player === undefined) return;
+        player.advance(tick);
+        const json = JSON.stringify({
+          startTick: player.startTick,
+          remaining: player.remaining,
+          done: player.done,
+        });
+        if (json !== published) root.dataset['inputReplay'] = published = json;
+      };
+    }
+    if (debugPage) {
       void Promise.all([import('@tools/console/start'), import('@tools/ai-debug/start')]).then(
         ([{ startDebugConsole, unboundDebugSpawns }, { startAiDebug }]) => {
           const bookmarks = new Map(
@@ -1729,6 +1806,7 @@ function startRenderer(
           const debugConsole = startDebugConsole({
             world,
             submit: (command) => {
+              inputRecorder?.record({ op: 'command', command });
               commands.push(command as GameCommand);
             },
             player: (): EntityId | undefined => player?.entity,
@@ -1760,13 +1838,9 @@ function startRenderer(
               location.search = params.toString();
             },
             loop,
-            // `save [slot]` (mw-e30.7): writes the world into a slot and publishes its state hash.
             save: (slot) => {
-              void deathReload
-                .then((reload) => reload.debugSave(slot))
-                .catch((error: unknown) => {
-                  console.error(error);
-                });
+              inputRecorder?.record({ op: 'save', slot });
+              debugSave(slot);
             },
             // A UI screen (mw-e00.23): while open it captures input, so the player gets no action
             // frames and pointer lock is released; the sim keeps running.
