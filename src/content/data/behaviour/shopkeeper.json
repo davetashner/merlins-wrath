@@ -1,0 +1,109 @@
+{
+  "$schema": "../behaviour.schema.json",
+  "id": "shopkeeper",
+  "notes": "A shopkeeper's day at the counter (mw-ju8.9): she stays at her post (the spawn point, held by a leash), waits, glances around the shop, and walks back if anything moves her. When she notices someone she turns to look at them for a few seconds (Suspicious here only means \"noticed a customer\"; nothing follows from it) and then goes back to minding the counter. Struck from the unseen she is startled for a few seconds and then settles again. She has no combat state and no attacks: friendliness comes from her faction (townsfolk). No day/night schedule yet: going upstairs at night needs the in-game clock and schedules (mw-e27.12) and the village NPC schedules (mw-e24.13).",
+  "tuning": {
+    "alertedTimeoutS": 6,
+    "suspiciousTimeoutS": 5
+  },
+  "thinkHz": 10,
+  "inertia": 0.1,
+  "initial": "unaware",
+  "states": {
+    "unaware": {
+      "transitions": [
+        {
+          "to": "suspicious",
+          "when": {
+            "input": "awareness",
+            "gte": {
+              "tuning": "suspiciousAt"
+            }
+          }
+        },
+        {
+          "to": "alerted",
+          "when": {
+            "event": "damaged-by-unseen"
+          }
+        }
+      ],
+      "activities": ["home", "mind-the-counter"]
+    },
+    "suspicious": {
+      "timeoutS": {
+        "tuning": "suspiciousTimeoutS"
+      },
+      "onTimeout": "unaware",
+      "transitions": [
+        {
+          "to": "alerted",
+          "when": {
+            "event": "damaged-by-unseen"
+          }
+        }
+      ],
+      "activities": ["greet"]
+    },
+    "alerted": {
+      "timeoutS": {
+        "tuning": "alertedTimeoutS"
+      },
+      "onTimeout": "unaware",
+      "activities": ["steady"]
+    }
+  },
+  "activities": {
+    "home": {
+      "weight": 2,
+      "considerations": [
+        {
+          "input": "fromPost",
+          "curve": {
+            "kind": "step",
+            "at": 0.5,
+            "below": 0,
+            "above": 1
+          }
+        }
+      ],
+      "steps": [
+        {
+          "do": "move-to",
+          "target": "post",
+          "within": 0.5,
+          "gait": "walk"
+        }
+      ]
+    },
+    "mind-the-counter": {
+      "steps": [
+        {
+          "do": "wait",
+          "seconds": 6
+        },
+        {
+          "do": "look-around",
+          "seconds": 3
+        }
+      ]
+    },
+    "steady": {
+      "steps": [
+        {
+          "do": "wait",
+          "seconds": 1
+        }
+      ]
+    },
+    "greet": {
+      "steps": [
+        {
+          "do": "look-at",
+          "target": "stimulus",
+          "seconds": 4
+        }
+      ]
+    }
+  }
+}

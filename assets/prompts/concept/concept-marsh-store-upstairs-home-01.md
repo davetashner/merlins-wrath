@@ -1,6 +1,6 @@
 # concept-marsh-store-upstairs-home-01: Second-floor living quarters above Marsh's General Store, where the shopkeeper lives. Establishes the cosy home interior and the view over the village rooftops.
 
-**Status: owner-approved concept** (2026-10-04, "these look great"). Bead mw-ju8.8. Names and the store are **placeholders** pending owner confirmation (story bible §3.5, §5.15).
+**Status: owner-approved concept** (2026-10-04, "these look great"). Bead mw-ju8.8. Names confirmed by the owner (2026-10-04; story bible §3.5, §5.15).
 
 | Field | Value |
 |---|---|

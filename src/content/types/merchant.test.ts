@@ -118,7 +118,9 @@ describe('merchant schema', () => {
 
 describe('merchant checks', () => {
   it('AC-1: the two fixture merchants validate (and load with their item and loot-table refs)', () => {
-    const merchants = loadDevContent().all('merchant');
+    const merchants = loadDevContent()
+      .all('merchant')
+      .filter((m) => m.id.startsWith('fixture-'));
     expect(merchants.map((m) => m.id)).toEqual(['fixture-fence', 'fixture-general-goods']);
     const [fence, shop] = merchants;
     expect(fence?.isFence && fence.buysStolen).toBe(true);

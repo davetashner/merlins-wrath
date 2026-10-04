@@ -1,6 +1,6 @@
 # prop-marsh-store-set-01: Prop set for the shop interior and exterior of Marsh's General Store.
 
-**Status: owner-approved concept** (2026-10-04, "these look great"). Bead mw-ju8.8. Names and the store are **placeholders** pending owner confirmation (story bible §3.5, §5.15).
+**Status: owner-approved concept** (2026-10-04, "these look great"). Bead mw-ju8.8. Names confirmed by the owner (2026-10-04; story bible §3.5, §5.15).
 
 | Field | Value |
 |---|---|

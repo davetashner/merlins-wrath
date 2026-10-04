@@ -619,7 +619,7 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room, the slice, the perf baseline and the valley spike scenes', () => {
+  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room, the slice, the perf baseline, the valley spike scenes and the Marsh store', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
@@ -628,6 +628,7 @@ describe('scene content', () => {
       'combat-sandbox',
       'kit-gallery',
       'lighting-room',
+      'marsh-store',
       'mechanism-room',
       'perf-baseline',
       'slice',

@@ -545,7 +545,7 @@ ${tokens}
 .vb-shop-greeting { margin: 0; font-style: italic; overflow-wrap: anywhere; }
 .vb-shop-crowns { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
 .vb-shop-panel[hidden] { display: none; }
-.vb-shop-rows { gap: var(--ui-space-1); max-height: 50vh; overflow-y: auto; padding: var(--ui-space-1); }
+.vb-shop-rows { gap: var(--ui-space-1); max-height: 40vh; overflow-y: auto; padding: var(--ui-space-1); }
 .vb-shop-item {
   position: relative;
   display: grid;

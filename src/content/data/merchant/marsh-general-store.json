@@ -1,0 +1,29 @@
+{
+  "$schema": "../merchant.schema.json",
+  "id": "marsh-general-store",
+  "notes": "Marsh's General Store, Briar Glen (story bible §3.5 and §5.15; mw-ju8.9): the first shop past the bridge, run by Ottilie Marsh (npc-ottilie), a friendly, shrewd general merchant for basics. Stocked only from the items that exist today (mw-ju8.3 and mw-ju8.4 author the full catalogue, so clothes, gloves, helmets, boots, more staves and knives, food, scrolls, ingredients and potion jars are still to come). Prices sit at the economy doc's default band: markup 1.25 (band 1.1-1.5) and buy rate 0.4 (band 0.3-0.6); consumables and tools are her specialties (bonus left at the default 1.2). She buys weapons, armour, shields, ammo, consumables, tools and odds and ends, never keys or quest items. The 250 gold reserve is about three-quarters of a light armour set at default markup (economy doc: about 320), so one big sale does not empty her but a pile of mail will: it refills 60 a day. Stock counts are small and restock slowly for ammunition and potions only. Item values are the placeholders the balance tool will re-base onto the economy bands, so these prices will move with them. No opening hours until the in-game clock exists (mw-e27.12).",
+  "npcId": "npc-ottilie",
+  "personalityTags": ["friendly", "shrewd"],
+  "specialties": ["consumable", "tool"],
+  "buysCategories": ["weapon", "armor", "shield", "ammo", "consumable", "tool", "misc"],
+  "stock": [
+    { "item": "arming-sword", "count": 2 },
+    { "item": "hunting-knife", "count": 3 },
+    { "item": "shortbow", "count": 1 },
+    { "item": "ash-staff", "count": 1 },
+    { "item": "standard-arrow", "count": 40, "restock": { "everyHours": 24, "amount": 20 } },
+    { "item": "leather-jerkin", "count": 2, "restock": { "everyHours": 72, "amount": 1 } },
+    { "item": "mail-hauberk", "count": 1 },
+    { "item": "wooden-shield", "count": 2 },
+    { "item": "travelling-robe", "count": 3 },
+    { "item": "healing-draught", "count": 5, "restock": { "everyHours": 24, "amount": 2 } },
+    { "item": "mana-draught", "count": 3, "restock": { "everyHours": 48, "amount": 1 } },
+    { "item": "oil-flask", "count": 6, "restock": { "everyHours": 48, "amount": 2 } },
+    { "item": "lockpicks", "count": 3 }
+  ],
+  "goldReserve": 250,
+  "goldRestockPerDay": 60,
+  "markup": 1.25,
+  "buyRate": 0.4,
+  "barkSet": "npc-ottilie"
+}
