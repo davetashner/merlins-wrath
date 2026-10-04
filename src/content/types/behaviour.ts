@@ -115,6 +115,38 @@ export const BEHAVIOUR_INPUTS = [
 /** A fixed input name. */
 export type BehaviourInput = (typeof BEHAVIOUR_INPUTS)[number];
 
+/** The values an input can take, both ends included (`Infinity` for no upper bound). */
+export interface InputRange {
+  readonly min: number;
+  readonly max: number;
+}
+
+/**
+ * The range of every fixed input (mw-e11.19), typed against BEHAVIOUR_INPUTS so a new input must
+ * declare one. The behaviour lint reads it to find curves that are 0 everywhere the input can be.
+ * `targetDistance` reads 1000 with no target (NO_TARGET_DISTANCE, src/sim/ai/combat.ts).
+ */
+export const BEHAVIOUR_INPUT_RANGES: Readonly<Record<BehaviourInput, InputRange>> = Object.freeze({
+  awareness: { min: 0, max: 1 },
+  hasStimulus: { min: 0, max: 1 },
+  targetVisible: { min: 0, max: 1 },
+  targetLostS: { min: 0, max: Infinity },
+  healthFraction: { min: 0, max: 1 },
+  timeInState: { min: 0, max: Infinity },
+  offRoute: { min: 0, max: Infinity },
+  targetDistance: { min: 0, max: 1000 },
+  attackToken: { min: 0, max: 1 },
+  targetUnreachableS: { min: 0, max: Infinity },
+  fromPost: { min: 0, max: Infinity },
+});
+
+/** The range of input `name`: a fixed input's, or 0-1 for `trait.<trait>` and `need.<need>`. */
+export function behaviourInputRange(name: string): InputRange {
+  return Object.hasOwn(BEHAVIOUR_INPUT_RANGES, name)
+    ? BEHAVIOUR_INPUT_RANGES[name as BehaviourInput]
+    : { min: 0, max: 1 };
+}
+
 /** External events queued on an agent and read by `{ "event": … }` conditions. */
 export const BEHAVIOUR_EVENTS = ['damaged-by-unseen', 'ally-alarm'] as const;
 
