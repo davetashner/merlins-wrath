@@ -93,7 +93,12 @@ import {
   type FacingRule,
 } from '../combat/melee/facing';
 import { bashRedirect, firstRedirect } from '../combat/melee/bash';
-import { blockSystem, DEFAULT_BLOCK_BUTTON, locomotionScale } from '../combat/melee/guard';
+import {
+  blockSystem,
+  DEFAULT_BLOCK_BUTTON,
+  isAttacking,
+  locomotionScale,
+} from '../combat/melee/guard';
 import { riposteRedirect } from '../combat/parry/parry';
 import { placeEntity, PlacementComponent } from '../stimulus/placement';
 import { defineComponent, type EntityId } from '../core/component';
@@ -459,14 +464,18 @@ const lookFacing: DodgeFacing & FacingRule = (world, entity) => {
 const UP = actionButton(false, false, false);
 
 /** `actions` as the controller may use them at `scale` of normal speed (see `locomotionScale`). */
-export function restrainMovement(actions: ActionFrame, scale: number): ActionFrame {
+export function restrainMovement(
+  actions: ActionFrame,
+  scale: number,
+  noJump = scale === 0,
+): ActionFrame {
   if (scale === 1) return actions;
   const { x, y } = actions.move;
   return {
     ...actions,
     move: { x: x * scale, y: y * scale },
     sprint: UP,
-    jump: scale === 0 ? UP : actions.jump,
+    jump: noJump ? UP : actions.jump,
   };
 }
 
@@ -699,7 +708,13 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
         const actions =
           combat === undefined
             ? frame
-            : restrainMovement(frame, combatLocomotionScale(world, entity, combat));
+            : restrainMovement(
+                frame,
+                combatLocomotionScale(world, entity, combat),
+                combat.melee !== undefined && isAttacking(world, entity, combat.moves)
+                  ? true
+                  : undefined,
+              );
         const motion = combat && world.get(entity, DodgeComponent)?.velocity;
         const anchor = world.get(entity, ViewAnchor);
         return {

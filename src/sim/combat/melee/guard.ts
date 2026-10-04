@@ -26,7 +26,7 @@
 // stamina the blocker has left. A real shield meets a guard-crushing hit like any other.
 //
 // While the shield is up the fighter moves at the shield's `moveSpeedScale` (half speed) and its
-// stamina regenerates at the pool's blocking rate; during an attack it is planted (`locomotionScale`).
+// stamina regenerates at the pool's blocking rate; during an attack it walks slowly (`locomotionScale`).
 
 import type { MoveTable } from '@content/index';
 import type { EntityId } from '../../core/component';
@@ -165,14 +165,22 @@ function guardBreak(
   });
 }
 
+/** How fast a fighter may walk while it swings, as a fraction of normal speed: it can still step and strafe. */
+export const ATTACK_MOVE_SCALE = 0.6;
+
+/** Whether `entity` is mid-attack: committed to its swing, so it may walk but not jump or sprint. */
+export function isAttacking(world: World<never>, entity: EntityId, moves: MoveTable): boolean {
+  const action = actionOf(world, entity);
+  return action !== undefined && moves.get(action.move)?.verb === 'attack';
+}
+
 /**
- * How fast `entity` may walk this tick, as a fraction of its normal speed: 0 while it performs an
- * attack (planted, committed), its shield's `moveSpeedScale` while the shield is up, else 1. Needs the
+ * How fast `entity` may walk this tick, as a fraction of its normal speed: `ATTACK_MOVE_SCALE` while it
+ * performs an attack (committed to its facing, not planted), its shield's `moveSpeedScale` while the shield is up, else 1. Needs the
  * melee and timeline components registered.
  */
 export function locomotionScale(world: World<never>, entity: EntityId, moves: MoveTable): number {
-  const action = actionOf(world, entity);
-  if (action !== undefined && moves.get(action.move)?.verb === 'attack') return 0;
+  if (isAttacking(world, entity, moves)) return ATTACK_MOVE_SCALE;
   const guard = world.get(entity, GuardComponent);
   return guard?.raisedAt == null ? 1 : guard.shield.moveSpeedScale;
 }
