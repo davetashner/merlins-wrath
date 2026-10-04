@@ -1,6 +1,6 @@
-# char-ottilie-marsh-base-01: Turnaround reference for the Marsh's General Store shopkeeper, Ottilie Marsh (placeholder name). Anchor for her portrait and any later model.
+# char-ottilie-marsh-base-01: Turnaround reference for the Marsh's General Store shopkeeper, Ottilie Marsh. Anchor for her portrait and any later model.
 
-**Status: owner-approved concept** (2026-10-04, "these look great"). Bead mw-ju8.8. Names and the store are **placeholders** pending owner confirmation (story bible §3.5, §5.15).
+**Status: owner-approved concept** (2026-10-04, "these look great"). Bead mw-ju8.8. Names confirmed by the owner (2026-10-04; story bible §3.5, §5.15).
 
 | Field | Value |
 |---|---|
@@ -15,7 +15,7 @@
 
 ## Brief
 
-Turnaround reference for the Marsh's General Store shopkeeper, Ottilie Marsh (placeholder name). Anchor for her portrait and any later model.
+Turnaround reference for the Marsh's General Store shopkeeper, Ottilie Marsh. Anchor for her portrait and any later model.
 
 ## Filled prompt (preamble verbatim from docs/art/style-bible.md §14, add-on from §14.1)
 
@@ -26,7 +26,7 @@ STYLE: Stylized hand-painted fantasy art for "The Vesper Bell", a 3D third-perso
 
 Character turnaround sheet: front, three-quarter, side and back views of the same character in a neutral A-pose, full body, identical proportions and colours in every view, evenly lit, plain flat parchment (#EFE2C4) background, no cast shadows, orthographic feel, no perspective distortion.
 
-SUBJECT: Ottilie Marsh (placeholder name), a stout, capable, middle-aged village shopkeeper woman with rosy cheeks, greying auburn hair pinned under a plain linen cap, sleeves rolled, a long moss-green wool dress, a heavy brown canvas apron with big pockets, a ring of brass keys and a coin pouch at her belt, sturdy boots, and spectacles pushed up on her forehead; friendly, shrewd, unhurried.
+SUBJECT: Ottilie Marsh, a stout, capable, middle-aged village shopkeeper woman with rosy cheeks, greying auburn hair pinned under a plain linen cap, sleeves rolled, a long moss-green wool dress, a heavy brown canvas apron with big pockets, a ring of brass keys and a coin pouch at her belt, sturdy boots, and spectacles pushed up on her forehead; friendly, shrewd, unhurried.
 ```
 
 ## Approval

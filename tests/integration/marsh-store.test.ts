@@ -1,8 +1,8 @@
 // mw-ju8.9: Marsh's General Store (src/content/data/scene/marsh-store.json), loaded headless as the
 // game wires it (createGameWorld: Rapier physics, the player with interaction, the scene's door,
-// creatures and shop counters). AC-1: the interior loads with the shopkeeper behind the counter and
-// she stays there, friendly (the browser run is e2e/marsh-store.spec.ts). AC-2: using the counter
-// requests the shop for her merchant, whose stock the shop transactions can read. AC-3: the player
+// creatures). AC-1: the interior loads with the shopkeeper behind the counter and
+// she stays there, friendly (the browser run is e2e/marsh-store.spec.ts). AC-2: the counter
+// prompts Trade for her merchant, whose stock the shop transactions can read. AC-3: the player
 // walks up the stair to the upstairs room, where the bed and the table are.
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import { describe, expect, it } from 'vitest';
@@ -19,12 +19,10 @@ import {
   PlacementComponent,
   PlayerLook,
   SceneSpawnComponent,
-  shopOpenRequested,
   Shops,
   teleportCommand,
   type ActionFrame,
   type EntityId,
-  type ShopOpenRequest,
   type Vec3,
   type World,
 } from '@sim/index';
@@ -40,7 +38,6 @@ function frame(forward: number, ...pressed: string[]): ActionFrame {
   });
 }
 const IDLE = frame(0);
-const INTERACT = frame(0, 'interact');
 const FORWARD = frame(1);
 /** Yaw π faces +z (north, towards the counter and the stair top); yaw π/2 faces −x (west). */
 const FACE_NORTH = Math.PI;
@@ -67,6 +64,8 @@ function store() {
     if (found === undefined) throw new Error(`no marsh-store spawn ${id}`);
     return found.position;
   };
+  const tags = (id: string): readonly string[] =>
+    game.scene.layout.spawns.find((s) => s.id === id)?.tags ?? [];
   const keeper = (): EntityId => {
     const found = world
       .query(CreatureComponent)
@@ -88,9 +87,7 @@ function store() {
     world.set(player, PlayerLook, { yaw, pitch: 0 });
     step(IDLE, 10);
   };
-  const requests: ShopOpenRequest[] = [];
-  world.events.on(shopOpenRequested, (request) => requests.push(request));
-  return { world, sim, player, spawn, marker, keeper, where, step, teleport, requests };
+  return { world, sim, player, spawn, marker, tags, keeper, where, step, teleport };
 }
 
 describe('Marsh’s General Store, headless (mw-ju8.9)', () => {
@@ -119,7 +116,7 @@ describe('Marsh’s General Store, headless (mw-ju8.9)', () => {
     expect(t.where(t.player).z).toBeLessThan(-2);
   });
 
-  it('AC-2: using the counter requests the shop for marsh-general-store, with its stock to hand', ({
+  it('AC-2: the counter prompts Trade for the player, and the merchant it names has its stock to hand', ({
     task,
   }) => {
     markExercised(task, 'merchant', 'marsh-general-store');
@@ -128,19 +125,14 @@ describe('Marsh’s General Store, headless (mw-ju8.9)', () => {
     t.teleport({ x: -2, y: 0, z: -0.25 }, FACE_NORTH);
     expect(interactionPrompt(t.sim, t.player)).toMatchObject({
       target: counter,
-      verb: 'use',
+      verb: 'talk',
       label: 'Trade',
       available: true,
     });
-    expect(t.requests).toEqual([]);
-    t.step(INTERACT);
-    t.step(IDLE, 5);
-    expect(t.requests.map(({ actor, entity, merchant }) => ({ actor, entity, merchant }))).toEqual([
-      { actor: t.player, entity: counter, merchant: 'marsh-general-store' },
-    ]);
-    // The request names a real merchant: the shop transactions open it with its authored stock.
-    const request = t.requests[0];
-    const merchant = content.get('merchant', request?.merchant ?? '');
+    // The shop screen takes the merchant from the counter's `merchant:<id>` tag (e2e/marsh-store.spec.ts
+    // opens it); the shop transactions then open it with its authored stock.
+    const tag = t.tags('shop-counter').find((x) => x.startsWith('merchant:'));
+    const merchant = content.get('merchant', tag?.slice('merchant:'.length) ?? '');
     const shops = new Shops(
       content.all('merchant'),
       content.all('item'),

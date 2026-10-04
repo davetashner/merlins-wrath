@@ -62,7 +62,6 @@ import {
   DAMAGE_COMPONENTS,
   HIT_VOLUME_COMPONENTS,
   installDebugCommands,
-  installShopCounters,
   installSlainFacts,
   LEDGE_HANG_CAPABILITY,
   testPropSpawners,
@@ -324,8 +323,6 @@ export function createGameWorld<TInput>(
   const containers = hasContainers(scene.layout)
     ? startContainers(world, prepareContainers(content, items.inventory), scene, content)
     : [];
-  // Shop counters (mw-ju8.9): Interact on one requests its merchant's shop (`shop.open`).
-  installShopCounters(world, scene.spawns);
   // Creatures (mw-e12.4) with senses and AI (mw-e11.21, mw-e11.23): perception sees the player by
   // the light field over the sim's Rapier world; AI walks the scene's navmesh.
   const sceneCreatures = startCreatures(world, creatures, combat, scene.layout.spawns, {

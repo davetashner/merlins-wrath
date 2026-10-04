@@ -383,19 +383,6 @@ describe('scene layout (mw-e00.21)', () => {
     );
   });
 
-  it('lays out a shop counter’s merchant as a plain id (mw-ju8.9)', () => {
-    const scene: SceneSpec = {
-      ...TEST_SCENE,
-      spawns: [
-        { id: 'counter', at: [1, 0, 1], yaw: 0, tags: [], merchant: { id: 'general-store' } },
-      ],
-    };
-    expect(layoutScene(scene, testKit).spawns[0]?.merchant).toBe('general-store');
-    expect(layoutScene(TEST_SCENE, testKit).spawns.every((s) => s.merchant === undefined)).toBe(
-      true,
-    );
-  });
-
   it('lays out placed signal graphs with their bindings and checkpoints (mw-e01.4)', () => {
     const scene: SceneSpec = {
       ...TEST_SCENE,

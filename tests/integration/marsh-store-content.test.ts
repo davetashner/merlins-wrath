@@ -132,11 +132,11 @@ describe('Marsh’s General Store scene (mw-ju8.9)', () => {
     );
   });
 
-  it('AC-2: the counter is a shop counter for marsh-general-store with a Trade prompt', () => {
+  it('AC-2: the counter is tagged for marsh-general-store and offers a Trade talk prompt', () => {
     const counter = spawn('shop-counter');
-    expect(counter?.merchant?.id).toBe('marsh-general-store');
+    expect(counter?.tags).toContain('merchant:marsh-general-store');
     expect(counter?.interact?.affordances.map((a) => [a.verb, a.label])).toEqual([
-      ['use', 'Trade'],
+      ['talk', 'Trade'],
     ]);
   });
 });

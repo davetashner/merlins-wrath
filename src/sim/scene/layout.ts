@@ -196,8 +196,6 @@ export interface SceneSpawnSpec {
   readonly switch?: SceneSwitchSpec | undefined;
   /** Makes the spawned entity a lootable container (mw-e18.3). */
   readonly container?: SceneContainerSpec | undefined;
-  /** Makes the spawned entity a shop counter for this merchant (mw-ju8.9). */
-  readonly merchant?: { readonly id: string } | undefined;
 }
 
 /** A named point routes walk through, grid cells (mw-e11.9). */
@@ -343,8 +341,6 @@ export interface SceneSpawnPlacement {
   readonly switch?: SceneSwitchSpec;
   /** Its container data, when it is a container (mw-e18.3). */
   readonly container?: SceneContainer;
-  /** The merchant whose shop opens at it, when it is a shop counter (mw-ju8.9). */
-  readonly merchant?: string;
 }
 
 export interface SceneLayout {
@@ -645,7 +641,6 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
       ...(spawn.door !== undefined && { door: doorOf(spawn.door) }),
       ...(spawn.switch !== undefined && { switch: switchOf(spawn.switch) }),
       ...(spawn.container !== undefined && { container: containerOf(spawn.container) }),
-      ...(spawn.merchant !== undefined && { merchant: spawn.merchant.id }),
     }),
   );
   return Object.freeze({

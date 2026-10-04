@@ -4,7 +4,7 @@ import { holdKey, playerState, stubPointerLock, takeControl, turnTo } from './he
 // mw-ju8.9: Marsh's General Store against the production build (Chromium). AC-1: from the street the
 // player opens the front door and walks in; the interior is loaded and Ottilie Marsh stands behind
 // the counter (#app[data-creatures] and #app[data-ai]). The counter prompts "Trade" and Interact on
-// it completes (#app[data-interactions]); the shop screen itself is mw-e20.10. AC-3: up the 12-step
+// it opens the shop screen (#app[data-shop]) for marsh-general-store, and a purchase works (mw-e20.10). AC-3: up the 12-step
 // stair to the second floor, where the bed and the table are (the console's `tp` knows the scene's
 // named spawns). The scene is dev-only until area transitions (mw-e01.11): ?scene=marsh-store.
 
@@ -84,9 +84,24 @@ test('AC-1: from the street, open the front door and walk in: the shopkeeper is 
   await turnTo(page, { x: -2, z: 1 });
   await expect(prompt).toContainText('Trade');
   await page.keyboard.press('KeyE');
-  await expect
-    .poll(() => data<{ verb: string; spawn: string | null }[]>(page, 'interactions'))
-    .toContainEqual({ tick: expect.any(Number), verb: 'use', spawn: 'shop-counter' });
+  // The shop screen opens for her merchant (#app[data-shop]); the dev scene tops the player up to 400.
+  await expect(page.locator('#app')).toHaveAttribute('data-shop', /"open":true/);
+  expect(await data<{ merchant: string; crowns: number }>(page, 'shop')).toMatchObject({
+    merchant: 'marsh-general-store',
+    crowns: 400,
+  });
+  await expect(page.locator('[data-screen="shop"] .vb-shop-name')).toContainText(/ottilie/i);
+  // Buying works: lockpicks leave the shelf for the pack and cost crowns.
+  await page.locator('[data-screen="shop"] [aria-label^="Buy Lockpicks"]').first().click();
+  await expect(page.getByTestId('shop-status')).toHaveText(/^Bought Lockpicks for \d+ crowns\.$/);
+  const after = await data<{ crowns: number; pack: { item: string; count: number }[] }>(
+    page,
+    'shop',
+  );
+  expect(after?.crowns).toBeLessThan(400);
+  expect(after?.pack).toContainEqual({ item: 'lockpicks', count: 1 });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#app')).toHaveAttribute('data-shop', /"open":false/);
   expect(problems).toEqual([]);
 });
 

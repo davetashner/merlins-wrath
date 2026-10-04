@@ -1,6 +1,6 @@
-# portrait-npc-ottilie-marsh-01: Dialogue portrait of Ottilie Marsh (placeholder name), shopkeeper of Marsh's General Store.
+# portrait-npc-ottilie-marsh-01: Dialogue portrait of Ottilie Marsh, shopkeeper of Marsh's General Store.
 
-**Status: owner-approved concept** (2026-10-04, "these look great"). Bead mw-ju8.8. Names and the store are **placeholders** pending owner confirmation (story bible §3.5, §5.15).
+**Status: owner-approved concept** (2026-10-04, "these look great"). Bead mw-ju8.8. Names confirmed by the owner (2026-10-04; story bible §3.5, §5.15).
 
 | Field | Value |
 |---|---|
@@ -15,7 +15,7 @@
 
 ## Brief
 
-Dialogue portrait of Ottilie Marsh (placeholder name), shopkeeper of Marsh's General Store.
+Dialogue portrait of Ottilie Marsh, shopkeeper of Marsh's General Store.
 
 ## Filled prompt (preamble verbatim from docs/art/style-bible.md §14, add-on from §14.1)
 
@@ -26,7 +26,7 @@ STYLE: Stylized hand-painted fantasy art for "The Vesper Bell", a 3D third-perso
 
 Head-and-shoulders character portrait, three-quarter view, expressive but natural face, painted, soft warm key light and cool rim, simple softly blurred background in the location's colours, bust framing with space above the head.
 
-SUBJECT: the same character as in the turnaround: Ottilie Marsh (placeholder name), a stout, capable, middle-aged village shopkeeper woman with rosy cheeks, greying auburn hair pinned under a plain linen cap, sleeves rolled, a long moss-green wool dress, a heavy brown canvas apron with big pockets, a ring of brass keys and a coin pouch at her belt, sturdy boots, and spectacles pushed up on her forehead; friendly, shrewd, unhurried. Head-and-shoulders, a warm, shrewd half-smile, behind a wooden shop counter with softly blurred shelves and amber lantern light (#FFB85C).
+SUBJECT: the same character as in the turnaround: Ottilie Marsh, a stout, capable, middle-aged village shopkeeper woman with rosy cheeks, greying auburn hair pinned under a plain linen cap, sleeves rolled, a long moss-green wool dress, a heavy brown canvas apron with big pockets, a ring of brass keys and a coin pouch at her belt, sturdy boots, and spectacles pushed up on her forehead; friendly, shrewd, unhurried. Head-and-shoulders, a warm, shrewd half-smile, behind a wooden shop counter with softly blurred shelves and amber lantern light (#FFB85C).
 ```
 
 ## Approval

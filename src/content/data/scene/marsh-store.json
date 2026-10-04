@@ -1,8 +1,8 @@
 {
   "$schema": "../scene.schema.json",
   "id": "marsh-store",
-  "name": "Marsh's General Store (placeholder)",
-  "description": "Bead mw-ju8.9: the first building in town in grey box, built from the e00 kit only. A 10 x 8 m ground-floor shop (front door on the street side, long counter with Ottilie Marsh behind it, shelves, crates, barrels and sacks, a hearth and lanterns) and, up a 3 m wooden stair (12 steps, kit stairs x3) in the east corner, her 8 x 6 m home (bed, table and chairs, desk, wardrobe, hearth, dormer light). Open-topped like every kit scene: the second-floor slab is the ground floor's ceiling. Furniture is kit stand-ins with named marker spawns so art can dress them later. The counter is a shop counter for merchant marsh-general-store. Reach it with ?scene=marsh-store; the street exit is an area-exit marker until area transitions exist (mw-e01.11).",
+  "name": "Marsh's General Store",
+  "description": "Bead mw-ju8.9: the first building in town in grey box, built from the e00 kit only. A 10 x 8 m ground-floor shop (front door on the street side, long counter with Ottilie Marsh behind it, shelves, crates, barrels and sacks, a hearth and lanterns) and, up a 3 m wooden stair (12 steps, kit stairs x3) in the east corner, her 8 x 6 m home (bed, table and chairs, desk, wardrobe, hearth, dormer light). Open-topped like every kit scene: the second-floor slab is the ground floor's ceiling. Furniture is kit stand-ins with named marker spawns so art can dress them later. The counter opens the shop screen for merchant marsh-general-store (tag merchant:<id>, verb talk); dev-crowns:400 tops the player up on first opening so the dev scene can trade. Reach it with ?scene=marsh-store; the street exit is an area-exit marker until area transitions exist (mw-e01.11).",
   "grid": 1,
   "camera": {
     "position": [-9, 11, -11],
@@ -236,17 +236,16 @@
     {
       "id": "shop-counter",
       "at": [-2, 0, 0.75],
-      "tags": ["counter", "shop"],
+      "tags": ["counter", "shop", "merchant:marsh-general-store", "dev-crowns:400"],
       "interact": {
         "affordances": [
           {
-            "verb": "use",
+            "verb": "talk",
             "label": "Trade"
           }
         ],
         "radius": 1.5
-      },
-      "merchant": "marsh-general-store"
+      }
     },
     {
       "id": "npc-ottilie",
@@ -361,7 +360,15 @@
     }
   ],
   "light": {
-    "ambient": 0.3
+    "ambient": 0.26,
+    "directional": [
+      {
+        "id": "window",
+        "direction": [0.3, -1, 0.4],
+        "level": 0.2,
+        "reach": 30
+      }
+    ]
   },
   "environment": {
     "sky": "#1E1B2E"
