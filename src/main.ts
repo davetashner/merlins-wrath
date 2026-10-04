@@ -188,6 +188,7 @@ import {
 import {
   createCreatureProxy,
   CreatureDeaths,
+  HitFlashes,
   showCreatureTelegraph,
 } from '@render/creatures/index';
 import { creatureLocomotion } from '@game/creatures/animation';
@@ -246,6 +247,7 @@ import {
   WorldPersistence,
   worldItemSpawner,
   zeroHealth,
+  DamageApplied,
   Died,
   hashWorld,
   type ActionFrame,
@@ -854,6 +856,8 @@ function startRenderer(
     let animation: AnimDemo | undefined;
     let creatureAnimation: AnimationDriver | undefined;
     let creatureDeaths: CreatureDeaths | undefined;
+    let hitFlashes: HitFlashes | undefined;
+    let frameClock: ((ms: number) => void) | undefined;
     let playerFade: OcclusionFade | undefined;
     let publishedProbe = '';
     // The AI debug overlay (mw-e11.17): loaded with the debug console (below), so release builds
@@ -931,6 +935,8 @@ function startRenderer(
         publishCreatures();
         publishArrows();
         creatureDeaths?.update(Math.max(0, elapsedMs) / 1000);
+        frameClock?.(timeMs);
+        hitFlashes?.update(timeMs);
         creatureAnimation?.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
         if (animation !== undefined) {
           animation.driver.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
@@ -1477,6 +1483,17 @@ function startRenderer(
       // A creature that dies falls where it stood and stays there (src/render/creatures/death.ts).
       const deaths = new CreatureDeaths();
       creatureDeaths = deaths;
+      // A creature that takes damage flashes white for 80 ms (mw-e29.4).
+      const flashes = new HitFlashes();
+      hitFlashes = flashes;
+      let frameMs = 0;
+      world.events.on(DamageApplied, ({ target, total }) => {
+        const proxy = creatureProxies.get(target);
+        if (proxy !== undefined && total > 0) flashes.flash(proxy, frameMs);
+      });
+      frameClock = (ms) => {
+        frameMs = ms;
+      };
       const creatureHeights = new Map<EntityId, number>();
       const minerSalt = randomSalt();
       const pinnedMiner = variantFromSearch(location.search);

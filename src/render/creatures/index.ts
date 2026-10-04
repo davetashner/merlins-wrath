@@ -32,6 +32,7 @@ import type { GreyboxRig, Rig } from '../animation/index';
 import { createKnightRig } from '../player/knight-model';
 import { loadForgottenMiner } from './forgotten-model';
 import { COLLAPSE_PIVOT } from './death';
+import { setBodyGlow } from './hit-flash';
 import { minerRigAssets, RIG_HEIGHT } from './miner-rig';
 
 const SLATE = 0x6f7f8c;
@@ -49,6 +50,7 @@ const TELEGRAPH_GLOW = { parry: 0xe0912e, block: 0xc8d4e8, unblockable: 0xd2321e
 export type CreatureTelegraphLook = keyof typeof TELEGRAPH_GLOW;
 
 export { CreatureDeaths } from './death';
+export { HIT_FLASH_MS, HitFlashes } from './hit-flash';
 
 /** Where a posed miner is wanted: the rig to skin it to, and who poses it once it is drawn. */
 export interface CreatureAnimation {
@@ -163,8 +165,8 @@ function bones(radius: number, height: number): Mesh[] {
 
 /** Lights `proxy`'s body for a telegraph of `look`, or puts it out (null). */
 export function showCreatureTelegraph(proxy: Object3D, look: CreatureTelegraphLook | null): void {
-  const body = proxy.getObjectByName('body');
-  if (!(body instanceof Mesh) || !(body.material instanceof MeshStandardMaterial)) return;
-  body.material.emissive.setHex(look === null ? 0x000000 : TELEGRAPH_GLOW[look]);
-  body.material.emissiveIntensity = look === null ? 0 : 0.85;
+  setBodyGlow(
+    proxy,
+    look === null ? { hex: 0, intensity: 0 } : { hex: TELEGRAPH_GLOW[look], intensity: 0.85 },
+  );
 }

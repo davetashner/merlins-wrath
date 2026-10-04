@@ -10,6 +10,7 @@ import {
   DamageApplied,
   fireExtinguished,
   fireIgnited,
+  GuardBroken,
   HitParried,
   registerWorldProperties,
   World,
@@ -168,6 +169,79 @@ describe('VFX cue sheets on the game’s events (mw-e29.3)', () => {
     expect(spawned.map((s) => s.effect)).toEqual(['vfx-impact-dust', 'vfx-parry-flash']);
     // No direction known (no packet direction, no facing): spawned unturned.
     expect(spawned[0]?.options.rotation).toBeUndefined();
+  });
+
+  it('mw-e29.4 AC-1: each struck material throws its own impact: bone, wood, stone and flesh', ({
+    task,
+  }) => {
+    for (const effect of [
+      'vfx-impact-bone',
+      'vfx-impact-splinters',
+      'vfx-impact-stone',
+      'vfx-impact-ichor',
+    ]) {
+      markExercised(task, 'vfx-effect', effect);
+    }
+    const { world, spawned, spawn } = game();
+    const sword = spawn('iron');
+    const club = spawn('wood'); // steel on stone throws sparks instead (the metal-on-stone rule)
+    const seen: Record<string, string | undefined> = {};
+    for (const material of ['bone', 'wood', 'stone', 'flesh']) {
+      spawned.length = 0;
+      world.step(); // a new tick, so de-dupe never merges two materials
+      const weapon = material === 'stone' ? club : sword;
+      world.events.emit(DamageApplied, hit(spawn(material), weapon, { x: 0, y: 0, z: -1 }));
+      world.events.flush();
+      seen[material] = spawned[0]?.effect;
+      expect(spawned).toHaveLength(1);
+    }
+    expect(seen).toEqual({
+      bone: 'vfx-impact-bone',
+      wood: 'vfx-impact-splinters',
+      stone: 'vfx-impact-stone',
+      flesh: 'vfx-impact-ichor',
+    });
+  });
+
+  it('mw-e29.4 AC-4: a material with no rule of its own still throws the generic dust', ({
+    task,
+  }) => {
+    markExercised(task, 'vfx-effect', 'vfx-impact-dust');
+    const { world, spawned, spawn } = game();
+    world.events.emit(DamageApplied, hit(spawn('cloth'), spawn('iron')));
+    world.events.flush();
+    expect(spawned.map((s) => s.effect)).toEqual(['vfx-impact-dust']);
+  });
+
+  it('mw-e29.4: a block on the wooden shield throws chips, a guard break a ring, and a critical a burst over the impact', ({
+    task,
+  }) => {
+    for (const effect of ['vfx-block-wood', 'vfx-guard-break', 'vfx-impact-critical']) {
+      markExercised(task, 'vfx-effect', effect);
+    }
+    const { world, spawned, spawn } = game();
+    const knight = spawn('iron');
+    const wolf = spawn('flesh');
+    world.events.emit(
+      DamageApplied,
+      hit(knight, wolf, undefined, { tags: ['blocked'], poiseDamage: 20 }),
+    );
+    world.step();
+    world.events.emit(DamageApplied, hit(wolf, knight, undefined, { tags: ['critical'] }));
+    world.step();
+    world.events.emit(GuardBroken, {
+      tick: 3,
+      entity: knight,
+      instigator: wolf,
+      source: null,
+      staggerTicks: 60,
+    });
+    world.events.flush();
+    const effects = spawned.map((s) => s.effect);
+    expect(effects).toContain('vfx-guard-break');
+    expect(effects).toContain('vfx-impact-critical');
+    // The critical's burst rides on the accent layer beside the flesh impact.
+    expect(effects).toContain('vfx-impact-ichor');
   });
 
   it('AC-2: a looping effect attached to an entity stops emitting when it is destroyed, and its particles finish within their lifetime', ({
