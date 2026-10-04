@@ -92,6 +92,69 @@
       "scene": "perf-baseline",
       "preset": "high",
       "note": "On the reference GPU a frame takes milliseconds, so every task of 200 ms or more in the sampling window counts, frame renders included. Same run as frame-p95-high."
+    },
+    {
+      "id": "load-to-playable-slice",
+      "metric": "loadToPlayableMs",
+      "mode": "reference",
+      "max": 10000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: Initial load to playable ≤ 10 s on a 50 Mbps connection",
+      "scene": "slice",
+      "note": "Reference mode, cold, cache disabled, 50 Mbps through CDP. The slice (/?scene=slice&class=knight&debug=1) as the slice playthrough e2e measured it before mw-e41.8."
+    },
+    {
+      "id": "front-door-load",
+      "metric": "frontDoorLoadMs",
+      "mode": "reference",
+      "max": 10000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: Initial load to playable ≤ 10 s on a 50 Mbps connection",
+      "scene": "slice",
+      "note": "Reference mode, cold at 50 Mbps: page load to the title (titleMs) plus New Game pressed to playable (playableMs - newGameMs) from #app[data-front-door], leaving out the player's reading time. Moved from e2e/title.spec.ts."
+    },
+    {
+      "id": "first-frame-warm",
+      "metric": "firstFrameMs",
+      "mode": "reference",
+      "max": 3000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: warm reload ≤ 3 s",
+      "scene": "front-door",
+      "note": "Reference mode, warm reload of /: #app[data-first-frame-ms]. Moved from e2e/render-boot.spec.ts."
+    },
+    {
+      "id": "save-load-testbed",
+      "metric": "saveLoadToPlayableMs",
+      "mode": "reference",
+      "max": 3000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: warm reload ≤ 3 s",
+      "scene": "testbed",
+      "note": "Reference mode, warm: save, kill, Load last save to the first sim step from the save. Moved from e2e/death-reload.spec.ts."
+    },
+    {
+      "id": "save-load-slice",
+      "metric": "saveLoadToPlayableMs",
+      "mode": "reference",
+      "max": 3000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: warm reload ≤ 3 s",
+      "scene": "slice",
+      "note": "Reference mode, warm: as save-load-testbed in the slice arena. Moved from e2e/death-respawn.spec.ts and the reload in e2e/slice-playthrough.spec.ts."
+    },
+    {
+      "id": "continue-slice",
+      "metric": "continueToPlayableMs",
+      "mode": "reference",
+      "max": 3000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: warm reload ≤ 3 s",
+      "scene": "slice",
+      "note": "Reference mode, warm: reload through the front door, Continue to the first sim step from the save. Moved from e2e/slice-saves.spec.ts."
+    },
+    {
+      "id": "restart-area-slice",
+      "metric": "restartToPlayableMs",
+      "mode": "reference",
+      "max": 3000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: warm reload ≤ 3 s",
+      "scene": "slice",
+      "note": "Reference mode, warm: death with no save, Restart area to the first sim step of the new world. Moved from e2e/slice-restart.spec.ts."
     }
   ]
 }

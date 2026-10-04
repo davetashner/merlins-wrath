@@ -24,6 +24,16 @@ export const PERF_METRICS = {
   loadToPlayableMs: 'ms',
   /** The same with the browser cache warm. */
   warmReloadMs: 'ms',
+  /** Warm reload of the front door: navigation start to the first frame drawn (data-first-frame-ms). */
+  firstFrameMs: 'ms',
+  /** Front door cold at 50 Mbps: title shown, then New Game → Knight → Confirm to playable, leaving out reading time. */
+  frontDoorLoadMs: 'ms',
+  /** Death screen "Load last save" pressed to the first sim step from the save (warm). */
+  saveLoadToPlayableMs: 'ms',
+  /** Title "Continue" pressed to the first sim step from the save (warm). */
+  continueToPlayableMs: 'ms',
+  /** Death screen "Restart area" pressed to the first sim step of the new world (warm). */
+  restartToPlayableMs: 'ms',
   /** JS heap (allocated) after idling in the testbed. */
   heapBytesAfterIdle: 'bytes',
   /** Main-thread tasks of 200 ms or more while frames are sampled, frame renders included. */

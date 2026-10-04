@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { budgetMs } from './helpers/budget';
 
 // mw-e30.7: death → reload in the testbed, against the production build (Chromium). The debug
 // console (?debug=1) makes a save with `save` (publishing the tick and sim state hash it saved on
@@ -62,26 +61,11 @@ async function type(page: Page, line: string): Promise<void> {
   await page.keyboard.press('Enter');
 }
 
-test('AC-2: after a death, Load last save is playable within 3 s at the save’s state hash', async ({
+test('AC-2: after a death, Load last save is playable at the save’s state hash', async ({
   page,
 }) => {
   test.setTimeout(90_000);
   const problems = collectProblems(page);
-  // On every page: the wall-clock time the player first moves on from a loaded save (the first sim
-  // step after it), seen by a MutationObserver as it happens, so test polling never adds to it.
-  await page.addInitScript(() => {
-    const observer = new MutationObserver(() => {
-      const app = document.querySelector<HTMLElement>('#app');
-      const loaded = app?.dataset['loadedSave'];
-      const player = app?.dataset['player'];
-      if (loaded === undefined || player === undefined) return;
-      const { tick } = JSON.parse(loaded) as { tick: number };
-      if ((JSON.parse(player) as { tick: number }).tick <= tick) return;
-      (window as unknown as { playableAt: number }).playableAt = Date.now();
-      observer.disconnect();
-    });
-    observer.observe(document, { attributes: true, subtree: true });
-  });
   await page.goto('/?scene=testbed&debug=1');
   await ready(page);
   // Warm the cache the reload will use, as a second visit would be.
@@ -112,14 +96,7 @@ test('AC-2: after a death, Load last save is playable within 3 s at the save’s
   // Playable: no screen holds the sim, and it is stepping on from the save.
   await expect(page.locator('[data-screen]')).toHaveCount(0);
   await expect.poll(() => playerTick(page)).toBeGreaterThan(loaded.tick);
-  // From the click on Load last save (stamped in the hand-off) to the first step from the save.
-  const playableAt = await page.evaluate(
-    () => (window as unknown as { playableAt: number }).playableAt,
-  );
-  const elapsed = playableAt - (loaded.requestedAt ?? 0);
-  test.info().annotations.push({ type: 'reload-ms', description: String(elapsed) });
-  expect(elapsed).toBeGreaterThan(0);
-  expect(elapsed).toBeLessThanOrEqual(budgetMs(3_000));
+  // The 3 s warm budget, click to first step from the save, is the perf suite's (testbed save-load).
   expect(problems).toEqual([]);
 });
 

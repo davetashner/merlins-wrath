@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { budgetMs } from './helpers/budget';
 
 // mw-e01.7: saving and reloading the vertical slice (?scene=slice), against the production build
 // (Chromium). The knight is put in the corridor with the debug console (`tp`) and saved into manual
@@ -9,10 +8,9 @@ import { budgetMs } from './helpers/budget';
 // slice, and #app[data-loaded-save] carries the state hash right after the load. On the way the
 // knight passes CP-1, whose checkpoint autosave is published on #app[data-autosave].
 //
-// "Within 3 s warm" is measured inside the page, as e2e/death-reload.spec.ts does: from the press on
-// Continue (stamped in the reload hand-off) to the first sim step from the loaded save, seen by a
-// MutationObserver as it happens, so Playwright round trips never add to it. CI draws a few frames a
-// second, so the specs wait on published state, never on wall time, and read it in one round trip.
+// The "within 3 s warm" wall-clock budget is the perf suite's (mw-e41.8, e2e/perf/flows.ts), not
+// asserted here. CI draws a few frames a second, so the spec waits on published state, never on wall
+// time, and reads it in one round trip.
 
 // Driver performance notices from the GPU process are not our errors (see e2e/render-boot.spec.ts).
 const DRIVER_PERF_NOTICE = /^\[\.WebGL-[^\]]+\]GL Driver Message \([^)]*\bPerformance\b/;
@@ -32,7 +30,6 @@ interface Resumed {
   loaded: Readout | null;
   player: { tick: number; position: { x: number; z: number } } | null;
   screens: string[];
-  playableAt: number | null;
 }
 
 function collectProblems(page: Page): string[] {
@@ -76,31 +73,14 @@ const resumed = (page: Page): Promise<Resumed> =>
       screens: [...document.querySelectorAll<HTMLElement>('[data-screen]')].map(
         (el) => el.dataset['screen'] ?? '',
       ),
-      playableAt: (window as unknown as { playableAt?: number }).playableAt ?? null,
     };
   });
 
-test('mw-e01.7 AC-3: a manual save in the corridor, reloaded and continued, resumes in the corridor within 3 s warm', async ({
+test('mw-e01.7 AC-3: a manual save in the corridor, reloaded and continued, resumes in the corridor', async ({
   page,
 }) => {
   test.setTimeout(180_000);
   const problems = collectProblems(page);
-  // On every page: the wall-clock time the player first moves on from a loaded save.
-  await page.addInitScript(() => {
-    const w = window as unknown as { playableAt?: number };
-    const observer = new MutationObserver(() => {
-      const app = document.querySelector<HTMLElement>('#app');
-      const loaded = app?.dataset['loadedSave'];
-      const player = app?.dataset['player'];
-      if (loaded === undefined || player === undefined || w.playableAt !== undefined) return;
-      const { tick } = JSON.parse(loaded) as { tick: number };
-      if ((JSON.parse(player) as { tick: number }).tick <= tick) return;
-      w.playableAt = Date.now();
-      observer.disconnect();
-    });
-    observer.observe(document, { attributes: true, subtree: true });
-  });
-
   // A new game as the knight, straight into the slice, with the debug console.
   await page.goto('/?scene=slice&class=knight&debug=1');
   const app = page.locator('#app');
@@ -144,7 +124,12 @@ test('mw-e01.7 AC-3: a manual save in the corridor, reloaded and continued, resu
     .poll(
       async () => {
         const state = await resumed(page);
-        return state.playableAt !== null && state.screens.length === 0;
+        // Playable: the sim has stepped on from the save and no screen holds it.
+        return (
+          state.loaded !== null &&
+          (state.player?.tick ?? 0) > state.loaded.tick &&
+          state.screens.length === 0
+        );
       },
       { timeout: 30_000 },
     )
@@ -156,10 +141,6 @@ test('mw-e01.7 AC-3: a manual save in the corridor, reloaded and continued, resu
   expect(Math.abs(at.x)).toBeLessThan(1);
   expect(at.z).toBeGreaterThan(5);
   expect(at.z).toBeLessThan(25);
-  // From the press on Continue (stamped in the hand-off) to the first step from the save.
-  const elapsed = (state.playableAt ?? 0) - (state.loaded?.requestedAt ?? 0);
-  test.info().annotations.push({ type: 'reload-ms', description: String(elapsed) });
-  expect(elapsed).toBeGreaterThan(0);
-  expect(elapsed).toBeLessThanOrEqual(budgetMs(3_000));
+  // The 3 s warm budget, press on Continue to first step from the save, is the perf suite's (continue-slice).
   expect(problems).toEqual([]);
 });

@@ -200,6 +200,13 @@ has two modes:
   `perf-baseline` scene. It fails unless frame time p50 and p95 are ≤ 16.7 ms and no task of 200 ms or
   more, frame renders included, runs while frames are sampled. Writes
   `perf/results/<date>-<sha>.json`; commit it so results build a trend. Close other apps first.
+  Reference mode also holds the wall-clock load budgets that PR e2e specs used to assert (mw-e41.8;
+  `e2e/perf/flows.ts`, same in-page timing hooks): cold slice load and the title's New Game → Knight →
+  playable ≤ 10 s at 50 Mbps; first frame on a warm reload, death → Load last save (testbed and
+  slice), title Continue and Restart area to the first sim step ≤ 3 s warm. They sit here, not in CI
+  mode, because software GL on shared runners makes absolute loads jitter (restarts measured 9–10 s
+  there). CI mode adds no relative or ceiling guard for them; its throttled testbed load and warm
+  reload budgets remain. PR e2e specs keep only functional assertions and hang-protection timeouts.
 
 Every run writes `test-results/perf-report.json` and prints a per-budget table. `perf-baseline`
 (`/?scene=perf-baseline`) is the stress scene: 64 crates kept tumbling by force blasts at its

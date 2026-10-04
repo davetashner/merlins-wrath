@@ -30,32 +30,38 @@ afterEach(() => {
 });
 
 describe('replay goldens and the content hash (mw-e00.31)', () => {
-  it('AC-1: an unrelated content change leaves every golden passing and rebless rewrites none', () => {
-    expect(currentContentHash()).not.toBe(UNRELATED);
-    cpSync(GOLDEN_REPLAY_DIR, join(dir, GOLDEN_REPLAY_DIR), { recursive: true });
-    for (const file of goldens) {
-      expect(expectReplay(join(GOLDEN_REPLAY_DIR, file), { contentHash: UNRELATED }).status).toBe(
-        'passed',
-      );
-    }
-    const lines: string[] = [];
-    const errors: string[] = [];
-    const io = {
-      ...defaultIo(dir),
-      log: (line: string) => lines.push(line),
-      error: (line: string) => errors.push(line),
-      buildSha: () => 'another-build',
-      contentHash: () => UNRELATED,
-    };
-    expect(main(['rebless'], io)).toBe(0);
-    expect(errors).toEqual([]);
-    expect(lines).toEqual(goldens.map((file) => `unchanged ${GOLDEN_REPLAY_DIR}/${file}`));
-    for (const file of goldens) {
-      expect(readFileSync(join(dir, GOLDEN_REPLAY_DIR, file), 'utf8')).toBe(
-        readFileSync(join(GOLDEN_REPLAY_DIR, file), 'utf8'),
-      );
-    }
-  });
+  // Replays every golden recording and then reblesses them, so it grows with the content: the
+  // 5 s default timed out on loaded CI runners (mw-cw6).
+  it(
+    'AC-1: an unrelated content change leaves every golden passing and rebless rewrites none',
+    { timeout: 60_000 },
+    () => {
+      expect(currentContentHash()).not.toBe(UNRELATED);
+      cpSync(GOLDEN_REPLAY_DIR, join(dir, GOLDEN_REPLAY_DIR), { recursive: true });
+      for (const file of goldens) {
+        expect(expectReplay(join(GOLDEN_REPLAY_DIR, file), { contentHash: UNRELATED }).status).toBe(
+          'passed',
+        );
+      }
+      const lines: string[] = [];
+      const errors: string[] = [];
+      const io = {
+        ...defaultIo(dir),
+        log: (line: string) => lines.push(line),
+        error: (line: string) => errors.push(line),
+        buildSha: () => 'another-build',
+        contentHash: () => UNRELATED,
+      };
+      expect(main(['rebless'], io)).toBe(0);
+      expect(errors).toEqual([]);
+      expect(lines).toEqual(goldens.map((file) => `unchanged ${GOLDEN_REPLAY_DIR}/${file}`));
+      for (const file of goldens) {
+        expect(readFileSync(join(dir, GOLDEN_REPLAY_DIR, file), 'utf8')).toBe(
+          readFileSync(join(GOLDEN_REPLAY_DIR, file), 'utf8'),
+        );
+      }
+    },
+  );
 
   it('AC-2: a content change that alters a replay outcome still fails the replay check', ({
     task,

@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { budgetMs } from './helpers/budget';
 
 // mw-e01.8: the player's death beat and respawn in the vertical slice (?scene=slice), against the
 // production build (Chromium). The debug console (?debug=1) teleports the knight into the arena,
@@ -10,9 +9,8 @@ import { budgetMs } from './helpers/budget';
 //
 // The death beat is counted in sim ticks, so its length is checked in ticks (1.5 s at 60 Hz = 90),
 // never in wall time: CI draws a few frames a second at most five ticks a frame, so the beat itself
-// can take several seconds of wall time there. "Playable within 3 s" is measured inside the page,
-// from the click on Load last save (stamped in the reload hand-off) to the first sim step from the
-// loaded save, seen by a MutationObserver as it happens, so Playwright round trips never add to it.
+// can take several seconds of wall time there. The "playable within 3 s" wall-clock budget is the perf
+// suite's (mw-e41.8, e2e/perf/flows.ts), not asserted here.
 //
 // "The skeleton's state matches the save" is checked generically: the whole world's state hash after
 // the load equals the one saved (it covers every entity, the arena's Forgotten miner, mw-e01.5,
@@ -82,15 +80,14 @@ async function run(page: Page, line: string): Promise<void> {
   await expect(page.locator('#app')).toHaveAttribute('data-debug-console', 'closed');
 }
 
-test('AC-2: dying in the slice arena plays a 90-tick death beat, and Load last save is playable within 3 s at the save’s state', async ({
+test('AC-2: dying in the slice arena plays a 90-tick death beat, and Load last save is playable at the save’s state', async ({
   page,
 }) => {
   test.setTimeout(150_000);
   const problems = collectProblems(page);
-  // On every page: the wall-clock time the player first moves on from a loaded save (the first sim
-  // step after it), and whether the death screen was ever open while the beat still ran.
+  // On every page: whether the death screen was ever open while the beat still ran.
   await page.addInitScript(() => {
-    const w = window as unknown as { playableAt?: number; screenDuringBeat?: boolean };
+    const w = window as unknown as { screenDuringBeat?: boolean };
     const observer = new MutationObserver(() => {
       const app = document.querySelector<HTMLElement>('#app');
       const death = app?.dataset['playerDeath'];
@@ -99,12 +96,6 @@ test('AC-2: dying in the slice arena plays a 90-tick death beat, and Load last s
           w.screenDuringBeat = true;
         }
       }
-      const loaded = app?.dataset['loadedSave'];
-      const player = app?.dataset['player'];
-      if (loaded === undefined || player === undefined || w.playableAt !== undefined) return;
-      const { tick } = JSON.parse(loaded) as { tick: number };
-      if ((JSON.parse(player) as { tick: number }).tick <= tick) return;
-      w.playableAt = Date.now();
     });
     observer.observe(document, { attributes: true, childList: true, subtree: true });
   });
@@ -166,12 +157,6 @@ test('AC-2: dying in the slice arena plays a 90-tick death beat, and Load last s
     slot: 'manual-1',
   });
   await expect(page.getByTestId('death-fade')).toBeHidden();
-  const playableAt = await page.evaluate(
-    () => (window as unknown as { playableAt?: number }).playableAt,
-  );
-  const elapsed = (playableAt ?? Infinity) - (loaded.requestedAt ?? 0);
-  test.info().annotations.push({ type: 'reload-ms', description: String(elapsed) });
-  expect(elapsed).toBeGreaterThan(0);
-  expect(elapsed).toBeLessThanOrEqual(budgetMs(3_000));
+  // The 3 s warm budget, click to first step from the save, is the perf suite's (slice save-load).
   expect(problems).toEqual([]);
 });

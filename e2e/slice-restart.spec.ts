@@ -7,18 +7,11 @@ import { collectProblems, data, ready, run, SLICE_URL } from './helpers/slice';
 // session (?class=), so the knight is back at player-start with its kit and fresh world facts.
 // #app[data-boot-state] is the sim state hash of the world as booted, before its first step.
 //
-// "Within 3 s warm" is measured inside the page, as e2e/death-reload.spec.ts does: from the click on
-// Restart area (stamped in session storage) to the first sim step of the new world, seen by a
-// MutationObserver as it happens. CI draws a few frames a second, so that budget can flake there.
+// The "playable within 3 s warm" wall-clock budget is not asserted here (mw-e41.8): it is measured in
+// the perf suite's reference mode (e2e/perf/flows.ts, budget restart-area-slice), where timings mean
+// something. This spec checks that the world is playable (stepping, no screen over it) at all.
 
 const SPAWN = { x: 0, z: -2 };
-
-/**
- * The bead's budget, on a developer machine. CI renders in software GL on 2-core runners (a few frames
- * a second; restarts took 3.2-6.8 s there), so it gets 3x; the real budget stays enforced against the
- * reference hardware by the perf-budget job.
- */
-const RESTART_BUDGET_MS = process.env['CI'] ? 9_000 : 3_000;
 
 interface BootState {
   tick: number;
@@ -37,30 +30,11 @@ const kitOf = (page: Page): Promise<{ name: string; items: (string | null)[] } |
         };
   });
 
-test('mw-e01.16 AC-1, AC-2, AC-3: after a death before CP-1 with no save, Restart area replays a knight New Game within 3 s, with no console errors', async ({
+test('mw-e01.16 AC-1, AC-2, AC-3: after a death before CP-1 with no save, Restart area replays a knight New Game, playable, with no console errors', async ({
   page,
 }) => {
   test.setTimeout(120_000);
   const problems = collectProblems(page);
-  // On every page: when the sim first steps in a world booted after the click on Restart area.
-  await page.addInitScript(() => {
-    const w = window as unknown as { playableAt?: number };
-    const observer = new MutationObserver(() => {
-      const app = document.querySelector<HTMLElement>('#app');
-      const player = app?.dataset['player'];
-      let stamp: string | null = null;
-      try {
-        stamp = sessionStorage.getItem('restartClickedAt');
-      } catch {
-        // No session storage: nothing to time.
-      }
-      if (stamp === null || player === undefined || w.playableAt !== undefined) return;
-      if ((JSON.parse(player) as { tick: number }).tick <= 0) return;
-      w.playableAt = Date.now();
-      observer.disconnect();
-    });
-    observer.observe(document, { attributes: true, subtree: true });
-  });
 
   // A new game as the knight: the baseline the restart must equal.
   await page.goto(SLICE_URL);
@@ -89,9 +63,6 @@ test('mw-e01.16 AC-1, AC-2, AC-3: after a death before CP-1 with no save, Restar
   await expect(restart).toBeFocused();
 
   const reloaded = page.waitForEvent('load');
-  await page.evaluate(() => {
-    sessionStorage.setItem('restartClickedAt', String(Date.now()));
-  });
   await restart.click();
   await reloaded;
   await ready(page);
@@ -104,23 +75,13 @@ test('mw-e01.16 AC-1, AC-2, AC-3: after a death before CP-1 with no save, Restar
   expect(await kitOf(page)).toEqual(kit);
   // AC-2: the world as booted hashes as the New Game as the knight did, at tick 0.
   expect(await data<BootState>(page, 'boot-state')).toEqual(newGame);
-  // AC-3: playable (stepping, no screen over it) within 3 s of the click.
+  // AC-3: playable (stepping, no screen over it); the 3 s budget is the perf suite's.
   await expect(page.locator('[data-screen]')).toHaveCount(0);
   const player = await data<{ position: { x: number; z: number } }>(page, 'player');
   expect(Math.abs(player.position.x - SPAWN.x)).toBeLessThan(0.5);
   expect(Math.abs(player.position.z - SPAWN.z)).toBeLessThan(0.5);
   await expect
-    .poll(() =>
-      page.evaluate(() => (window as unknown as { playableAt?: number }).playableAt ?? null),
-    )
-    .not.toBeNull();
-  const { playableAt, clickedAt } = await page.evaluate(() => ({
-    playableAt: (window as unknown as { playableAt: number }).playableAt,
-    clickedAt: Number(sessionStorage.getItem('restartClickedAt')),
-  }));
-  const elapsed = playableAt - clickedAt;
-  test.info().annotations.push({ type: 'restart-ms', description: String(elapsed) });
-  expect(elapsed).toBeGreaterThan(0);
-  expect(elapsed).toBeLessThanOrEqual(RESTART_BUDGET_MS);
+    .poll(async () => (await data<{ tick: number }>(page, 'player')).tick, { timeout: 60_000 })
+    .toBeGreaterThan(0);
   expect(problems).toEqual([]);
 });
