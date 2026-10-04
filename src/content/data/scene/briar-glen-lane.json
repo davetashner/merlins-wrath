@@ -1,0 +1,435 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "briar-glen-lane",
+  "name": "Briar Glen: the shop lane",
+  "description": "Bead mw-ju8.5: a greybox cobbled lane, about 40 m long and 16 m wide, built from the e00 kit only. It runs north from the town end of the Miners' Bridge (the bridge-town-end marker, tagged scene:valley-03 as a stand-in for the road to the valley). Marsh's General Store is the first building past the bridge, on the west side: its front door (marsh-store-door, tagged scene:marsh-store) is an area-exit marker until area transitions exist (mw-e01.11), so for now reach the interior with ?scene=marsh-store. On the east side three open-fronted shops stand side by side, each with a six metre counter and its keeper behind it: Brand's Forge (Oswin Brand; anvil, forge fire, weapon rack, quench barrel), Fenn's Fletchery & Simples (Juniper Fenn; bow rack, herb bench, arrow barrel) and Pell's Bakery (Hollis Pell; bread shelf, oven, flour sacks). Each counter is a spawn tagged merchant:<id> with the Trade verb and dev-crowns:400 so the dev scene can trade. Props are kit stand-ins with named marker spawns so art can dress them later; street and shop lanterns are warm. Reach it with ?scene=briar-glen-lane.",
+  "grid": 1,
+  "camera": {
+    "position": [-12, 16, 4],
+    "target": [3, 1, 20]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [1.0, 0.0, 20.0],
+      "scale": [8, 1, 20]
+    },
+    {
+      "piece": "floor",
+      "at": [-8.0, 0.0, 9.0],
+      "scale": [1, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [1.0, 0.0, 0.0],
+      "scale": [8, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [1.0, 0.0, 40.0],
+      "scale": [8, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [9.0, 0.0, 20.0],
+      "yaw": 90,
+      "scale": [20, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-7.0, 0.0, 4.0],
+      "yaw": 90,
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [-7.0, 0.0, 9.0],
+      "yaw": 90
+    },
+    {
+      "piece": "wall",
+      "at": [-7.0, 0.0, 25.0],
+      "yaw": 90,
+      "scale": [15, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-9.0, 0.0, 9.0],
+      "yaw": 90,
+      "scale": [1, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-8.0, 0.0, 8.0],
+      "scale": [1, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-8.0, 0.0, 10.0],
+      "scale": [1, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [6.5, 0.0, 12.0],
+      "scale": [2.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [6.5, 0.0, 20.0],
+      "scale": [2.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [6.5, 0.0, 28.0],
+      "scale": [2.5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [6.5, 0.0, 36.0],
+      "scale": [2.5, 1, 1]
+    },
+    {
+      "piece": "platform",
+      "at": [5.0, 0.0, 16.0],
+      "scale": [0.5, 1, 3],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [5.0, 0.0, 24.0],
+      "scale": [0.5, 1, 3],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [5.0, 0.0, 32.0],
+      "scale": [0.5, 1, 3],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [7.5, 0.0, 13.25],
+      "scale": [0.3, 0.6, 0.25],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [8.5, 0.0, 19.0],
+      "scale": [0.5, 0.55, 0.8],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [8.75, 0.0, 15.5],
+      "scale": [0.1, 1.6, 1.2],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "crate",
+      "at": [7.5, 0.0, 18.75],
+      "scale": [0.8, 0.8, 0.8]
+    },
+    {
+      "piece": "platform",
+      "at": [8.75, 0.0, 23.0],
+      "scale": [0.1, 1.6, 1.5],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [8.0, 0.0, 27.25],
+      "scale": [0.5, 0.8, 0.6],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "crate",
+      "at": [7.5, 0.0, 20.75],
+      "scale": [0.8, 0.8, 0.8]
+    },
+    {
+      "piece": "platform",
+      "at": [8.75, 0.0, 31.0],
+      "scale": [0.1, 1.5, 1.4],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [8.5, 0.0, 35.0],
+      "scale": [0.6, 1.2, 0.7],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "crate",
+      "at": [7.5, 0.0, 29.0],
+      "scale": [0.7, 0.6, 0.7]
+    },
+    {
+      "piece": "crate",
+      "at": [-5.5, 0.0, 16.0],
+      "scale": [0.8, 0.8, 0.8]
+    },
+    {
+      "piece": "crate",
+      "at": [-5.5, 0.0, 17.0],
+      "scale": [0.8, 0.6, 0.8]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "brand-forge-counter",
+      "at": [4.25, 0.0, 16.0],
+      "tags": ["counter", "shop", "merchant:brand-forge", "dev-crowns:400"],
+      "interact": {
+        "affordances": [
+          {
+            "verb": "talk",
+            "label": "Trade"
+          }
+        ],
+        "radius": 1.5
+      }
+    },
+    {
+      "id": "npc-oswin",
+      "at": [7.0, 0.0, 16.0],
+      "tags": ["shopkeeper"],
+      "yaw": 270,
+      "creature": "npc-oswin",
+      "leash": {
+        "radius": 2
+      }
+    },
+    {
+      "id": "sign-brand-forge",
+      "at": [4.25, 3.25, 16.0],
+      "tags": ["sign"]
+    },
+    {
+      "id": "lantern-brand-forge",
+      "at": [6.0, 2.5, 16.0],
+      "tags": ["lantern"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "fenn-fletchery-simples-counter",
+      "at": [4.25, 0.0, 24.0],
+      "tags": ["counter", "shop", "merchant:fenn-fletchery-simples", "dev-crowns:400"],
+      "interact": {
+        "affordances": [
+          {
+            "verb": "talk",
+            "label": "Trade"
+          }
+        ],
+        "radius": 1.5
+      }
+    },
+    {
+      "id": "npc-juniper",
+      "at": [7.0, 0.0, 24.0],
+      "tags": ["shopkeeper"],
+      "yaw": 270,
+      "creature": "npc-juniper",
+      "leash": {
+        "radius": 2
+      }
+    },
+    {
+      "id": "sign-fenn-fletchery-simples",
+      "at": [4.25, 3.25, 24.0],
+      "tags": ["sign"]
+    },
+    {
+      "id": "lantern-fenn-fletchery-simples",
+      "at": [6.0, 2.5, 24.0],
+      "tags": ["lantern"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "pell-bakery-counter",
+      "at": [4.25, 0.0, 32.0],
+      "tags": ["counter", "shop", "merchant:pell-bakery", "dev-crowns:400"],
+      "interact": {
+        "affordances": [
+          {
+            "verb": "talk",
+            "label": "Trade"
+          }
+        ],
+        "radius": 1.5
+      }
+    },
+    {
+      "id": "npc-hollis",
+      "at": [7.0, 0.0, 32.0],
+      "tags": ["shopkeeper"],
+      "yaw": 270,
+      "creature": "npc-hollis",
+      "leash": {
+        "radius": 2
+      }
+    },
+    {
+      "id": "sign-pell-bakery",
+      "at": [4.25, 3.25, 32.0],
+      "tags": ["sign"]
+    },
+    {
+      "id": "lantern-pell-bakery",
+      "at": [6.0, 2.5, 32.0],
+      "tags": ["lantern"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "anvil",
+      "at": [7.5, 0.5, 13.25],
+      "tags": ["anvil", "prop"]
+    },
+    {
+      "id": "forge-fire",
+      "at": [8.5, 0.5, 19.0],
+      "tags": ["forge", "hearth"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 86400
+      }
+    },
+    {
+      "id": "weapon-rack",
+      "at": [8.75, 1.5, 15.5],
+      "tags": ["rack", "prop"]
+    },
+    {
+      "id": "quench-barrel",
+      "at": [7.5, 0.75, 18.75],
+      "tags": ["barrel", "prop"]
+    },
+    {
+      "id": "bow-rack",
+      "at": [8.75, 1.5, 23.0],
+      "tags": ["rack", "prop"]
+    },
+    {
+      "id": "herb-bench",
+      "at": [8.0, 0.75, 27.25],
+      "tags": ["bench", "prop"]
+    },
+    {
+      "id": "arrow-barrel",
+      "at": [7.5, 0.75, 20.75],
+      "tags": ["barrel", "prop"]
+    },
+    {
+      "id": "drying-herbs",
+      "at": [6.0, 2.25, 26.0],
+      "tags": ["herbs", "prop"]
+    },
+    {
+      "id": "bread-shelf",
+      "at": [8.75, 1.5, 31.0],
+      "tags": ["shelf", "prop"]
+    },
+    {
+      "id": "oven-fire",
+      "at": [8.5, 1.0, 35.0],
+      "tags": ["oven", "hearth"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 86400
+      }
+    },
+    {
+      "id": "flour-sacks",
+      "at": [7.5, 0.5, 29.0],
+      "tags": ["sacks", "prop"]
+    },
+    {
+      "id": "player-start",
+      "at": [0.0, 0.0, 4.0],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "bridge-town-end",
+      "at": [0.0, 0.0, 1.5],
+      "tags": ["area-exit", "bridge", "scene:valley-03"]
+    },
+    {
+      "id": "marsh-store-door",
+      "at": [-8.0, 0.0, 9.0],
+      "tags": ["area-exit", "building", "scene:marsh-store"]
+    },
+    {
+      "id": "sign-marsh-general-store",
+      "at": [-6.5, 3.25, 9.0],
+      "tags": ["sign"]
+    },
+    {
+      "id": "street-lantern-1",
+      "at": [0.0, 2.5, 6.0],
+      "tags": ["lantern", "street"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "street-lantern-2",
+      "at": [0.0, 2.5, 17.0],
+      "tags": ["lantern", "street"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "street-lantern-3",
+      "at": [0.0, 2.5, 28.0],
+      "tags": ["lantern", "street"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "street-lantern-4",
+      "at": [0.0, 2.5, 38.0],
+      "tags": ["lantern", "street"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    }
+  ],
+  "light": {
+    "ambient": 0.28,
+    "directional": [
+      {
+        "id": "moon",
+        "direction": [0.3, -1, 0.4],
+        "level": 0.22,
+        "reach": 60
+      }
+    ]
+  },
+  "environment": {
+    "sky": "#1E1B2E"
+  }
+}

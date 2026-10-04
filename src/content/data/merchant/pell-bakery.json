@@ -1,0 +1,23 @@
+{
+  "$schema": "../merchant.schema.json",
+  "id": "pell-bakery",
+  "notes": "Pell's Bakery, Briar Glen (story bible §3.5 and §5.5; mw-ju8.5): Hollis Pell (npc-hollis), who bakes at four. Food only: bread, hot pies, cheese, sausage, apples and travelling rations. Friendly and generous, so the lowest markup that suits a baker, 1.15 (band 1.1-1.5), and the default buy rate 0.4 (band 0.3-0.6); food is his specialty (the consumable category, bonus at the default 1.2, so he will also take a potion off you). He buys consumables only. A small till of 120 gold refilling 30 a day: food is cheap, so he cannot pay for much else. Everything restocks daily, the bread fastest. Prices follow the catalogue values (mw-ju8.4) and will move with the balance pass.",
+  "npcId": "npc-hollis",
+  "displayName": "Hollis Pell",
+  "shopName": "Pell's Bakery",
+  "personalityTags": ["friendly", "generous"],
+  "specialties": ["consumable"],
+  "buysCategories": ["consumable"],
+  "stock": [
+    { "item": "bread-loaf", "count": 12, "restock": { "everyHours": 12, "amount": 6 } },
+    { "item": "hot-pie", "count": 6, "restock": { "everyHours": 12, "amount": 3 } },
+    { "item": "hard-cheese-wedge", "count": 6, "restock": { "everyHours": 24, "amount": 3 } },
+    { "item": "smoked-sausage", "count": 6, "restock": { "everyHours": 24, "amount": 3 } },
+    { "item": "apple", "count": 10, "restock": { "everyHours": 24, "amount": 5 } },
+    { "item": "travelling-rations", "count": 8, "restock": { "everyHours": 24, "amount": 4 } }
+  ],
+  "goldReserve": 120,
+  "goldRestockPerDay": 30,
+  "markup": 1.15,
+  "buyRate": 0.4
+}
