@@ -1,0 +1,151 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-forgotten-overhead-chop",
+  "rig": "greybox-humanoid",
+  "notes": "The Forgotten's overhead chop (24/4/26 ticks): the pick raised overhead in both hands, held at the top, chopped straight down. Torso: spine, chest and head point up, so a positive x tilts them BACK and a positive y turns the right shoulder FORWARD (left); arms and legs hang down, so a positive x swings them forward. ",
+  "duration": 0.9,
+  "markers": [
+    {
+      "kind": "hit",
+      "t": 0.4
+    }
+  ],
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [6.0, -4.0, 0.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [-8.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.55,
+        "rot": [-9.6, 0.0, 0.0]
+      },
+      {
+        "t": 0.9,
+        "rot": [0.0, 0.0, 0.0]
+      }
+    ],
+    "chest": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [12.0, -10.0, 0.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [-16.0, 6.0, 0.0]
+      },
+      {
+        "t": 0.55,
+        "rot": [-17.6, 8.0, 0.0]
+      },
+      {
+        "t": 0.9,
+        "rot": [0.0, 0.0, 0.0]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 6.0]
+      },
+      {
+        "t": 0.15,
+        "rot": [70.0, 0.0, 30.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [150.0, -6.0, 16.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [92.0, -4.0, 8.0]
+      },
+      {
+        "t": 0.55,
+        "rot": [40.0, 0.0, 4.0]
+      },
+      {
+        "t": 0.9,
+        "rot": [0.0, 0.0, 6.0]
+      }
+    ],
+    "forearm-r": [
+      {
+        "t": 0,
+        "rot": [8.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.15,
+        "rot": [70.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [105.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [10.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.9,
+        "rot": [8.0, 0.0, 0.0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, -6.0]
+      },
+      {
+        "t": 0.15,
+        "rot": [70.0, 0.0, -20.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [140.0, 0.0, -14.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [70.0, 0.0, -10.0]
+      },
+      {
+        "t": 0.55,
+        "rot": [30.0, 0.0, -8.0]
+      },
+      {
+        "t": 0.9,
+        "rot": [0.0, 0.0, -6.0]
+      }
+    ],
+    "forearm-l": [
+      {
+        "t": 0,
+        "rot": [20.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [80.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [20.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.9,
+        "rot": [20.0, 0.0, 0.0]
+      }
+    ]
+  }
+}

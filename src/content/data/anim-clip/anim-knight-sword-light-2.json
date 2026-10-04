@@ -1,0 +1,125 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-knight-sword-light-2",
+  "rig": "greybox-humanoid",
+  "notes": "Grey-box placeholder for move sword-light-2 (10/4/20 ticks): the backhand: the sword drawn across to the left (torso turned left), then swept flat to the right, the hit marker as it crosses the front, and out wide on the right. Torso: spine, chest and head point up, so a positive x tilts them BACK and a positive y turns the right shoulder FORWARD (left); arms and legs hang down, so a positive x swings them forward. ",
+  "duration": 0.5,
+  "markers": [
+    {
+      "kind": "hit",
+      "t": 0.1667
+    }
+  ],
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.1,
+        "rot": [0.0, 10.0, 0.0]
+      },
+      {
+        "t": 0.1667,
+        "rot": [-3.0, -8.0, 0.0]
+      },
+      {
+        "t": 0.28,
+        "rot": [-3.0, -14.0, 0.0]
+      },
+      {
+        "t": 0.5,
+        "rot": [0.0, 0.0, 0.0]
+      }
+    ],
+    "chest": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.1,
+        "rot": [2.0, 28.0, 0.0]
+      },
+      {
+        "t": 0.1667,
+        "rot": [-4.0, -22.0, 0.0]
+      },
+      {
+        "t": 0.28,
+        "rot": [-5.0, -34.0, 0.0]
+      },
+      {
+        "t": 0.5,
+        "rot": [0.0, 0.0, 0.0]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 6.0]
+      },
+      {
+        "t": 0.05,
+        "rot": [50.0, 20.0, 20.0]
+      },
+      {
+        "t": 0.1,
+        "rot": [80.0, 52.0, 14.0]
+      },
+      {
+        "t": 0.1667,
+        "rot": [88.0, -8.0, 12.0]
+      },
+      {
+        "t": 0.28,
+        "rot": [70.0, -48.0, 20.0]
+      },
+      {
+        "t": 0.5,
+        "rot": [0.0, 0.0, 6.0]
+      }
+    ],
+    "forearm-r": [
+      {
+        "t": 0,
+        "rot": [8.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.1,
+        "rot": [40.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.1667,
+        "rot": [12.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.28,
+        "rot": [10.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.5,
+        "rot": [8.0, 0.0, 0.0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, -6.0]
+      },
+      {
+        "t": 0.1,
+        "rot": [10.0, 0.0, -30.0]
+      },
+      {
+        "t": 0.1667,
+        "rot": [20.0, 0.0, -12.0]
+      },
+      {
+        "t": 0.5,
+        "rot": [0.0, 0.0, -6.0]
+      }
+    ]
+  }
+}

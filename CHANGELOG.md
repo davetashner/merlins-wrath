@@ -13,6 +13,7 @@ check enforces this).
 
 ### Added
 
+- Sword swings now wind up behind the shoulder and cut down instead of sweeping up from the ground, with their own motions for the heavy attack, the second and third light attacks, the riposte and the skeleton's chops; the run no longer leans back, and footsteps sound once per drawn step instead of about twice as often.
 - Hits now burst with an effect that matches what they hit — bone chips and dust off the skeleton, splinters off wood, grit off stone — wooden shields throw chips, a broken guard shatters in a ring, and a critical hit adds a bright burst. Struck creatures also flash white for a moment.
 - The Forgotten skeleton now dies properly: it stops fighting the moment its health runs out, falls onto its back and stays there.
 - Your knight now turns see-through while he stands between the camera and a nearby creature, so you can see what you are fighting.

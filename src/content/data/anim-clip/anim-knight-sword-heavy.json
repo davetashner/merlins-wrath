@@ -1,0 +1,151 @@
+{
+  "$schema": "../anim-clip.schema.json",
+  "id": "anim-knight-sword-heavy",
+  "rig": "greybox-humanoid",
+  "notes": "Grey-box placeholder for move sword-heavy (24/5/26 ticks): both hands high behind the head, the torso leaning well back for the long windup (the top of the swing is reached at about three quarters of it, where the charged heavy holds), then slammed down. Torso: spine, chest and head point up, so a positive x tilts them BACK and a positive y turns the right shoulder FORWARD (left); arms and legs hang down, so a positive x swings them forward. ",
+  "duration": 0.92,
+  "markers": [
+    {
+      "kind": "hit",
+      "t": 0.4
+    }
+  ],
+  "tracks": {
+    "spine": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [8.0, -4.0, 0.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [-9.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.55,
+        "rot": [-10.799999999999999, 0.0, 0.0]
+      },
+      {
+        "t": 0.92,
+        "rot": [0.0, 0.0, 0.0]
+      }
+    ],
+    "chest": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [16.0, -10.0, 0.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [-18.0, 6.0, 0.0]
+      },
+      {
+        "t": 0.55,
+        "rot": [-19.8, 8.0, 0.0]
+      },
+      {
+        "t": 0.92,
+        "rot": [0.0, 0.0, 0.0]
+      }
+    ],
+    "upper-arm-r": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, 6.0]
+      },
+      {
+        "t": 0.15,
+        "rot": [70.0, 0.0, 30.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [150.0, -6.0, 16.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [92.0, -4.0, 8.0]
+      },
+      {
+        "t": 0.55,
+        "rot": [40.0, 0.0, 4.0]
+      },
+      {
+        "t": 0.92,
+        "rot": [0.0, 0.0, 6.0]
+      }
+    ],
+    "forearm-r": [
+      {
+        "t": 0,
+        "rot": [8.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.15,
+        "rot": [70.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [105.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [10.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.92,
+        "rot": [8.0, 0.0, 0.0]
+      }
+    ],
+    "upper-arm-l": [
+      {
+        "t": 0,
+        "rot": [0.0, 0.0, -6.0]
+      },
+      {
+        "t": 0.15,
+        "rot": [70.0, 0.0, -20.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [140.0, 0.0, -14.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [70.0, 0.0, -10.0]
+      },
+      {
+        "t": 0.55,
+        "rot": [30.0, 0.0, -8.0]
+      },
+      {
+        "t": 0.92,
+        "rot": [0.0, 0.0, -6.0]
+      }
+    ],
+    "forearm-l": [
+      {
+        "t": 0,
+        "rot": [20.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.3,
+        "rot": [80.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.4,
+        "rot": [20.0, 0.0, 0.0]
+      },
+      {
+        "t": 0.92,
+        "rot": [20.0, 0.0, 0.0]
+      }
+    ]
+  }
+}
