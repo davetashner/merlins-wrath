@@ -196,6 +196,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].container.contents[].count` | integer 1–9999 | `1` | Units of it; default 1. |
 | `spawns[].container.lock` | ref → lock | — | The lock it carries: unlocked and picked like a door’s (mw-e03.18). |
 | `spawns[].container.locked` | boolean | — | Starts locked; defaults to true when it has a lock (needs one). |
+| `spawns[].merchant` | ref → merchant | — | Makes the spawned entity a shop counter: using it asks for this merchant’s shop (mw-ju8.9). It declares the prompt itself (`interact`). |
 | `waypoints` | list of object | `[]` | Named points patrol routes walk through (mw-e11.9). |
 | `waypoints[].id` | id | required | Name of the waypoint, unique in the scene, e.g. yard-gate. |
 | `waypoints[].at` | list of any (at least 3) | required | Position in grid cells (x, y, z), snapped to SCENE_SNAP_STEP. |

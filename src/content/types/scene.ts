@@ -387,6 +387,11 @@ export const sceneSpawnSchema = z.strictObject({
     .describe(
       'Makes the spawned entity a lootable container: loot table, contents and lock (mw-e18.3).',
     ),
+  merchant: ref('merchant')
+    .optional()
+    .describe(
+      'Makes the spawned entity a shop counter: using it asks for this merchant’s shop (mw-ju8.9). It declares the prompt itself (`interact`).',
+    ),
 });
 
 const lightLevel = z.number().min(0).max(1);
@@ -822,6 +827,18 @@ function checkMechanism(spawn: SpawnDef, index: number, ctx: z.RefinementCtx): v
     }
     if (container.locked === true && container.lock === undefined) {
       issue('container', 'starts locked but has no lock');
+    }
+  }
+  if (spawn.merchant !== undefined) {
+    if (spawn.interact === undefined) {
+      issue('interact', 'is a shop counter: it declares the affordance that opens the shop');
+    }
+    for (const [key, what] of [
+      ['door', 'a door'],
+      ['switch', 'a switch'],
+      ['container', 'a container'],
+    ] as const) {
+      if (spawn[key] !== undefined) issue(key, `cannot be both a shop counter and ${what}`);
     }
   }
   const own = spawn.switch;

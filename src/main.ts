@@ -236,6 +236,7 @@ import {
   CreatureComponent,
   PlacementComponent,
   registerPersistence,
+  installShopCounters,
   installSlainFacts,
   registerSceneComponents,
   RespawnRules,
@@ -1440,6 +1441,9 @@ function startRenderer(
         drawContainers();
         afterStep.push(drawContainers);
       }
+      // Shop counters (mw-ju8.9): Interact on a spawn that names a merchant requests that shop
+      // (`shop.open`, src/sim/economy/counter.ts); the shop screen (mw-e20.10) subscribes to it.
+      installShopCounters(world, loaded.spawns);
       // World facts (mw-e01.4): the e2e reads the set facts, e.g. the slice's pass slice.complete
       // (docs/design/vertical-slice.md §5), from #app[data-facts], rewritten when one changes.
       const publishFacts = (): void => {

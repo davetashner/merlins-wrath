@@ -1,0 +1,369 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "marsh-store",
+  "name": "Marsh's General Store (placeholder)",
+  "description": "Bead mw-ju8.9: the first building in town in grey box, built from the e00 kit only. A 10 x 8 m ground-floor shop (front door on the street side, long counter with Ottilie Marsh behind it, shelves, crates, barrels and sacks, a hearth and lanterns) and, up a 3 m wooden stair (12 steps, kit stairs x3) in the east corner, her 8 x 6 m home (bed, table and chairs, desk, wardrobe, hearth, dormer light). Open-topped like every kit scene: the second-floor slab is the ground floor's ceiling. Furniture is kit stand-ins with named marker spawns so art can dress them later. The counter is a shop counter for merchant marsh-general-store. Reach it with ?scene=marsh-store; the street exit is an area-exit marker until area transitions exist (mw-e01.11).",
+  "grid": 1,
+  "camera": {
+    "position": [-9, 11, -11],
+    "target": [0, 1, 0]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 0],
+      "scale": [5, 1, 4]
+    },
+    {
+      "piece": "floor",
+      "at": [0, 0, -5.5],
+      "scale": [3, 1, 1.5]
+    },
+    {
+      "piece": "wall",
+      "at": [-3, 0, -4],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [0, 0, -4]
+    },
+    {
+      "piece": "wall",
+      "at": [3, 0, -4],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 4],
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-5, 0, 0],
+      "yaw": 90,
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [5, 0, 0],
+      "yaw": 90,
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [3, 0, 1.5],
+      "yaw": 90,
+      "scale": [2.5, 1, 1]
+    },
+    {
+      "piece": "stairs",
+      "at": [4, 0, -2]
+    },
+    {
+      "piece": "stairs",
+      "at": [4, 1, 0]
+    },
+    {
+      "piece": "stairs",
+      "at": [4, 2, 2]
+    },
+    {
+      "piece": "floor",
+      "at": [-1, 3, 1],
+      "scale": [4, 1, 3]
+    },
+    {
+      "piece": "floor",
+      "at": [4, 3, 3.5],
+      "scale": [1, 1, 0.5]
+    },
+    {
+      "piece": "wall",
+      "at": [-5, 3, 1],
+      "yaw": 90,
+      "scale": [3, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 3, 4],
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [5, 3, 0],
+      "yaw": 90,
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-1, 3, -2],
+      "scale": [4, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [3, 3, 0.25],
+      "yaw": 90,
+      "scale": [2.25, 1, 1]
+    },
+    {
+      "piece": "platform",
+      "at": [-2, 0, 1.5],
+      "scale": [3, 1, 0.5],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [-2, 0, 3.75],
+      "scale": [3, 1.8, 0.2],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [-4.75, 0, -0.25],
+      "scale": [0.15, 1.6, 1.25],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [-1, 0, -1],
+      "scale": [0.75, 0.8, 0.5],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [2, 0, 3.5],
+      "scale": [0.8, 1.4, 0.2],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "crate",
+      "at": [-4.5, 0, -3.5],
+      "scale": [0.8, 1, 0.8]
+    },
+    {
+      "piece": "crate",
+      "at": [-3.5, 0, -3.5],
+      "scale": [0.8, 1, 0.8]
+    },
+    {
+      "piece": "crate",
+      "at": [-4.5, 0, -2.5]
+    },
+    {
+      "piece": "crate",
+      "at": [-4.5, 1, -2.5]
+    },
+    {
+      "piece": "crate",
+      "at": [1.5, 0, -3.75],
+      "scale": [0.8, 0.6, 0.5]
+    },
+    {
+      "piece": "crate",
+      "at": [2.25, 0, -3.75],
+      "scale": [0.8, 0.6, 0.5]
+    },
+    {
+      "piece": "platform",
+      "at": [-4.25, 3, 2.75],
+      "scale": [0.6, 0.5, 1],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [-2.75, 3, 3.5],
+      "scale": [0.5, 1.9, 0.3],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [-4.5, 3, 0.5],
+      "scale": [0.3, 0.75, 0.6],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [-1, 3, 1.5],
+      "scale": [0.6, 0.75, 0.4],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [0.5, 3, -1.75],
+      "scale": [0.8, 1.4, 0.2],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "crate",
+      "at": [-1, 3, 0.5],
+      "scale": [0.4, 0.45, 0.4]
+    },
+    {
+      "piece": "crate",
+      "at": [-1, 3, 2.5],
+      "scale": [0.4, 0.45, 0.4]
+    },
+    {
+      "piece": "crate",
+      "at": [-2.25, 3, 1.5],
+      "scale": [0.4, 0.45, 0.4]
+    },
+    {
+      "piece": "crate",
+      "at": [-3.5, 3, 0.5],
+      "scale": [0.4, 0.45, 0.4]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, -3],
+      "tags": ["player-start", "entrance"]
+    },
+    {
+      "id": "front-door",
+      "at": [0, 0, -4],
+      "door": {
+        "profile": "wooden-door"
+      }
+    },
+    {
+      "id": "street-exit",
+      "at": [0, 0, -6.5],
+      "tags": ["area-exit", "street"]
+    },
+    {
+      "id": "shop-counter",
+      "at": [-2, 0, 0.75],
+      "tags": ["counter", "shop"],
+      "interact": {
+        "affordances": [
+          {
+            "verb": "use",
+            "label": "Trade"
+          }
+        ],
+        "radius": 1.5
+      },
+      "merchant": "marsh-general-store"
+    },
+    {
+      "id": "npc-ottilie",
+      "at": [-2, 0, 3],
+      "yaw": 180,
+      "tags": ["shopkeeper"],
+      "creature": "npc-ottilie",
+      "leash": {
+        "radius": 3
+      }
+    },
+    {
+      "id": "hearth-ground",
+      "at": [2, 0.5, 3.25],
+      "tags": ["hearth"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 86400
+      }
+    },
+    {
+      "id": "lantern-door",
+      "at": [0, 2.5, -3.5],
+      "tags": ["lantern"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "lantern-counter",
+      "at": [-1, 1.75, 1.5],
+      "tags": ["lantern"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "lantern-stairs",
+      "at": [4.75, 3.25, 0.5],
+      "tags": ["lantern"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "hearth-upstairs",
+      "at": [0.5, 3.5, -1.25],
+      "tags": ["hearth"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 86400
+      }
+    },
+    {
+      "id": "dormer-window",
+      "at": [-4.75, 4.5, 1.0],
+      "tags": ["window", "dormer"],
+      "properties": {
+        "lightEmitter": {
+          "intensity": 60,
+          "radius": 6
+        }
+      }
+    },
+    {
+      "id": "bed",
+      "at": [-4.25, 3.5, 2.75],
+      "tags": ["bed", "furniture", "home"]
+    },
+    {
+      "id": "table",
+      "at": [-1, 3.75, 1.5],
+      "tags": ["table", "furniture", "home"]
+    },
+    {
+      "id": "chair-table-south",
+      "at": [-1, 3.5, 0.5],
+      "tags": ["chair", "furniture", "home"]
+    },
+    {
+      "id": "chair-table-north",
+      "at": [-1, 3.5, 2.5],
+      "tags": ["chair", "furniture", "home"]
+    },
+    {
+      "id": "chair-table-west",
+      "at": [-2.25, 3.5, 1.5],
+      "tags": ["chair", "furniture", "home"]
+    },
+    {
+      "id": "desk",
+      "at": [-4.5, 3.75, 0.5],
+      "tags": ["desk", "furniture", "home"]
+    },
+    {
+      "id": "desk-chair",
+      "at": [-3.5, 3.5, 0.5],
+      "tags": ["chair", "furniture", "home"]
+    },
+    {
+      "id": "wardrobe",
+      "at": [-2.75, 5, 3.5],
+      "tags": ["wardrobe", "furniture", "home"]
+    }
+  ],
+  "light": {
+    "ambient": 0.3
+  },
+  "environment": {
+    "sky": "#1E1B2E"
+  }
+}

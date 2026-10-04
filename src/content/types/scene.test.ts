@@ -157,6 +157,52 @@ describe('scene containers (mw-e18.3)', () => {
   });
 });
 
+describe('scene shop counters (mw-ju8.9)', () => {
+  const spawn = (id: string, extra: object) => ({ id, at: [0, 0, 0], ...extra });
+  const trade = { affordances: [{ verb: 'use', label: 'Trade' }] };
+
+  it('takes a merchant id on a spawn that declares its own prompt', () => {
+    const scene = sceneSchema.parse({
+      ...room,
+      spawns: [spawn('counter', { merchant: 'marsh-general-store', interact: trade })],
+    });
+    expect(scene.spawns[0]?.merchant).toEqual(new ContentRef('merchant', 'marsh-general-store'));
+  });
+
+  it('rejects a counter with no prompt, or that is also a door, switch or container', () => {
+    expect(
+      problems({
+        ...room,
+        spawns: [
+          spawn('counter', {
+            merchant: 'marsh-general-store',
+            door: { profile: 'wooden-door' },
+            switch: { kind: 'lever' },
+            container: {},
+          }),
+        ],
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        'spawns.0.interact: spawn "counter" is a shop counter: it declares the affordance that opens the shop',
+        'spawns.0.door: spawn "counter" cannot be both a shop counter and a door',
+        'spawns.0.switch: spawn "counter" cannot be both a shop counter and a switch',
+        'spawns.0.container: spawn "counter" cannot be both a shop counter and a container',
+      ]),
+    );
+  });
+
+  it('refuses a merchant the content does not have', () => {
+    const content = [
+      source('scene/room.json', {
+        ...room,
+        spawns: [spawn('counter', { merchant: 'nobody', interact: trade })],
+      }),
+    ];
+    expect(() => loadContent(contentTypes, content, contentChecks)).toThrow(ContentLoadError);
+  });
+});
+
 describe('scene checkpoints (mw-e01.4)', () => {
   it('marks volume nodes of a placed graph as checkpoints, each once', () => {
     const scene = sceneSchema.parse({
@@ -619,7 +665,7 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room, the slice, the perf baseline and the valley spike scenes', () => {
+  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room, the slice, the perf baseline, the valley spike scenes and the Marsh store', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
@@ -628,6 +674,7 @@ describe('scene content', () => {
       'combat-sandbox',
       'kit-gallery',
       'lighting-room',
+      'marsh-store',
       'mechanism-room',
       'perf-baseline',
       'slice',
