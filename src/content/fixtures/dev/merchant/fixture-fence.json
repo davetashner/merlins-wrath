@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../data/merchant.schema.json",
+  "id": "fixture-fence",
+  "notes": "Grey-box fence (mw-e20.2), debug builds only: the one merchant that buys stolen goods, at the default 0.6 of the sell price; dearer markup, thin stock, open at night. Not tuned.",
+  "npcId": "fixture-fence",
+  "personalityTags": ["suspicious", "greedy"],
+  "specialties": ["tool"],
+  "buysCategories": ["weapon", "armor", "tool", "artifact", "misc"],
+  "stock": [
+    { "item": "lockpicks", "count": 6, "restock": { "everyHours": 72, "amount": 2 } },
+    { "item": "hunting-knife", "count": 2 }
+  ],
+  "goldReserve": 500,
+  "goldRestockPerDay": 50,
+  "markup": 1.5,
+  "buyRate": 0.45,
+  "isFence": true,
+  "buysStolen": true,
+  "hours": { "open": 20, "close": 4 }
+}

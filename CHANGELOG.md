@@ -13,6 +13,7 @@ check enforces this).
 
 ### Added
 
+- Groundwork for village shops: the economy design (what skeletons and chests pay, what wares cost), merchant data with price limits, and the price rules for buying and selling. No shop is open yet; two test merchants appear in development builds only.
 - Three new outdoor test areas — a tight mountain path, a forest path and a fenced cliff overlook with a stone bridge — show painted mountain and forest vistas behind the walls, with distance fog. (Previewable in development builds only for now.)
 - Sword swings now wind up behind the shoulder and cut down instead of sweeping up from the ground, with their own motions for the heavy attack, the second and third light attacks, the riposte and the skeleton's chops; the run no longer leans back, and footsteps sound once per drawn step instead of about twice as often.
 - Hits now burst with an effect that matches what they hit — bone chips and dust off the skeleton, splinters off wood, grit off stone — wooden shields throw chips, a broken guard shatters in a ring, and a critical hit adds a bright burst. Struck creatures also flash white for a moment.
