@@ -13,6 +13,7 @@ check enforces this).
 
 ### Added
 
+- The Forgotten skeleton now dies properly: it stops fighting the moment its health runs out, falls onto its back and stays there.
 - Your knight now turns see-through while he stands between the camera and a nearby creature, so you can see what you are fighting.
 - The Forgotten skeleton now moves: it idles, walks and swings its pick instead of sliding about as a statue.
 - A health bar for the fighter you are locked onto (or last hit) now sits at the top of the screen with its name, and damage numbers show what you deal and take. Turn the numbers off under Settings → Gameplay → Damage numbers.

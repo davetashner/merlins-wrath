@@ -31,6 +31,7 @@ import {
 import type { GreyboxRig, Rig } from '../animation/index';
 import { createKnightRig } from '../player/knight-model';
 import { loadForgottenMiner } from './forgotten-model';
+import { COLLAPSE_PIVOT } from './death';
 import { minerRigAssets, RIG_HEIGHT } from './miner-rig';
 
 const SLATE = 0x6f7f8c;
@@ -46,6 +47,8 @@ const TELEGRAPH_GLOW = { parry: 0xe0912e, block: 0xc8d4e8, unblockable: 0xd2321e
 
 /** How a creature's telegraph reads (the game's TelegraphLook). */
 export type CreatureTelegraphLook = keyof typeof TELEGRAPH_GLOW;
+
+export { CreatureDeaths } from './death';
 
 /** Where a posed miner is wanted: the rig to skin it to, and who poses it once it is drawn. */
 export interface CreatureAnimation {
@@ -77,6 +80,10 @@ export function createCreatureProxy({
 }): Object3D {
   const group = new Group();
   group.name = `creature:${id}`;
+  // Everything drawn hangs from the pivot at the feet, so a fallen creature can topple about them.
+  const pivot = new Group();
+  pivot.name = COLLAPSE_PIVOT;
+  group.add(pivot);
   const length = Math.max(height - 2 * radius, 0);
   const skin = new MeshStandardMaterial({ color: new Color(armed ? RUST : SLATE), roughness: 1 });
   const body = new Mesh(new CapsuleGeometry(radius, length, 4, 12), skin);
@@ -91,7 +98,7 @@ export function createCreatureProxy({
   for (const part of parts) {
     part.castShadow = true;
     part.receiveShadow = true;
-    group.add(part);
+    pivot.add(part);
   }
   if (mesh === CAPSULE_BONES_MESH) {
     void loadForgottenMiner(variant).then(
@@ -107,7 +114,7 @@ export function createCreatureProxy({
           });
           view.root.scale.setScalar(height / RIG_HEIGHT);
           view.root.rotation.y = Math.PI;
-          group.add(view.root);
+          pivot.add(view.root);
           animation.attach(view);
           return;
         }
@@ -129,7 +136,7 @@ export function createCreatureProxy({
           pick.receiveShadow = true;
           model.add(pick);
         }
-        group.add(model);
+        pivot.add(model);
       },
       (error: unknown) => {
         console.warn('The Forgotten miner model did not load; keeping the capsule.', error);
