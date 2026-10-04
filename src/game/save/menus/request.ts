@@ -60,3 +60,13 @@ export function searchWithoutMenu(
   for (const [key, value] of Object.entries(extra)) params.set(key, value);
   return params.toString();
 }
+
+/**
+ * The search string for quitting to the title (mw-e01.3): the front door, so every parameter that
+ * skips the title (and `?menu=`) is removed; the rest (`debug`, …) stay.
+ */
+export function titleSearch(search: string): string {
+  const params = new URLSearchParams(search);
+  for (const name of [MENU_PARAM, ...SKIP_TITLE_PARAMS]) params.delete(name);
+  return params.toString();
+}

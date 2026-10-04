@@ -264,7 +264,7 @@
     },
     {
       "id": "arena-brazier",
-      "at": [-4.5, 0, 35.5],
+      "at": [-4.5, 0.75, 35.5],
       "tags": ["brazier"],
       "properties": {
         "flammable": true,

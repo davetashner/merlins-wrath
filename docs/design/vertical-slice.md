@@ -265,7 +265,7 @@ a "Slice complete" card (run time, class, Return to title). The card is new bead
 
 | System                                       | Bead                                                        | Status |
 | -------------------------------------------- | ----------------------------------------------------------- | ------ |
-| Pause: resume, settings, save, load, quit    | `e01-pause-menu` (mw-e01.3), `e31-settings-framework` (mw-e31.1) | open |
+| Pause: resume, settings, save, load, quit    | `e01-pause-menu` (mw-e01.3), `e31-settings-framework` (mw-e31.1) | done |
 | Death beat and respawn rule                  | `e01-death-respawn-loop` (mw-e01.8)                        | open   |
 | Death screen, Load last save                 | `e30-death-reload` (mw-e30.7)                              | open   |
 | Restart area with no save                    | `e01-slice-restart` (mw-e01.16)                            | open (new) |
@@ -371,7 +371,7 @@ at the left edge to +10 at the right. Rows with nothing new are left out.
 | `skeleton`         | creature `forgotten-miner`         | (2.5, 0, 32.5), yaw 180 | Resting idle; leash 25 m around this post; carries `rusted-gallery-key` |
 | `torch-arena-west` | light (burning)                    | (−5.75, 2.25, 31)   | |
 | `torch-arena-east` | light (burning)                    | (5.75, 2.25, 29)    | |
-| `arena-brazier`    | light + hazard (burning, fuel 3600) | (−4.5, 0, 35.5)    | 8 fire/s within 0.75 m |
+| `arena-brazier`    | light + hazard (burning, fuel 3600) | (−4.5, 0.75, 35.5) | 8 fire/s within 0.75 m; y is the height of the coals in the bowl (the model stands on the floor), so the flame burns in the bowl |
 | `step-crate`       | physics prop `crate`               | (5.5, 0, 34)        | |
 | `alcove-chest`     | container, slice loot table        | (8, 1.4, 36), yaw 270 | Faces the arena |
 | `exit-door`        | door, hinged, iron                 | (0, 0, 37)          | Lock `slice-exit`, key `rusted-gallery-key` |
@@ -504,7 +504,7 @@ Dependency changes:
 | `e00-ui-framework`               | mw-e00.23 | done   |
 | `e01-creature-leash`             | mw-e01.17 | open   |
 | `e01-death-respawn-loop`         | mw-e01.8  | open   |
-| `e01-pause-menu`                 | mw-e01.3  | open   |
+| `e01-pause-menu`                 | mw-e01.3  | done   |
 | `e01-playable-classes`           | mw-e01.15 | open   |
 | `e01-slice-complete-card`        | mw-e01.18 | open   |
 | `e01-slice-e2e-test`             | mw-e01.9  | open   |

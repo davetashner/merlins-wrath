@@ -11,7 +11,7 @@ describe('input glyphs (mw-e02.9)', () => {
     expect(inputGlyph('interact', 'keyboardMouse', defaults)).toBe('E');
     expect(inputGlyph('jump', 'gamepad', defaults)).toBe('A');
     expect(inputGlyph('jump', 'keyboardMouse', defaults)).toBe('Space');
-    expect(inputGlyph('primaryAttack', 'gamepad', defaults)).toBe('RT');
+    expect(inputGlyph('primaryAttack', 'gamepad', defaults)).toBe('RB');
     expect(inputGlyph('primaryAttack', 'keyboardMouse', defaults)).toBe('Left click');
     expect(inputGlyph('sprint', 'keyboardMouse', defaults)).toBe('Shift');
     expect(inputGlyph('pause', 'gamepad', defaults)).toBe('Menu');

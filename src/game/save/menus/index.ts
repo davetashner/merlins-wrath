@@ -18,6 +18,7 @@ export {
   saveMenuRequest,
   SKIP_TITLE_PARAMS,
   searchWithoutMenu,
+  titleSearch,
   type SaveMenuId,
   type SaveMenuRequest,
 } from './request';

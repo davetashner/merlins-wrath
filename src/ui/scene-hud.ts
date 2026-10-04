@@ -15,6 +15,8 @@ export interface ControlsHintLabels {
   readonly crouch: string;
   readonly dodge: string;
   readonly attack: string;
+  readonly strongAttack: string;
+  readonly leftHand: string;
   readonly block: string;
 }
 
@@ -26,10 +28,10 @@ export function playerControlsHint(
   device: 'keyboardMouse' | 'gamepad',
   labels: ControlsHintLabels,
 ): string {
-  const { move, jump, sprint, crouch, dodge, attack, block } = labels;
-  const combat = `${attack} attack, ${block} block`;
+  const { move, jump, sprint, crouch, dodge, attack, strongAttack, leftHand, block } = labels;
+  const combat = `${attack} right-hand attack, ${strongAttack} strong attack, ${leftHand} left-hand action, ${block} block`;
   return device === 'gamepad'
-    ? `Controller: ${move} move, right stick look, ${jump} jump, ${sprint} sprint (toggle), ${crouch} crouch, ${dodge} dodge, ${combat}`
+    ? `Controller: ${move} move, right stick look, ${jump} jump, ${sprint} sprint (toggle), ${crouch} crouch (toggle), ${dodge} dodge, ${combat}`
     : `Click to play: ${move} move, mouse look, wheel zoom, ${jump} jump, ${sprint} sprint, ${crouch} crouch, ${dodge} dodge, ${combat}, Esc release`;
 }
 
@@ -41,6 +43,8 @@ export const PLAYER_CONTROLS_HINT = playerControlsHint('keyboardMouse', {
   crouch: 'C',
   dodge: 'R',
   attack: 'Left click',
+  strongAttack: '1',
+  leftHand: '3',
   block: 'Right click',
 });
 

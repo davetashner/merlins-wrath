@@ -427,7 +427,7 @@ Rules:
 **Direction: "illuminated field journal."** Parchment and ink, brass fittings, hand-inked frames, used sparingly.
 The HUD is minimal and diegetic-leaning; menus feel like a well-loved adventurer's book.
 
-- **HUD:** health/stamina/mana as short curved brushstroke bars bottom-left; quickslots bottom-centre as
+- **HUD:** health/stamina/mana as short curved brushstroke bars top-right; quickslots bottom-centre as
   small brass-rimmed circles; compass strip top-centre (optional); no permanent minimap in MVP (encourages
   landmarks). HUD elements fade when full/idle.
 - **Menus:** parchment panels `#EFE2C4` with `ink #1E1B2E` text, `hearth` hover, `ember` warnings, deckle

@@ -13,6 +13,32 @@ check enforces this).
 
 ### Added
 
+- The controller's combat layout moves to the shoulder buttons: RB attacks, RT is the strong attack, LB is
+  your left hand (parry), LT holds your shield and Y locks on. Pressing the right stick toggles crouch;
+  jumping or sprinting stands you back up.
+- The slice's walls, floors and ledges are weathered glenstone blocks instead of flat grey, lit warmly by the
+  torches and the brazier. It is a placeholder style probe until approved.
+- The slice's chest, crate, pillars and ivy ledge look the part too: an iron-banded wooden chest in the
+  alcove, a braced and bracketed crate, weathered stone block pillars in the arena, and ivy over the climbable
+  ledge. They are placeholders until approved.
+- The slice's torches, brazier and doors look the part: iron-and-wood torches on the walls, an iron brazier
+  full of coals (its flame now burns in the bowl), a painted plank door with iron hinges in the first room,
+  and a heavy riveted iron door at the exit. They are placeholders until approved.
+- The slice has sound under it. A quiet dripping ambience loops through the mine gallery, a slow
+  explore theme plays once as you start, and when the skeleton turns on you the combat music fades in
+  and fades back out a few seconds after the fight ends. The Master, Music and Effects volume sliders now
+  change the volume. The music and ambience are placeholders until the adaptive score lands.
+- The skeleton in the arena has a model: a bony miner in a leather cap with a pick, with eyes that glow
+  cold blue. There are four different looks, and each game picks one at random for each miner. They do not
+  walk or swing yet (animation is still to come) and are placeholders until approved.
+- The knight has a model. Your character now walks, crouches and fights as the armoured knight
+  from the concept art instead of a grey box, with a separate sword in the right hand and the shield
+  on the left arm. It is a placeholder until the final model is approved.
+- You can pause. Esc, P or the controller's Menu button stops the game and opens the pause menu:
+  Resume, Settings, Save, Load and Quit to Title. Save is greyed out with "Can't save during combat"
+  while a fight is on. Quit to Title asks first if you have played on since your last save, then
+  takes you back to the title, where Continue picks up from that save. The menu works with the
+  keyboard, the mouse or a controller's d-pad.
 - The vertical slice saves itself. Walking through the first door and reaching the end of the
   corridor each make an autosave, and so does finishing the slice. An autosave never happens
   mid-fight: it waits until the skeleton's fight is over. Close the game, press Continue on the
@@ -357,6 +383,7 @@ check enforces this).
 
 ### Fixed
 
+- If you fall out of the level, you are put back at the start instead of falling forever.
 - A hinged door you open while standing right up against it now swings open away from you,
   instead of stopping as if something were in its way. A door still stops against anyone standing
   where it swings.

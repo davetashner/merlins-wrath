@@ -1,5 +1,35 @@
 [
   {
+    "id": "amb-slice-gallery",
+    "variants": [
+      "amb-deepworks-drips-01"
+    ],
+    "bus": "ambience",
+    "spatial": false,
+    "loop": true,
+    "priority": 30
+  },
+  {
+    "id": "music-slice-combat",
+    "variants": [
+      "music-skeleton-arena-combat-music"
+    ],
+    "bus": "music",
+    "spatial": false,
+    "loop": true,
+    "priority": 60
+  },
+  {
+    "id": "music-slice-explore",
+    "variants": [
+      "music-open-world"
+    ],
+    "bus": "music",
+    "spatial": false,
+    "loop": false,
+    "priority": 40
+  },
+  {
     "id": "sfx-armor-chain-layer",
     "variants": [
       "sfx-armor-chain-layer-01",

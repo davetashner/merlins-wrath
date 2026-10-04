@@ -336,3 +336,40 @@ test('mw-e01.6 AC-3: loot the alcove chest, save, close the tab, load the save: 
   expect(await alcoveChest(second)).toEqual({ opened: true, items: [], gold: 0 });
   expect(later).toEqual([]);
 });
+
+// mw-546, mw-va0: the slice's set pieces wear their art. The two door fronts are painted on the leaves, the
+// torch, brazier and chest models replace their stand-ins, and the crate, pillars and ivy ledge wear
+// paintings, and the walls, floors and ledges wear the glenstone (mw-7w0); each is requested and loads with no console errors (the models and textures are
+// placeholders, see assets/prompts).
+test('mw-546, mw-va0: the slice loads its door fronts, models and surface paintings with no console errors', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  const problems: string[] = [];
+  page.on('console', (msg) => {
+    if (msg.type() !== 'error' && msg.type() !== 'warning') return;
+    if (/^\[\.WebGL-[^\]]+\]GL Driver Message/.test(msg.text())) return;
+    problems.push(`${msg.type()}: ${msg.text()}`);
+  });
+  page.on('pageerror', (err) => problems.push(`pageerror: ${err.message}`));
+  const assets = [
+    'door-wood-01.webp',
+    'door-iron-01.webp',
+    'model-prop-wall-torch-01.glb',
+    'model-prop-brazier-floor-01.glb',
+    'model-prop-chest-wooden-01.glb',
+    'crate-01.webp',
+    'pillar-glenstone-01.webp',
+    'ivy-stone-01.webp',
+    'tex-glenstone-quay-wendmouth-probe-01.webp',
+  ];
+  const loaded = assets.map((name) =>
+    page.waitForResponse((response) => response.url().endsWith(name) && response.ok()),
+  );
+  await page.goto('/?scene=slice');
+  await expect(page.locator('#app')).toHaveAttribute('data-scene', 'slice', { timeout: 10_000 });
+  await Promise.all(loaded);
+  // A few frames, so a texture or model that failed to build would raise its error here.
+  await page.waitForTimeout(1_500);
+  expect(problems).toEqual([]);
+});

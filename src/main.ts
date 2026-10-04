@@ -89,6 +89,7 @@ import {
   playableClasses,
 } from '@game/classes';
 import { attachGameAudio, attachGameVfx, soundPositions } from '@game/cues/index';
+import { bindVolumes, SliceMusic } from '@game/music/index';
 import { layers } from '@game/index';
 import { ActionSampler, inputGlyph, type InputDevice } from '@game/input/index';
 import { debugConsoleEnabled } from '@game/debug-console-gate';
@@ -106,8 +107,8 @@ import {
   playerFocus,
   propBodies,
 } from '@game/physics-objects';
-import { createSettingsStore, type SettingsStore } from '@game/settings/index';
-import { createUiGameBridge } from '@game/ui/index';
+import { createSettingsStore, openOptionsMenu, type SettingsStore } from '@game/settings/index';
+import { createUiGameBridge, PauseController, SaveProgress } from '@game/ui/index';
 import {
   createGameLight,
   installGameLight,
@@ -148,9 +149,10 @@ import {
   opensTitle,
   SaveMenus,
   searchWithoutMenu,
+  titleSearch,
   type SaveMenuReadout,
 } from '@game/save/menus/index';
-import { autosaveReadout, GameAutosave } from '@game/save/autosave/index';
+import { autosaveReadout, GameAutosave, SafetyVetoes } from '@game/save/autosave/index';
 import { describeSave } from '@game/save/describe';
 import { createGameSaveRegistry } from '@game/save/sections';
 import { SaveSlots } from '@game/save/slots/index';
@@ -168,11 +170,12 @@ import {
   disposeArrowShaft,
 } from '@render/combat/index';
 import { createCreatureProxy, showCreatureTelegraph } from '@render/creatures/index';
+import { pickVariant, randomSalt, variantFromSearch } from '@render/creatures/variant';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
 import { createLightRig } from '@render/light/index';
 import { AnimationController, compileGraph } from '@render/animation/index';
-import { createPlayerBody, projectToNdc } from '@render/player/index';
+import { createPlayerBody, loadKnight, projectToNdc } from '@render/player/index';
 import { createVfxRenderer } from '@render/vfx/index';
 import { captureCanvasThumbnail, type CapturedThumbnail } from '@render/thumbnail';
 import {
@@ -452,15 +455,21 @@ function startRenderer(
   let inventoryUi: InventoryUi | undefined;
   // The container window and pickup toasts (mw-e18.4), once the player exists.
   let containerUi: ContainerUi | undefined;
+  // The pause menu (mw-e01.3), once the world has a player: the Pause action (Esc, P, Menu) opens it
+  // from gameplay frames, and resumes from the frames drained while it pauses.
+  let pauseUi: PauseController | undefined;
   const bridge = createUiGameBridge({
     ui,
     sampleCommands: (tick) => {
       const frames = sampler.sampleCommands(tick);
       if (frames.some((frame) => frame.inventory.pressed)) inventoryUi?.toggle();
+      if (frames.some((frame) => frame.pause.pressed)) pauseUi?.pausePressed();
       return frames;
     },
     drain: () => {
-      if (sampler.sample().inventory.pressed) inventoryUi?.toggle();
+      const frame = sampler.sample();
+      if (frame.inventory.pressed) inventoryUi?.toggle();
+      pauseUi?.drained(frame.pause.pressed);
     },
   });
   // The lock-on marker (mw-e02.16) rides the HUD layer over the locked target's lock point.
@@ -482,7 +491,16 @@ function startRenderer(
     root.dataset['inputDevice'] = device;
     const bindings = { keyboardMouse: sampler.bindings, gamepad: sampler.padBindings };
     const glyph = (
-      action: 'move' | 'jump' | 'sprint' | 'crouch' | 'dodge' | 'primaryAttack' | 'secondaryAttack',
+      action:
+        | 'move'
+        | 'jump'
+        | 'sprint'
+        | 'crouch'
+        | 'dodge'
+        | 'primaryAttack'
+        | 'secondaryAttack'
+        | 'ability1'
+        | 'ability3',
     ) => inputGlyph(action, device, bindings);
     controls.textContent = gone
       ? GAMEPAD_DISCONNECTED_HINT
@@ -493,6 +511,8 @@ function startRenderer(
           crouch: glyph('crouch'),
           dodge: glyph('dodge'),
           attack: glyph('primaryAttack'),
+          strongAttack: glyph('ability1'),
+          leftHand: glyph('ability3'),
           block: glyph('secondaryAttack'),
         });
   };
@@ -514,6 +534,14 @@ function startRenderer(
     },
   });
   let player: TestbedPlayer | undefined;
+  // The browser ends pointer lock on Esc itself (and on alt-tab), not always passing the key on:
+  // losing the player's lock while nothing else is open pauses the game (mw-e01.3).
+  let hadLock = false;
+  document.addEventListener('pointerlockchange', () => {
+    const locked = document.pointerLockElement === view.canvas;
+    if (hadLock && !locked) pauseUi?.pointerUnlocked();
+    hadLock = locked;
+  });
 
   bindDebugCameraInput(debugCamera, {
     keys: globalThis.window,
@@ -886,6 +914,17 @@ function startRenderer(
     if (request.kind === 'scene') {
       const scene = content.get('scene', request.id);
       const loaded = scenes.load(scene.id);
+      // Volume sliders drive the buses; the slice's ambience and music beds play from the first
+      // gesture on (mw-0j5), a stand-in for the adaptive controller (mw-e28.11).
+      const volumes = bindVolumes(audio, settings);
+      const music =
+        scene.id === 'slice'
+          ? new SliceMusic({ world, engine: audio, now: () => performance.now() })
+          : undefined;
+      afterStep.push(() => {
+        volumes.update();
+        music?.update();
+      });
       // Noise propagation through the scene's rooms and doors (mw-e09.22): footsteps, breaks and
       // creatures' noises reach listeners muffled by shut doors and walls.
       startSceneNoise(world, content, loaded);
@@ -927,7 +966,8 @@ function startRenderer(
           content.get('anim-graph', PLAYER_RIG_ID),
           content.all('anim-clip'),
         );
-        const body = createPlayerBody(graph.rig);
+        // The knight's model (mw-e37.21) takes the boxes' place once it has loaded.
+        const body = createPlayerBody(graph.rig, loadKnight());
         let publishedPlayerProbe = '';
         player = setupTestbedPlayer({
           world,
@@ -1057,7 +1097,7 @@ function startRenderer(
       );
       drawArrows();
       afterStep.push(drawArrows);
-      // The combat HUD (mw-e04.10): bars bottom-left, sized by the HUD scale setting, fed by the
+      // The combat HUD (mw-e04.10): bars top-right, sized by the HUD scale setting, fed by the
       // player's sim state and events; arcs point at off-screen attackers relative to the camera.
       if (player !== undefined) {
         const bars = new CombatHud({
@@ -1340,6 +1380,10 @@ function startRenderer(
       // Its body glows while it winds up a telegraphed move (mw-e04.20); the telegraph watch exists
       // only where creatures do, and a step with no telegraph change costs one empty check.
       const creatureProxies = new Map<EntityId, ReturnType<typeof createCreatureProxy>>();
+      // Which look each Forgotten miner wears: one salt per game session, hashed with the miner's
+      // entity, so a new game looks different; ?miner=N pins one (mw-1ja).
+      const minerSalt = randomSalt();
+      const pinnedMiner = variantFromSearch(location.search);
       const drawCreatures = (): void => {
         bindCreatures(world, sync, (entity, look) => {
           const object = createCreatureProxy({
@@ -1348,6 +1392,7 @@ function startRenderer(
             height: look.nav.height,
             armed: look.armed,
             mesh: creatures.table.get(look.id)?.def.presentation.mesh,
+            variant: pinnedMiner ?? pickVariant(minerSalt, entity),
           });
           view.scene.add(object);
           creatureProxies.set(entity, object);
@@ -1443,6 +1488,13 @@ function startRenderer(
     // restarting the area reloads the page, which tears the whole world down and builds it again.
     const areaId = request.kind === 'scene' ? request.id : undefined;
     const session = sessionStore();
+    // Whether the world moved on since it was last saved or loaded: Quit to Title asks first then.
+    const progress = new SaveProgress(() => world.tick);
+    // The "not safe to save now" checks (mw-e01.7): they hold back autosaves and disable the pause
+    // menu's Save with their reason (mw-e01.3). In m1, a creature in Combat.
+    const saveVetoes = { [COMBAT_VETO_ID]: combatVeto(world) };
+    const safety = new SafetyVetoes();
+    for (const [id, veto] of Object.entries(saveVetoes)) safety.register(id, veto);
     // Items no longer in content are dropped from a loaded save with a warning (mw-e17.8).
     const saveRegistry = createGameSaveRegistry({
       knownItem: (id) => content.has('item', id),
@@ -1480,6 +1532,7 @@ function startRenderer(
           describe,
           publish: (readout) => {
             root.dataset[READOUT_ATTRIBUTE[readout.kind]] = JSON.stringify(readout);
+            if (readout.kind !== 'death') progress.mark();
             // A death's reload has loaded its save: the player is back in play (mw-e01.8).
             const respawn = pending?.respawn;
             if (readout.kind === 'loaded' && respawn !== undefined && player !== undefined) {
@@ -1530,6 +1583,7 @@ function startRenderer(
           },
           publish: (readout: SaveMenuReadout) => {
             root.dataset[SAVE_MENU_ATTRIBUTE[readout.kind]] = JSON.stringify(readout);
+            if (readout.kind === 'saved') progress.mark();
             if (readout.kind === 'title' && frontDoor.titleMs === undefined) {
               markFrontDoor('titleMs');
             }
@@ -1557,9 +1611,10 @@ function startRenderer(
           describe: () => ({ ...describe(), captureThumbnail }),
           ...(checkpoints !== undefined && { isCheckpoint: checkpoints }),
           milestones: [SLICE_COMPLETE_FACT],
-          vetoes: { [COMBAT_VETO_ID]: combatVeto(world) },
+          vetoes: saveVetoes,
           publish: (event) => {
             root.dataset['autosave'] = JSON.stringify(autosaveReadout(event));
+            if (event.type === 'saved') progress.mark();
           },
           warn: (message) => {
             console.warn(message);
@@ -1568,6 +1623,41 @@ function startRenderer(
       });
       afterStep.push(() => {
         void autosave?.afterStep();
+      });
+    }
+    // The pause menu (mw-e01.3): Esc, P or the pad's Menu while playing. Its Settings, Save and Load
+    // open over it (Back returns to it); Save is disabled while a safety veto objects; Quit to Title
+    // asks first when there is unsaved progress, then reloads into the front door. The e2e reads
+    // #app[data-pause] (open/closed).
+    let inPlay = false;
+    if (player !== undefined && areaId !== undefined) {
+      const hero = player.entity;
+      const pause = new PauseController({
+        ui,
+        canPause: () => inPlay && playerInput.enabled && !isPlayerDead(world, hero),
+        saveBlocked: () => safety.active()[0]?.reason ?? null,
+        unsavedProgress: () => progress.unsaved,
+        pauseKeys: () => sampler.bindings.pause,
+        openSettings: () => {
+          openOptionsMenu(ui, settings);
+        },
+        openSave: () => {
+          void saveMenus.then((menus) => menus.openSave());
+        },
+        openLoad: () => {
+          void saveMenus.then((menus) => menus.openLoad());
+        },
+        quitToTitle: () => {
+          const search = titleSearch(location.search);
+          location.assign(`${location.pathname}${search === '' ? '' : `?${search}`}`);
+        },
+        publish: (state) => {
+          root.dataset['pause'] = state;
+        },
+      });
+      pauseUi = pause;
+      globalThis.window.addEventListener('keydown', (event) => {
+        if (pause.keydown(event)) event.preventDefault();
       });
     }
     const openRequestedMenu = (): void => {
@@ -1736,12 +1826,14 @@ function startRenderer(
     // freshly built world before the first sim step.
     if (pending === undefined) {
       loop.start();
+      inPlay = true;
       openRequestedMenu();
     } else
       void deathReload
         .then((reload) => reload.resume(pending))
         .finally(() => {
           loop.start();
+          inPlay = true;
         });
   };
 

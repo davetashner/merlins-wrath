@@ -6,7 +6,9 @@
 //
 // The `placeholder-capsule-bones` mesh (the Forgotten, mw-e13.1) adds pale bones over the capsule: a
 // skull, a spine down its back and ribs across its chest, so a skeleton reads as one before its
-// model lands (mw-e37.368). Any other mesh id draws the plain capsule.
+// model lands. Once the miner's model has loaded (mw-2l9, forgotten-model.ts) it takes the capsule's
+// place, scaled to the creature's height; if it never loads the capsule stays. Any other mesh id
+// draws the plain capsule.
 //
 // Telegraphs (mw-e04.20): while a creature winds up a telegraphed move its body glows — ember for a
 // swing a parry deflects, pale steel for one only a shield stops, red for an unblockable move or a
@@ -26,6 +28,7 @@ import {
   SphereGeometry,
   type Object3D,
 } from 'three';
+import { loadForgottenMiner } from './forgotten-model';
 
 const SLATE = 0x6f7f8c;
 const RUST = 0x9c4a32;
@@ -48,6 +51,7 @@ export function createCreatureProxy({
   height,
   armed,
   mesh,
+  variant,
 }: {
   readonly id: string;
   readonly radius: number;
@@ -55,6 +59,8 @@ export function createCreatureProxy({
   readonly armed: boolean;
   /** CreatureDef.presentation.mesh; absent = the plain capsule. */
   readonly mesh?: string | undefined;
+  /** Which of the miner's looks to wear (0 to 3; see variant.ts); absent = the first. */
+  readonly variant?: number | undefined;
 }): Object3D {
   const group = new Group();
   group.name = `creature:${id}`;
@@ -73,6 +79,37 @@ export function createCreatureProxy({
     part.castShadow = true;
     part.receiveShadow = true;
     group.add(part);
+  }
+  if (mesh === CAPSULE_BONES_MESH) {
+    void loadForgottenMiner(variant).then(
+      (assets) => {
+        // The model takes the capsule's place; its body is the one the telegraph glow finds.
+        for (const part of parts) part.visible = false;
+        body.name = 'proxy-body';
+        assets.body.geometry.computeBoundingBox();
+        const scale = height / (assets.body.geometry.boundingBox?.max.y ?? height);
+        const model = new Group();
+        model.name = 'model';
+        model.scale.setScalar(scale);
+        // A material of its own, so one miner's telegraph glow does not light the others.
+        const skeleton = new Mesh(assets.body.geometry, assets.body.material.clone());
+        skeleton.name = 'body';
+        skeleton.castShadow = true;
+        skeleton.receiveShadow = true;
+        model.add(skeleton);
+        if (assets.pick !== undefined) {
+          const pick = new Mesh(assets.pick.geometry, assets.pick.material);
+          pick.name = 'pick';
+          pick.castShadow = true;
+          pick.receiveShadow = true;
+          model.add(pick);
+        }
+        group.add(model);
+      },
+      (error: unknown) => {
+        console.warn('The Forgotten miner model did not load; keeping the capsule.', error);
+      },
+    );
   }
   return group;
 }

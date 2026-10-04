@@ -101,7 +101,7 @@ binding.frame(latestSnapshot, frame.timeMs);
 - `Meter` options: `trailDrainMs` drains the trail over a fixed time whatever its size, `flash(nowMs)`
   sets `data-flash` for `flashMs`, and `lowBelow` sets `data-low` below that fraction of max. Every
   timer runs on the `nowMs` passed to `update`, so tests step it without wall time.
-- `CombatHud` (`src/ui/combat-hud.ts`, mw-e04.10) is the player's health and stamina bars, bottom-left.
+- `CombatHud` (`src/ui/combat-hud.ts`, mw-e04.10) is the player's health and stamina bars, top-right.
   Health has a chip that holds 500 ms and drains over the next 500 ms, and it pulses below 25 %.
   Stamina flashes for 300 ms on `staminaRejected(nowMs)`. `damageFrom(bearing, nowMs)` shows an arc
   on a ring around the screen centre (0° ahead, clockwise) that fades over 1.5 s. Bar sizes are inline
@@ -309,7 +309,7 @@ await menus.openLoad();   // every save, most recent first
   with no reload (a scene without a player reloads with `?newgame` instead). The title shows the
   build SHA ("Build abc1234") under the menu. The thumbnail is read from the canvas straight after the
   next render. The e2e reads `#app[data-save-menu-saved]` (tick and hash) and
-  `#app[data-save-menu-title|list|deleted]`. mw-e01.3 opens Save and Load from the pause menu.
+  `#app[data-save-menu-title|list|deleted]`. The pause menu (below) opens Save and Load too.
 - **The front door (mw-e01.2).** A page that names no `?scene=`, `?newgame`, `?class=` or `?menu=`
   boots the game's start scene, `game.startScene` (`src/content/data/game/game.json`; the slice in
   m1, the mountain road from m3), with the title menu over it (`bootMenuRequest`,
@@ -321,6 +321,41 @@ await menus.openLoad();   // every save, most recent first
   reloads with the area's `?scene=`, so it restarts the scene rather than showing the title. The e2e
   reads `#app[data-front-door]`: page-relative milliseconds when the title showed (`titleMs`), New Game
   was pressed (`newGameMs`) and the class was applied (`playableMs`).
+
+## Pause menu (`src/ui/pause-menu.ts`, `src/game/ui/pause.ts`, mw-e01.3)
+
+```ts
+const pause = new PauseController({ ui, canPause, saveBlocked, unsavedProgress, pauseKeys,
+  openSettings, openSave, openLoad, quitToTitle, publish });
+window.addEventListener('keydown', (e) => { if (pause.keydown(e)) e.preventDefault(); });
+pause.pausePressed();          // the Pause action in a sampled gameplay frame (pad Menu, disconnect)
+pause.drained(frame.pause.pressed); // each frame drained while the sim is paused
+pause.pointerUnlocked();       // the player's pointer lock ended (Esc, alt-tab)
+```
+
+- **Opening.** Esc or P (the Pause binding), the pad's Menu, a pad disconnecting, or losing pointer
+  lock while playing opens the menu, but only with no other screen open and a living player in play
+  (not during the death beat or with the debug fly camera). The keydown listener runs after the UI's
+  own, so an Esc that closed another screen (it is that screen's Back) never also pauses: screens
+  stack, and Esc and B close the top one first.
+- **Options.** Resume (focused on open), Settings (the options menu), Save (the Save screen), Load
+  (the Load screen) and Quit to Title, one column: up and down reach each one and Enter or A
+  presses it. Settings, Save and Load open over the menu, and Back returns to it with focus on the
+  option that opened them. Resume, Back (Esc, B) and Pause again (P, Menu) resume. A Pause press
+  recorded before the menu opened (the key that opened it, under pointer lock) is dropped.
+- **Pausing.** The screen pauses the sim: the loop runs no steps while it is open, so the world
+  clock stops and replays never see how long the game sat paused.
+- **Save disabled.** While a safety veto objects (the autosave's, mw-e01.7: a creature in Combat),
+  Save stays in place but is `aria-disabled`, with the reason ("Can't save during combat") shown
+  under it as its `aria-describedby`. It is still focusable, so the d-pad reaches it, and pressing it
+  does nothing. The vetoes are the autosave's own `SafetyVetoes`.
+- **Quit to Title.** With progress since the last save or load (`SaveProgress`: the sim tick moved
+  on since then; a new game counts from its start), a `confirmDialog` asks "Quit to title?" ("Progress
+  since your last save will be lost.") with focus on Cancel. Confirming reloads into the front door
+  (`titleSearch` drops `?scene=`, `?newgame`, `?class=` and `?menu=`), which tears the world down; the
+  title's Continue then loads the latest save. The menu stays open, the sim paused, while the page
+  leaves.
+- **Readout.** `#app[data-pause]` is `open` or `closed`.
 
 ## Testing
 

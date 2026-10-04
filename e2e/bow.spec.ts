@@ -92,6 +92,9 @@ function yawToBoard(feet: { x: number; z: number }): number {
 test('AC-3: the bow out, an arrow loosed at the back wall renders stuck in its target board, with no console errors', async ({
   page,
 }) => {
+  // Turn, draw (48 ticks), loose and watch the arrow fly add up to more than the default 30 s when CI's
+  // software renderer runs the sim at about ten ticks a second.
+  test.setTimeout(90_000);
   const problems = collectProblems(page);
   await play(page);
   const start = await data<PlayerData>(page, 'player');
@@ -112,8 +115,10 @@ test('AC-3: the bow out, an arrow loosed at the back wall renders stuck in its t
   await page.evaluate(() => {
     window.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
   });
+  // The draw counts sim ticks, and CI's software renderer runs the sim at about ten ticks a second (at most
+  // five steps a frame), so 48 ticks take about five seconds there: wait for the ticks, not for the clock.
   await expect
-    .poll(async () => (await data<PlayerData>(page, 'player')).bow?.draw ?? 0, { timeout: 5_000 })
+    .poll(async () => (await data<PlayerData>(page, 'player')).bow?.draw ?? 0, { timeout: 20_000 })
     .toBeGreaterThanOrEqual(48);
   await expect
     .poll(async () => (await data<{ fov: number }>(page, 'orbit-camera')).fov)
