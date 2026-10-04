@@ -1,0 +1,21 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "tempered-mail-hauberk",
+  "category": "armor",
+  "name": "Tempered mail hauberk",
+  "description": "Rings drawn tighter and hardened by a smith with something to prove. Heavy, but so is a bad day.",
+  "notes": "Fine medium body armor, the tempered cousin of the mail hauberk at the same weight. Weight 8 kg (ADR-0003 reference weights). Catalogue tier fine (economy doc, body armor medium 180-300 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-tempered-mail-hauberk-01",
+  "value": 500,
+  "weightClass": "heavy",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "body",
+    "proficiencies": ["medium-armor"]
+  },
+  "armor": {
+    "weightKg": 8
+  }
+}

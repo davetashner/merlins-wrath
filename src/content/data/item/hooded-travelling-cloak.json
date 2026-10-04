@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "hooded-travelling-cloak",
+  "category": "armor",
+  "name": "Hooded travelling cloak",
+  "description": "Waxed against the weather, with a hood deep enough to hide in or sulk in.",
+  "notes": "Clothes: a heavier hooded cloak, at the top of the cloth weight range. Weight 2.5 kg (ADR-0003 reference weights). Catalogue tier common (economy doc, clothes 20-80). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-hooded-travelling-cloak-01",
+  "value": 55,
+  "worldProperties": {
+    "material": "cloth"
+  },
+  "equip": {
+    "slot": "body",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 2.5
+  }
+}

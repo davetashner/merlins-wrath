@@ -1,0 +1,21 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "kettle-helm",
+  "category": "armor",
+  "name": "Kettle helm",
+  "description": "A broad-brimmed iron hat for people who expect rain and arrows in equal measure.",
+  "notes": "Fine medium helmet at the top of the mail weight range. Weight 2.5 kg (ADR-0003 reference weights). Catalogue tier fine (economy doc, helmets medium 70-120 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-kettle-helm-01",
+  "value": 200,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "head",
+    "proficiencies": ["medium-armor"]
+  },
+  "armor": {
+    "weightKg": 2.5
+  }
+}

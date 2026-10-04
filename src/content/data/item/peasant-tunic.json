@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "peasant-tunic",
+  "category": "armor",
+  "name": "Peasant tunic",
+  "description": "Undyed wool, patched twice and honest about it. Warm, and invisible at any market.",
+  "notes": "Clothes: cosmetic cloth body piece. Weight 1.5 kg (ADR-0003 reference weights). Catalogue tier common (economy doc, clothes 20-80). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-peasant-tunic-01",
+  "value": 20,
+  "worldProperties": {
+    "material": "cloth"
+  },
+  "equip": {
+    "slot": "body",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 1.5
+  }
+}

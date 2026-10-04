@@ -1,0 +1,22 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "small-buckler",
+  "category": "shield",
+  "name": "Small buckler",
+  "description": "A little round shield you punch people with. Very light, and no help against anything that is not coming straight at your hand.",
+  "notes": "A light buckler (ADR-0003 names the buckler as the light shield). Blocks as the wood-shield profile (no separate shield data yet). Weight 1.5 kg. Catalogue tier common (economy doc, light class 35-60). The economy doc has no shield band; priced as a helmet of the matching class. Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-small-buckler-01",
+  "value": 45,
+  "weightClass": "light",
+  "worldProperties": {
+    "material": "wood"
+  },
+  "equip": {
+    "slot": "off-hand",
+    "proficiencies": ["shields"]
+  },
+  "shield": {
+    "weightKg": 1.5,
+    "profile": "wood-shield"
+  }
+}

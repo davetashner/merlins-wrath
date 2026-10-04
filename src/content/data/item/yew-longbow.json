@@ -1,0 +1,19 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "yew-longbow",
+  "category": "weapon",
+  "name": "Yew longbow",
+  "description": "Taller than its owner and twice as proud. Takes a strong back to draw and a stronger one to carry.",
+  "notes": "A fine bow; draws, launches and aims as the shortbow bow profile (mw-e05.3), as there is no separate bow data yet. Catalogue tier fine (economy doc, bows 60-140 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-yew-longbow-01",
+  "value": 220,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "wood"
+  },
+  "equip": {
+    "slot": "both-hands",
+    "proficiencies": ["bows"]
+  },
+  "weapon": {}
+}

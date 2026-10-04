@@ -1,0 +1,19 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "tempered-hunting-knife",
+  "category": "weapon",
+  "name": "Tempered hunting knife",
+  "description": "A hunting knife that has been to a proper smith. It holds an edge through a whole hare and most of a second.",
+  "notes": "A fine knife; no moves of its own yet, like the hunting knife. Catalogue tier fine (economy doc, knives 25-60 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-tempered-hunting-knife-01",
+  "value": 90,
+  "weightClass": "light",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "main-hand",
+    "proficiencies": ["daggers"]
+  },
+  "weapon": {}
+}

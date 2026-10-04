@@ -1,0 +1,19 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "yew-staff",
+  "category": "weapon",
+  "name": "Yew staff",
+  "description": "Dark, fine-grained and slightly warm to the touch. Sorcerers say it listens; the bursar says it was expensive.",
+  "notes": "A fine staff; no moves of its own yet, like the ash staff. Catalogue tier fine (economy doc, staves 60-140 x2.5). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-yew-staff-01",
+  "value": 200,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "wood"
+  },
+  "equip": {
+    "slot": "both-hands",
+    "proficiencies": ["staves"]
+  },
+  "weapon": {}
+}

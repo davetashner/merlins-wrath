@@ -16,7 +16,23 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-blunt-arrow-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-bread-loaf-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-brigandine-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-broadhead-arrow-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-burnished-open-helm-01",
     "placeholder": true
   },
   {
@@ -25,6 +41,10 @@
   },
   {
     "id": "icon-item-empty-glass-jar-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-fire-arrow-01",
     "placeholder": true
   },
   {
@@ -104,7 +124,15 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-hooded-travelling-cloak-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-hot-pie-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-hunting-bow-01",
     "placeholder": true
   },
   {
@@ -120,11 +148,39 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-kettle-helm-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-kite-shield-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-leather-boots-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-leather-gloves-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-leather-jerkin-01",
     "placeholder": true
   },
   {
+    "id": "icon-item-lined-leather-gloves-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-lockpick-iron-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-longsword-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-mail-gauntlets-01",
     "placeholder": true
   },
   {
@@ -136,7 +192,15 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-merchants-coat-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-mushroom-caps-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-nasal-helm-01",
     "placeholder": true
   },
   {
@@ -144,7 +208,35 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-oiled-riding-boots-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-open-helm-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-padded-gambeson-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-peasant-tunic-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-red-clay-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-reinforced-buckler-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-reinforced-gambeson-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-riveted-boots-01",
     "placeholder": true
   },
   {
@@ -164,7 +256,15 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-short-sword-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-shortbow-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-small-buckler-01",
     "placeholder": true
   },
   {
@@ -196,6 +296,14 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-tempered-hunting-knife-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-tempered-mail-hauberk-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-travelling-rations-01",
     "placeholder": true
   },
@@ -204,7 +312,27 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-utility-knife-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-walking-staff-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-wooden-shield-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-wool-cloak-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-yew-longbow-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-yew-staff-01",
     "placeholder": true
   }
 ]

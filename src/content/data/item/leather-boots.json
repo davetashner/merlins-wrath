@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "leather-boots",
+  "category": "armor",
+  "name": "Leather boots",
+  "description": "Stout, well-greased and good for a hundred miles before they start to complain.",
+  "notes": "Light boots at the leather reference weight. Weight 1 kg (ADR-0003 reference weights). Catalogue tier common (economy doc, boots light 25-45). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-leather-boots-01",
+  "value": 35,
+  "worldProperties": {
+    "material": "cloth"
+  },
+  "equip": {
+    "slot": "feet",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 1
+  }
+}

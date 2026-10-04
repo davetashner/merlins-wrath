@@ -1,0 +1,21 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "mail-gauntlets",
+  "category": "armor",
+  "name": "Mail gauntlets",
+  "description": "Riveted rings over leather. They turn a blade and make fiddly work awkward.",
+  "notes": "Medium gloves at the mail reference weight. Weight 2 kg (ADR-0003 reference weights). Catalogue tier common (economy doc, gloves and boots medium 50-90). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-mail-gauntlets-01",
+  "value": 70,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "hands",
+    "proficiencies": ["medium-armor"]
+  },
+  "armor": {
+    "weightKg": 2
+  }
+}

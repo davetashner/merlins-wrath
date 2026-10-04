@@ -1,0 +1,21 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "brigandine",
+  "category": "armor",
+  "name": "Brigandine",
+  "description": "Small iron plates riveted between layers of cloth. Looks like a coat until someone swings at it.",
+  "notes": "Medium body armor, between leather and mail; weight within the mail reference range. Weight 6.5 kg (ADR-0003 reference weights). Catalogue tier common (economy doc, body armor medium 180-300). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-brigandine-01",
+  "value": 240,
+  "weightClass": "heavy",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "body",
+    "proficiencies": ["medium-armor"]
+  },
+  "armor": {
+    "weightKg": 6.5
+  }
+}

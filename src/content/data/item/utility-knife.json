@@ -1,0 +1,19 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "utility-knife",
+  "category": "weapon",
+  "name": "Utility knife",
+  "description": "Cuts bread, rope and the occasional argument short. Nobody has ever called it a weapon to its face.",
+  "notes": "A plain working knife; no moves of its own yet, like the hunting knife. Catalogue tier common (economy doc, knives 25-60). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-utility-knife-01",
+  "value": 25,
+  "weightClass": "light",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "main-hand",
+    "proficiencies": ["daggers"]
+  },
+  "weapon": {}
+}

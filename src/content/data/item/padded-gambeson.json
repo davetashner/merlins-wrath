@@ -1,0 +1,20 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "padded-gambeson",
+  "category": "armor",
+  "name": "Padded gambeson",
+  "description": "Layers of quilted linen. It is surprisingly good at stopping a blow and unsurprisingly bad at smelling nice.",
+  "notes": "Light body armor: padded cloth at the top of the cloth weight range. Weight 2.5 kg (ADR-0003 reference weights). Catalogue tier common (economy doc, body armor light 90-140). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-padded-gambeson-01",
+  "value": 95,
+  "worldProperties": {
+    "material": "cloth"
+  },
+  "equip": {
+    "slot": "body",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 2.5
+  }
+}

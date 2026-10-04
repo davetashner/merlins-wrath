@@ -1,0 +1,21 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "riveted-boots",
+  "category": "armor",
+  "name": "Riveted boots",
+  "description": "Heavy leather with iron plates sewn over the shin. You will hear yourself coming.",
+  "notes": "Medium boots at the mail reference weight. Weight 2 kg (ADR-0003 reference weights). Catalogue tier common (economy doc, gloves and boots medium 50-90). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-riveted-boots-01",
+  "value": 60,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "feet",
+    "proficiencies": ["medium-armor"]
+  },
+  "armor": {
+    "weightKg": 2
+  }
+}

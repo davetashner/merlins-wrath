@@ -1,0 +1,18 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "hunting-bow",
+  "category": "weapon",
+  "name": "Hunting bow",
+  "description": "A sturdy bow that has fed several households. It is quieter than a shortbow and every bit as judgemental.",
+  "notes": "A common bow; draws, launches and aims as the shortbow bow profile (mw-e05.3), as there is no separate bow data yet. Catalogue tier common (economy doc, bows 60-140). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-hunting-bow-01",
+  "value": 80,
+  "worldProperties": {
+    "material": "wood"
+  },
+  "equip": {
+    "slot": "both-hands",
+    "proficiencies": ["bows"]
+  },
+  "weapon": {}
+}

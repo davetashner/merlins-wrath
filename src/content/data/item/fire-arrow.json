@@ -1,0 +1,18 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "fire-arrow",
+  "category": "ammo",
+  "name": "Fire arrow",
+  "description": "Pitch-bound and meant to burn. Do keep it away from the thatch you intend to sleep under.",
+  "notes": "A special arrow (the fire arrow profile, mw-e05.1/e05.8). Special arrow band 3-8 per arrow (economy doc). Authored for shop stock (mw-ju8.3); not for sale until a shop row stocks it (mw-ju8.5).",
+  "icon": "icon-item-fire-arrow-01",
+  "value": 5,
+  "stackable": true,
+  "maxStack": 20,
+  "worldProperties": {
+    "material": "wood"
+  },
+  "ammo": {
+    "arrow": "fire"
+  }
+}
