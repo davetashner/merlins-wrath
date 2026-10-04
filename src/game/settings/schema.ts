@@ -217,6 +217,11 @@ export const SETTINGS_SCHEMA = {
         ],
         default: 'normal',
       }),
+      damageNumbers: toggle({
+        label: 'Damage numbers',
+        help: 'Shows the damage you deal over your target and the damage you take.',
+        default: true,
+      }),
     },
   },
 } as const satisfies Readonly<

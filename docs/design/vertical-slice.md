@@ -193,7 +193,7 @@ so luring it into the fire is a systemic option, not a scripted one.
 | Fire hazard damage (brazier)                 | `e04-environmental-damage` (mw-e04.19), `e03-element-propagation` (mw-e03.5) | done |
 | Hit, block and parry audio                   | `e28-combat-hit-audio` (mw-e28.4), mw-e28.16 (parry cues) | done |
 | Placeholder impact VFX                       | `e29-vfx-cue-sheets` (mw-e29.3), `e29-placeholder-vfx` (mw-e29.2) | open |
-| Target health bar, lock reticle (nice to have) | `e04-hud-target` (mw-e04.21)                          | open   |
+| Target health bar, lock reticle (nice to have) | `e04-hud-target` (mw-e04.21)                          | done   |
 
 ### B5 — Key drop
 
