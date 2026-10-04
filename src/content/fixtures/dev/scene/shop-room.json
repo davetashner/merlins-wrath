@@ -58,7 +58,12 @@
       "at": [-2, 0, 1],
       "tags": ["merchant:fixture-general-goods", "dev-crowns:400"],
       "interact": {
-        "affordances": [{ "verb": "talk", "label": "Trade with the shopkeeper" }]
+        "affordances": [
+          {
+            "verb": "talk",
+            "label": "Trade with the shopkeeper"
+          }
+        ]
       }
     },
     {
@@ -66,8 +71,24 @@
       "at": [2, 0, 1],
       "tags": ["merchant:fixture-fence", "dev-crowns:400"],
       "interact": {
-        "affordances": [{ "verb": "talk", "label": "Trade with the fence" }]
+        "affordances": [
+          {
+            "verb": "talk",
+            "label": "Trade with the fence"
+          }
+        ]
       }
     }
-  ]
+  ],
+  "light": {
+    "ambient": 0.26,
+    "directional": [
+      {
+        "id": "sun",
+        "direction": [-0.45, -1, 0.3],
+        "level": 0.5,
+        "reach": 60
+      }
+    ]
+  }
 }
