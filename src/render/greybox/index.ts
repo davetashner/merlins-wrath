@@ -47,9 +47,13 @@ import {
   MeshStandardMaterial,
   PCFShadowMap,
   Quaternion,
+  RepeatWrapping,
+  SRGBColorSpace,
+  TextureLoader,
   Vector3,
   type Object3D,
   type Scene,
+  type Texture,
   type WebGLRenderer,
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -73,10 +77,48 @@ const BACKGROUND = 0x10131c;
 const DEFAULT_SUN_DIRECTION = new Vector3(0.45, 1, -0.3).normalize();
 const SHADOW_MAP_SIZE = 2048;
 
-/** A standard material with a 1 m world-space grid drawn over it. */
-function gridMaterial(colour: number): MeshStandardMaterial {
+/**
+ * The glenstone painted over a purpose's flat colour (mw-7w0, the owner's quay probe). `floor` lays it on
+ * upward-facing surfaces only and keeps the grid (the testbed, as the owner wired it); `all` blends it onto
+ * every face, projected along the surface's dominant axis (one fetch, not a blend: the slice is boxes), and
+ * drops the grid.
+ */
+export interface StoneSurface {
+  readonly faces: 'floor' | 'all';
+  readonly grid: boolean;
+}
+
+/** The runtime stone painting: 1024², one tile is 4 m × 4 m (blocks 80 to 140 cm). */
+export const STONE_URL = '/assets/texture/tex-glenstone-quay-wendmouth-probe-01.webp';
+const STONE_TILE_METRES = 4;
+
+/** Which scenes lay stone on which purposes, until scenes name their own surfaces. */
+export function stoneFor(layoutId: string, purpose: KitPurpose): StoneSurface | undefined {
+  if (layoutId === 'testbed' && purpose === 'walkable') return { faces: 'floor', grid: true };
+  if (layoutId === 'slice' && ['walkable', 'blocking', 'climbable'].includes(purpose)) {
+    return { faces: 'all', grid: false };
+  }
+  return undefined;
+}
+
+/** How much of the stone shows: 0 until the painting has loaded (so there is no black flash), then 1. */
+interface StoneLoad {
+  readonly map: Texture;
+  readonly amount: { value: number };
+}
+
+/** A standard material with a 1 m world-space grid drawn over it, and optionally the stone painting. */
+function gridMaterial(
+  colour: number,
+  stone?: { surface: StoneSurface; load: StoneLoad },
+): MeshStandardMaterial {
   const material = new MeshStandardMaterial({ color: new Color(colour), roughness: 0.9 });
   material.onBeforeCompile = (shader) => {
+    if (stone !== undefined) {
+      shader.uniforms['vbStoneMap'] = { value: stone.load.map };
+      shader.uniforms['vbStoneAmount'] = stone.load.amount;
+      shader.uniforms['vbStoneTile'] = { value: STONE_TILE_METRES };
+    }
     shader.vertexShader = shader.vertexShader
       .replace('void main() {', 'varying vec3 vGridPos;\nvarying vec3 vGridNormal;\nvoid main() {')
       .replace(
@@ -87,21 +129,49 @@ function gridMaterial(colour: number): MeshStandardMaterial {
           'vGridNormal = normalize(mat3(modelMatrix) * objectNormal);',
         ].join('\n'),
       );
+    const stoneHeader =
+      stone === undefined
+        ? ''
+        : 'uniform sampler2D vbStoneMap;\nuniform float vbStoneAmount;\nuniform float vbStoneTile;\n';
+    const stoneColour =
+      stone === undefined
+        ? []
+        : stone.surface.faces === 'floor'
+          ? [
+              'float stoneFacing = smoothstep(0.7, 0.9, abs(normalize(vGridNormal).y)) * vbStoneAmount;',
+              'vec3 stoneColour = texture2D(vbStoneMap, vGridPos.xz / vbStoneTile).rgb;',
+              'diffuseColor.rgb = mix(diffuseColor.rgb, stoneColour, stoneFacing);',
+            ]
+          : [
+              'vec3 stoneA = abs(normalize(vGridNormal));',
+              'vec2 stoneUv = stoneA.y >= max(stoneA.x, stoneA.z) ? vGridPos.xz : (stoneA.x >= stoneA.z ? vGridPos.zy : vGridPos.xy);',
+              'vec3 stoneColour = texture2D(vbStoneMap, stoneUv / vbStoneTile).rgb;',
+              'diffuseColor.rgb = mix(diffuseColor.rgb, stoneColour, vbStoneAmount);',
+            ];
+    const gridLines =
+      stone !== undefined && !stone.surface.grid
+        ? []
+        : [
+            'vec3 gridN = abs(normalize(vGridNormal));',
+            'vec3 gridW = max(fwidth(vGridPos) * 1.5, vec3(1e-4));',
+            'vec3 gridL = 1.0 - clamp(abs(fract(vGridPos - 0.5) - 0.5) / gridW, 0.0, 1.0);',
+            'float grid = max(max(gridL.x * (1.0 - gridN.x), gridL.y * (1.0 - gridN.y)), gridL.z * (1.0 - gridN.z));',
+            'diffuseColor.rgb *= 1.0 - 0.3 * grid;',
+          ];
     shader.fragmentShader = shader.fragmentShader
-      .replace('void main() {', 'varying vec3 vGridPos;\nvarying vec3 vGridNormal;\nvoid main() {')
+      .replace(
+        'void main() {',
+        `${stoneHeader}varying vec3 vGridPos;\nvarying vec3 vGridNormal;\nvoid main() {`,
+      )
       .replace(
         '#include <color_fragment>',
-        [
-          '#include <color_fragment>',
-          'vec3 gridN = abs(normalize(vGridNormal));',
-          'vec3 gridW = max(fwidth(vGridPos) * 1.5, vec3(1e-4));',
-          'vec3 gridL = 1.0 - clamp(abs(fract(vGridPos - 0.5) - 0.5) / gridW, 0.0, 1.0);',
-          'float grid = max(max(gridL.x * (1.0 - gridN.x), gridL.y * (1.0 - gridN.y)), gridL.z * (1.0 - gridN.z));',
-          'diffuseColor.rgb *= 1.0 - 0.3 * grid;',
-        ].join('\n'),
+        ['#include <color_fragment>', ...stoneColour, ...gridLines].join('\n'),
       );
   };
-  material.customProgramCacheKey = () => 'greybox-grid';
+  material.customProgramCacheKey = () =>
+    stone === undefined
+      ? 'greybox-grid'
+      : `greybox-grid-stone-${stone.surface.faces}-${stone.surface.grid ? 'grid' : 'plain'}`;
   return material;
 }
 
@@ -273,6 +343,31 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
   scene.add(sky, sun, sun.target);
   const sunDirection = DEFAULT_SUN_DIRECTION.clone();
   let fitted: readonly ScenePart[] = [];
+  let stoneLoad: StoneLoad | undefined;
+
+  /** The stone painting, loaded on the first scene that wants it and shared by every material. */
+  const stone = (): StoneLoad => {
+    if (stoneLoad === undefined) {
+      const amount = { value: 0 };
+      const map = new TextureLoader().load(
+        STONE_URL,
+        () => {
+          amount.value = 1;
+        },
+        undefined,
+        () => {
+          // Keep the flat purpose colours.
+        },
+      );
+      map.name = 'texture:tex-glenstone-quay-wendmouth-probe-01';
+      map.colorSpace = SRGBColorSpace;
+      map.wrapS = RepeatWrapping;
+      map.wrapT = RepeatWrapping;
+      map.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      stoneLoad = { map, amount };
+    }
+    return stoneLoad;
+  };
 
   /** Points the sun at the layout and fits its shadow camera around it. */
   const fitSun = (parts: readonly ScenePart[]): void => {
@@ -334,7 +429,12 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
       for (const [purpose, geometries] of byPurpose) {
         const merged = mergeGeometries(geometries);
         for (const geometry of geometries) geometry.dispose();
-        const mesh = new Mesh(merged, gridMaterial(PURPOSE_COLOURS[purpose]));
+        const surface = stoneFor(layout.id, purpose);
+        const material =
+          surface === undefined
+            ? gridMaterial(PURPOSE_COLOURS[purpose])
+            : gridMaterial(PURPOSE_COLOURS[purpose], { surface, load: stone() });
+        const mesh = new Mesh(merged, material);
         mesh.name = purpose;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -493,6 +593,8 @@ export function createGreyboxView(renderer: WebGLRenderer, scene: Scene): Greybo
     },
 
     dispose() {
+      stoneLoad?.map.dispose();
+      stoneLoad = undefined;
       sun.shadow.dispose();
       scene.remove(sky, sun, sun.target);
     },
