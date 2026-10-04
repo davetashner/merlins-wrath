@@ -1,0 +1,15 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "glenstone-dust",
+  "category": "misc",
+  "name": "Glenstone dust",
+  "description": "Honey-grey grit swept from a mason's floor. The valley's whole fortune started as this, and most of it is still on the floor.",
+  "notes": "Potion ingredient (mw-ju8.4): shop and loot stock only, with no use until a brewing system lands (a later bead). Fine freestone powder from the quarries and galleries. Base value 12 sits in the economy ingredient band (3-15).",
+  "icon": "icon-item-glenstone-dust-01",
+  "value": 12,
+  "stackable": true,
+  "maxStack": 20,
+  "worldProperties": {
+    "material": "glenstone"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "scroll-of-ember",
+  "category": "book",
+  "name": "Scroll of Ember",
+  "description": "The ink is slightly scorched at the edges. That is either craftsmanship or a warning.",
+  "notes": "A scroll of Ember (mw-ju8.4), spell.ember. Intended to cast that spell once when read and be consumed. That read-and-cast path does not exist yet (no spell content or cast pipeline: mw-e06.2), so for now it is a stock item with no effect and teaches nothing; a follow-up bead wires it. Base value 60 sits in the economy scroll band (40-150).",
+  "icon": "icon-item-scroll-of-ember-01",
+  "value": 60,
+  "stackable": true,
+  "maxStack": 5,
+  "book": {
+    "textKey": "book.scroll-of-ember.text",
+    "teaches": []
+  }
+}

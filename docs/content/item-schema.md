@@ -148,6 +148,8 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `use[].properties.noiseMultiplier` | number 0.2–3 | — | Multiplier on its wearer's noise; an actor's is the product of its equipment's. |
 | `use[].seconds` | number > 0 ≤ 3600 | required | How long the coating lasts, seconds. |
 | `use[].op` | `"throw"` | required |  |
+| `breakable` | object | — | Breaks when dropped or thrown hard (a jar): as a world item it carries the breakable profile and breaks at its material’s fragile threshold, emitting breakableBroken; the item and its contents are lost (mw-ju8.4). |
+| `breakable.profile` | ref → breakable | required | Breakable profile it breaks with (mw-e03.11), e.g. pottery. |
 | `flags` | object | — | Item rules; omitted flags take their defaults (quest items: noSell, noDrop). |
 | `flags.unique` | boolean | — | At most one; never stacks. Default false. |
 | `flags.questItem` | boolean | — | Needed by a quest. Default true for category quest, else false. |

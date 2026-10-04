@@ -1,0 +1,12 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "mushroom-caps",
+  "category": "misc",
+  "name": "Mushroom caps",
+  "description": "Pale caps from the dark places. They are probably fine. Probably.",
+  "notes": "Potion ingredient (mw-ju8.4): shop and loot stock only, with no use until a brewing system lands (a later bead). Cave mushrooms, pale and damp. Base value 4 sits in the economy ingredient band (3-15).",
+  "icon": "icon-item-mushroom-caps-01",
+  "value": 4,
+  "stackable": true,
+  "maxStack": 20
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "bread-loaf",
+  "category": "consumable",
+  "name": "Bread loaf",
+  "description": "Yesterday's loaf, which is the best kind. Fresh bread is a rumour in Briar Glen.",
+  "notes": "Food (mw-ju8.4). Eaten for 12 stamina and 3 health. Base value 3 sits in the economy food band (2-6). No spoilage exists yet.",
+  "icon": "icon-item-bread-loaf-01",
+  "value": 3,
+  "stackable": true,
+  "maxStack": 10,
+  "use": [
+    {
+      "op": "restore",
+      "pool": "stamina",
+      "amount": 12
+    },
+    {
+      "op": "restore",
+      "pool": "health",
+      "amount": 3
+    }
+  ]
+}

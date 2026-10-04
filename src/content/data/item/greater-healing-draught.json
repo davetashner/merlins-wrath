@@ -1,0 +1,22 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "greater-healing-draught",
+  "category": "consumable",
+  "name": "Greater healing draught",
+  "description": "A full bottle of crimson that smells of iron and cloves. It closes a wound the way a door closes on a draught.",
+  "notes": "A greater health potion (mw-ju8.4), buy and use only: no brewing yet. Restores 100 health; the minor tier is the existing healing draught at 30. Base value 90 sits in the economy greater potion band. Magnitudes are a placeholder scale for the balance tool.",
+  "icon": "icon-item-greater-healing-draught-01",
+  "value": 90,
+  "stackable": true,
+  "maxStack": 10,
+  "worldProperties": {
+    "material": "glass"
+  },
+  "use": [
+    {
+      "op": "restore",
+      "pool": "health",
+      "amount": 100
+    }
+  ]
+}

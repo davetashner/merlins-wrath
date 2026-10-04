@@ -1,0 +1,12 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "bellwort-root",
+  "category": "misc",
+  "name": "Bellwort root",
+  "description": "A pale root, knobbled like a knuckle. Chewed by miners for a cough, and by nobody for pleasure.",
+  "notes": "Potion ingredient (mw-ju8.4): shop and loot stock only, with no use until a brewing system lands (a later bead). A bitter root from the glen's damp banks. Base value 6 sits in the economy ingredient band (3-15).",
+  "icon": "icon-item-bellwort-root-01",
+  "value": 6,
+  "stackable": true,
+  "maxStack": 20
+}

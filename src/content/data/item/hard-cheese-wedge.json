@@ -1,0 +1,24 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "hard-cheese-wedge",
+  "category": "consumable",
+  "name": "Hard cheese wedge",
+  "description": "Dry, sharp and older than the landlord's promises. It keeps, which is the whole recommendation.",
+  "notes": "Food (mw-ju8.4). Eaten for 15 stamina and 4 health. Base value 4 sits in the economy food band (2-6). No spoilage exists yet.",
+  "icon": "icon-item-hard-cheese-wedge-01",
+  "value": 4,
+  "stackable": true,
+  "maxStack": 10,
+  "use": [
+    {
+      "op": "restore",
+      "pool": "stamina",
+      "amount": 15
+    },
+    {
+      "op": "restore",
+      "pool": "health",
+      "amount": 4
+    }
+  ]
+}

@@ -18,6 +18,11 @@ import {
   InventoryRules,
   type ItemInstanceFlags,
 } from '../inventory/inventory';
+import {
+  BREAKABLE_COMPONENTS,
+  BreakableComponent,
+  type BreakableProfile,
+} from '../breakables/components';
 import { noiseEmitted, type NoiseEvent } from '../noise/events';
 import { installPhysicsObjects, PhysicsObjectComponent, physicsImpact } from '../physics/objects';
 import { RapierPhysics } from '../physics/rapier';
@@ -591,5 +596,40 @@ describe('world items (mw-e17.7)', () => {
       return hashWorld(s.sim);
     };
     expect(run()).toBe(run());
+  });
+});
+
+describe('breakable world items (mw-ju8.4)', () => {
+  const JAR: WorldItemDef = item('jar', 'misc', {
+    worldProperties: { material: 'glass' },
+    breakable: { profile: 'pottery' },
+  });
+  const POTTERY: BreakableProfile = {
+    id: 'pottery',
+    resistances: {},
+    debris: { count: 2, size: 0.1 },
+    breakLoudness: 70,
+  };
+  const place = (breakables?: (id: string) => BreakableProfile | undefined) => {
+    const s = setup({
+      items: new WorldItems([JAR], {
+        materials: MATERIALS,
+        ...(breakables !== undefined && { breakables }),
+      }),
+    });
+    s.sim.register(...BREAKABLE_COMPONENTS);
+    return { s, entity: placeAhead(s, 'jar') };
+  };
+
+  it('a world item whose definition names a known profile is made breakable', () => {
+    const { s, entity } = place((id) => (id === 'pottery' ? POTTERY : undefined));
+    expect(s.sim.get(entity, BreakableComponent)).toMatchObject({ profile: 'pottery' });
+  });
+
+  it('without a profile lookup, or for an unknown profile, it stays an ordinary item', () => {
+    for (const lookup of [undefined, () => undefined]) {
+      const { s, entity } = place(lookup);
+      expect(s.sim.has(entity, BreakableComponent)).toBe(false);
+    }
   });
 });
