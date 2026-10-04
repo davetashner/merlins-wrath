@@ -31,7 +31,24 @@ describe('target bar (mw-e04.21)', () => {
   });
 });
 
+describe('target bar under reduced motion (mw-e04.21)', () => {
+  it('snaps instead of draining a chip', () => {
+    const bar = new TargetBar({ reducedMotion: () => true });
+    bar.update({ name: 'Dummy', health: { value: 40, max: 40 } }, 0);
+    bar.update({ name: 'Dummy', health: { value: 20, max: 40 } }, 16);
+    expect(bar.health.chip).toBe(0);
+  });
+});
+
 describe('damage numbers (mw-e04.21)', () => {
+  it('reuses a finished slot before replacing a live number', () => {
+    const n = new DamageNumbers();
+    n.spawn('1', 'dealt', 0, 0, 0);
+    n.spawn('2', 'dealt', 0, 0, DAMAGE_NUMBER_MS + 1);
+    n.update(DAMAGE_NUMBER_MS + 1);
+    expect(n.numbers.map((x) => x.text)).toEqual(['2']);
+  });
+
   it('a number rises and fades, then is gone', () => {
     const n = new DamageNumbers();
     n.spawn('12', 'dealt', 100, 200, 1000);
@@ -54,6 +71,18 @@ describe('damage numbers (mw-e04.21)', () => {
     const el = n.element.querySelector<HTMLElement>('.vb-damage-number:not([hidden])');
     expect(el?.style.transform).toBe('translate(10px, 20px)');
     expect(el?.dataset['kind']).toBe('taken');
+  });
+
+  it('a full pool replaces the oldest number even when it is not in the first slot', () => {
+    const n = new DamageNumbers();
+    for (let i = 0; i < MAX_DAMAGE_NUMBERS; i++) {
+      n.spawn(String(i), 'dealt', 0, 0, MAX_DAMAGE_NUMBERS - i);
+    }
+    n.spawn('new', 'dealt', 0, 0, MAX_DAMAGE_NUMBERS + 1);
+    n.update(MAX_DAMAGE_NUMBERS + 1);
+    expect(n.numbers.map((x) => x.text)).toContain('0');
+    expect(n.numbers.map((x) => x.text)).not.toContain(String(MAX_DAMAGE_NUMBERS - 1));
+    expect(n.numbers.map((x) => x.text)).toContain('new');
   });
 
   it('a full pool reuses its oldest number', () => {

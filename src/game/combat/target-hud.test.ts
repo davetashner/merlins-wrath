@@ -123,6 +123,16 @@ describe('target HUD glue (mw-e04.21)', () => {
     expect(s.numbers.numbers).toEqual([]);
   });
 
+  it('a hit that does no damage shows no number, and a target without a placement has none', () => {
+    const s = setup();
+    s.hit(s.foe, { amounts: { slash: 0 }, instigator: s.player });
+    const ghost = s.world.spawn();
+    giveCombatant(s.world, ghost, { health: 10 });
+    s.hit(ghost, { amounts: { slash: 3 }, instigator: s.player });
+    s.glue.frame(0);
+    expect(s.numbers.numbers).toEqual([]);
+  });
+
   it('dispose stops listening', () => {
     const s = setup();
     s.glue.dispose();
