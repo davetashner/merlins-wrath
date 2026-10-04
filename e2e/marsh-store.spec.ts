@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { holdKey, playerState, stubPointerLock, takeControl, turnTo } from './helpers/player';
+import {
+  holdKey,
+  playerState,
+  runConsole,
+  stubPointerLock,
+  takeControl,
+  turnTo,
+} from './helpers/player';
 
 // mw-ju8.9: Marsh's General Store against the production build (Chromium). AC-1: from the street the
 // player opens the front door and walks in; the interior is loaded and Ottilie Marsh stands behind
@@ -7,9 +14,18 @@ import { holdKey, playerState, stubPointerLock, takeControl, turnTo } from './he
 // it opens the shop screen (#app[data-shop]) for marsh-general-store, and a purchase works (mw-e20.10). AC-3: up the 12-step
 // stair to the second floor, where the bed and the table are (the console's `tp` knows the scene's
 // named spawns). The scene is dev-only until area transitions (mw-e01.11): ?scene=marsh-store.
+//
+// Built for a slow runner (mw-ju8.18). CI draws about one frame a second in software GL, and there
+// every Playwright round trip (a key press, an attribute read, an expect poll) costs 2-3 s: one long
+// test of ~45 actions timed out at 90 s, twice. So each test proves one thing, starts near it with a
+// teleport (`runConsole`: the whole console sequence in one page evaluation), and keeps its action
+// count low; none waits on a locator's frame-paced actionability checks. Only the door test walks.
 
 // Driver performance notices from the GPU process are not our errors (see e2e/render-boot.spec.ts).
 const DRIVER_PERF_NOTICE = /^\[\.WebGL-[^\]]+\]GL Driver Message \([^)]*\bPerformance\b/;
+
+// A starved software-GL frame drops sim steps and says so; that is the runner, not the game.
+const FRAME_LOOP_NOTICE = 'frame loop: ';
 
 const W = { code: 'KeyW', key: 'w' };
 
@@ -17,7 +33,7 @@ function collectProblems(page: Page): string[] {
   const problems: string[] = [];
   page.on('console', (msg) => {
     if (msg.type() !== 'error' && msg.type() !== 'warning') return;
-    if (DRIVER_PERF_NOTICE.test(msg.text())) return;
+    if (DRIVER_PERF_NOTICE.test(msg.text()) || msg.text().startsWith(FRAME_LOOP_NOTICE)) return;
     problems.push(`${msg.type()}: ${msg.text()}`);
   });
   page.on('pageerror', (err) => problems.push(`pageerror: ${err.message}`));
@@ -38,19 +54,47 @@ async function openStore(page: Page): Promise<void> {
   await expect(app).toHaveAttribute('data-player', /"grounded":true/, { timeout: 10_000 });
 }
 
-/** Runs `line` in the debug console, leaving it closed again and the game under the player's hand. */
-async function run(page: Page, line: string): Promise<void> {
-  await page.keyboard.press('Backquote');
-  const input = page.getByTestId('debug-console-input');
-  await expect(input).toBeFocused();
-  await page.keyboard.insertText(line);
-  await page.keyboard.press('Enter');
-  await page.keyboard.press('Escape');
-  await expect(page.locator('#app')).toHaveAttribute('data-debug-console', 'closed');
-  await takeControl(page);
-}
+/** Ottilie's published state: where she stands and what she makes of the player. */
+const keeper = async (page: Page) =>
+  (await data<{ agents: { at: number[]; state: string }[] }>(page, 'ai'))?.agents[0];
 
-test('AC-1: from the street, open the front door and walk in: the shopkeeper is behind the counter', async ({
+test('AC-1: the interior is loaded and the shopkeeper stands behind the counter', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  const problems = collectProblems(page);
+  await openStore(page);
+
+  // Ottilie is in the loaded interior, drawn, standing north of the counter (z 1…2) at her post.
+  await expect
+    .poll(() => data<{ kinds: Record<string, number>; drawn: number }>(page, 'creatures'))
+    .toMatchObject({ kinds: { 'npc-ottilie': 1 }, drawn: 1 });
+  await expect.poll(async () => (await keeper(page))?.at[2]).toBeGreaterThan(2);
+  // Noticing a customer is a glance, not an alarm: unaware, or suspicious ("noticed someone").
+  expect((await keeper(page))?.state).toMatch(/^(unaware|suspicious)$/);
+  expect(problems).toEqual([]);
+});
+
+test('AC-1: from the street, open the front door and walk in', async ({ page }) => {
+  test.setTimeout(150_000);
+  const problems = collectProblems(page);
+  await openStore(page);
+  await takeControl(page);
+
+  // Out on the street, facing the closed front door: Interact opens it and the player walks in.
+  await runConsole(page, 'tp street-exit');
+  await turnTo(page, { x: 0, z: -4 });
+  await expect(page.getByTestId('interact-prompt')).toContainText('Open');
+  await page.keyboard.press('KeyE');
+  const inside = await holdKey(page, W, 75, 10);
+  expect(inside.position.z).toBeGreaterThan(-3.5);
+  expect(inside.position.y).toBeLessThan(0.5);
+  // She is still behind the counter.
+  expect((await keeper(page))?.at[2]).toBeGreaterThan(2);
+  expect(problems).toEqual([]);
+});
+
+test('AC-1: the counter offers a trade, opens the shop for her merchant, and a purchase works', async ({
   page,
 }) => {
   test.setTimeout(90_000);
@@ -58,31 +102,9 @@ test('AC-1: from the street, open the front door and walk in: the shopkeeper is 
   await openStore(page);
   await takeControl(page);
 
-  // Ottilie is in the loaded interior, drawn, standing north of the counter (z 1…2) at her post.
-  await expect
-    .poll(() => data<{ kinds: Record<string, number>; drawn: number }>(page, 'creatures'))
-    .toMatchObject({ kinds: { 'npc-ottilie': 1 }, drawn: 1 });
-  const keeper = async () =>
-    (await data<{ agents: { at: number[]; state: string }[] }>(page, 'ai'))?.agents[0];
-  await expect.poll(async () => (await keeper())?.at[2]).toBeGreaterThan(2);
-  // Noticing a customer is a glance, not an alarm: unaware, or suspicious ("noticed someone").
-  expect((await keeper())?.state).toMatch(/^(unaware|suspicious)$/);
-
-  // Out on the street, facing the closed front door: Interact opens it and the player walks in.
-  await run(page, 'tp street-exit');
-  await turnTo(page, { x: 0, z: -4 });
-  const prompt = page.getByTestId('interact-prompt');
-  await expect(prompt).toContainText('Open');
-  await page.keyboard.press('KeyE');
-  const inside = await holdKey(page, W, 75, 10);
-  expect(inside.position.z).toBeGreaterThan(-3.5);
-  expect(inside.position.y).toBeLessThan(0.5);
-
-  // She is still behind the counter, and the counter offers a trade.
-  expect((await keeper())?.at[2]).toBeGreaterThan(2);
-  await run(page, 'tp -2 0 -0.25');
+  await runConsole(page, 'tp -2 0 -0.25');
   await turnTo(page, { x: -2, z: 1 });
-  await expect(prompt).toContainText('Trade');
+  await expect(page.getByTestId('interact-prompt')).toContainText('Trade');
   await page.keyboard.press('KeyE');
   // The shop screen opens for her merchant (#app[data-shop]); the dev scene tops the player up to 400.
   await expect(page.locator('#app')).toHaveAttribute('data-shop', /"open":true/);
@@ -91,11 +113,10 @@ test('AC-1: from the street, open the front door and walk in: the shopkeeper is 
     crowns: 400,
   });
   await expect(page.locator('[data-screen="shop"] .vb-shop-name')).toContainText(/ottilie/i);
-  // Buying works: lockpicks leave the shelf for the pack and cost crowns.
-  // Lockpicks sit below the fold of the scrolling list, and on a software-GL runner the page draws about
-  // one frame a second, where Playwright's frame-paced click checks (visible, stable) never settle
-  // (CI timed out after 90 s). Reach the row as a keyboard player does: focus it (the browser scrolls
-  // it into view) and press Enter.
+  // Buying works: lockpicks leave the shelf for the pack and cost crowns. Lockpicks sit below the
+  // fold of the scrolling list, and Playwright's frame-paced click checks (visible, stable) never
+  // settle at a frame a second: reach the row as a keyboard player does, focus it (the browser
+  // scrolls it into view) and press Enter.
   await page.locator('[data-screen="shop"] [aria-label^="Buy Lockpicks"]').first().focus();
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('shop-status')).toHaveText(/^Bought Lockpicks for \d+ crowns\.$/);
@@ -110,24 +131,29 @@ test('AC-1: from the street, open the front door and walk in: the shopkeeper is 
   expect(problems).toEqual([]);
 });
 
-test('AC-3: up the stair to the second floor, where the bed and the table are', async ({
-  page,
-}) => {
-  test.setTimeout(90_000);
+test('AC-3: from the foot of the stair, straight up it to the second floor', async ({ page }) => {
+  test.setTimeout(180_000);
   const problems = collectProblems(page);
   await openStore(page);
   await takeControl(page);
 
   // From the foot of the 12-step stair, straight up it: no jump, no stuck step.
-  await run(page, 'tp 4 0 -3.5');
+  await runConsole(page, 'tp 4 0 -3.5');
   await turnTo(page, { x: 4, z: 3 });
   const top = await holdKey(page, W, 150, 10);
   expect(top.position.y).toBeGreaterThan(2.9);
   expect(top.position.z).toBeGreaterThan(2.5);
+  expect(problems).toEqual([]);
+});
 
-  // The bed and the table are named places up here.
+test('AC-3: the bed and the table are named places on the second floor', async ({ page }) => {
+  test.setTimeout(60_000);
+  const problems = collectProblems(page);
+  await openStore(page);
+  await takeControl(page);
+
   for (const place of ['bed', 'table']) {
-    await run(page, `tp ${place}`);
+    await runConsole(page, `tp ${place}`);
     await expect.poll(async () => (await playerState(page)).position.y).toBeGreaterThan(3);
   }
   expect(problems).toEqual([]);

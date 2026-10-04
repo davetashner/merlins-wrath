@@ -62,6 +62,75 @@ export async function takeControl(page: Page): Promise<void> {
 }
 
 /**
+ * Runs one debug-console line (`tp bed`, `tp -2 0 -0.25`) and hands the game back to the player,
+ * all inside one page evaluation. The key-by-key way (Backquote, wait for focus, type, Enter, Escape,
+ * wait for the console to close, click, wait for the lock) is about eight Playwright round trips,
+ * and on a runner drawing a frame a second each costs 2-3 s (CI traces of mw-ju8.18): twenty
+ * seconds a teleport. Here the keys go through the console's own listeners and the waits ride the
+ * page's frames, so a slow runner pays for the frames and not for the round trips. Needs
+ * `?debug=1` and the pointer-lock stub; the click is retried until the lock lands, because the UI
+ * only allows it again a frame after the console closes.
+ */
+export async function runConsole(page: Page, line: string): Promise<void> {
+  await page.evaluate(
+    (text) =>
+      new Promise<void>((resolve, reject) => {
+        const app = document.querySelector<HTMLElement>('#app');
+        const started = performance.now();
+        const until = (done: () => boolean, then: () => void, what: string): void => {
+          const check = (): void => {
+            if (done()) then();
+            else if (performance.now() - started > 60_000) reject(new Error(`timed out: ${what}`));
+            else requestAnimationFrame(check);
+          };
+          check();
+        };
+        const key = (target: EventTarget, code: string, name: string): void => {
+          target.dispatchEvent(
+            new KeyboardEvent('keydown', { code, key: name, bubbles: true, cancelable: true }),
+          );
+        };
+        key(window, 'Backquote', '`');
+        const input = () =>
+          document.querySelector<HTMLInputElement>('[data-testid="debug-console-input"]');
+        until(
+          () => input() !== null,
+          () => {
+            const field = input();
+            if (field === null) return;
+            field.focus();
+            field.value = text;
+            key(field, 'Enter', 'Enter');
+            key(field, 'Escape', 'Escape');
+            until(
+              () => app?.dataset['debugConsole'] === 'closed',
+              () => {
+                const take = (): void => {
+                  if (document.pointerLockElement !== null) {
+                    resolve();
+                    return;
+                  }
+                  document
+                    .elementFromPoint(window.innerWidth / 2, window.innerHeight / 2)
+                    ?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                  requestAnimationFrame(() => {
+                    if (performance.now() - started > 60_000) reject(new Error('timed out: lock'));
+                    else take();
+                  });
+                };
+                take();
+              },
+              'the console to close',
+            );
+          },
+          'the console to open',
+        );
+      }),
+    line,
+  );
+}
+
+/**
  * Holds the key `code` (KeyboardEvent.key `key`) through the game's own window listeners for
  * `ticks` sim ticks, lets it go, waits `coast` more ticks and returns the player's state then. All
  * in one page evaluation, paced by the published tick: the frame loop runs at most five ticks a
