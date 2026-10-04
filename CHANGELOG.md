@@ -13,6 +13,8 @@ check enforces this).
 
 ### Added
 
+- A Forgotten miner stands guard in the slice's arena by the second pillar. It wakes when it sees you or
+  hears a clatter, fights you, and drops the rusted gallery key that opens the exit when it falls.
 - The controller's combat layout moves to the shoulder buttons: RB attacks, RT is the strong attack, LB is
   your left hand (parry), LT holds your shield and Y locks on. Pressing the right stick toggles crouch;
   jumping or sprinting stands you back up.

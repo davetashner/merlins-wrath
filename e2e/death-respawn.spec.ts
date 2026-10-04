@@ -13,10 +13,10 @@ import { expect, test, type Page } from '@playwright/test';
 // from the click on Load last save (stamped in the reload hand-off) to the first sim step from the
 // loaded save, seen by a MutationObserver as it happens, so Playwright round trips never add to it.
 //
-// The slice's skeleton is not placed yet (mw-e01.5) and creature runtime state is not in saves yet
-// (mw-e12.14), so "the skeleton's state matches the save" is checked generically: the whole world's
-// state hash after the load equals the one saved (it covers every entity, creatures included), and
-// the creature readout is the same as at the save. mw-e01.9 checks the skeleton itself.
+// "The skeleton's state matches the save" is checked generically: the whole world's state hash after
+// the load equals the one saved (it covers every entity, the arena's Forgotten miner, mw-e01.5,
+// included), and the creature readout is the same as at the save. mw-e01.9 checks the skeleton
+// itself.
 
 // Driver performance notices from the GPU process are not our errors (see e2e/render-boot.spec.ts).
 const DRIVER_PERF_NOTICE = /^\[\.WebGL-[^\]]+\]GL Driver Message \([^)]*\bPerformance\b/;

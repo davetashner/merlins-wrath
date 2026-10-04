@@ -1,8 +1,8 @@
 // mw-e01.17 AC-5: the slice's arena skeleton on its 25 m leash (docs/design/vertical-slice.md §6,
 // failure F5), through the game's own wiring (createGameWorld: Rapier physics, the slice's navmesh,
 // perception by the light field, awareness and AI with the Forgotten's content behaviour). The
-// skeleton is not placed in slice.json until mw-e01.5, so the test spawns it at its post, (2.5, 0,
-// 32.5) facing south, with the leash the slice gives it. The player picks a fight in the arena, then
+// skeleton is the one slice.json places (mw-e01.5) at its post, (2.5, 0, 32.5) facing south, with
+// its 25 m leash. The player picks a fight in the arena, then
 // flees down the corridor into the spawn room: the skeleton gives up at the leash edge (near z = 7.5),
 // never enters the spawn room, and is back at its post within 15 s.
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
@@ -14,9 +14,8 @@ import {
   actionVector,
   AlertStateChanged,
   brainOf,
-  facingFromYaw,
+  CreatureComponent,
   PlacementComponent,
-  spawnCreature,
   teleportCommand,
   type AlertStateChange,
   type EntityId,
@@ -70,15 +69,15 @@ describe('the arena skeleton’s leash (mw-e01.17)', () => {
     const game = createGameWorld<unknown>(RAPIER, { seed: 1, hz: HZ, scene: 'slice' });
     const { world, player } = game;
     const sim = world as unknown as World<never>;
-    const spawned = spawnCreature(sim, game.creatures.spawn, {
-      creature: 'forgotten-miner',
-      at: POST,
-      facing: facingFromYaw(180),
-      point: 'skeleton',
-      leash: { radius: LEASH_M },
+    const placed = game.sceneCreatures.entities.find(
+      (entity) => world.get(entity, CreatureComponent)?.origin.point === 'skeleton',
+    );
+    if (placed === undefined) throw new Error('the skeleton is not in the slice');
+    const skeleton: EntityId = placed;
+    expect(world.get(skeleton, CreatureComponent)?.origin.leash).toEqual({
+      radius: LEASH_M,
+      post: POST,
     });
-    if (!spawned.ok) throw new Error('the skeleton did not spawn');
-    const skeleton: EntityId = spawned.entity;
     const changes: AlertStateChange[] = [];
     sim.events.on(AlertStateChanged, (e) => {
       if (e.entity === skeleton) changes.push(e);

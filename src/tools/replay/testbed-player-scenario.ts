@@ -33,6 +33,7 @@ import {
 import {
   prepareCreatures,
   SceneNavigation,
+  startCreatureDrops,
   startCreatures,
   startSceneNoise,
   type AiWatch,
@@ -333,6 +334,8 @@ export function createGameWorld<TInput>(
   });
   // A placed creature's death sets its slain fact (mw-e01.7).
   installSlainFacts(world, scene.id);
+  // A dying creature drops what it carries and rolls its loot table (mw-e01.5).
+  startCreatureDrops(world, content, items, scene.id, scene.layout.spawns);
   const aiWatch = watchCreatureAi(world, sceneCreatures.ai, navigation);
   return {
     world,

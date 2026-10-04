@@ -5,18 +5,10 @@
 // registry; autosaves through the game's autosave wiring (GameAutosave) over the slice's checkpoint
 // volumes, its slice.complete milestone and the creatures' combat veto, into real save slots.
 //
-// The Forgotten miner is not placed in slice.json yet (mw-e01.5, after the leash, mw-e01.17), so
-// these tests place it themselves: the slice scene's content gets the skeleton spawn the design
-// gives it (§4: `skeleton`, creature forgotten-miner at (2.5, 0, 32.5), yaw 180), and nothing else
-// changes. Once mw-e01.5 places it, `sliceContent` goes and the tests use the placed skeleton.
+// The Forgotten miner is the one slice.json places (mw-e01.5): spawn `skeleton`, at its post by
+// pillar B, (2.5, 0, 32.5), facing the doorway; killed, it drops the gallery key it carries.
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
-import {
-  contentChecks,
-  contentTypes,
-  gameContentSources,
-  loadContent,
-  type GameContent,
-} from '@content/index';
+import { loadGameContent, type GameContent } from '@content/index';
 import { markExercised } from '@content/testing';
 import { createCapabilityRegistry } from '@game/capabilities';
 import { applyClass, createClassRules } from '@game/classes';
@@ -43,6 +35,7 @@ import {
   PlayerLook,
   SceneSpawnComponent,
   teleportCommand,
+  WorldItemComponent,
   type ActionFrame,
   type EntityId,
   type Vec3,
@@ -65,30 +58,10 @@ const INTERACT = frame('interact');
 /** Yaw π faces +z (north: up the corridor, into the arena). */
 const FACE_NORTH = Math.PI;
 
-const SCENE_FILE = 'src/content/data/scene/slice.json';
-/** The skeleton at its post by pillar B, as docs/design/vertical-slice.md §4 places it. */
-const SKELETON_SPAWN = {
-  id: 'skeleton',
-  at: [2.5, 0, 32.5],
-  yaw: 180,
-  creature: 'forgotten-miner',
-};
-
 let content: GameContent | undefined;
-/** The game's content with the skeleton placed in the slice (see the file header). */
+/** The game's content, loaded once. */
 function sliceContent(): GameContent {
-  content ??= loadContent(
-    contentTypes,
-    gameContentSources().map((source) => {
-      if (source.path !== SCENE_FILE) return source;
-      const scene = JSON.parse(source.text) as { spawns: unknown[] };
-      return {
-        ...source,
-        text: JSON.stringify({ ...scene, spawns: [...scene.spawns, SKELETON_SPAWN] }),
-      };
-    }),
-    contentChecks,
-  );
+  content ??= loadGameContent();
   return content;
 }
 
@@ -214,6 +187,14 @@ describe('saving and reloading the slice (mw-e01.7)', () => {
     expect(classOf(back.sim, back.player)).toBe('knight');
     expect(back.alive(back.skeleton())).toBe(false);
     expect(back.world.facts.get('entity:slice/skeleton.slain')).toBe(true);
+    // The key it dropped still lies by its body (mw-e01.5), once.
+    const lying = (w: typeof back.world) =>
+      w
+        .query(WorldItemComponent)
+        .ids()
+        .map((entity) => w.get(entity, WorldItemComponent)?.defId);
+    expect(lying(t.world)).toEqual(['rusted-gallery-key']);
+    expect(lying(back.world)).toEqual(['rusted-gallery-key']);
     // The chest is empty: Search is greyed with "Empty", and Interact rolls nothing more.
     const again = back.spawn('alcove-chest');
     back.step(IDLE);

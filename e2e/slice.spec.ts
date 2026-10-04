@@ -12,9 +12,12 @@ import {
 // (Chromium). The required route is a straight line north along x = 0 (docs/design/vertical-slice.md
 // §4): the bot walks up against the spawn-room door and opens it with Interact (E), walks the
 // corridor through CP-1 and CP-2, crosses the arena between the pillars and walks into the locked
-// iron exit door without the key. The page publishes the doors on #app[data-mechanisms], the
-// checkpoints entered on #app[data-checkpoints], the world facts on #app[data-facts] and the player
-// on #app[data-player]; the test only reads them.
+// iron exit door without the key. The arena's Forgotten miner (mw-e01.5) would fight the bot on the
+// way; the fight is not this test's, so the debug console (?debug=1) kills it while the bot is
+// still in the spawn room (it drops the key at its post, off the route, and the bot never takes it).
+// The page publishes the doors on #app[data-mechanisms], the checkpoints entered on
+// #app[data-checkpoints], the world facts on #app[data-facts], the creatures' AI on #app[data-ai]
+// and the player on #app[data-player]; the test only reads them.
 //
 // Walking is paced by sim ticks and checked against the published position, never by wall time:
 // CI renders a few frames a second and the frame loop runs at most five ticks a frame, so a slow
@@ -67,6 +70,35 @@ async function walkNorth(page: Page, target: number, maxLegs = 12): Promise<Play
   return state;
 }
 
+interface AiReadout {
+  agents: { entity: number; state: string; at: [number, number, number] }[];
+}
+
+/** The slice's one creature, the Forgotten miner, as #app[data-ai] lists it once it thinks. */
+async function skeleton(page: Page): Promise<AiReadout['agents'][number]> {
+  await expect
+    .poll(async () => (await data<AiReadout | null>(page, 'ai'))?.agents.length ?? 0, {
+      timeout: 15_000,
+    })
+    .toBe(1);
+  const agent = (await data<AiReadout>(page, 'ai')).agents[0];
+  if (agent === undefined) throw new Error('the slice has no skeleton');
+  return agent;
+}
+
+/** Kills the Forgotten miner with the debug console and waits for its slain fact (mw-e01.7). */
+async function killSkeleton(page: Page): Promise<void> {
+  const { entity } = await skeleton(page);
+  await run(page, `kill ${String(entity)}`);
+  await expect
+    .poll(
+      async () =>
+        (await data<Record<string, unknown>>(page, 'facts'))['entity:slice/skeleton.slain'],
+      { timeout: 30_000 },
+    )
+    .toBe(true);
+}
+
 /** Presses Interact for one tick (the frame loop may hold it a few more). */
 async function interact(page: Page): Promise<void> {
   await holdKey(page, E, 1, 5);
@@ -81,12 +113,13 @@ test('mw-e01.4 AC-3: walking the route into the exit without the key, it stays l
   test.setTimeout(240_000);
   const problems = collectProblems(page);
   await stubPointerLock(page);
-  await page.goto('/?scene=slice');
+  await openSlice(page);
   const app = page.locator('#app');
-  await expect(app).toHaveAttribute('data-scene', 'slice', { timeout: 10_000 });
-  await expect(app).toHaveAttribute('data-player', /"grounded":true/);
   await expect(app).toHaveAttribute('data-mechanisms', /"exit-door":\{"status":"locked"/);
   await expect(app).toHaveAttribute('data-facts', '{}');
+  // The miner rests at its post, Unaware of the bot in the spawn room; it falls before the walk.
+  expect(await skeleton(page)).toMatchObject({ state: 'unaware', at: [2.5, 0, 32.5] });
+  await killSkeleton(page);
   await takeControl(page);
 
   // Spawn room: up against the wooden door (it stops the player short of z = 5) and open it.
@@ -124,16 +157,19 @@ test('mw-e01.4 AC-3: walking the route into the exit without the key, it stays l
     openness: 0,
   });
   await expect(prompt).toContainText('Locked.');
-  // No slice complete: the fact was never written.
-  expect(await data<Record<string, unknown>>(page, 'facts')).toEqual({});
+  // No slice complete: the fact was never written (only the miner's slain fact is).
+  expect(await data<Record<string, unknown>>(page, 'facts')).toEqual({
+    'entity:slice/skeleton.slain': true,
+  });
   expect(problems).toEqual([]);
 });
 
-// mw-e01.6: the slice's loot. The rusted gallery key lies at the Forgotten miner's post by pillar B
-// (2.5, 0, 32.5) until the miner carries it (mw-e01.5); the alcove chest stands at (8, 1.4, 36.5),
-// 1.4 m up off the arena. These tests reach them with the debug console's `tp` (the walk there is
-// mw-e01.9's): the pack is on #app[data-items], what each container holds on #app[data-containers]
-// and whether the inventory screen is open on #app[data-inventory].
+// mw-e01.6: the slice's loot. The Forgotten miner rests at its post by pillar B (2.5, 0, 32.5),
+// carrying the rusted gallery key, and drops it at its body when it dies (mw-e01.5); the alcove chest
+// stands at (8, 1.4, 36.5), 1.4 m up off the arena. These tests kill the miner and reach the key and
+// the chest with the debug console's `kill` and `tp` (the fight and the walk there are mw-e01.9's):
+// the pack is on #app[data-items], what each container holds on #app[data-containers] and whether
+// the inventory screen is open on #app[data-inventory].
 
 interface Stack {
   item: string;
@@ -205,7 +241,9 @@ test('mw-e01.6 AC-2: holding the gallery key, Interact on the exit door unlocks 
   await expect(app).toHaveAttribute('data-mechanisms', /"exit-door":\{"status":"locked"/);
   await takeControl(page);
 
-  // The key at the miner's post: Interact takes it onto the keyring.
+  // The miner dies at its post and drops the key it carries: Interact by the body takes it onto the
+  // keyring.
+  await killSkeleton(page);
   await standAt(page, [2.5, 0, 31.3], { x: 2.5, z: 32.5 });
   const prompt = page.getByTestId('interact-prompt');
   await expect(prompt).toContainText('Rusted gallery key', { timeout: 10_000 });
@@ -250,6 +288,8 @@ test('mw-e01.6 AC-3: loot the alcove chest, save, close the tab, load the save: 
   await stubPointerLock(first);
   await openSlice(first);
   expect(await alcoveChest(first)).toEqual({ opened: false, items: [], gold: 0 });
+  // The miner below the alcove is not this test's: it falls first.
+  await killSkeleton(first);
   await takeControl(first);
 
   // Up in the alcove, facing the chest: Interact opens it (rolling its table), Enter takes all.
