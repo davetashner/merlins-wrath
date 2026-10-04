@@ -2,7 +2,7 @@
 // loading and the save-schema gate (pnpm save:check, tests/save-fixtures) all build their registry
 // here, so a system that adds a section registers it in exactly one place and the gate fingerprints
 // it automatically. Sections: the built-in world section, then inventory (mw-e17.8), creatures
-// (mw-e12.14), world facts and level deltas (mw-e27.4).
+// (mw-e12.14), world facts and level deltas (mw-e27.4), then merchants (mw-e20.4).
 
 import {
   CapabilitiesComponent,
@@ -14,6 +14,7 @@ import { creaturesSaveSection } from './creatures';
 import { SaveRegistry } from './format';
 import { inventorySaveSection, type InventorySectionOptions } from './inventory';
 import { levelDeltasSaveSection } from './level-deltas';
+import { merchantsSaveSection } from './merchants';
 import { worldFactsSaveSection } from './world-facts';
 
 /**
@@ -45,5 +46,6 @@ export function createGameSaveRegistry(options: GameSaveOptions = {}): SaveRegis
     .register(inventorySaveSection(options))
     .register(creaturesSaveSection())
     .register(worldFactsSaveSection({ ...(warn && { warn }) }))
-    .register(levelDeltasSaveSection({ ...(warn && { warn }) }));
+    .register(levelDeltasSaveSection({ ...(warn && { warn }) }))
+    .register(merchantsSaveSection(options));
 }

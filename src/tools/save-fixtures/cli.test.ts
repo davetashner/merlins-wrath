@@ -89,6 +89,7 @@ describe('pnpm save:fixture / save:check', () => {
       'creatures',
       'world-facts',
       'level-deltas',
+      'merchants',
     ]);
     expect(real.worlds.length).toBeGreaterThan(0);
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
