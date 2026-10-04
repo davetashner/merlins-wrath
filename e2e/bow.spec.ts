@@ -92,6 +92,9 @@ function yawToBoard(feet: { x: number; z: number }): number {
 test('AC-3: the bow out, an arrow loosed at the back wall renders stuck in its target board, with no console errors', async ({
   page,
 }) => {
+  // Turn, draw (48 ticks), loose and watch the arrow fly add up to more than the default 30 s when CI's
+  // software renderer runs the sim at about ten ticks a second.
+  test.setTimeout(90_000);
   const problems = collectProblems(page);
   await play(page);
   const start = await data<PlayerData>(page, 'player');
