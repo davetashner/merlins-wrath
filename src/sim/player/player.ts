@@ -45,7 +45,7 @@
 // the view: look input does not turn it, and the controller strafes around the anchor point.
 
 import type { ControllerTuning, Frozen, MoveTable, RuntimeShield } from '@content/index';
-import { SKIN } from '../character/controller';
+import { initialCharacterState, SKIN } from '../character/controller';
 import type { CollisionWorld } from '../character/collision-world';
 import { radians } from '../character/greybox';
 import {
@@ -95,7 +95,7 @@ import {
 import { bashRedirect, firstRedirect } from '../combat/melee/bash';
 import { blockSystem, DEFAULT_BLOCK_BUTTON, locomotionScale } from '../combat/melee/guard';
 import { riposteRedirect } from '../combat/parry/parry';
-import { placeEntity } from '../stimulus/placement';
+import { placeEntity, PlacementComponent } from '../stimulus/placement';
 import { defineComponent, type EntityId } from '../core/component';
 import type { System, World } from '../core/world';
 import { hasCheat } from '../debug/cheats';
@@ -115,12 +115,16 @@ import { capabilitiesOf } from '../progression/capabilities';
 import type { TraversalHook } from '../character/traversal';
 import type { SceneSpawnPlacement } from '../scene/layout';
 import type { Vec3 } from '../stimulus/shapes';
+import { LockOnComponent, NO_LOCK } from '../targeting/components';
 
 /** The tag that marks a scene's player spawn. */
 export const PLAYER_START_TAG = 'player-start';
 
 /** Radians of yaw per mouse count (the same feel as the debug camera until settings, mw-e31). */
 export const PLAYER_LOOK_SENSITIVITY = 0.003;
+
+/** Metres below the lowest authored scene geometry before a fall resets the player. */
+export const PLAYER_FALL_RESET_MARGIN = 10;
 
 /**
  * Where the player looks. Yaw is about +y, radians in (−π, π]; 0 looks along −z, positive turns
@@ -295,10 +299,7 @@ export const KNIGHT_LIGHT_ATTACK = 'sword-light-1';
 /** The knight's heavy attack (mw-e04.13): hold its button to charge it (sword-heavy-charged). */
 export const KNIGHT_HEAVY_ATTACK = 'sword-heavy';
 
-/**
- * The button that starts the heavy attack for entities driven by the ActionFrame: ability 1 (Y,
- * D-pad Up, 1) until the owner settles the knight's layout, as with the parry.
- */
+/** The strong-attack button: ability 1 (RT/R2, or 1 on keyboard; mw-e04.39). */
 export const DEFAULT_HEAVY_BUTTON: ButtonAction = 'ability1';
 
 /** The knight's parry (mw-e04.12). */
@@ -307,10 +308,7 @@ export const KNIGHT_PARRY = 'shield-parry';
 /** The knight's riposte: its attack button starts it while a Parried target is in reach (e04.12). */
 export const KNIGHT_RIPOSTE = 'sword-riposte';
 
-/**
- * The button that parries for entities driven by the ActionFrame: ability 3 (LB, 3) until the
- * owner settles the knight's layout (block holds LT / right click).
- */
+/** The left-hand button: ability 3 (LB/L1, or 3); the knight's shield uses it to parry. */
 export const DEFAULT_PARRY_BUTTON: ButtonAction = 'ability3';
 
 /** The knight's shield bash (mw-e04.14): attack while blocking. */
@@ -540,6 +538,8 @@ export interface PlayerOptions {
   readonly look?: Partial<LookSettings>;
   /** The pitch the player starts with, radians (clamped to the limits); defaults to level (0). */
   readonly pitch?: number;
+  /** Falling below this world-space height resets position and look to `player-start`. */
+  readonly fallResetY?: number;
   /** Stamina, the action timeline and the dodge (see the file header); absent = movement only. */
   readonly combat?: PlayerCombatOptions;
   /** Mantling and ledge hangs over the scene's ledges (mw-e02.12); absent = none. */
@@ -574,6 +574,32 @@ export class NoPlayerStartError extends Error {
   override readonly name = 'NoPlayerStartError';
 }
 
+/** Deterministically returns an out-of-bounds player to the authored scene start. */
+export function playerFallRecoverySystem<TInput>(
+  entity: EntityId,
+  resetBelowY: number,
+  position: Vec3,
+  look: PlayerLook,
+  placementRadius = 0,
+): System<TInput> {
+  return {
+    name: 'player-fall-recovery',
+    run({ world }) {
+      const state = world.get(entity, CharacterController);
+      if (state === undefined || state.position.y >= resetBelowY) return;
+      world.set(entity, CharacterController, initialCharacterState(position));
+      world.set(entity, PlayerLook, look);
+      if (world.isRegistered(PlacementComponent) && world.has(entity, PlacementComponent)) {
+        placeEntity(world, entity, position, placementRadius);
+      }
+      if (world.has(entity, ViewAnchor)) world.remove(entity, ViewAnchor);
+      if (world.isRegistered(LockOnComponent) && world.has(entity, LockOnComponent)) {
+        world.set(entity, LockOnComponent, NO_LOCK);
+      }
+    },
+  };
+}
+
 /**
  * Adds the player to `world`: registers its components, adds the look and controller systems and
  * spawns it at the player start, facing the spawn's direction. Once per world, between steps. The
@@ -587,6 +613,9 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     throw new NoPlayerStartError(`the scene has no spawn tagged "${PLAYER_START_TAG}"`);
   }
   const look: LookSettings = { ...DEFAULT_LOOK_SETTINGS, ...options.look };
+  if (options.fallResetY !== undefined && !Number.isFinite(options.fallResetY)) {
+    throw new RangeError(`fallResetY must be finite, got ${String(options.fallResetY)}`);
+  }
   const { combat } = options;
   world.register(CharacterController, CharacterTuning, CharacterLocomotion, PlayerLook, ViewAnchor);
   world.addSystem(playerLookSystem(look));
@@ -700,11 +729,13 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     }),
   );
   const { x, y, z } = start.position;
-  const id = spawnCharacter(world, { x, y: y + SKIN, z });
+  const startPosition = { x, y: y + SKIN, z };
+  const startLook = { yaw: spawnYaw(start), pitch: clampPitch(options.pitch ?? 0, look) };
+  const id = spawnCharacter(world, startPosition);
   // Its own tuning, so the debug console's ctl.set changes it from the very next tick (mw-e02.3).
   world.add(id, CharacterTuning, options.tuning);
   giveLocomotion(world, id);
-  world.add(id, PlayerLook, { yaw: spawnYaw(start), pitch: clampPitch(options.pitch ?? 0, look) });
+  world.add(id, PlayerLook, startLook);
   if (combat !== undefined) {
     giveStamina(world, id, combat.stamina ?? DEFAULT_STAMINA_PROFILE);
     giveActionTimeline(world, id);
@@ -719,6 +750,17 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     giveHitboxes(world, id);
     placeEntity(world, id, { x, y: y + SKIN, z }, options.tuning.capsule.radius);
     world.addSystem(playerPlacementSystem(id, options.tuning.capsule.radius));
+  }
+  if (options.fallResetY !== undefined) {
+    world.addSystem(
+      playerFallRecoverySystem(
+        id,
+        options.fallResetY,
+        startPosition,
+        startLook,
+        options.tuning.capsule.radius,
+      ),
+    );
   }
   return id;
 }

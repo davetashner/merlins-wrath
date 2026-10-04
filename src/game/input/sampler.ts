@@ -91,9 +91,10 @@ export class ActionSampler {
   #pad: PadSnapshot | undefined;
   /** A pad went away since the last sample. */
   #disconnected = false;
-  /** Pad buttons down (raw) as of the last sample: press edges for the sprint latch and the device. */
+  /** Pad buttons down (raw) as of the last sample: press edges for latches and the device. */
   #padRaw: ReadonlySet<PadCode> = IDLE_PAD.buttons;
   #sprintLatched = false;
+  #crouchLatched = false;
   #padMoving = false;
   #lastDevice: InputDevice = 'keyboardMouse';
 
@@ -267,6 +268,17 @@ export class ActionSampler {
     let padUsed =
       magnitude(pad.left) > settings.moveDeadzone || magnitude(pad.right) > settings.moveDeadzone;
     for (const code of pad.buttons) if (!this.#padRaw.has(code)) padUsed = true;
+    // Pad crouch is a stance toggle: each bound-button click flips it. The first bound code carries
+    // the synthetic held state, so releasing R3 does not stand the player up.
+    const crouchCodes = this.#padBindings.crouch.filter(isPadCode);
+    for (const code of crouchCodes) {
+      if (pad.buttons.has(code) && !this.#padRaw.has(code)) {
+        this.#crouchLatched = !this.#crouchLatched;
+      }
+      wanted.delete(code);
+    }
+    const [crouchLatch] = crouchCodes;
+    if (this.#crouchLatched && crouchLatch !== undefined) wanted.add(crouchLatch);
     if (settings.sprintToggle) {
       // Sprint latches: a click flips it, and it lets go when the stick comes back to centre.
       const moving = magnitude(padMove) > 0;
@@ -286,11 +298,21 @@ export class ActionSampler {
       if (wanted.has(code)) goDown(code);
       else goUp(code);
     }
+    // Jumping or engaging sprint exits the crouch stance. Keyboard actions count too because both
+    // devices merge into this frame; a held keyboard crouch still wins through its own binding.
+    // A latch only exists when a pad crouch button is bound, so `latched` is defined exactly when crouching.
+    const latched = this.#crouchLatched ? crouchLatch : undefined;
+    if (latched !== undefined && (edges.get('jump')?.pressed === true || held.has('sprint'))) {
+      this.#crouchLatched = false;
+      goUp(latched);
+    }
     this.#padRaw = pad.buttons;
     if (this.#disconnected) {
       this.#disconnected = false;
       this.#sprintLatched = false;
+      this.#crouchLatched = false;
       this.#padMoving = false;
+      if (crouchLatch !== undefined) goUp(crouchLatch);
       // AC-4: everything the pad held has just been released above; the game pauses per settings.
       if (settings.pauseOnDisconnect) {
         const pause = edgesOf('pause');

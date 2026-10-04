@@ -120,9 +120,10 @@ import {
 import { spawnTrainingDummy, trainingDummySpawns } from './training-dummy';
 
 /**
- * The testbed's bow buttons: fire on the primary attack (left click, RT), take out and put away on
- * ability 4 (4, D-pad Left), cycle arrows on ability 2 (2, RB) — not the sim's default ability 3,
- * which is the knight's parry (docs/design/controls.md). Until class kits bind them (mw-e02.3).
+ * The testbed's bow buttons: fire on the primary attack (left click, RB/R1), take out and put away
+ * on ability 4 (4, D-pad Left), cycle arrows on ability 2 (2, D-pad Right) — not the sim's default
+ * ability 3, which is the knight's parry (docs/design/controls.md). Until class kits bind them
+ * (mw-e02.3).
  */
 export const TESTBED_BOW_BUTTONS: BowButtons = Object.freeze({
   fire: 'primaryAttack',

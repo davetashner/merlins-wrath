@@ -13,6 +13,9 @@ check enforces this).
 
 ### Added
 
+- The controller's combat layout moves to the shoulder buttons: RB attacks, RT is the strong attack, LB is
+  your left hand (parry), LT holds your shield and Y locks on. Pressing the right stick toggles crouch;
+  jumping or sprinting stands you back up.
 - The slice's walls, floors and ledges are weathered glenstone blocks instead of flat grey, lit warmly by the
   torches and the brazier. It is a placeholder style probe until approved.
 - The slice's chest, crate, pillars and ivy ledge look the part too: an iron-banded wooden chest in the
@@ -380,6 +383,7 @@ check enforces this).
 
 ### Fixed
 
+- If you fall out of the level, you are put back at the start instead of falling forever.
 - A hinged door you open while standing right up against it now swings open away from you,
   instead of stopping as if something were in its way. A door still stops against anyone standing
   where it swings.
