@@ -127,7 +127,8 @@ test('AC-3: with no saves the death screen offers Restart area, which restarts w
 }) => {
   test.setTimeout(60_000);
   const problems = collectProblems(page);
-  await page.goto('/?scene=testbed&debug=1');
+  // A class is chosen this session: Restart area restarts as it (mw-e01.16; with none it goes to the title).
+  await page.goto('/?scene=testbed&class=knight&debug=1');
   await ready(page);
 
   await type(page, 'kill');

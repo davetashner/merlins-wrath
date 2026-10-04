@@ -54,6 +54,8 @@ interface Setup {
   areaId?: string | undefined;
   tick?: number;
   clock?: { now: number };
+  /** The session's chosen class (default knight); undefined: none. */
+  chosenClass?: string | undefined;
 }
 
 /** A DeathReload over a real registry, with the page reload and outputs recorded. */
@@ -65,6 +67,8 @@ function setup(options: Setup = {}) {
   const clock = options.clock ?? { now: T0 };
   const w = world(options.tick ?? 0);
   const navigations: (string | undefined)[] = [];
+  const restarts: (string | undefined)[] = [];
+  const titles: number[] = [];
   const readouts: DeathReloadReadout[] = [];
   const warnings: string[] = [];
   const areaId = 'areaId' in options ? options.areaId : 'testbed';
@@ -77,12 +81,29 @@ function setup(options: Setup = {}) {
     now: () => clock.now,
     session: storage,
     areaId,
-    navigate: (area) => navigations.push(area),
+    navigate: (area, classId) => {
+      navigations.push(area);
+      restarts.push(classId);
+    },
+    chosenClass: () => ('chosenClass' in options ? options.chosenClass : 'knight'),
+    toTitle: () => titles.push(1),
     describe: () => ({ characterName: 'Knight', classId: 'knight', areaId: areaId ?? '' }),
     publish: (readout) => readouts.push(readout),
     warn: (message) => warnings.push(message),
   });
-  return { ui, store, storage, clock, world: w, reload, navigations, readouts, warnings };
+  return {
+    ui,
+    store,
+    storage,
+    clock,
+    world: w,
+    reload,
+    navigations,
+    restarts,
+    titles,
+    readouts,
+    warnings,
+  };
 }
 
 type Session = ReturnType<typeof setup>;
@@ -241,6 +262,29 @@ describe('death screen', () => {
     expect(s.navigations).toEqual([undefined]);
     expect(takePendingLoad(s.storage)).toBeUndefined();
     expect(s.warnings).toEqual([]);
+  });
+
+  it('mw-e01.16 AC-1: Restart area hands the class chosen this session to the new-game boot', async () => {
+    const s = setup({ chosenClass: 'knight' });
+    await s.reload.playerDied();
+    press('Restart area');
+    expect(s.restarts).toEqual(['knight']);
+    expect(s.titles).toEqual([]);
+  });
+
+  it('mw-e01.16 AC-4: with no chosen class Restart area returns to the title with a warning instead of throwing', async () => {
+    const s = setup({ chosenClass: undefined });
+    writePendingLoad(s.storage, { slot: 'manual-1', areaId: 'testbed' });
+    await s.reload.playerDied();
+    expect(() => {
+      press('Restart area');
+    }).not.toThrow();
+    expect(s.titles).toEqual([1]);
+    expect(s.navigations).toEqual([]);
+    expect(takePendingLoad(s.storage)).toBeUndefined();
+    expect(s.warnings).toEqual([
+      'restart area: no class was chosen this session, returning to the title',
+    ]);
   });
 
   it('counts a save list it cannot read as no saves, so the area can still be restarted', async () => {
