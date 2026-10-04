@@ -7,7 +7,9 @@ function setup() {
   const entity = world.spawn();
   world.add(entity, PlacementComponent, { x: 0, y: 0, z: 0, radius: 0.4 });
   const read = creatureLocomotion(60);
-  const moveTo = (e: EntityId, x: number, z: number) => { world.set(e, PlacementComponent, { x, y: 0, z, radius: 0.4 }); };
+  const moveTo = (e: EntityId, x: number, z: number) => {
+    world.set(e, PlacementComponent, { x, y: 0, z, radius: 0.4 });
+  };
   return { world, entity, read, moveTo };
 }
 
