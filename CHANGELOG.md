@@ -13,6 +13,7 @@ check enforces this).
 
 ### Added
 
+- A health bar for the fighter you are locked onto (or last hit) now sits at the top of the screen with its name, and damage numbers show what you deal and take. Turn the numbers off under Settings → Gameplay → Damage numbers.
 - Walking through the exit now ends the slice with a "Slice complete" card showing your run time and class and the
   state of the completion save, with Return to title focused (keyboard or controller) and the knight no longer
   moving.

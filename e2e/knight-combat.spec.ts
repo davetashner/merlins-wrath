@@ -110,5 +110,9 @@ test('AC-7: three attacks run the light chain and take 20 + 22 + 30 = 72 from th
   );
   expect(moves).toEqual(['sword-light-1', 'sword-light-2', 'sword-light-3']);
   await expect.poll(async () => (await dummy(page)).health).toBe(200 - 72);
+  // mw-e04.21: the fighter the player just hit has its health bar up, and it reads the same health.
+  const target = page.getByTestId('target-bar');
+  await expect(target).toBeVisible();
+  await expect(target.getByRole('meter')).toHaveAttribute('data-value', String(200 - 72));
   expect(problems).toEqual([]);
 });

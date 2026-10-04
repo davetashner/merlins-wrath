@@ -26,6 +26,7 @@ import {
   installSandboxRules,
   prepareTestbedCombat,
   attachCombatHud,
+  attachTargetHud,
   cameraForward,
   horizontalHalfFov,
   readArrowTransform,
@@ -34,6 +35,7 @@ import {
   startTestbedCombat,
   TRAINING_DUMMY,
   type CombatHudGlue,
+  type TargetHudGlue,
   type SandboxHud,
 } from '@game/combat/index';
 import {
@@ -256,6 +258,8 @@ import { FramePerfProbe, formatPerfReport, parsePerfParam } from '@tools/perf/fr
 import { formatVfxStats, parseVfxParam, VfxDemo } from '@tools/vfx-demo/index';
 import {
   CombatHud,
+  DamageNumbers,
+  TargetBar,
   DeathFade,
   InteractPrompt,
   KitPanel,
@@ -630,6 +634,7 @@ function startRenderer(
     let sandboxHud: SandboxHud | undefined;
     // The player's health and stamina bars with damage feedback (mw-e04.10), once it is a combatant.
     let combatHud: CombatHudGlue | undefined;
+    let targetHud: TargetHudGlue | undefined;
     let publishedDummy = '';
 
     // VFX (mw-e29.1): effects from content, simulated each frame after the sim and the camera have
@@ -875,6 +880,7 @@ function startRenderer(
         }
         sandboxHud?.frame();
         combatHud?.frame(timeMs);
+        targetHud?.frame(timeMs);
         lockMarker.update(
           lockMarkerModel(
             player?.lockTarget(),
@@ -1133,6 +1139,22 @@ function startRenderer(
             forward: cameraForward(camera.quaternion),
             halfFov: horizontalHalfFov(camera.fov, camera.aspect),
           }),
+        });
+        // The target bar and damage numbers (mw-e04.21): the locked (or last-hit) fighter's health,
+        // and what each hit did, over whoever took it.
+        const reduced = (): boolean => reducedMotion(ui.element, (q) => globalThis.matchMedia(q));
+        const targetBar = new TargetBar({ reducedMotion: reduced });
+        const damageNumbers = new DamageNumbers({ reducedMotion: reduced });
+        ui.hud.append(targetBar.element, damageNumbers.element);
+        targetHud = attachTargetHud({
+          world,
+          player: player.entity,
+          bar: targetBar,
+          numbers: damageNumbers,
+          lock: () => player?.lockTarget(),
+          project: (point) => projectToNdc(camera, point),
+          size: () => ({ width: root.clientWidth, height: root.clientHeight }),
+          numbersEnabled: () => settings.get('gameplay.damageNumbers'),
         });
       }
       // World items (mw-e17.7): the scene's items lie in the world as physics objects; the player
