@@ -45,6 +45,8 @@ import {
   type ItemInstanceFlags,
 } from '../inventory/inventory';
 import { cos, sin } from '../math';
+import type { BreakableProfileLookup } from '../breakables/components';
+import { makeBreakable } from '../breakables/system';
 import { noiseEmitted } from '../noise/events';
 import { addPhysicsObject, physicsImpact } from '../physics/objects';
 import { PlayerLook } from '../player/player';
@@ -134,6 +136,8 @@ export interface WorldItemDef extends InventoryItemDef {
   readonly flags: InventoryItemDef['flags'] & { readonly noDrop: boolean };
   /** Its world properties in the world (an oil flask is flammable); weight defaults by class. */
   readonly worldProperties?: WorldPropertyInit | undefined;
+  /** Breaks when dropped or thrown hard (a jar): the breakable profile id (mw-ju8.4). */
+  readonly breakable?: { readonly profile: string } | undefined;
 }
 
 /** A world item to place. */
@@ -260,6 +264,12 @@ export interface WorldItemsOptions {
   readonly materials?: MaterialPresets;
   /** An item's display name; defaults to `readableName` of its id. */
   readonly name?: (def: WorldItemDef) => string;
+  /**
+   * Breakable profiles by id. A world item whose definition names one is made breakable
+   * (`makeBreakable`): with the breakables installed, a hard enough drop or throw breaks it. An
+   * item naming a profile this lookup lacks stays an ordinary item.
+   */
+  readonly breakables?: BreakableProfileLookup;
 }
 
 /** Where a released item starts: its box centre, rotation and (for a throw) velocity. */
@@ -316,6 +326,7 @@ export class WorldItems {
   readonly #defs: ReadonlyMap<string, WorldItemDef>;
   readonly #materials: MaterialPresets;
   readonly #name: (def: WorldItemDef) => string;
+  readonly #breakables: BreakableProfileLookup | undefined;
 
   /** `items`: every item definition (the content registry's). */
   constructor(items: Iterable<WorldItemDef>, options: WorldItemsOptions = {}) {
@@ -324,6 +335,7 @@ export class WorldItems {
     this.#defs = new Map(defs.map((def) => [def.id, def]));
     this.#materials = options.materials ?? new Map();
     this.#name = options.name ?? ((def) => readableName(def.id));
+    this.#breakables = options.breakables;
   }
 
   /** Whether `defId` is a known item. */
@@ -395,6 +407,11 @@ export class WorldItems {
       InteractableComponent,
       interactableOf({ affordances: [{ verb: 'pick-up', label: this.label(def.id, count) }] }),
     );
+    // A jar breaks like any breakable (mw-ju8.4): the breakables system tests the physics impact of
+    // a hard drop or throw against its material's fragile threshold; nothing of it is left to pick up.
+    const profile =
+      def.breakable === undefined ? undefined : this.#breakables?.(def.breakable.profile);
+    if (profile !== undefined) makeBreakable(world, entity, profile);
   }
 
   /**

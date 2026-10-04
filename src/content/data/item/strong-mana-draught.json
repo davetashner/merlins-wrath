@@ -1,0 +1,22 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "strong-mana-draught",
+  "category": "consumable",
+  "name": "Strong mana draught",
+  "description": "Cold blue and faintly singing. The cork has been wired down, which tells you something.",
+  "notes": "A standard mana potion (mw-ju8.4), buy and use only: no brewing yet. Restores 60 mana; the minor tier is the existing mana draught at 30. Base value 45 sits in the economy standard potion band. Magnitudes are a placeholder scale for the balance tool.",
+  "icon": "icon-item-strong-mana-draught-01",
+  "value": 45,
+  "stackable": true,
+  "maxStack": 10,
+  "worldProperties": {
+    "material": "glass"
+  },
+  "use": [
+    {
+      "op": "restore",
+      "pool": "mana",
+      "amount": 60
+    }
+  ]
+}

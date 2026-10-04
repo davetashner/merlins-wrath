@@ -1,0 +1,12 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "spider-silk",
+  "category": "misc",
+  "name": "Spider silk",
+  "description": "A skein of grey thread, light as breath and stronger than it has any right to be.",
+  "notes": "Potion ingredient (mw-ju8.4): shop and loot stock only, with no use until a brewing system lands (a later bead). Gathered from the older galleries. Base value 10 sits in the economy ingredient band (3-15).",
+  "icon": "icon-item-spider-silk-01",
+  "value": 10,
+  "stackable": true,
+  "maxStack": 20
+}

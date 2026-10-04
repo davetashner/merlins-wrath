@@ -1,0 +1,22 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "stamina-tonic",
+  "category": "consumable",
+  "name": "Stamina tonic",
+  "description": "Green, bitter and sold as a cure for tiredness, which it is, until it is not.",
+  "notes": "A minor stamina potion (mw-ju8.4), buy and use only: no brewing yet. Restores 50 stamina; the minor tier is the existing mana draught at 30. Base value 20 sits in the economy minor potion band. Magnitudes are a placeholder scale for the balance tool.",
+  "icon": "icon-item-stamina-tonic-01",
+  "value": 20,
+  "stackable": true,
+  "maxStack": 10,
+  "worldProperties": {
+    "material": "glass"
+  },
+  "use": [
+    {
+      "op": "restore",
+      "pool": "stamina",
+      "amount": 50
+    }
+  ]
+}

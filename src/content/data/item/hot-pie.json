@@ -1,0 +1,24 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "hot-pie",
+  "category": "consumable",
+  "name": "Hot pie",
+  "description": "Steam, gravy and a filling that is mostly confident. Eat it before it cools; nobody has ever wanted it cold.",
+  "notes": "Food (mw-ju8.4). Eaten for 10 health and 10 stamina. Base value 6 sits in the economy food band (2-6). No spoilage exists yet.",
+  "icon": "icon-item-hot-pie-01",
+  "value": 6,
+  "stackable": true,
+  "maxStack": 10,
+  "use": [
+    {
+      "op": "restore",
+      "pool": "health",
+      "amount": 10
+    },
+    {
+      "op": "restore",
+      "pool": "stamina",
+      "amount": 10
+    }
+  ]
+}

@@ -38,6 +38,7 @@ import {
   type Vec3,
   type World,
 } from '@sim/index';
+import { breakableProfiles } from '../breakables';
 import type { RenderSync, SceneBinding } from '../loop/render-sync';
 
 /**
@@ -45,9 +46,10 @@ import type { RenderSync, SceneBinding } from '../loop/render-sync';
  * id. It is both a world item's and a consumable's definition.
  */
 export function worldItemDef(item: ItemEntry): ConsumableDef {
-  const { worldProperties, use, ...rest } = item;
+  const { worldProperties, use, breakable, ...rest } = item;
   return {
     ...rest,
+    ...(breakable !== undefined && { breakable: { profile: breakable.profile.id } }),
     ...(worldProperties !== undefined && { worldProperties: toPropertyInit(worldProperties) }),
     ...(use !== undefined && {
       use: use.map((effect) =>
@@ -60,9 +62,10 @@ export function worldItemDef(item: ItemEntry): ConsumableDef {
 }
 
 /** World-item rules over every content item, with content's material presets. */
-export function prepareWorldItems(content: Pick<GameContent, 'all'>): WorldItems {
+export function prepareWorldItems(content: Pick<GameContent, 'all' | 'get' | 'has'>): WorldItems {
   return new WorldItems(content.all('item').map(worldItemDef), {
     materials: materialPresets(content.all('material')),
+    breakables: breakableProfiles(content),
   });
 }
 

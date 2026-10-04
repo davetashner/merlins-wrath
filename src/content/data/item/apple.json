@@ -1,0 +1,24 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "apple",
+  "category": "consumable",
+  "name": "Apple",
+  "description": "Small, speckled and slightly sour. A miner's apple has to be grateful for what it is.",
+  "notes": "Food (mw-ju8.4). Eaten for 8 stamina and 2 health. Base value 2 sits in the economy food band (2-6). No spoilage exists yet.",
+  "icon": "icon-item-apple-01",
+  "value": 2,
+  "stackable": true,
+  "maxStack": 10,
+  "use": [
+    {
+      "op": "restore",
+      "pool": "stamina",
+      "amount": 8
+    },
+    {
+      "op": "restore",
+      "pool": "health",
+      "amount": 2
+    }
+  ]
+}

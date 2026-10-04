@@ -1,0 +1,24 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "smoked-sausage",
+  "category": "consumable",
+  "name": "Smoked sausage",
+  "description": "Hung over the hearth until it learned to be patient. Do not ask what it was before.",
+  "notes": "Food (mw-ju8.4). Eaten for 20 stamina and 5 health. Base value 5 sits in the economy food band (2-6). No spoilage exists yet.",
+  "icon": "icon-item-smoked-sausage-01",
+  "value": 5,
+  "stackable": true,
+  "maxStack": 10,
+  "use": [
+    {
+      "op": "restore",
+      "pool": "stamina",
+      "amount": 20
+    },
+    {
+      "op": "restore",
+      "pool": "health",
+      "amount": 5
+    }
+  ]
+}

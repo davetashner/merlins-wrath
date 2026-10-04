@@ -1,0 +1,22 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "strong-healing-draught",
+  "category": "consumable",
+  "name": "Strong healing draught",
+  "description": "Deep red and thick as a sermon. The apothecary says it works. The apothecary also says that about everything.",
+  "notes": "A standard health potion (mw-ju8.4), buy and use only: no brewing yet. Restores 60 health; the minor tier is the existing healing draught at 30. Base value 45 sits in the economy standard potion band. Magnitudes are a placeholder scale for the balance tool.",
+  "icon": "icon-item-strong-healing-draught-01",
+  "value": 45,
+  "stackable": true,
+  "maxStack": 10,
+  "worldProperties": {
+    "material": "glass"
+  },
+  "use": [
+    {
+      "op": "restore",
+      "pool": "health",
+      "amount": 60
+    }
+  ]
+}

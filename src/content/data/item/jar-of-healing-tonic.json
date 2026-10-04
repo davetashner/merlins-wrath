@@ -1,0 +1,25 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "jar-of-healing-tonic",
+  "category": "consumable",
+  "name": "Jar of healing tonic",
+  "description": "A thin tonic in a thinner jar. Drink it before the jar gets ideas of its own.",
+  "notes": "A breakable jar holding a mild healing tonic (mw-ju8.4): drinking restores 15 health. Dropped or thrown hard, the jar breaks (pottery profile), emits breakableBroken and the tonic is lost. Base value 10 sits in the economy jar band (4-12).",
+  "icon": "icon-item-jar-of-healing-tonic-01",
+  "value": 10,
+  "stackable": true,
+  "maxStack": 10,
+  "worldProperties": {
+    "material": "glass"
+  },
+  "breakable": {
+    "profile": "pottery"
+  },
+  "use": [
+    {
+      "op": "restore",
+      "pool": "health",
+      "amount": 15
+    }
+  ]
+}

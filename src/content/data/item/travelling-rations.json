@@ -1,0 +1,24 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "travelling-rations",
+  "category": "consumable",
+  "name": "Travelling rations",
+  "description": "Biscuit, dried meat and a twist of salt, wrapped in waxed cloth. Built to survive a long march and a longer argument.",
+  "notes": "Food (mw-ju8.4). Eaten for 25 stamina and 8 health. Base value 6 sits in the economy food band (2-6). No spoilage exists yet.",
+  "icon": "icon-item-travelling-rations-01",
+  "value": 6,
+  "stackable": true,
+  "maxStack": 10,
+  "use": [
+    {
+      "op": "restore",
+      "pool": "stamina",
+      "amount": 25
+    },
+    {
+      "op": "restore",
+      "pool": "health",
+      "amount": 8
+    }
+  ]
+}

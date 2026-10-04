@@ -1,0 +1,22 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "greater-mana-draught",
+  "category": "consumable",
+  "name": "Greater mana draught",
+  "description": "A bottle of bright, restless blue. It hums in a way that makes the candles lean away.",
+  "notes": "A greater mana potion (mw-ju8.4), buy and use only: no brewing yet. Restores 100 mana; the minor tier is the existing mana draught at 30. Base value 90 sits in the economy greater potion band. Magnitudes are a placeholder scale for the balance tool.",
+  "icon": "icon-item-greater-mana-draught-01",
+  "value": 90,
+  "stackable": true,
+  "maxStack": 10,
+  "worldProperties": {
+    "material": "glass"
+  },
+  "use": [
+    {
+      "op": "restore",
+      "pool": "mana",
+      "amount": 100
+    }
+  ]
+}

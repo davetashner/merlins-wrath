@@ -1,0 +1,12 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "dried-nightshade",
+  "category": "misc",
+  "name": "Dried nightshade",
+  "description": "Black berries on a brittle stem. Handled with gloves by those who have learned to.",
+  "notes": "Potion ingredient (mw-ju8.4): shop and loot stock only, with no use until a brewing system lands (a later bead). Dried berries and leaf; apothecaries guard it. Base value 8 sits in the economy ingredient band (3-15).",
+  "icon": "icon-item-dried-nightshade-01",
+  "value": 8,
+  "stackable": true,
+  "maxStack": 20
+}

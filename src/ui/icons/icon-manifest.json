@@ -1,10 +1,30 @@
 [
   {
+    "id": "icon-item-apple-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-arming-sword-01",
     "placeholder": true
   },
   {
     "id": "icon-item-ash-staff-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-bellwort-root-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-bread-loaf-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-dried-nightshade-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-empty-glass-jar-01",
     "placeholder": true
   },
   {
@@ -60,11 +80,31 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-glenstone-dust-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-gold-coin-01",
     "placeholder": true
   },
   {
+    "id": "icon-item-greater-healing-draught-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-greater-mana-draught-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-hard-cheese-wedge-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-healing-draught-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-hot-pie-01",
     "placeholder": true
   },
   {
@@ -73,6 +113,10 @@
   },
   {
     "id": "icon-item-iron-key-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-jar-of-healing-tonic-01",
     "placeholder": true
   },
   {
@@ -92,7 +136,15 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-mushroom-caps-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-oil-flask-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-red-clay-01",
     "placeholder": true
   },
   {
@@ -100,7 +152,31 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-scroll-of-ember-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-scroll-of-firebolt-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-scroll-of-mage-hand-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-shortbow-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-smoked-sausage-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-spider-silk-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-stamina-tonic-01",
     "placeholder": true
   },
   {
@@ -108,7 +184,19 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-strong-healing-draught-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-strong-mana-draught-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-tally-stick-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-travelling-rations-01",
     "placeholder": true
   },
   {

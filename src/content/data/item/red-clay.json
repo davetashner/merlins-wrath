@@ -1,0 +1,12 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "red-clay",
+  "category": "misc",
+  "name": "Red clay",
+  "description": "A damp brick of river clay. Potters want it, apothecaries want it, and the Wend has plenty.",
+  "notes": "Potion ingredient (mw-ju8.4): shop and loot stock only, with no use until a brewing system lands (a later bead). Clay from the river banks, used for seals and bases. Base value 3 sits in the economy ingredient band (3-15).",
+  "icon": "icon-item-red-clay-01",
+  "value": 3,
+  "stackable": true,
+  "maxStack": 20
+}

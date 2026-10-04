@@ -1,0 +1,18 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "empty-glass-jar",
+  "category": "misc",
+  "name": "Empty glass jar",
+  "description": "A stoppered jar, thin as a promise. It will break the moment it is dropped hard, and it will let you know about it.",
+  "notes": "An empty breakable jar (mw-ju8.4). Thin glass with the pottery break profile: dropped or thrown hard it breaks, emits breakableBroken and is lost. Base value 4 sits in the economy jar band (4-12).",
+  "icon": "icon-item-empty-glass-jar-01",
+  "value": 4,
+  "stackable": true,
+  "maxStack": 10,
+  "worldProperties": {
+    "material": "glass"
+  },
+  "breakable": {
+    "profile": "pottery"
+  }
+}

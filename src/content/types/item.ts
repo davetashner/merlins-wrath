@@ -291,6 +291,18 @@ const base = {
     .default([])
     .describe('Capabilities the item grants while equipped or carried (ADR-0004).'),
   use: z.array(useEffectSchema).optional().describe('Effects of using it; absent = no use.'),
+  breakable: z
+    .strictObject({
+      profile: ref('breakable').describe(
+        'Breakable profile it breaks with (mw-e03.11), e.g. pottery.',
+      ),
+    })
+    .optional()
+    .describe(
+      'Breaks when dropped or thrown hard (a jar): as a world item it carries the breakable ' +
+        'profile and breaks at its material’s fragile threshold, emitting breakableBroken; the ' +
+        'item and its contents are lost (mw-ju8.4).',
+    ),
   flags: flagsSchema.optional(),
 };
 
