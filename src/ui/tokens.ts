@@ -525,6 +525,67 @@ ${tokens}
 .vb-container-status:empty { display: none; }
 .vb-container-hint { color: var(--ui-color-text-muted); font-size: ${size(0.875)}; }
 .vb-container-actions { flex-wrap: wrap; }
+.vb-panel.vb-shop { width: min(40em, 100%); }
+.vb-shop h1 { overflow-wrap: anywhere; margin: 0; }
+.vb-shop-header { display: flex; align-items: center; gap: var(--ui-space-3); }
+.vb-shop-portrait {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 4.5em;
+  height: 5.5em;
+  border: 3px double var(--ui-color-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-color-panel-raised);
+  font-family: var(--ui-font-heading);
+  font-size: ${size(1.75)};
+  color: var(--ui-color-text-muted);
+}
+.vb-shop-who { min-width: 0; }
+.vb-shop-greeting { margin: 0; font-style: italic; overflow-wrap: anywhere; }
+.vb-shop-crowns { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.vb-shop-panel[hidden] { display: none; }
+.vb-shop-rows { gap: var(--ui-space-1); max-height: 50vh; overflow-y: auto; padding: var(--ui-space-1); }
+.vb-shop-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7em;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+.vb-button.vb-shop-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 6em;
+  align-items: center;
+  gap: var(--ui-space-2);
+  width: 100%;
+  text-align: left;
+}
+.vb-shop-icon { width: 1.5em; height: 1.5em; }
+.vb-shop-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--ui-space-2); min-width: 0; }
+.vb-shop-item-name { overflow-wrap: anywhere; line-height: 1.2; font-weight: 700; }
+.vb-shop-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  padding: 0 0.4em;
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius);
+  font-size: ${size(0.8125)};
+}
+.vb-shop-badge-icon { width: 1em; height: 1em; }
+.vb-shop-comparison, .vb-shop-reason { flex-basis: 100%; font-size: ${size(0.875)}; overflow-wrap: anywhere; }
+.vb-shop-comparison { color: var(--ui-color-text-muted); }
+.vb-shop-reason { color: var(--ui-color-warning); font-weight: 700; }
+.vb-shop-price { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; overflow-wrap: anywhere; }
+.vb-shop-stepper { display: inline-flex; align-items: center; justify-content: flex-end; gap: var(--ui-space-1); min-height: 1.5em; }
+.vb-shop-qty { min-width: 2em; text-align: center; font-variant-numeric: tabular-nums; }
+.vb-shop-step { min-width: 1.75em; padding-left: 0.25em; padding-right: 0.25em; }
+.vb-shop-tooltip { white-space: pre-line; max-width: 22em; }
+.vb-shop-empty { margin: 0; padding: var(--ui-space-2) 0; font-style: italic; }
+.vb-shop-status, .vb-shop-hint { margin: 0; }
+.vb-shop-status:empty { display: none; }
+.vb-shop-hint { color: var(--ui-color-text-muted); font-size: ${size(0.875)}; }
 .vb-pickups {
   position: absolute;
   right: var(--ui-space-3);

@@ -1,0 +1,73 @@
+{
+  "$schema": "../../../data/scene.schema.json",
+  "id": "shop-room",
+  "name": "Shop room",
+  "description": "A small walled room with two shop counters for trying the shop screen (mw-e20.10), in debug builds only: talk to the general-goods counter on the left or the fence on the right. Each counter's spawn is tagged merchant:<id>; the player is topped up to 400 crowns the first time a counter opens (dev-crowns:400). Fixture merchants, not tuned.",
+  "grid": 1,
+  "camera": {
+    "position": [0, 7, -9],
+    "target": [0, 0, 1]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 0],
+      "scale": [4, 1, 4]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, -4],
+      "scale": [4, 0.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 4],
+      "scale": [4, 0.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-4, 0, 0],
+      "yaw": 90,
+      "scale": [4, 0.5, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [4, 0, 0],
+      "yaw": 90,
+      "scale": [4, 0.5, 1]
+    },
+    {
+      "piece": "platform",
+      "at": [-2, 0, 2],
+      "scale": [1, 0.5, 0.25]
+    },
+    {
+      "piece": "platform",
+      "at": [2, 0, 2],
+      "scale": [1, 0.5, 0.25]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, -2],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "general-goods-counter",
+      "at": [-2, 0, 1],
+      "tags": ["merchant:fixture-general-goods", "dev-crowns:400"],
+      "interact": {
+        "affordances": [{ "verb": "talk", "label": "Trade with the shopkeeper" }]
+      }
+    },
+    {
+      "id": "fence-counter",
+      "at": [2, 0, 1],
+      "tags": ["merchant:fixture-fence", "dev-crowns:400"],
+      "interact": {
+        "affordances": [{ "verb": "talk", "label": "Trade with the fence" }]
+      }
+    }
+  ]
+}
