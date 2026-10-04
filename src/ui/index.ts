@@ -28,5 +28,6 @@ export * from './pickup-toasts';
 export * from './quick-slots';
 export * from './save-menus';
 export * from './screens';
+export * from './slice-complete';
 export * from './testing/overflow';
 export * from './tokens';

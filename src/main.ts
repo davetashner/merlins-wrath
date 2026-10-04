@@ -112,7 +112,12 @@ import {
   propBodies,
 } from '@game/physics-objects';
 import { createSettingsStore, openOptionsMenu, type SettingsStore } from '@game/settings/index';
-import { createUiGameBridge, PauseController, SaveProgress } from '@game/ui/index';
+import {
+  createUiGameBridge,
+  PauseController,
+  SaveProgress,
+  SliceCompleteController,
+} from '@game/ui/index';
 import {
   createGameLight,
   installGameLight,
@@ -790,6 +795,8 @@ function startRenderer(
     // The death beat (mw-e01.8): the camera pull-back and fade between the player's death and the
     // death screen. Set up once the player and the death screen exist (below).
     let deathBeat: DeathBeat | undefined;
+    // The slice-complete card (mw-e01.18), opened the frame after slice.complete turns true.
+    let sliceCard: SliceCompleteController | undefined;
     let captureAfterRender: ((capture: Promise<CapturedThumbnail>) => void) | undefined;
     // A save's thumbnail (mw-e30.11): the next drawn frame, or the placeholder when no frame comes
     // (a hidden tab). Manual saves and autosaves both take one.
@@ -850,6 +857,7 @@ function startRenderer(
         if (debugCamera.update(elapsedMs)) writeCameraData();
         lastFrameMs = timeMs;
         deathBeat?.frame(frame.alpha);
+        sliceCard?.frame();
         containerUi?.frame(timeMs);
         player?.frame(frame);
         if (player !== undefined) {
@@ -1602,11 +1610,29 @@ function startRenderer(
           },
         }),
     );
+    // Leaves for the title screen: the page reloads into the front door (Quit to Title, the slice's
+    // completion card).
+    const leaveForTitle = (): void => {
+      const search = titleSearch(location.search);
+      location.assign(`${location.pathname}${search === '' ? '' : `?${search}`}`);
+    };
     // Autosaves (mw-e01.7, mw-e30.5): in a scene with a player, entering a checkpoint volume (the
     // slice's CP-1 and CP-2) and finishing the slice write the autosave ring once it is safe, never
     // while a creature is in Combat. The e2e reads each attempt from #app[data-autosave].
     if (player !== undefined && areaId !== undefined) {
       const checkpoints = isCheckpoint;
+      sliceCard = new SliceCompleteController({
+        ui,
+        world,
+        fact: SLICE_COMPLETE_FACT,
+        className: () => describe().characterName,
+        saveBlocked: () => safety.active()[0]?.reason ?? null,
+        returnToTitle: leaveForTitle,
+        publish: (state) => {
+          root.dataset['sliceComplete'] = state;
+        },
+      });
+      const card = sliceCard;
       let autosave: GameAutosave | undefined;
       void saves.then(({ store }) => {
         autosave = new GameAutosave({
@@ -1624,6 +1650,7 @@ function startRenderer(
           publish: (event) => {
             root.dataset['autosave'] = JSON.stringify(autosaveReadout(event));
             if (event.type === 'saved') progress.mark();
+            card.autosave(event);
           },
           warn: (message) => {
             console.warn(message);
@@ -1656,10 +1683,7 @@ function startRenderer(
         openLoad: () => {
           void saveMenus.then((menus) => menus.openLoad());
         },
-        quitToTitle: () => {
-          const search = titleSearch(location.search);
-          location.assign(`${location.pathname}${search === '' ? '' : `?${search}`}`);
-        },
+        quitToTitle: leaveForTitle,
         publish: (state) => {
           root.dataset['pause'] = state;
         },

@@ -178,6 +178,9 @@ test('AC-1, AC-2, AC-3: the recorded slice run reaches slice.complete at the gol
     })
     .toBe(true);
   await expect(app).toHaveAttribute('data-saved-game', /"slot":"manual-2"/, { timeout: 30_000 });
+  // mw-e01.18: the slice-complete card is up, naming the class, with Return to title focused.
+  await expect(page.getByTestId('slice-complete')).toContainText('Class: Knight');
+  await expect(page.getByTestId('slice-complete-return')).toBeFocused();
   const final = await data<Saved>(page, 'saved-game');
   expect({ tick: final.tick, hash: final.hash }).toEqual({
     tick: recording.golden.final.tick,

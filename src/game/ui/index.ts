@@ -50,3 +50,4 @@ export {
   type PauseControllerOptions,
   type PauseKey,
 } from './pause';
+export { SliceCompleteController, type SliceCompleteControllerOptions } from './slice-complete';
