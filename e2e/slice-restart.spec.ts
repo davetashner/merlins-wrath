@@ -1,6 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 import { collectProblems, data, ready, run, SLICE_URL } from './helpers/slice';
-import { budgetMs } from './helpers/budget';
 
 // mw-e01.16: "Restart area" after a death with no save, in the vertical slice, against the production
 // build (Chromium). A clean profile has no saves; the debug console's `kill` stands in for a death
@@ -122,6 +121,6 @@ test('mw-e01.16 AC-1, AC-2, AC-3: after a death before CP-1 with no save, Restar
   const elapsed = playableAt - clickedAt;
   test.info().annotations.push({ type: 'restart-ms', description: String(elapsed) });
   expect(elapsed).toBeGreaterThan(0);
-  expect(elapsed).toBeLessThanOrEqual(budgetMs(RESTART_BUDGET_MS));
+  expect(elapsed).toBeLessThanOrEqual(RESTART_BUDGET_MS);
   expect(problems).toEqual([]);
 });
