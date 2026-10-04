@@ -250,9 +250,37 @@ books under the counter and keeps one forbidden book she will not sell to anyone
 ### 3.5 Locations (MVP)
 
 **Briar Glen (town)** — Market Green and the notice board; **the Sleeping Ox** inn (Dot's); **the Lamplit
-Stacks** bookshop (Mirela's); Brand's Forge; Fenn's Fletchery & Simples; Pell's Bakery; the Watch House
+Stacks** bookshop (Mirela's); Brand's Forge; Fenn's Fletchery & Simples; Pell's Bakery; **Marsh's General Store** (placeholder, §5.15); the Watch House
 and its one-cell jail; Vane House on the rise; the schoolhouse (empty; its teacher is missing); the Glen
 Well (a loose ladder-rung leads to the old cistern); the lychgate cemetery with Vesperine graves.
+
+**The Miners' Bridge (Briar Glen)** — a broad stone bridge of glenstone arches over the River Wend, built about two
+hundred years ago so miners could reach the nearest mine without the long way round. It made the Deepworks easy
+to reach and the town easy to attack: before the bridge, the river was Briar Glen's wall. Today the **Bridge
+Watch** (part of Captain Hale's Watch, §5.2) keeps a guard post on the town end by day and night, and turns
+away hooligans and monsters; nothing that is not a person on business crosses it. Everything a traveller
+brings into Briar Glen from the valley passes the post first, and Marsh's General Store is the first building
+past it. The bridge is canon (owner, 2026-10-04). Guard names, shift times and what the post does with
+armed or armoured strangers are open.
+
+**The Bridgeward College (placeholder name, Briar Glen)** — the bridge's second legacy: the garrison that had
+to be kept at the town end grew over two centuries into a soldierly training college inside the town, where
+townsfolk and strangers learn **fighting** (knight techniques, mw-e19.8) and **archery** (the archery range,
+mw-e05.14). It does not teach sorcery. The Lantern Court's licence (§3.3) keeps a licensed school out of a
+frontier town, and the college's old soldiers regard casters as unreliable. Instructors, fees and entry terms
+are open.
+
+**The robed figure under the bridge (unnamed)** — sorcery is learned elsewhere: after dark, beneath the
+Miners' Bridge, a robed figure waits for those who ask the right questions (rumours, Dot, Mirela). Who they
+are, what they charge and what they teach are open. They are not licensed by the Lantern Court. They appear
+only at night.
+
+**Marsh's General Store (placeholder, Briar Glen)** — the first building a traveller reaches after crossing the
+stone bridge into town. A crooked three-storey timber-framed shop with a slate roof: the ground floor is the
+shop (clothes, boots, gloves, basic arms and armour, food, simple potions and jars, herbs); the shopkeeper,
+Ottilie Marsh (§5.15), lives upstairs, reached by a wooden stair inside and an outside gallery stair. Painted
+sign: a lantern and a barrel, pictures only. Concept art: `concept-marsh-store-*` (mw-ju8.8). Placeholder
+pending owner confirmation of the name and of how its stock sits beside Brand's Forge and Fenn's Fletchery.
 
 **The Briarwood (wilderness)** — the Sleepers' Path (a line of trampled ferns only visible at night or to a
 sharp eye); the Standing Horn (a Hornfolk menhir, hands over its ears); the wolf den; the woodcutter's
@@ -783,6 +811,16 @@ mimic); historical: **Sergeant Aldric Mooring**, **Ysolde Thorne**. Harbour and 
 gossip); **Captain Hesketh** of the *Gilded Tern*; **"Mr. S—'s agent"** (a veiled passenger who never
 leaves the Tern's locked berth in the MVP).
 
+### 5.15 Ottilie Marsh — shopkeeper (merchant, placeholder)
+**Placeholder name and entry, pending owner confirmation.** Middle-aged, stout, capable and unhurried, with
+rosy cheeks, greying auburn hair under a linen cap and spectacles pushed up on her forehead. Keeps Marsh's
+General Store (§3.5), the first shop past the bridge, and lives in the rooms above it. Friendly and shrewd;
+her brass scales are known to be honest. No voice acting in the MVP (text only).
+- **Want:** a shop that stays open and a town that keeps coming in to it.
+- **Hooks (no plot-changing canon):** she hears everything that crosses the bridge, so she can be a source
+  for a rumour (§6.2) or a pointer to who has come and gone lately. She is a general merchant for basics.
+- **Art:** `char-ottilie-marsh-base-01`, `portrait-npc-ottilie-marsh-01`, `prop-marsh-store-set-01`.
+
 ---
 
 ## 6. Side quests and rumours
@@ -1200,3 +1238,5 @@ is beyond "a dream that hungers". All three are post-MVP hooks (§10).
 | v0.2 | 2026-09-27 | Owner extension: the River Wend, Kestrel Lock and the optional harbour town of Wendmouth, with harbour cast, quests and rumours. | owner |
 | v0.3 | 2026-09-27 | Retitled *The Vesper Bell* (ADR-0002). Stone-first economy: glenstone barged down the Wend for export built the valley and Wendmouth's monumental stone harbour; silver, struck ~35 years ago, is the empire's cash cow and drives Vane below the Bell Line (PR #13). | owner |
 | **CANON v1** | 2026-09-27 | Owner sign-off. Canon counts, ages and deliberately open questions added to §11.3. | owner |
+| v1.1 (placeholder) | 2026-10-04 | Added Marsh's General Store (§3.5) and Ottilie Marsh (§5.15) as placeholders pending owner confirmation, from owner-approved concept art (mw-ju8.8). No plot-changing canon. | owner (concept images only; names pending) |
+| v1.2 | 2026-10-04 | Owner canon: the Miners' Bridge (built ~200 years ago for miners; guarded day and night by the Bridge Watch), the Bridgeward College (fighting and archery) and the robed sorcery teacher under the bridge at night (§3.5). Supersedes the 'stone bridge' open question from v1.1. | owner |
