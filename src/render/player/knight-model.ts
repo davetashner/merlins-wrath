@@ -151,14 +151,28 @@ export async function loadKnight(): Promise<KnightAssets> {
   return { body: body.value, props };
 }
 
+/** What differs between the characters one rig carries (see createKnightRig). */
+export interface RigOptions {
+  /** The root group's name (default `<rig>-knight`). */
+  readonly name?: string;
+  /** The body mesh's name (default `knight-mesh`). */
+  readonly meshName?: string;
+  /** Where the body's limbs lie, per bone (default the knight's). */
+  readonly fits?: Readonly<Record<string, SegmentFit>>;
+}
+
 /**
  * The knight skinned to `rig`: a bone hierarchy at the rig's rest offsets (the same shape
  * createGreyboxRig builds) with the body mesh bound to it and each prop fixed to its bone. `apply` and
  * `lower` pose it exactly as the grey-box view, so either drives the same animation.
  */
-export function createKnightRig(rig: Rig, assets: KnightAssets): GreyboxRig {
+export function createKnightRig(
+  rig: Rig,
+  assets: KnightAssets,
+  options: RigOptions = {},
+): GreyboxRig {
   const root = new Group();
-  root.name = `${rig.id}-knight`;
+  root.name = options.name ?? `${rig.id}-knight`;
   const bones: Bone[] = [];
   rig.defs.forEach((def, i) => {
     const bone = new Bone();
@@ -174,13 +188,13 @@ export function createKnightRig(rig: Rig, assets: KnightAssets): GreyboxRig {
   const held = new Set<number>(rig.index.has('sword') ? [rig.index.get('sword') ?? -1] : []);
   const skin = autoSkin(
     position.array,
-    fitSegments(restSegments(rig), rig.index, KNIGHT_SEGMENT_FITS),
+    fitSegments(restSegments(rig), rig.index, options.fits ?? KNIGHT_SEGMENT_FITS),
     held,
   );
   geometry.setAttribute('skinIndex', new Uint16BufferAttribute(skin.indices, 4));
   geometry.setAttribute('skinWeight', new Float32BufferAttribute(skin.weights, 4));
   const mesh = new SkinnedMesh(geometry, assets.body.material);
-  mesh.name = 'knight-mesh';
+  mesh.name = options.meshName ?? 'knight-mesh';
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   // The bounding sphere is the bind pose's; poses swing the arms past it.

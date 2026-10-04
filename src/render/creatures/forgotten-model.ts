@@ -2,7 +2,7 @@
 // creature-forgotten-miner-base-01 and the mining pick, each loaded once and shared by every miner
 // wearing it (which look a miner wears: variant.ts). Creatures face +z (see index.ts), the
 // mesh arrives facing +x, so the body is turned −90° about y and stood on the ground. The model is
-// a static figure for now: creature animation lands with mw-e37.402, so it slides and does not walk.
+// a static mesh; miner-rig.ts skins it onto the humanoid animation rig so it walks and swings.
 // The pick is a separate prop held in the right hand (the creature's −x side).
 //
 // Render-only (needs a GPU context to draw), so it is excluded from unit coverage and verified by the
