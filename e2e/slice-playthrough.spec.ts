@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { playerState, stubPointerLock, takeControl, turnTo } from './helpers/player';
 import { collectProblems, data, interact, ready, run, SLICE_URL, walkNorth } from './helpers/slice';
+import { budgetMs } from './helpers/budget';
 
 // mw-e01.9: the vertical slice played start to finish against the production build (Chromium), from a
 // recorded input log (e2e/logs/slice-playthrough.json, recorded by `pnpm slice:record`, see
@@ -127,7 +128,7 @@ test('AC-1, AC-2, AC-3: the recorded slice run reaches slice.complete at the gol
     uploadThroughput: -1,
   });
   test.info().annotations.push({ type: 'load-ms', description: String(Math.round(loadMs)) });
-  expect(loadMs).toBeLessThanOrEqual(10_000);
+  expect(loadMs).toBeLessThanOrEqual(budgetMs(10_000));
 
   // Segment 0: fight, loot, save, deliberate death. The save's tick and state hash are the golden.
   await replayDone(page);
@@ -168,7 +169,7 @@ test('AC-1, AC-2, AC-3: the recorded slice run reaches slice.complete at the gol
   const reloadMs = playableAt - (loaded.requestedAt ?? 0);
   test.info().annotations.push({ type: 'reload-ms', description: String(reloadMs) });
   expect(reloadMs).toBeGreaterThan(0);
-  expect(reloadMs).toBeLessThanOrEqual(3_000);
+  expect(reloadMs).toBeLessThanOrEqual(budgetMs(3_000));
 
   // Segment 1: the replay continues from the save, through the iron door, to the pass.
   await replayDone(page);

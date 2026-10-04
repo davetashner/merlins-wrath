@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { budgetMs } from './helpers/budget';
 
 // mw-e30.7: death → reload in the testbed, against the production build (Chromium). The debug
 // console (?debug=1) makes a save with `save` (publishing the tick and sim state hash it saved on
@@ -118,7 +119,7 @@ test('AC-2: after a death, Load last save is playable within 3 s at the save’s
   const elapsed = playableAt - (loaded.requestedAt ?? 0);
   test.info().annotations.push({ type: 'reload-ms', description: String(elapsed) });
   expect(elapsed).toBeGreaterThan(0);
-  expect(elapsed).toBeLessThanOrEqual(3_000);
+  expect(elapsed).toBeLessThanOrEqual(budgetMs(3_000));
   expect(problems).toEqual([]);
 });
 

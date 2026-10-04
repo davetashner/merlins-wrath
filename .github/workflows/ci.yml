@@ -1,8 +1,8 @@
 name: CI
 
 # Required checks reference these job names; keep them stable (mw-e00.3, mw-e00.10):
-# lint, typecheck, unit, coverage-gate, coverage-ratchet, e2e-smoke (aggregates the e2e-shard and
-# e2e-playthrough jobs),
+# lint, typecheck, unit, coverage-gate, coverage-ratchet, e2e-smoke (aggregates the e2e-shard,
+# e2e-audio and e2e-playthrough jobs),
 # build, beads-validate.
 on:
   pull_request:
@@ -34,22 +34,18 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm typecheck
 
+  # The unit suite runs once, in coverage-gate below (mw-e41.2): running it here too doubled the runner
+  # time for one signal. This job keeps the name branch protection requires and runs the sim perf
+  # budgets, which live in vitest benchmark files (mw-e00.15 AC-6: mean step() <= 1 ms).
   unit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
-      - run: pnpm test
-      # Every content entry is exercised by a passing test (contract §3, mw-e00.18); reads the report
-      # the Vitest content reporter wrote during pnpm test.
-      - run: pnpm content:coverage
-      # Loot tables across the world: references, cycles and depth, unique items guaranteed once
-      # (mw-e18.2); unreferenced tables are warnings.
-      - run: pnpm content:loot
-      # Sim perf budgets asserted in vitest benchmark files (mw-e00.15 AC-6: mean step() ≤ 1 ms).
       - run: pnpm bench --reporter=verbose
 
+  # The only job that runs the unit and integration tests (mw-e41.2); a failing test fails it.
   coverage-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -60,6 +56,12 @@ jobs:
       - run: pnpm test:coverage
       # coverage-exclusions.md is the only source of exclusions and glue-layer gaps.
       - run: pnpm coverage:exclusions
+      # Every content entry is exercised by a passing test (contract §3, mw-e00.18); reads the report
+      # the Vitest content reporter wrote during the coverage run above.
+      - run: pnpm content:coverage
+      # Loot tables across the world: references, cycles and depth, unique items guaranteed once
+      # (mw-e18.2); unreferenced tables are warnings.
+      - run: pnpm content:loot
       # On main this is the baseline that PR ratchets download.
       - uses: actions/upload-artifact@v7
         if: always()
@@ -101,15 +103,19 @@ jobs:
       # Falls back to the committed coverage-baseline.json with a warning annotation.
       - run: node scripts/coverage-ratchet-cli.ts
 
-  # The suite runs in three shards so each stays well inside its timeout (mw-e00.34); the required
-  # e2e-smoke check below passes only when every shard does.
+  # The chromium project runs in duration-weighted shards (mw-e41.1): e2e/shards.json holds per-spec
+  # seconds and scripts/e2e-shards-cli.ts hands each shard its spec files, so no shard is much slower
+  # than the rest. Playwright's own --shard split left one shard at 600-810 s beside others at 330-670 s,
+  # and the slowest shard sets the PR's wall clock. Regenerate the weights with
+  # `pnpm e2e:shards:regenerate <report.json>` when specs are added or change a lot; unlisted specs get
+  # the median weight. The required e2e-smoke check below passes only when every e2e job does.
   e2e-shard:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
@@ -119,21 +125,25 @@ jobs:
         id: browsers
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-firefox-webkit
-      # Firefox and WebKit run the audio testbed only (mw-e28.1 AC-6; see playwright.config.ts).
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
       - if: steps.browsers.outputs.cache-hit != 'true'
-        run: pnpm exec playwright install --with-deps chromium firefox webkit
+        run: pnpm exec playwright install --with-deps chromium
       - if: steps.browsers.outputs.cache-hit == 'true'
-        run: pnpm exec playwright install-deps chromium firefox webkit
-      # Firefox only runs an AudioContext with a sound server; the runner has no sound card, so give
-      # it PulseAudio with a null sink (mw-e28.1 AC-6).
-      - run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends pulseaudio
-          pulseaudio --start --exit-idle-time=-1
-          pactl load-module module-null-sink sink_name=ci_null
-          pactl set-default-sink ci_null
-      - run: pnpm e2e --shard=${{ matrix.shard }}/3 --project=chromium --project=firefox --project=webkit
+        run: pnpm exec playwright install-deps chromium
+      - name: Run this shard's specs
+        run: |
+          files=$(node scripts/e2e-shards-cli.ts files ${{ matrix.shard }} 4)
+          # An empty list would make Playwright run every spec.
+          if [ -z "$files" ]; then echo "Shard ${{ matrix.shard }} has no specs."; exit 0; fi
+          pnpm e2e --project=chromium $files
+      # Per-spec durations for e2e/shards.json (pnpm e2e:shards:regenerate), kept on every run.
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: e2e-report-${{ matrix.shard }}
+          path: test-results/e2e-report.json
+          if-no-files-found: ignore
+          retention-days: 14
       # The renderer boot smoke's first-frame screenshot, kept on every run (mw-e00.19). Only the
       # shard that runs the boot smoke has one.
       - uses: actions/upload-artifact@v7
@@ -147,6 +157,43 @@ jobs:
         if: failure()
         with:
           name: playwright-traces-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  # Firefox and WebKit run the audio testbed only (mw-e28.1 AC-6; see playwright.config.ts), so they
+  # get one job of their own instead of taxing every chromium shard with browser installs (mw-e41.1).
+  e2e-audio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - id: playwright
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        id: browsers
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-firefox-webkit
+      - if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps firefox webkit
+      - if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps firefox webkit
+      # Firefox only runs an AudioContext with a sound server; the runner has no sound card, so give
+      # it PulseAudio with a null sink (mw-e28.1 AC-6).
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends pulseaudio
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=ci_null
+          pactl set-default-sink ci_null
+      - run: pnpm e2e --project=firefox --project=webkit
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-traces-audio
           path: |
             playwright-report/
             test-results/
@@ -182,13 +229,16 @@ jobs:
           retention-days: 14
 
   e2e-smoke:
-    needs: [e2e-shard, e2e-playthrough]
+    needs: [e2e-shard, e2e-audio, e2e-playthrough]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Every e2e shard and the playthrough passed
-        run: test "${{ needs.e2e-shard.result }}" = success && test "${{ needs.e2e-playthrough.result }}" = success
+      - name: Every e2e job passed
+        run: |
+          test "${{ needs.e2e-shard.result }}" = success \
+            && test "${{ needs.e2e-audio.result }}" = success \
+            && test "${{ needs.e2e-playthrough.result }}" = success
 
   # The perf budget suite in CI mode (mw-e32.1; budgets in perf/perf-budgets.json, all from contract
   # §1): initial transfer and bundle size, load-to-playable and warm reload at 50 Mbps, JS heap after

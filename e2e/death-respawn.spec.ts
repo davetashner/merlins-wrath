@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { budgetMs } from './helpers/budget';
 
 // mw-e01.8: the player's death beat and respawn in the vertical slice (?scene=slice), against the
 // production build (Chromium). The debug console (?debug=1) teleports the knight into the arena,
@@ -171,6 +172,6 @@ test('AC-2: dying in the slice arena plays a 90-tick death beat, and Load last s
   const elapsed = (playableAt ?? Infinity) - (loaded.requestedAt ?? 0);
   test.info().annotations.push({ type: 'reload-ms', description: String(elapsed) });
   expect(elapsed).toBeGreaterThan(0);
-  expect(elapsed).toBeLessThanOrEqual(3_000);
+  expect(elapsed).toBeLessThanOrEqual(budgetMs(3_000));
   expect(problems).toEqual([]);
 });

@@ -8,7 +8,15 @@ export default defineConfig({
   testDir: 'e2e',
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 2 : 0,
-  reporter: process.env['CI'] ? [['github'], ['html', { open: 'never' }]] : 'list',
+  // CI also writes a JSON report: per-spec durations feed e2e/shards.json (mw-e41.1) and the flake
+  // report (mw-e41.7); it is uploaded on every run.
+  reporter: process.env['CI']
+    ? [
+        ['github'],
+        ['html', { open: 'never' }],
+        ['json', { outputFile: 'test-results/e2e-report.json' }],
+      ]
+    : 'list',
   use: {
     baseURL: `http://127.0.0.1:${String(PORT)}`,
     // Kept only for failures; CI uploads them as artifacts.
