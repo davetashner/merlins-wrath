@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4173;
+const PLAYTHROUGH = 'slice-playthrough.spec.ts';
 
 // Smoke tests run against the production build served by `vite preview`.
 export default defineConfig({
@@ -15,7 +16,10 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: PLAYTHROUGH },
+    // The slice playthrough replays a whole run for minutes in software GL; beside other specs it
+    // starves their wall-clock budgets, so CI runs it alone in its own job (mw-e01.9).
+    { name: 'playthrough', use: { ...devices['Desktop Chrome'] }, testMatch: PLAYTHROUGH },
     // Web Audio differs per engine (autoplay policy, AudioListener params, codecs), so the audio
     // testbed also runs in Firefox and WebKit (mw-e28.1 AC-6).
     { name: 'firefox', use: { ...devices['Desktop Firefox'] }, testMatch: 'audio.spec.ts' },

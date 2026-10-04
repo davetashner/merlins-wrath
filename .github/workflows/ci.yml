@@ -1,7 +1,8 @@
 name: CI
 
 # Required checks reference these job names; keep them stable (mw-e00.3, mw-e00.10):
-# lint, typecheck, unit, coverage-gate, coverage-ratchet, e2e-smoke (aggregates the e2e-shard jobs),
+# lint, typecheck, unit, coverage-gate, coverage-ratchet, e2e-smoke (aggregates the e2e-shard and
+# e2e-playthrough jobs),
 # build, beads-validate.
 on:
   pull_request:
@@ -132,7 +133,7 @@ jobs:
           pulseaudio --start --exit-idle-time=-1
           pactl load-module module-null-sink sink_name=ci_null
           pactl set-default-sink ci_null
-      - run: pnpm e2e --shard=${{ matrix.shard }}/3
+      - run: pnpm e2e --shard=${{ matrix.shard }}/3 --project=chromium --project=firefox --project=webkit
       # The renderer boot smoke's first-frame screenshot, kept on every run (mw-e00.19). Only the
       # shard that runs the boot smoke has one.
       - uses: actions/upload-artifact@v7
@@ -151,14 +152,43 @@ jobs:
             test-results/
           retention-days: 14
 
+  # The slice playthrough (mw-e01.9) replays a whole run for minutes in software GL, so it gets a
+  # runner to itself: beside other specs it starves their wall-clock budgets.
+  e2e-playthrough:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - id: playwright
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        id: browsers
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
+      - if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+      - run: pnpm e2e --project=playthrough
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-traces-playthrough
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
   e2e-smoke:
-    needs: e2e-shard
+    needs: [e2e-shard, e2e-playthrough]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Every e2e shard passed
-        run: test "${{ needs.e2e-shard.result }}" = success
+      - name: Every e2e shard and the playthrough passed
+        run: test "${{ needs.e2e-shard.result }}" = success && test "${{ needs.e2e-playthrough.result }}" = success
 
   # The perf budget suite in CI mode (mw-e32.1; budgets in perf/perf-budgets.json, all from contract
   # §1): initial transfer and bundle size, load-to-playable and warm reload at 50 Mbps, JS heap after
