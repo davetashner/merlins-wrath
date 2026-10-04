@@ -2,3 +2,4 @@
 export * from './body';
 export * from './project';
 export * from './knight-model';
+export * from './occlusion-fade';
