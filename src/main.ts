@@ -186,6 +186,8 @@ import {
   disposeArrowShaft,
 } from '@render/combat/index';
 import { createCreatureProxy, showCreatureTelegraph } from '@render/creatures/index';
+import { creatureLocomotion } from '@game/creatures/animation';
+import { AnimationDriver, simAnimReader } from '@game/animation/index';
 import { pickVariant, randomSalt, variantFromSearch } from '@render/creatures/variant';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
 import { createGreyboxView } from '@render/greybox/index';
@@ -842,6 +844,7 @@ function startRenderer(
     const interactions: { tick: number; verb: string; spawn: string | null }[] = [];
     // Animated demo characters in the testbed (mw-e02.20), and the probe the e2e reads.
     let animation: AnimDemo | undefined;
+    let creatureAnimation: AnimationDriver | undefined;
     let publishedProbe = '';
     // The AI debug overlay (mw-e11.17): loaded with the debug console (below), so release builds
     // never have it. `ai.freeze` holds the sim through simPaused; it draws before each render.
@@ -863,6 +866,7 @@ function startRenderer(
       onStep: () => {
         player?.onStep();
         animation?.driver.capture();
+        creatureAnimation?.capture();
         for (const hook of afterStep) hook();
       },
       draw: (frame) => {
@@ -903,6 +907,7 @@ function startRenderer(
         hitOverlay.sync(world);
         publishCreatures();
         publishArrows();
+        creatureAnimation?.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
         if (animation !== undefined) {
           animation.driver.frame(frame.alpha, Math.max(0, elapsedMs) / 1000, camera.position);
           const probe = JSON.stringify(compactProbe(animation.driver.probe()));
@@ -1432,6 +1437,18 @@ function startRenderer(
       const creatureProxies = new Map<EntityId, ReturnType<typeof createCreatureProxy>>();
       // Which look each Forgotten miner wears: one salt per game session, hashed with the miner's
       // entity, so a new game looks different; ?miner=N pins one (mw-1ja).
+      // Their animation: the shared humanoid rig and clips, posed by a driver of their own (the
+      // testbed's demo characters use another); creatures walk by how far they moved (mw-e37.402).
+      const creatureGraph = compileGraph(
+        content.get('anim-graph', PLAYER_RIG_ID),
+        content.all('anim-clip'),
+      );
+      const creatureRead = simAnimReader({
+        moves: combat.moves,
+        locomotion: creatureLocomotion(),
+      });
+      const minerDriver = new AnimationDriver(world);
+      creatureAnimation = minerDriver;
       const minerSalt = randomSalt();
       const pinnedMiner = variantFromSearch(location.search);
       const drawCreatures = (): void => {
@@ -1443,6 +1460,19 @@ function startRenderer(
             armed: look.armed,
             mesh: creatures.table.get(look.id)?.def.presentation.mesh,
             variant: pinnedMiner ?? pickVariant(minerSalt, entity),
+            animation: {
+              rig: creatureGraph.rig,
+              attach: (view) => {
+                minerDriver.add(entity, {
+                  name: look.id,
+                  controller: new AnimationController(creatureGraph),
+                  read: creatureRead,
+                  apply: (pose) => {
+                    view.apply(pose);
+                  },
+                });
+              },
+            },
           });
           view.scene.add(object);
           creatureProxies.set(entity, object);

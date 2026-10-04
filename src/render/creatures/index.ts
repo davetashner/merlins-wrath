@@ -7,7 +7,7 @@
 // The `placeholder-capsule-bones` mesh (the Forgotten, mw-e13.1) adds pale bones over the capsule: a
 // skull, a spine down its back and ribs across its chest, so a skeleton reads as one before its
 // model lands. Once the miner's model has loaded (mw-2l9, forgotten-model.ts) it takes the capsule's
-// place, scaled to the creature's height; if it never loads the capsule stays. Any other mesh id
+// place, scaled to the creature's height, skinned to the animation rig when the caller gives one (miner-rig.ts); if it never loads the capsule stays. Any other mesh id
 // draws the plain capsule.
 //
 // Telegraphs (mw-e04.20): while a creature winds up a telegraphed move its body glows — ember for a
@@ -28,7 +28,10 @@ import {
   SphereGeometry,
   type Object3D,
 } from 'three';
+import type { GreyboxRig, Rig } from '../animation/index';
+import { createKnightRig } from '../player/knight-model';
 import { loadForgottenMiner } from './forgotten-model';
+import { minerRigAssets, RIG_HEIGHT } from './miner-rig';
 
 const SLATE = 0x6f7f8c;
 const RUST = 0x9c4a32;
@@ -44,6 +47,13 @@ const TELEGRAPH_GLOW = { parry: 0xe0912e, block: 0xc8d4e8, unblockable: 0xd2321e
 /** How a creature's telegraph reads (the game's TelegraphLook). */
 export type CreatureTelegraphLook = keyof typeof TELEGRAPH_GLOW;
 
+/** Where a posed miner is wanted: the rig to skin it to, and who poses it once it is drawn. */
+export interface CreatureAnimation {
+  readonly rig: Rig;
+  /** Called once the model has loaded, with the skinned view to pose (`apply`) each frame. */
+  readonly attach: (view: GreyboxRig) => void;
+}
+
 /** A capsule body of `radius` and `height` metres, feet at the origin; see the file header. */
 export function createCreatureProxy({
   id,
@@ -52,6 +62,7 @@ export function createCreatureProxy({
   armed,
   mesh,
   variant,
+  animation,
 }: {
   readonly id: string;
   readonly radius: number;
@@ -61,6 +72,8 @@ export function createCreatureProxy({
   readonly mesh?: string | undefined;
   /** Which of the miner's looks to wear (0 to 3; see variant.ts); absent = the first. */
   readonly variant?: number | undefined;
+  /** Skin the miner to an animation rig and hand it to `attach`; absent = a static model. */
+  readonly animation?: CreatureAnimation | undefined;
 }): Object3D {
   const group = new Group();
   group.name = `creature:${id}`;
@@ -86,6 +99,18 @@ export function createCreatureProxy({
         // The model takes the capsule's place; its body is the one the telegraph glow finds.
         for (const part of parts) part.visible = false;
         body.name = 'proxy-body';
+        if (animation !== undefined) {
+          // Posed by the shared humanoid rig, which faces −z: the creature faces +z, so it is turned.
+          const view = createKnightRig(animation.rig, minerRigAssets(animation.rig, assets), {
+            name: 'model',
+            meshName: 'body',
+          });
+          view.root.scale.setScalar(height / RIG_HEIGHT);
+          view.root.rotation.y = Math.PI;
+          group.add(view.root);
+          animation.attach(view);
+          return;
+        }
         assets.body.geometry.computeBoundingBox();
         const scale = height / (assets.body.geometry.boundingBox?.max.y ?? height);
         const model = new Group();

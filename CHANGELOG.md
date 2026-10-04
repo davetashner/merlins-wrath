@@ -13,6 +13,7 @@ check enforces this).
 
 ### Added
 
+- The Forgotten skeleton now moves: it idles, walks and swings its pick instead of sliding about as a statue.
 - A health bar for the fighter you are locked onto (or last hit) now sits at the top of the screen with its name, and damage numbers show what you deal and take. Turn the numbers off under Settings → Gameplay → Damage numbers.
 - Dying before any save exists and choosing "Restart area" now puts you back at the start of the slice as the class
   you chose, with its kit equipped and the world's facts reset; with no class chosen it returns to the title.
