@@ -36,6 +36,31 @@ const LIMB_FLESH = 1.8;
 /** How far inside a side bone's own x the vertices it may move can sit (see BoneSegment.lateral). */
 const LATERAL_MARGIN = 0.03;
 
+/** Fields of a bone's rest segment a model overrides to match its own shape (see fitSegments). */
+export type SegmentFit = Partial<BoneSegment>;
+
+/**
+ * The rest segments with each bone named in `fits` overridden. A static mesh rarely stands in the
+ * grey-box rig's pose (a knight's arms hang angled out, its legs apart), and a vertex binds to the
+ * bone whose segment it is nearest, so the segment must follow the mesh, not the rig: otherwise cloth
+ * hanging beside the rig's arm binds to it and is dragged along when the arm swings. Only the
+ * binding changes; the bones still pivot at the rig's joints. Throws on a bone the rig lacks, so a
+ * misspelt name cannot silently skip its fit.
+ */
+export function fitSegments(
+  segments: readonly BoneSegment[],
+  index: ReadonlyMap<string, number>,
+  fits: Readonly<Record<string, SegmentFit>>,
+): BoneSegment[] {
+  const byIndex = new Map<number, SegmentFit>();
+  for (const [bone, fit] of Object.entries(fits)) {
+    const i = index.get(bone);
+    if (i === undefined) throw new RangeError(`fitSegments: no bone "${bone}"`);
+    byIndex.set(i, fit);
+  }
+  return segments.map((segment, i) => ({ ...segment, ...byIndex.get(i) }));
+}
+
 /**
  * The rest segment of every bone: from the bone's joint to the far end of its grey-box shape (the
  * shape's centre is half its extent from the joint). A bone without a shape is a point at its joint.
