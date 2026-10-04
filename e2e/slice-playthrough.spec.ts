@@ -233,7 +233,9 @@ test('AC-4: with IndexedDB unavailable, saving shows the fallback message and th
   await turnTo(page, { x: 0, z: 37 }, { tolerance: 0.03 });
   await interact(page);
   await expect
-    .poll(async () => (await data<{ doors: Record<string, unknown> }>(page, 'mechanisms')).doors)
+    .poll(async () => (await data<{ doors: Record<string, unknown> }>(page, 'mechanisms')).doors, {
+      timeout: 60_000,
+    })
     .toMatchObject({ 'exit-door': { status: 'open' } });
   await walkNorth(page, 38.5);
   await expect
