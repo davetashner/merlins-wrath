@@ -1,0 +1,206 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "valley-02",
+  "name": "Valley path (forest)",
+  "description": "Spike mw-ju8.1: a 46 m forest-ish path in grey box: trunks (pillars) either side, a rail on the west side above a river seen 3 m lower, and a mid-forest-and-river backdrop layer (assets/_incoming, dev only) that slides slightly against the level (follow 0.9). The river is a tagged region.",
+  "grid": 1,
+  "camera": {
+    "position": [-10, 14, -8],
+    "target": [0, 0, 14]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0.0, 0, 24.0],
+      "scale": [9.0, 1, 24.0]
+    },
+    {
+      "piece": "wall",
+      "at": [9.25, 0, 24.0],
+      "yaw": 90,
+      "scale": [24.0, 1.0, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0.0, 0, 0.0],
+      "scale": [9.0, 1.0, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-9.25, 0, 24.0],
+      "yaw": 90,
+      "scale": [24.0, 0.4166666666666667, 1]
+    },
+    {
+      "piece": "floor",
+      "at": [-21.0, -3, 24.0],
+      "scale": [9.0, 1, 22.0],
+      "purpose": "interactive"
+    },
+    {
+      "piece": "wall",
+      "at": [-12.25, -3, 24.0],
+      "yaw": 90,
+      "scale": [22.0, 1.0, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-6.0, 0, 3.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-7.5, 0, 8.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [5.5, 0, 6.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [7.0, 0, 11.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-5.5, 0, 14.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [6.5, 0, 17.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-7.0, 0, 20.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [4.5, 0, 23.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [7.5, 0, 26.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-6.5, 0, 27.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [5.0, 0, 31.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-7.25, 0, 33.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [7.0, 0, 36.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-5.5, 0, 38.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [6.0, 0, 41.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-7.0, 0, 44.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [4.5, 0, 45.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [2.0, 0, 18.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "pillar",
+      "at": [-1.5, 0, 36.0],
+      "scale": [1, 1.5, 1]
+    },
+    {
+      "piece": "platform",
+      "at": [-3.5, 0, 10.0],
+      "scale": [0.75, 0.5, 0.75],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [3.0, 0, 29.0],
+      "scale": [1.0, 0.6, 0.75],
+      "purpose": "blocking"
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0.0, 0, 2.0],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "path-start",
+      "at": [0.0, 0, 2.0],
+      "tags": ["path-start"]
+    },
+    {
+      "id": "path-end",
+      "at": [0.0, 0, 46.0],
+      "tags": ["path-end", "area-exit"]
+    }
+  ],
+  "light": {
+    "ambient": 0.35,
+    "directional": [
+      {
+        "id": "sun",
+        "direction": [-0.45, -1, 0.3],
+        "level": 0.6,
+        "reach": 60
+      }
+    ]
+  },
+  "environment": {
+    "sky": "#7A74A0",
+    "fog": {
+      "color": "#8A8AA0",
+      "near": 12,
+      "far": 110
+    },
+    "backdrop": {
+      "image": "backdrop-valley-01/mid-forest-river.png",
+      "bearing": 0,
+      "arc": 110,
+      "radius": 150,
+      "centreY": 22,
+      "follow": 0.9
+    }
+  },
+  "regions": [
+    {
+      "id": "river",
+      "min": [-30, -6, 2],
+      "max": [-12, -2, 46],
+      "tags": ["water", "river"]
+    }
+  ]
+}

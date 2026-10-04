@@ -1,0 +1,136 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "valley-01",
+  "name": "Valley path (north gate)",
+  "description": "Spike mw-ju8.1: the first scene outside the starting area in grey box: a 3 m path between 6 m rock walls, about 55 m long with a dog-leg, two boulders that narrow it and a far-mountains-and-castle backdrop layer (assets/_incoming, dev only) behind distance fog. Built from the e00 kit only.",
+  "grid": 1,
+  "camera": {
+    "position": [-10, 14, -8],
+    "target": [3, 0, 14]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0.0, 0, 9.0],
+      "scale": [1.75, 1, 9.0]
+    },
+    {
+      "piece": "floor",
+      "at": [3.0, 0, 19.5],
+      "scale": [4.75, 1, 1.5]
+    },
+    {
+      "piece": "floor",
+      "at": [6.0, 0, 37.5],
+      "scale": [1.75, 1, 16.5]
+    },
+    {
+      "piece": "wall",
+      "at": [0.0, 0, 0.0],
+      "scale": [1.75, 1.3333333333333333, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-1.75, 0, 10.5],
+      "yaw": 90,
+      "scale": [10.5, 1.3333333333333333, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [1.75, 0, 9.0],
+      "yaw": 90,
+      "scale": [9.0, 1.3333333333333333, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [4.75, 0, 18.0],
+      "scale": [3.0, 1.3333333333333333, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [1.25, 0, 21.0],
+      "scale": [3.0, 1.3333333333333333, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [4.25, 0, 37.5],
+      "yaw": 90,
+      "scale": [16.5, 1.3333333333333333, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [7.75, 0, 36.0],
+      "yaw": 90,
+      "scale": [18.0, 1.3333333333333333, 1]
+    },
+    {
+      "piece": "platform",
+      "at": [0.75, 0, 9.0],
+      "scale": [0.5, 0.8, 0.75],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [5.5, 0, 32.0],
+      "scale": [0.5, 0.8, 0.75],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "crate",
+      "at": [-0.75, 0, 14]
+    },
+    {
+      "piece": "crate",
+      "at": [6.5, 0, 45]
+    },
+    {
+      "piece": "pillar",
+      "at": [-0.25, 0, 53.5],
+      "scale": [1, 1, 1]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0.0, 0, 2.0],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "path-start",
+      "at": [0.0, 0, 2.0],
+      "tags": ["path-start"]
+    },
+    {
+      "id": "path-end",
+      "at": [6.0, 0, 52.0],
+      "tags": ["path-end", "area-exit"]
+    }
+  ],
+  "light": {
+    "ambient": 0.35,
+    "directional": [
+      {
+        "id": "sun",
+        "direction": [-0.45, -1, 0.3],
+        "level": 0.6,
+        "reach": 60
+      }
+    ]
+  },
+  "environment": {
+    "sky": "#6A5A86",
+    "fog": {
+      "color": "#8A7A94",
+      "near": 18,
+      "far": 130
+    },
+    "backdrop": {
+      "image": "backdrop-valley-01/far-mountains-castle.png",
+      "bearing": 0,
+      "arc": 110,
+      "radius": 150,
+      "centreY": 28,
+      "follow": 1
+    }
+  }
+}

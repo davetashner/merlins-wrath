@@ -494,6 +494,83 @@ const cameraSchema = z.strictObject({
   target: vec3Schema.describe('Point the camera looks at, metres.'),
 });
 
+const hexColour = z.string().regex(/^#[0-9a-fA-F]{6}$/, { message: 'must be a #RRGGBB colour' });
+
+/**
+ * A backdrop layer (mw-ju8.1): one painted image on a curved, unlit card behind the scene. It hangs on
+ * a cylinder arc `radius` m from the camera, centred on a compass `bearing` (0 faces +z, 90 faces +x),
+ * and follows the camera by `follow` (1 = infinitely far, no parallax; less lets the layer slide a
+ * little against the level). Not tiled, so it has no seams. The renderer loads it only when the file
+ * is there (unapproved images stay in assets/_incoming) and shows the flat sky colour otherwise.
+ */
+export const sceneBackdropSchema = z.strictObject({
+  image: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9._/-]*\.(png|webp|jpg)$/, {
+      message: 'must be a relative image path such as backdrop-valley-01/far-mountains-castle.png',
+    })
+    .describe('Image path under the backdrop folder (assets/_incoming in dev).'),
+  bearing: z
+    .number()
+    .min(0)
+    .lt(360)
+    .default(0)
+    .describe('Compass direction the card is centred on, degrees: 0 faces +z, 90 faces +x.'),
+  arc: z
+    .number()
+    .min(20)
+    .max(360)
+    .default(100)
+    .describe('How much of the horizon the card spans, degrees; its height follows the image.'),
+  radius: z
+    .number()
+    .min(20)
+    .max(190)
+    .default(150)
+    .describe('Distance from the camera, m; must stay inside the camera far plane.'),
+  centreY: z.number().default(25).describe('Height of the image centre above the camera plane, m.'),
+  follow: z
+    .number()
+    .min(0)
+    .max(1)
+    .default(1)
+    .describe('Share of the camera movement the card follows: 1 never parallaxes, 0 stays put.'),
+});
+
+/** Sky, distance fog and backdrop layer of an outdoor scene (mw-ju8.1). */
+export const sceneEnvironmentSchema = z.strictObject({
+  sky: hexColour.optional().describe('Flat sky colour behind everything, #RRGGBB.'),
+  fog: z
+    .strictObject({
+      color: hexColour.describe('Fog colour, #RRGGBB.'),
+      near: z.number().min(0).describe('Distance where fog starts, m.'),
+      far: z.number().positive().describe('Distance where the fog is solid, m.'),
+    })
+    .refine(({ near, far }) => far > near, {
+      message: 'far must be beyond near',
+      path: ['far'],
+    })
+    .optional()
+    .describe('Distance fog that blends the level into the backdrop.'),
+  backdrop: sceneBackdropSchema.optional().describe('Painted backdrop layer behind the level.'),
+});
+
+/**
+ * A tagged box of the scene (mw-ju8.1): data only for now, e.g. a river a later bead lets the player
+ * swim in. Systems pick regions by tag.
+ */
+export const sceneRegionSchema = z
+  .strictObject({
+    id: contentId.describe('Name of the region, unique in the scene, e.g. river.'),
+    min: vec3Schema.describe('Lower corner, grid cells.'),
+    max: vec3Schema.describe('Upper corner, grid cells; above min on every axis.'),
+    tags: z.array(z.string()).default([]).describe('Free-form tags, e.g. water.'),
+  })
+  .refine(({ min, max }) => max[0] > min[0] && max[1] > min[1] && max[2] > min[2], {
+    message: 'max must be above min on every axis',
+    path: ['max'],
+  });
+
 export const sceneSchema = z
   .strictObject({
     id: contentId.describe('Scene id; also the ?scene= URL value.'),
@@ -521,8 +598,26 @@ export const sceneSchema = z
     acoustics: sceneAcousticsSchema
       .optional()
       .describe('Rooms, portals and partitions for sound propagation (mw-e09.3).'),
+    environment: sceneEnvironmentSchema
+      .optional()
+      .describe('Outdoor look: sky colour, distance fog and a painted backdrop (mw-ju8.1).'),
+    regions: z
+      .array(sceneRegionSchema)
+      .default([])
+      .describe('Tagged boxes, e.g. a river (mw-ju8.1); data only until a system reads them.'),
   })
   .superRefine((scene, ctx) => {
+    const regionIds = new Set<string>();
+    scene.regions.forEach((region, index) => {
+      if (regionIds.has(region.id)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['regions', index, 'id'],
+          message: `region id "${region.id}" is used twice in this scene`,
+        });
+      }
+      regionIds.add(region.id);
+    });
     const seen = new Set<string>();
     scene.spawns.forEach((spawn, index) => {
       if (seen.has(spawn.id)) {
@@ -745,6 +840,8 @@ export type SceneDefInput = z.input<typeof sceneSchema>;
 export type ScenePlacementDef = z.output<typeof scenePlacementSchema>;
 export type SceneSpawnDef = z.output<typeof sceneSpawnSchema>;
 export type SceneLightDef = z.output<typeof sceneLightSchema>;
+export type SceneEnvironmentDef = z.output<typeof sceneEnvironmentSchema>;
+export type SceneBackdropDef = z.output<typeof sceneBackdropSchema>;
 export type SceneDoorDef = z.output<typeof sceneDoorSchema>;
 export type SceneSwitchDef = z.output<typeof sceneSwitchSchema>;
 export type SceneSignalDef = z.output<typeof sceneSignalSchema>;

@@ -241,3 +241,21 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `acoustics.partitions` | list of object | `[]` | Materials of partitions between touching rooms; the rest use the tuning default. |
 | `acoustics.partitions[].rooms` | list of any (at least 2) | required | The two touching rooms. |
 | `acoustics.partitions[].material` | id | required | Material id of what separates them; its wall or floor gain comes from the stealth tuning. |
+| `environment` | object | — | Outdoor look: sky colour, distance fog and a painted backdrop (mw-ju8.1). |
+| `environment.sky` | string | — | Flat sky colour behind everything, #RRGGBB. |
+| `environment.fog` | object | — | Distance fog that blends the level into the backdrop. |
+| `environment.fog.color` | string | required | Fog colour, #RRGGBB. |
+| `environment.fog.near` | number ≥ 0 | required | Distance where fog starts, m. |
+| `environment.fog.far` | number > 0 | required | Distance where the fog is solid, m. |
+| `environment.backdrop` | object | — | Painted backdrop layer behind the level. |
+| `environment.backdrop.image` | string | required | Image path under the backdrop folder (assets/_incoming in dev). |
+| `environment.backdrop.bearing` | number ≥ 0 < 360 | `0` | Compass direction the card is centred on, degrees: 0 faces +z, 90 faces +x. |
+| `environment.backdrop.arc` | number 20–360 | `100` | How much of the horizon the card spans, degrees; its height follows the image. |
+| `environment.backdrop.radius` | number 20–190 | `150` | Distance from the camera, m; must stay inside the camera far plane. |
+| `environment.backdrop.centreY` | number | `25` | Height of the image centre above the camera plane, m. |
+| `environment.backdrop.follow` | number 0–1 | `1` | Share of the camera movement the card follows: 1 never parallaxes, 0 stays put. |
+| `regions` | list of object | `[]` | Tagged boxes, e.g. a river (mw-ju8.1); data only until a system reads them. |
+| `regions[].id` | id | required | Name of the region, unique in the scene, e.g. river. |
+| `regions[].min` | list of any (at least 3) | required | Lower corner, grid cells. |
+| `regions[].max` | list of any (at least 3) | required | Upper corner, grid cells; above min on every axis. |
+| `regions[].tags` | list of string | `[]` | Free-form tags, e.g. water. |
