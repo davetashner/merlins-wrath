@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { paintedKind } from './index';
+import { paintedKind, stoneFor } from './index';
 
 describe('paintedKind (mw-va0)', () => {
   it('paints a kit pillar as stone, whatever its properties', () => {
@@ -19,5 +19,26 @@ describe('paintedKind (mw-va0)', () => {
     expect(paintedKind({ piece: 'platform' }, undefined)).toBeUndefined();
     expect(paintedKind({ piece: 'platform' }, { material: { id: 'wood' } })).toBeUndefined();
     expect(paintedKind({ piece: 'wall' }, { climbable: 'ladder' })).toBeUndefined();
+  });
+});
+
+describe('stoneFor (mw-7w0)', () => {
+  it('lays the stone on the testbed floor only, upward faces, grid kept (the owner probe)', () => {
+    expect(stoneFor('testbed', 'walkable')).toEqual({ faces: 'floor', grid: true });
+    expect(stoneFor('testbed', 'blocking')).toBeUndefined();
+    expect(stoneFor('testbed', 'climbable')).toBeUndefined();
+  });
+
+  it('lays the stone on every face of the slice floors, walls and ledges, with no grid', () => {
+    for (const purpose of ['walkable', 'blocking', 'climbable'] as const) {
+      expect(stoneFor('slice', purpose)).toEqual({ faces: 'all', grid: false });
+    }
+  });
+
+  it('leaves hazards and interactive parts, and every other scene, to the flat colours', () => {
+    expect(stoneFor('slice', 'hazard')).toBeUndefined();
+    expect(stoneFor('slice', 'interactive')).toBeUndefined();
+    expect(stoneFor('mechanism-room', 'walkable')).toBeUndefined();
+    expect(stoneFor('kit-gallery', 'blocking')).toBeUndefined();
   });
 });

@@ -61,6 +61,9 @@ async function play(page: Page): Promise<void> {
 test('AC-7: three attacks run the light chain and take 20 + 22 + 30 = 72 from the dummy, with no console errors', async ({
   page,
 }) => {
+  // Three swings of the light chain are about 150 sim ticks, which take 15 s or more when CI's software
+  // renderer runs the sim at about ten ticks a second, so the default 30 s is too tight.
+  test.setTimeout(90_000);
   const problems = collectProblems(page);
   await play(page);
   // Taking control must not have swung.

@@ -13,6 +13,8 @@ check enforces this).
 
 ### Added
 
+- The slice's walls, floors and ledges are weathered glenstone blocks instead of flat grey, lit warmly by the
+  torches and the brazier. It is a placeholder style probe until approved.
 - The slice's chest, crate, pillars and ivy ledge look the part too: an iron-banded wooden chest in the
   alcove, a braced and bracketed crate, weathered stone block pillars in the arena, and ivy over the climbable
   ledge. They are placeholders until approved.
