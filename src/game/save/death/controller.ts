@@ -67,8 +67,18 @@ export interface DeathReloadOptions {
   readonly session: PendingLoadStorage;
   /** The area (scene id) the world was built for; undefined when no scene loaded. */
   readonly areaId: string | undefined;
-  /** Reloads the page into `areaId`, or into the current area when undefined. */
-  readonly navigate: (areaId: string | undefined) => void;
+  /**
+   * Reloads the page into `areaId`, or into the current area when undefined. With `classId` the new
+   * game hand-off applies that class to the fresh world (Restart area), as `?class=` does.
+   */
+  readonly navigate: (areaId: string | undefined, classId?: string) => void;
+  /**
+   * The class chosen this session (mw-e19.5), the one on the player now; undefined when there is none
+   * (state lost, or a scene booted without class selection).
+   */
+  readonly chosenClass: () => string | undefined;
+  /** Leaves for the title screen (Restart area with no chosen class to restart as). */
+  readonly toTitle: () => void;
   /** Who and where the player is, for saves. */
   readonly describe: () => SlotDescription;
   readonly publish?: (readout: DeathReloadReadout) => void;
@@ -187,10 +197,20 @@ export class DeathReload {
     this.options.navigate(load.areaId);
   }
 
-  /** Reloads the current area from its start, with no save (Restart area). */
+  /**
+   * Reloads the current area from its start, with no save (Restart area), through the New Game
+   * hand-off: fresh world facts, the class chosen this session applied (mw-e01.16). With no chosen
+   * class it warns and returns to the title instead.
+   */
   restart(): void {
     clearPendingLoad(this.options.session);
-    this.options.navigate(undefined);
+    const classId = this.options.chosenClass();
+    if (classId === undefined) {
+      this.warn('restart area: no class was chosen this session, returning to the title');
+      this.options.toTitle();
+      return;
+    }
+    this.options.navigate(undefined, classId);
   }
 
   /**

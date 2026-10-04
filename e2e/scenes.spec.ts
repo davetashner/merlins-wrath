@@ -166,6 +166,9 @@ test('AC-4: ?scene=does-not-exist shows an error listing the available scenes an
 test('AC-5: with the debug camera on, WASD and mouse input move it; toggling off restores the prior camera', async ({
   page,
 }) => {
+  // On CI's software-GL runners beside heavy slice specs this one has timed out at 30 s with the fly
+  // camera never switched on (it passes in under 10 s locally); give it 90 s there.
+  test.slow(!!process.env['CI'], 'software-GL runners are slow');
   const problems = collectProblems(page);
   await page.goto('/?scene=testbed');
   const app = page.locator('#app');
