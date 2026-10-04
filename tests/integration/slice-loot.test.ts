@@ -2,9 +2,10 @@
 // validator (mw-e18.2) over the game content and checks the alcove chest's table names only items
 // that exist. AC-2 and AC-3 load the slice headless as the game wires it (createGameWorld: Rapier
 // physics, the player with interaction and an inventory, world items, the scene's mechanisms and
-// containers) and drive it with ActionFrames: the rusted gallery key, taken from the floor at the
-// Forgotten miner's post, opens the iron exit from the keyring in one press; the alcove chest, looted,
-// saved and reloaded, is empty when opened again.
+// containers, creatures and their drops) and drive it with ActionFrames: the rusted gallery key,
+// dropped by the Forgotten miner where it dies (mw-e01.5) and taken from beside its body, opens the
+// iron exit from the keyring in one press; the alcove chest, looted, saved and reloaded, is empty
+// when opened again.
 import * as RAPIER from '@dimforge/rapier3d-deterministic';
 import {
   contentChecks,
@@ -23,16 +24,19 @@ import {
   actionVector,
   containerActionCommand,
   containerOpened,
+  CreatureComponent,
   doorStatus,
   hashWorld,
   interacted,
   interactionPrompt,
   inventoryOf,
+  killCommand,
   lockOpened,
   PlacementComponent,
   PlayerLook,
   SceneSpawnComponent,
   teleportCommand,
+  WorldItemComponent,
   type ActionFrame,
   type ContainerOpened,
   type EntityId,
@@ -85,6 +89,22 @@ function slice() {
     if (placement === undefined) throw new Error('the player is not placed');
     return { x: placement.x, y: placement.y, z: placement.z };
   };
+  const creature = (point: string): EntityId => {
+    const found = world
+      .query(CreatureComponent)
+      .ids()
+      .find((entity) => world.get(entity, CreatureComponent)?.origin.point === point);
+    if (found === undefined) throw new Error(`no slice creature ${point}`);
+    return found;
+  };
+  const worldItem = (defId: string): EntityId => {
+    const found = world
+      .query(WorldItemComponent)
+      .ids()
+      .find((entity) => world.get(entity, WorldItemComponent)?.defId === defId);
+    if (found === undefined) throw new Error(`no ${defId} lies in the slice`);
+    return found;
+  };
   const interactions: Interaction[] = [];
   const opened: LockOpened[] = [];
   const searched: ContainerOpened[] = [];
@@ -100,6 +120,8 @@ function slice() {
     player,
     containers: game.containers,
     spawn,
+    creature,
+    worldItem,
     step,
     teleport,
     at,
@@ -111,7 +133,7 @@ function slice() {
   };
 }
 
-/** The Forgotten miner's post by pillar B, where the key lies (vertical-slice §4). */
+/** The Forgotten miner's post by pillar B, where it rests and, killed there, drops the key (§4). */
 const KEY_AT = { x: 2.5, z: 32.5 };
 /** On the loot alcove's floor (1.4 m up), a step south of the chest at (8, 36.5). */
 const BEFORE_CHEST = { x: 8, y: 1.4, z: 35.4 };
@@ -164,10 +186,14 @@ describe('the slice loot (mw-e01.6)', () => {
     markExercised(task, 'item', 'rusted-gallery-key');
     const t = slice();
     const door = t.spawn('exit-door');
-    const key = t.spawn('gallery-key');
     expect(doorStatus(t.sim, door)).toBe('locked');
 
-    // Take the key from the floor at the miner's post: it goes on the keyring.
+    // The miner dies at its post and drops the key it carries (mw-e01.5).
+    t.world.step([IDLE, killCommand(t.creature('skeleton'))]);
+    t.step(IDLE, 30);
+    const key = t.worldItem('rusted-gallery-key');
+
+    // Take the key from beside the body: it goes on the keyring.
     t.teleport({ x: KEY_AT.x, y: 0, z: KEY_AT.z - 1.2 });
     expect(interactionPrompt(t.sim, t.player)).toMatchObject({ target: key, available: true });
     t.step(INTERACT);

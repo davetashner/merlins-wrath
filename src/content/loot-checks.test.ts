@@ -4,6 +4,7 @@ import { ContentLoadError, loadContent, type ContentSource, type LoadedEntry } f
 import { checkLootTables, lootTableProblems } from './loot-checks.ts';
 import { contentChecks, contentTypes } from './registry.ts';
 import { lootTableSchema, type LootTableInput } from './types/loot-table.ts';
+import type { SceneDef } from './types/scene.ts';
 
 const table = (input: Omit<LootTableInput, 'notes'>): LoadedEntry => ({
   type: 'loot-table',
@@ -313,5 +314,101 @@ describe('loot-table validator: scene containers (mw-e18.3)', () => {
     ]);
     const once = [item('crown', true), scene('keep', { vault: { contents: [['crown', 1]] } })];
     expect(errors(once)).toEqual([]);
+  });
+});
+
+/** A scene placing creatures: spawn id → its creature and what it carries. */
+const creatureScene = (
+  id: string,
+  spawns: Record<string, { creature: string; carries?: [string, number][] }>,
+): LoadedEntry => {
+  const value = {
+    id,
+    spawns: Object.entries(spawns).map(([spawn, { creature, carries }]) => ({
+      id: spawn,
+      creature: { id: creature },
+      ...(carries !== undefined && {
+        carries: carries.map(([item, count]) => ({ item: { id: item }, count })),
+      }),
+    })),
+  };
+  return { type: 'scene', file: `s/${id}.json`, value };
+};
+
+describe('loot-table validator: creature drops (mw-e01.5)', () => {
+  it('AC-2: a creature’s table guaranteeing a unique item counts once per scene spawn of that creature', () => {
+    const entries = [
+      item('crown', true),
+      creature('king', 'regalia'),
+      table({ id: 'regalia', guaranteed: [{ item: 'crown' }] }),
+      creatureScene('hall', { throne: { creature: 'king' }, dais: { creature: 'king' } }),
+    ];
+    expect(warnings(entries)).toEqual([]);
+    expect(errors(entries)).toEqual([
+      't/regalia.json#/guaranteed/0: unique item "crown" is guaranteed in 2 placements; it may be guaranteed in at most one: scene:hall/throne (creature:king) (via loot-table:regalia guaranteed[0]), scene:hall/dais (creature:king) (via loot-table:regalia guaranteed[0])',
+    ]);
+    const once = entries.map((e) =>
+      e.type === 'scene' ? creatureScene('hall', { throne: { creature: 'king' } }) : e,
+    );
+    expect(errors(once)).toEqual([]);
+  });
+
+  it('AC-2: a placed creature’s table that is missing fails once, however often it is placed', () => {
+    const entries = [
+      creature('rat', 'scraps'),
+      creatureScene('cellar', { a: { creature: 'rat' }, b: { creature: 'rat' } }),
+    ];
+    expect(errors(entries)).toEqual([
+      'c/rat.json#/loot: creature:rat loot names missing loot-table "scraps"',
+    ]);
+  });
+
+  it('AC-2: a unique item a placed creature carries is a placement of its own, one unit at a time', () => {
+    const entries = [
+      item('bread'),
+      item('key', true),
+      table({ id: 'lockbox', guaranteed: [{ item: 'key' }] }),
+      creatureScene('mine', {
+        miner: {
+          creature: 'miner',
+          carries: [
+            ['key', 2],
+            ['bread', 3],
+          ],
+        },
+      }),
+    ];
+    expect(errors(entries)).toEqual([
+      's/mine.json#/spawns/0/carries/0/count: scene:mine/miner carries[0] holds 2 of unique item "key"; a unique item drops once',
+      't/lockbox.json#/guaranteed/0: unique item "key" is guaranteed in 2 placements; it may be guaranteed in at most one: loot-table:lockbox guaranteed[0], scene:mine/miner carries[0]',
+    ]);
+    const once = [
+      item('key', true),
+      creatureScene('mine', { miner: { creature: 'miner', carries: [['key', 1]] } }),
+    ];
+    expect(errors(once)).toEqual([]);
+  });
+
+  it('AC-2: the slice skeleton is the one placement of the rusted gallery key', () => {
+    let entries: readonly LoadedEntry[] = [];
+    loadContent(contentTypes, gameContentSources(), [
+      ...contentChecks,
+      (loaded) => {
+        entries = loaded;
+        return [];
+      },
+    ]);
+    const twice = entries.map((e): LoadedEntry => {
+      if (e.type !== 'scene' || e.value.id !== 'slice') return e;
+      const scene = e.value as SceneDef;
+      const skeleton = scene.spawns.find((s) => s.id === 'skeleton');
+      const spawns = [...scene.spawns, { ...skeleton, id: 'skeleton-2' }];
+      const value: SceneDef = { ...scene, spawns: spawns as SceneDef['spawns'] };
+      return { ...e, value };
+    });
+    expect(lootTableProblems(entries).errors).toEqual([]);
+    expect(lootTableProblems(twice).errors.map((e) => e.message)).toEqual([
+      'unique item "rusted-gallery-key" is guaranteed in 2 placements; it may be guaranteed in at most one: scene:slice/skeleton carries[0], scene:slice/skeleton-2 carries[0]',
+    ]);
   });
 });

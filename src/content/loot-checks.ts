@@ -10,8 +10,10 @@
 // - nested tables never form a cycle ("a > b > a") nor nest deeper than LOOT_MAX_DEPTH, which the
 //   sim would otherwise only catch mid-roll with `loot.depthExceeded`;
 // - a unique item is guaranteed in at most one placement across the world, one unit at a time. A
-//   placement is a creature or scene container (mw-e18.3) rolling a table that guarantees it, the
-//   table itself while nothing places it yet, or a container holding it from the start;
+//   placement is a scene container (mw-e18.3) rolling a table that guarantees it; a creature whose
+//   table guarantees it, once for each scene spawn of that creature (each one drops it, mw-e01.5),
+//   or once while no scene places the creature; the table itself while nothing rolls it yet; a
+//   container holding it from the start; or a placed creature carrying it (a spawn's `carries`);
 // - every table is referenced by a creature, a scene container or another table; an unreferenced
 //   one is a warning only.
 //
@@ -137,15 +139,34 @@ export function lootTableProblems(entries: readonly LoadedEntry[]): LootProblems
       errors.push({ file, pointer, message: `${placer} loot names missing loot-table "${loot}"` });
     }
   };
-  for (const { file, creature } of creatures) {
-    if (creature.loot !== undefined) {
-      placedBy(`creature:${creature.id}`, creature.loot, file, '/loot');
+  // A creature's table is rolled by every creature of that kind a scene places (each drops it).
+  const spawnsOf = new Map<string, string[]>();
+  for (const { scene } of scenes) {
+    for (const { id, creature } of scene.spawns) {
+      if (creature === undefined) continue;
+      spawnsOf.set(creature.id, [...(spawnsOf.get(creature.id) ?? []), `scene:${scene.id}/${id}`]);
     }
   }
-  // Unique items a scene container holds from the start: each is a placement of its own.
+  for (const { file, creature } of creatures) {
+    if (creature.loot === undefined) continue;
+    const at = `creature:${creature.id}`;
+    const placed = spawnsOf.get(creature.id) ?? [];
+    if (placed.length === 0 || !tables.has(creature.loot)) {
+      placedBy(at, creature.loot, file, '/loot');
+      continue;
+    }
+    for (const spawn of placed) placedBy(`${spawn} (${at})`, creature.loot, file, '/loot');
+  }
+  // Unique items a scene container holds from the start or a placed creature carries: each is a
+  // placement of its own.
   const held: { item: string; count: number; placement: Placement }[] = [];
   for (const { file, scene } of scenes) {
-    scene.spawns.forEach(({ id, container }, i) => {
+    scene.spawns.forEach(({ id, container, carries }, i) => {
+      (carries ?? []).forEach(({ item, count }, j) => {
+        const name = `scene:${scene.id}/${id} carries[${String(j)}]`;
+        const pointer = `/spawns/${String(i)}/carries/${String(j)}`;
+        held.push({ item: item.id, count, placement: { name, file, pointer } });
+      });
       if (container === undefined) return;
       const placer = `scene:${scene.id}/${id}`;
       const pointer = `/spawns/${String(i)}/container`;

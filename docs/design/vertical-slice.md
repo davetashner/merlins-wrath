@@ -157,7 +157,9 @@ The arena is open to the corridor through a doorway (no door, so retreat is alwa
 pillars break lines of attack and let the skeleton's lunge whiff. Two wall torches and a floor brazier
 light it. A **Forgotten miner** (`forgotten-miner`) sits in a resting idle with its back to the far
 pillar, about 8 m from the doorway, in light. On sight or on noise in the arena it stands and enters
-Combat (mw-e01.5 AC-1: Combat within 2 s of the player entering in view).
+Combat (mw-e01.5 AC-1: Combat within 2 s of the player entering in view). In grey box the resting
+idle is the Forgotten's post idle: it stands at its post facing the doorway until the rig brings a
+seated pose (E37).
 
 Its three moves are the e04 grey-box set: overhead chop (parryable), two-hit slash (parryable) and
 lunging thrust (unparryable, blockable, longer telegraph). The knight's tools are everything the
@@ -198,8 +200,11 @@ so luring it into the fire is a systemic option, not a scripted one.
 When the skeleton dies, its Died event drops the **Rusted gallery key** as a world item within 1 m of
 the body (mw-e01.5 AC-2). Interact ("Take Rusted gallery key") adds it to the keyring. The key is a
 quest item, so it cannot be dropped (mw-e17.7 AC-4) and can never be lost in the level.
-Until the encounter lands, the key (`rusted-gallery-key`) lies on the floor at the skeleton's post
-at (2.5, 0, 32.5) by pillar B (mw-e01.6); mw-e01.5 replaces that placement with the drop.
+The skeleton's scene spawn carries the key (`"carries": [{ "item": "rusted-gallery-key" }]`), and
+creature drops (`src/sim/loot/drops.ts`) lay what a dying creature carries, then its definition's loot
+table roll, at its body; nothing places the key on the floor any more (mw-e01.5 replaced mw-e01.6's
+stand-in at the post). The loot validator counts a carried unique as a placement, so the key stays
+the one key in the world.
 
 | System                          | Bead                                                   | Status |
 | ------------------------------- | ------------------------------------------------------ | ------ |

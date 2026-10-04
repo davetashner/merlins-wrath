@@ -267,6 +267,35 @@ describe('scene layout (mw-e00.21)', () => {
     expect(layoutScene(TEST_SCENE, testKit).spawns.every((s) => s.leash === undefined)).toBe(true);
   });
 
+  it('mw-e01.5: lays out what a creature carries as plain item ids, in order', () => {
+    const scene: SceneSpec = {
+      ...TEST_SCENE,
+      spawns: [
+        {
+          id: 'skeleton',
+          at: [1, 0, 3],
+          yaw: 180,
+          tags: [],
+          creature: { id: 'forgotten-miner' },
+          carries: [
+            { item: { id: 'rusted-gallery-key' }, count: 1 },
+            { item: { id: 'gold' }, count: 4 },
+          ],
+        },
+      ],
+    };
+    const [skeleton] = layoutScene(scene, testKit).spawns;
+    expect(skeleton?.carries).toEqual([
+      { item: 'rusted-gallery-key', count: 1 },
+      { item: 'gold', count: 4 },
+    ]);
+    expect(Object.isFrozen(skeleton?.carries)).toBe(true);
+    expect(Object.isFrozen(skeleton?.carries?.[0])).toBe(true);
+    expect(layoutScene(TEST_SCENE, testKit).spawns.every((s) => s.carries === undefined)).toBe(
+      true,
+    );
+  });
+
   it('mw-e11.9: throws for a route naming an unknown waypoint, a link off the route or an unknown route', () => {
     const base: SceneSpec = {
       ...TEST_SCENE,

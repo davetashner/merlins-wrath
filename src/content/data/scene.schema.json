@@ -844,6 +844,33 @@
             ],
             "additionalProperties": false
           },
+          "carries": {
+            "description": "What the spawned creature carries and drops where it dies, as world items (mw-e01.5), e.g. the slice skeleton’s key (needs creature).",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item": {
+                  "description": "An item the creature carries.",
+                  "type": "string",
+                  "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                  "x-contentRef": "item"
+                },
+                "count": {
+                  "default": 1,
+                  "description": "Units of it; default 1.",
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9999
+                }
+              },
+              "required": [
+                "item"
+              ],
+              "additionalProperties": false
+            }
+          },
           "properties": {
             "description": "World properties of the spawned entity, e.g. a torch: { \"burning\": true, \"fuel\": 3600 } (mw-e03.37). A spawn with properties is placed in the sim, so the light field and stimuli reach it.",
             "type": "object",

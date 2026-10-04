@@ -388,6 +388,44 @@ describe('scene creature leashes (mw-e01.17)', () => {
   });
 });
 
+describe('scene creature carries (mw-e01.5)', () => {
+  it('lists items a placed creature carries, a unit by default; needs a creature, an item and at least one entry', () => {
+    const spawns = [
+      {
+        id: 'skeleton',
+        at: [2.5, 0, 32.5],
+        creature: 'forgotten-miner',
+        carries: [{ item: 'rusted-gallery-key' }, { item: 'gold', count: 5 }],
+      },
+    ];
+    expect(problems({ ...room, spawns })).toEqual([]);
+    const carries = sceneSchema.parse({ ...room, spawns }).spawns[0]?.carries;
+    expect(carries?.map(({ item, count }) => ({ item: item.id, count }))).toEqual([
+      { item: 'rusted-gallery-key', count: 1 },
+      { item: 'gold', count: 5 },
+    ]);
+    expect(
+      problems({
+        ...room,
+        spawns: [
+          { id: 'marker', at: [0, 0, 0], carries: [{ item: 'gold' }] },
+          { id: 'a', at: [0, 0, 0], creature: 'forgotten-miner', carries: [] },
+          {
+            id: 'b',
+            at: [0, 0, 0],
+            creature: 'forgotten-miner',
+            carries: [{ item: 'gold', count: 0 }],
+          },
+        ],
+      }),
+    ).toEqual([
+      'spawns.1.carries: Too small: expected array to have >=1 items',
+      'spawns.2.carries.0.count: Too small: expected number to be >=1',
+      'spawns.0.carries: spawn "marker" sets carries but spawns no creature',
+    ]);
+  });
+});
+
 describe('scene schema (mw-e00.21)', () => {
   it('fills defaults: 1 m grid, no yaw, unit scale, no spawns', () => {
     expect(sceneSchema.parse(room)).toEqual({

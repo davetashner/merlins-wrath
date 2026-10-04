@@ -4,7 +4,12 @@
 // it automatically. Sections: the built-in world section, then inventory (mw-e17.8), creatures
 // (mw-e12.14), world facts and level deltas (mw-e27.4).
 
-import { CapabilitiesComponent, PlayerClassComponent, StatsComponent } from '@sim/index';
+import {
+  CapabilitiesComponent,
+  NavRouteComponent,
+  PlayerClassComponent,
+  StatsComponent,
+} from '@sim/index';
 import { creaturesSaveSection } from './creatures';
 import { SaveRegistry } from './format';
 import { inventorySaveSection, type InventorySectionOptions } from './inventory';
@@ -13,13 +18,16 @@ import { worldFactsSaveSection } from './world-facts';
 
 /**
  * Components the game registers only on first use: class selection (mw-e19.5) adds the player's
- * class, stats and capabilities. A save holding them loads into a fresh world that has not chosen a
- * class yet (Continue from the title, mw-e01.7).
+ * class, stats and capabilities, and a creature's first walk on the navmesh its route (mw-e11.4). A
+ * save holding them loads into a fresh world that has not chosen a class yet (Continue from the
+ * title, mw-e01.7) or whose creatures have not moved yet (a save mid-fight with the slice's skeleton,
+ * mw-e01.5).
  */
 export const ON_DEMAND_COMPONENTS = Object.freeze([
   PlayerClassComponent,
   StatsComponent,
   CapabilitiesComponent,
+  NavRouteComponent,
 ]);
 
 /** What the game's sections need from the running build. */

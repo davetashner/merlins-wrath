@@ -12,7 +12,8 @@
 // random-weighted graph, or a guard post), and a creature spawn's `routine` lists the routes it
 // walks, each in an optional window of hours. Every name is checked within the scene, like signal
 // bindings: a route naming a waypoint the scene does not have fails validation. A creature spawn's
-// `leash` (mw-e01.17) ties it to a post: a radius in metres around a point (default its spawn).
+// `leash` (mw-e01.17) ties it to a post: a radius in metres around a point (default its spawn), and
+// its `carries` (mw-e01.5) lists what it drops where it dies, on top of its definition's loot table.
 
 import { z } from 'zod';
 import { contentId, ref } from '../schema.ts';
@@ -353,6 +354,18 @@ export const sceneSpawnSchema = z.strictObject({
     .describe(
       'Ties the spawned creature to a post (mw-e01.17): in Combat it chases only this far from the post, then searches and walks home (needs creature).',
     ),
+  carries: z
+    .array(
+      z.strictObject({
+        item: ref('item').describe('An item the creature carries.'),
+        count: z.int().min(1).max(ITEM_STACK_GUARD).default(1).describe('Units of it; default 1.'),
+      }),
+    )
+    .min(1)
+    .optional()
+    .describe(
+      'What the spawned creature carries and drops where it dies, as world items (mw-e01.5), e.g. the slice skeleton’s key (needs creature).',
+    ),
   properties: worldPropertiesSchema
     .optional()
     .describe(
@@ -522,7 +535,7 @@ export const sceneSchema = z
       seen.add(spawn.id);
       checkMechanism(spawn, index, ctx);
       if (spawn.creature !== undefined) return;
-      for (const key of ['faction', 'patrol', 'routine', 'leash'] as const) {
+      for (const key of ['faction', 'patrol', 'routine', 'leash', 'carries'] as const) {
         if (spawn[key] === undefined) continue;
         ctx.addIssue({
           code: 'custom',
