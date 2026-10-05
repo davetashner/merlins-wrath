@@ -11,14 +11,20 @@ import { defineSaveSection, type SaveSection, type SectionMigration } from './fo
 /** Id of the merchants section (never renamed). */
 export const MERCHANTS_SECTION_ID = 'merchants';
 
-/** Data version of the merchants section. v1 (mw-e20.4): gold, stock lines and buyback per merchant. */
-export const MERCHANTS_SECTION_VERSION = 1;
+/**
+ * Data version of the merchants section. v1 (mw-e20.4): gold, stock lines and buyback per merchant.
+ * v2 (mw-e20.5): adds the optional `restockedDay` and `opened` (restock bookkeeping).
+ */
+export const MERCHANTS_SECTION_VERSION = 2;
 
 /**
- * `MERCHANTS_MIGRATIONS[n]` upgrades the section's data from v`n` to v`n + 1`. v1 is the first
- * version, so the chain is empty; the next shape change bumps the version and adds `1: (data) => …`.
+ * `MERCHANTS_MIGRATIONS[n]` upgrades the section's data from v`n` to v`n + 1`. v1 -> v2 only
+ * adds optional fields, so the data passes through (a merchant without `restockedDay` is taken as
+ * restocked today).
  */
-export const MERCHANTS_MIGRATIONS: Readonly<Record<number, SectionMigration>> = Object.freeze({});
+export const MERCHANTS_MIGRATIONS: Readonly<Record<number, SectionMigration>> = Object.freeze({
+  1: (data) => data,
+});
 
 /** The section's data. */
 export interface MerchantsData {
@@ -46,6 +52,8 @@ const merchantSchema = z.strictObject({
     }),
   ),
   buyback: z.array(z.strictObject({ id: count, defId, count, flags, unitPrice: count })),
+  restockedDay: count.exactOptional(),
+  opened: z.array(z.int().nonnegative()).exactOptional(),
 });
 
 const merchantsSchema = z.strictObject({

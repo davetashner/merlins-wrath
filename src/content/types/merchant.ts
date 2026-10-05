@@ -14,6 +14,7 @@
 import { z } from 'zod';
 import type { ContentCheck, ContentIssue } from '../loader.ts';
 import { contentId, ref } from '../schema.ts';
+import { conditionSchema } from './condition.ts';
 import { ITEM_CATEGORIES, type ItemDef } from './item.ts';
 
 /** An inclusive numeric band from the economy doc (mirrors `Band` in src/sim/economy/bands.ts). */
@@ -79,7 +80,14 @@ const stockSchema = z
           .describe('Units (or rolls) added each time, up to `count`.'),
       })
       .optional()
-      .describe('How the stock refills; absent = never restocks.'),
+      .describe(
+        'How the stock refills; absent = never restocks (a unique good never returns once sold). Runs on world-day ticks: `amount` every `everyHours` rounded up to whole days, up to `count`. A loot-table entry with a rule rotates instead: its unsold units are replaced by `count` fresh rolls each period.',
+      ),
+    when: conditionSchema
+      .optional()
+      .describe(
+        'A world-fact condition (mw-e27.5): the entry is absent until it holds, appears at the next restock and stays.',
+      ),
   })
   .refine((entry) => (entry.item === undefined) !== (entry.lootTable === undefined), {
     message: 'a stock entry names exactly one of `item` or `lootTable`',

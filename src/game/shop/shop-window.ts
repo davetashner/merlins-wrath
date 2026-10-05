@@ -579,6 +579,7 @@ export function startShopUi(options: ShopUiOptions): ShopUi {
     rules,
     new LootTables(content.all('loot-table'), items),
   );
+  shops.restockOnRest(world); // sleeping refills tills and shelves (mw-e20.5)
   const views = new ShopViews(content, shops);
   const toasts = new ToastHost();
   ui.hud.append(toasts.element);

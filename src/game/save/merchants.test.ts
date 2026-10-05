@@ -138,12 +138,39 @@ describe('merchants save section', () => {
 
   it('v1 data passes through the migration runner and validates; bad data is refused', () => {
     const section = merchantsSaveSection();
-    expect(MERCHANTS_SECTION_VERSION).toBe(1);
-    expect(MERCHANTS_MIGRATIONS).toEqual({});
+    expect(MERCHANTS_SECTION_VERSION).toBe(2);
+    expect(Object.keys(MERCHANTS_MIGRATIONS)).toEqual(['1']);
     const data = { merchants: merchantStoreOf(tradedWorld().world).capture() };
     const migrated = migrateSection(section, { version: 1, data });
     expect(migrated).toEqual({ ok: true, data });
     expect(validateSection(section, data).ok).toBe(true);
     expect(validateSection(section, { merchants: { smith: { gold: -1 } } }).ok).toBe(false);
+  });
+
+  it('mw-e20.5: restock bookkeeping saves, and restocking after a load equals restocking without one', () => {
+    const keeper: ShopMerchantDef = {
+      ...merchant('keeper', 100, []),
+      goldRestockPerDay: 25,
+      stock: [
+        { item: { id: 'healing-draught' }, count: 4, restock: { everyHours: 24, amount: 4 } },
+      ],
+    };
+    const restocking = new Shops([keeper], items, rules);
+    const { world, actor } = shopWorld(5);
+    const line = restocking.stateOf(world, 'keeper').stock[0]?.id ?? 0;
+    expect(restocking.buy(world, actor, 'keeper', line, 4).ok).toBe(true);
+    expect(merchantStoreOf(world).get('keeper')?.restockedDay).toBe(1);
+
+    const bytes = createGameSaveRegistry({ knownItem }).write(world, saveOptions);
+    const loaded = new World({ seed: 5 });
+    expect(createGameSaveRegistry({ knownItem }).read(loaded, bytes).ok).toBe(true);
+    expect(merchantStoreOf(loaded).capture()).toEqual(merchantStoreOf(world).capture());
+
+    restocking.restock(world, 4);
+    restocking.restock(loaded, 4);
+    expect(merchantStoreOf(loaded).capture()).toEqual(merchantStoreOf(world).capture());
+    const after = merchantStoreOf(loaded).get('keeper');
+    expect(after?.stock[0]?.count).toBe(4);
+    expect(after?.restockedDay).toBe(4);
   });
 });

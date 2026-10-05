@@ -42,6 +42,13 @@ export interface MerchantState {
   readonly stock: readonly StockLine[];
   /** Oldest sale first. */
   readonly buyback: readonly BuybackEntry[];
+  /**
+   * The world day the shop was last brought up to (mw-e20.5); restocking runs for the days after it.
+   * Absent in states saved before restocking existed: such a shop is taken as current.
+   */
+  readonly restockedDay?: number;
+  /** Indices of authored stock entries gated by a `when` that have appeared (and stay). */
+  readonly opened?: readonly number[];
 }
 
 /** The saved form: merchant id → state. */
@@ -49,6 +56,27 @@ export type MerchantStates = Readonly<Record<string, MerchantState>>;
 
 export const sameFlags = (a: ItemInstanceFlags, b: ItemInstanceFlags): boolean =>
   a.stolen === b.stolen && a.ownerId === b.ownerId && a.bound === b.bound;
+
+/** Adds units to the shelf, merging with a line of the same item, flags and source. */
+export function shelve(
+  state: MerchantState,
+  defId: string,
+  count: number,
+  flags: ItemInstanceFlags,
+  entry: number | null,
+): MerchantState {
+  const at = state.stock.findIndex(
+    (line) => line.defId === defId && line.entry === entry && sameFlags(line.flags, flags),
+  );
+  if (at >= 0) {
+    const stock = state.stock.map((line, i) =>
+      i === at ? { ...line, count: line.count + count } : line,
+    );
+    return { ...state, stock };
+  }
+  const line: StockLine = { id: state.nextId, defId, count, flags, entry };
+  return { ...state, nextId: state.nextId + 1, stock: [...state.stock, line] };
+}
 
 /** Every merchant's state in one world. */
 export class MerchantStore {
