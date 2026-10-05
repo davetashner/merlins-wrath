@@ -119,6 +119,36 @@
       "at": [6.0, 0, 48.0],
       "yaw": 180,
       "tags": ["arrival"]
+    },
+    {
+      "id": "skel-valley-01-bend-miner",
+      "at": [0.0, 0, 15.5],
+      "yaw": 90,
+      "creature": "forgotten-miner",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-bend", "habit-digs-at-the-wall"]
+    },
+    {
+      "id": "skel-valley-01-flank-miner",
+      "at": [5.25, 0, 38.0],
+      "yaw": 180,
+      "creature": "forgotten-miner",
+      "leash": {
+        "radius": 18
+      },
+      "tags": ["encounter", "group-flank", "habit-sweeps-the-path"]
+    },
+    {
+      "id": "skel-valley-01-flank-archer",
+      "at": [7.0, 0, 33.5],
+      "yaw": 180,
+      "creature": "forgotten-archer",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-flank", "habit-keeps-the-pocket"]
     }
   ],
   "light": {

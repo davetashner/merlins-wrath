@@ -335,7 +335,7 @@ describe('area transitions (mw-e01.11)', () => {
   });
 
   it('AC-2: a creature in Combat does not follow, and is not in Combat when the player returns', () => {
-    const content = contentWith('valley-01.json', (scene) => {
+    const content = contentWith('scene/valley-01.json', (scene) => {
       (scene['spawns'] as unknown[]).push({
         id: 'miner',
         at: [6, 0, 40],
@@ -343,10 +343,14 @@ describe('area transitions (mw-e01.11)', () => {
         tags: ['test'],
       });
     });
+    // valley-01 already has its own skeletons (mw-ju8.21); the test adds one more and drives that one.
+    const placed =
+      baseContent.get('scene', 'valley-01').spawns.filter((s) => s.creature !== undefined).length +
+      1;
     const session = new MemoryStorage();
     const first = boot(content, session, 'valley-01');
-    expect(first.creatures).toHaveLength(1);
-    const miner = first.creatures[0] ?? -1;
+    expect(first.creatures).toHaveLength(placed);
+    const miner = first.creatures.at(-1) ?? -1;
     const brain = first.world.get(miner, BrainComponent);
     expect(brain?.state).not.toBe('combat');
     if (brain === undefined) return;
@@ -354,7 +358,14 @@ describe('area transitions (mw-e01.11)', () => {
 
     const second = cross(first, session, 'north-gate');
     // Nothing of the creature crossed: not in the world, not in what was carried.
-    expect(second.world.query(BrainComponent).ids()).toEqual([]);
+    // Only valley-02's own skeletons are there, all unaware: none came over in Combat.
+    const own = baseContent
+      .get('scene', 'valley-02')
+      .spawns.filter((s) => s.creature !== undefined);
+    expect(second.world.query(BrainComponent).ids()).toHaveLength(own.length);
+    for (const id of second.world.query(BrainComponent).ids()) {
+      expect(second.world.get(id, BrainComponent)?.state).toBe('unaware');
+    }
     expect(second.arrivedBy?.carry).toBeDefined();
     expect(JSON.stringify(second.arrivedBy?.carry)).not.toContain('forgotten-miner');
     expect(JSON.stringify(second.arrivedBy?.carry)).not.toContain('ai.brain');
@@ -363,9 +374,10 @@ describe('area transitions (mw-e01.11)', () => {
     const back = cross(second, session, 'south-gate');
     expect(back.scene).toBe('valley-01');
     expectAt(back, 'arrive-from-valley-02');
-    expect(back.creatures).toHaveLength(1);
-    const again = back.world.get(back.creatures[0] ?? -1, BrainComponent);
-    expect(again?.state).toBe('unaware');
+    expect(back.creatures).toHaveLength(placed);
+    for (const id of back.creatures) {
+      expect(back.world.get(id, BrainComponent)?.state).toBe('unaware');
+    }
   });
 
   it('walks the whole chain from valley-01 to Marsh’s store and back', () => {

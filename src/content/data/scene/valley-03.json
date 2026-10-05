@@ -207,6 +207,37 @@
       "at": [0.0, 0, 51.0],
       "yaw": 180,
       "tags": ["arrival"]
+    },
+    {
+      "id": "skel-valley-03-plateau-miner",
+      "at": [-4.5, 0, 13.5],
+      "yaw": 90,
+      "creature": "forgotten-miner",
+      "leash": {
+        "radius": 18
+      },
+      "tags": ["encounter", "group-plateau", "habit-mends-the-fence"]
+    },
+    {
+      "id": "skel-valley-03-plateau-bearer",
+      "at": [-2.5, 0, 15.5],
+      "yaw": 90,
+      "creature": "forgotten-shield-bearer",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-plateau", "habit-stands-the-watch"]
+    },
+    {
+      "id": "skel-valley-03-gate-brute",
+      "at": [0.0, 0, 25.0],
+      "yaw": 180,
+      "creature": "forgotten-brute",
+      "leash": {
+        "radius": 15,
+        "post": [0.0, 0, 22.0]
+      },
+      "tags": ["encounter", "group-gate", "habit-bars-the-bridge"]
     }
   ],
   "light": {
