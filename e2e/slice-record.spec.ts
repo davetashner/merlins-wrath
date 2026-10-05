@@ -64,17 +64,22 @@ test('record the slice playthrough', async ({ page }) => {
 
   // The key at the miner's body.
   const prompt = page.getByTestId('interact-prompt');
-  for (let attempt = 0; attempt < 12; attempt++) {
-    if (((await prompt.textContent({ timeout: 5_000 })) ?? '').includes('Rusted gallery key'))
-      break;
+  // The miner's own loot (crowns, scrap, mw-ju8.19) lies beside the key: Interact takes whatever the
+  // prompt names, one at a time, until the key is on the ring.
+  const hasKey = async () =>
+    JSON.stringify((await data<{ pack: unknown[] }>(page, 'items')).pack).includes(
+      'rusted-gallery-key',
+    );
+  for (let attempt = 0; attempt < 12 && !(await hasKey()); attempt++) {
+    const text = (await prompt.textContent({ timeout: 5_000 })) ?? '';
+    if (/Take|Pick up/.test(text)) {
+      await interact(page);
+      continue;
+    }
     await turnTo(page, { x: fight.at[0], z: fight.at[2] }, { tolerance: 0.05 });
     await holdKey(page, W, 8, 6);
   }
-  await expect(prompt).toContainText('Rusted gallery key');
-  await interact(page);
-  await expect
-    .poll(async () => JSON.stringify((await data<{ pack: unknown[] }>(page, 'items')).pack))
-    .toContain('rusted-gallery-key');
+  await expect.poll(hasKey).toBe(true);
 
   // Up into the alcove (the climb is the debug console's), and the chest: open it, take all.
   await run(page, 'tp 8 1.4 35.3');
