@@ -5,13 +5,13 @@
 // typed reason and changes nothing (expected failures never throw). Gold and items only move, never
 // appear or vanish: a buy moves gold player -> merchant and units shelf -> pack, a sell the reverse
 // with the units going to the buyback list, and the oldest buyback entry falls onto the shelf when
-// the list is full (or when `clearBuyback` runs, the hook the restock bead will call).
+// the list is full (or when `clearBuyback` runs, the same step restocking takes).
 //
 // State: per merchant id, created the first time the merchant is touched from its definition (gold
 // reserve and stock; a loot-table entry is rolled once with a stream derived from the world seed and
 // the merchant id, so the result does not depend on the order shops are visited) and held in the
 // world's merchant store (shop-state.ts), saved by the `merchants` section. Currency is `gold`.
-// Events: `shop.bought`, `shop.sold`, `shop.bought-back`. Out of scope: restocking, haggling (the
+// Events: `shop.bought`, `shop.sold`, `shop.bought-back`. Restocking is restock.ts (mw-e20.5). Out of scope: haggling (the
 // caller passes a modifier), theft and dispositions (the caller passes a band).
 
 import type { EntityId } from '../core/component';
@@ -27,15 +27,23 @@ import {
 } from '../inventory/inventory';
 import type { LootTables } from '../loot/tables';
 import { Rng } from '../rng';
-import { restBlocked, restUntilMorning, type RestOptions, type RestResult } from '../rest/rest';
+import {
+  restBlocked,
+  restCompleted,
+  restUntilMorning,
+  type RestOptions,
+  type RestResult,
+} from '../rest/rest';
 import { price, type PriceInput, type PriceRefusal, type PriceResult } from './price';
+import type { Condition } from '../facts/conditions';
+import { DAY_FACT } from '../rest/day-clock';
+import { openGatedStock, restockMerchant, type RestockDeps } from './restock';
 import {
   BUYBACK_LIMIT,
   merchantStoreOf,
-  sameFlags,
+  shelve,
   type BuybackEntry,
   type MerchantState,
-  type StockLine,
 } from './shop-state';
 
 /** Whether an equipment slot references pack instance `instanceId`. */
@@ -67,6 +75,8 @@ export interface ShopMerchantDef {
   readonly buysCategories: readonly string[];
   readonly specialties?: readonly string[] | undefined;
   readonly goldReserve: number;
+  /** Gold the till refills by each world day, up to `goldReserve` (mw-e20.5); absent = none. */
+  readonly goldRestockPerDay?: number | undefined;
   readonly markup?: number | undefined;
   readonly buyRate?: number | undefined;
   readonly specialtyBonus?: number | undefined;
@@ -79,6 +89,10 @@ export interface ShopMerchantDef {
     readonly item?: { readonly id: string } | undefined;
     readonly lootTable?: { readonly id: string } | undefined;
     readonly count: number;
+    /** Refill rule (mw-e20.5): `amount` per `everyHours` (rounded up to days), up to `count`. */
+    readonly restock?: { readonly everyHours: number; readonly amount: number } | undefined;
+    /** The entry is absent until this world-fact condition holds (mw-e20.5). */
+    readonly when?: Condition | undefined;
   }[];
 }
 
@@ -177,27 +191,6 @@ export const shopStockStream = (merchantId: string): string => `shop.stock.${mer
 
 const failure = <R extends string>(reason: R) => ({ ok: false, reason }) as const;
 
-/** Adds units to the shelf, merging with a line of the same item, flags and source. */
-function shelve(
-  state: MerchantState,
-  defId: string,
-  count: number,
-  flags: ItemInstanceFlags,
-  entry: number | null,
-): MerchantState {
-  const at = state.stock.findIndex(
-    (line) => line.defId === defId && line.entry === entry && sameFlags(line.flags, flags),
-  );
-  if (at >= 0) {
-    const stock = state.stock.map((line, i) =>
-      i === at ? { ...line, count: line.count + count } : line,
-    );
-    return { ...state, stock };
-  }
-  const line: StockLine = { id: state.nextId, defId, count, flags, entry };
-  return { ...state, nextId: state.nextId + 1, stock: [...state.stock, line] };
-}
-
 /** Takes `count` units off a shelf line (the line goes when it empties). */
 function unshelve(state: MerchantState, lineId: number, count: number): MerchantState {
   const stock = state.stock.flatMap((line) =>
@@ -241,10 +234,43 @@ export class Shops {
   stateOf(world: World, merchantId: string): MerchantState {
     const store = merchantStoreOf(world);
     const existing = store.get(merchantId);
-    if (existing !== undefined) return existing;
-    const created = this.#create(world, this.#merchant(merchantId));
-    store.set(merchantId, created);
-    return created;
+    if (existing === undefined) {
+      const created = this.#create(world, this.#merchant(merchantId));
+      store.set(merchantId, created);
+      return created;
+    }
+    // Catch up days that passed while the merchant was not looked at (a long sleep, an old save).
+    const day = this.#day(world);
+    if (existing.restockedDay !== undefined && existing.restockedDay >= day) return existing;
+    const caught = restockMerchant(existing, this.#merchant(merchantId), day, this.#deps(world));
+    store.set(merchantId, caught);
+    return caught;
+  }
+
+  /**
+   * Restocks every merchant that has state to world `day` (mw-e20.5; rules in restock.ts). Call it
+   * whenever the day advances: the game does on `rest.completed`, and mw-e27.12's clock will on its
+   * day tick. Running it twice for a day changes nothing the second time; several days at once
+   * apply every one of them. Merchants never touched are untouched: they start fresh later.
+   */
+  restock(world: World, day: number): void {
+    const store = merchantStoreOf(world);
+    const deps = this.#deps(world);
+    for (const [id, state] of Object.entries(store.capture())) {
+      const def = this.#merchants.get(id);
+      if (def === undefined) continue;
+      store.set(id, restockMerchant(state, def, day, deps));
+    }
+  }
+
+  /**
+   * Restocks the shops whenever a rest ends on a new day (`rest.completed`; mw-e20.5), so sleeping
+   * refills the tills and shelves. Returns the unsubscribe function.
+   */
+  restockOnRest(world: World): () => void {
+    return world.events.on(restCompleted, ({ wakes }) => {
+      this.restock(world, wakes.day);
+    });
   }
 
   /** The price of one unit of `defId` in `direction` (what a UI shows), or the refusal. */
@@ -488,31 +514,53 @@ export class Shops {
     return shelve({ ...state, buyback: rest }, oldest.defId, oldest.count, oldest.flags, null);
   }
 
+  #day(world: World): number {
+    return Number(world.facts.get(DAY_FACT) ?? 1);
+  }
+
+  #deps(world: World): RestockDeps {
+    const loot = this.#loot;
+    return {
+      facts: world.facts,
+      stream: (name) => Rng.create(world.seed).stream(name),
+      roll: (tableId, rolls, rng) => {
+        if (loot === undefined) {
+          throw new RangeError(`a merchant stocks loot table "${tableId}": pass LootTables`);
+        }
+        const units = new Map<string, number>();
+        for (let roll = 0; roll < rolls; roll++) {
+          for (const { item, count } of loot.roll(tableId, rng, { facts: world.facts }).stacks) {
+            units.set(item, (units.get(item) ?? 0) + count);
+          }
+        }
+        return units;
+      },
+    };
+  }
+
   #create(world: World, def: ShopMerchantDef): MerchantState {
-    let state: MerchantState = { gold: def.goldReserve, nextId: 1, stock: [], buyback: [] };
+    let state: MerchantState = {
+      gold: def.goldReserve,
+      nextId: 1,
+      stock: [],
+      buyback: [],
+      restockedDay: this.#day(world),
+    };
+    const deps = this.#deps(world);
     const rng = Rng.create(world.seed).stream(shopStockStream(def.id));
     def.stock.forEach((entry, index) => {
+      if (entry.when !== undefined) return; // gated entries open below, from their own streams
       if (entry.item !== undefined) {
         this.#item(entry.item.id);
         state = shelve(state, entry.item.id, entry.count, {}, index);
         return;
       }
       const tableId = (entry.lootTable as { readonly id: string }).id;
-      if (this.#loot === undefined) {
-        throw new RangeError(
-          `merchant "${def.id}" stocks loot table "${tableId}": pass LootTables`,
-        );
+      for (const [item, count] of deps.roll(tableId, entry.count, rng)) {
+        state = shelve(state, item, count, {}, index);
       }
-      const units = new Map<string, number>();
-      for (let roll = 0; roll < entry.count; roll++) {
-        for (const { item, count } of this.#loot.roll(tableId, rng, { facts: world.facts })
-          .stacks) {
-          units.set(item, (units.get(item) ?? 0) + count);
-        }
-      }
-      for (const [item, count] of units) state = shelve(state, item, count, {}, index);
     });
-    return state;
+    return openGatedStock(state, def, deps);
   }
 
   #merchant(id: string): ShopMerchantDef {

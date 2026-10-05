@@ -19,9 +19,10 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `stock[].item` | ref → item | — | An item the merchant stocks. |
 | `stock[].lootTable` | ref → loot-table | — | A loot table rolled to stock the shelf (a shop that varies). |
 | `stock[].count` | integer 1–999 | required | Units of the item, or rolls of the loot table. |
-| `stock[].restock` | object | — | How the stock refills; absent = never restocks. |
+| `stock[].restock` | object | — | How the stock refills; absent = never restocks (a unique good never returns once sold). Runs on world-day ticks: `amount` every `everyHours` rounded up to whole days, up to `count`. A loot-table entry with a rule rotates instead: its unsold units are replaced by `count` fresh rolls each period. |
 | `stock[].restock.everyHours` | integer 1–720 | required | In-world hours between restocks. |
 | `stock[].restock.amount` | integer 1–999 | required | Units (or rolls) added each time, up to `count`. |
+| `stock[].when` | `condition` | — | A world-fact condition (mw-e27.5): the entry is absent until it holds, appears at the next restock and stays. |
 | `services` | list of object | `[]` | Services on the shop window’s Services tab (an inn’s rooms). |
 | `services[].id` | id | required | Service id, unique within the merchant, e.g. "room-for-the-night". |
 | `services[].name` | string | required | What the shop window lists, e.g. "Room for the night". |
@@ -39,3 +40,52 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `hours.open` | integer 0–23 | required | Hour of day (0-23) the shop opens. |
 | `hours.close` | integer 0–23 | required | Hour of day (0-23) it closes; may be earlier than open (overnight). |
 | `barkSet` | id | — | Bark set id for the shopkeeper’s lines (E22). |
+
+## `condition`
+
+A condition over world facts: one of fact, count, all, any, not (docs/design/conditions.md).
+
+A `condition` is exactly one of these objects:
+
+### 1. Tests one fact, with at most one operator.
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `fact` | string | required | Fact key to test. Alone: the (bool) fact is true. With one operator: that comparison holds. |
+| `eq` | boolean or integer or string | — | The fact equals this value. |
+| `neq` | boolean or integer or string | — | The fact does not equal this value (unset counts as unequal). |
+| `gt` | integer | — | The (int or tick) fact is greater than this. |
+| `gte` | integer | — | The (int or tick) fact is at least this. |
+| `lt` | integer | — | The (int or tick) fact is less than this. |
+| `lte` | integer | — | The (int or tick) fact is at most this. |
+| `has` | boolean | — | true: the fact holds a value (set, or declared with a non-null default); false: none. |
+
+### 2. Counts true entity facts matching a pattern, compared with exactly one operator.
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `count` | string | required | Entity facts to count: `entity:<level>/*.<fact>` (one level) or `entity:*/*.<fact>` (every level). Counts those holding true. |
+| `eq` | integer | — | The count equals this. |
+| `neq` | integer | — | The count does not equal this. |
+| `gt` | integer | — | The count is greater than this. |
+| `gte` | integer | — | The count is at least this. |
+| `lt` | integer | — | The count is less than this. |
+| `lte` | integer | — | The count is at most this. |
+
+### 3. True when every condition in the list holds.
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `all` | list of `condition` (at least 1) | required | Every condition holds. |
+
+### 4. True when at least one condition in the list holds.
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `any` | list of `condition` (at least 1) | required | At least one holds. |
+
+### 5. True when the condition does not hold.
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `not` | `condition` | required | The condition that must not hold. |

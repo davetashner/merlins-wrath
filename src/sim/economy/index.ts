@@ -3,3 +3,4 @@ export * from './bands';
 export * from './price';
 export * from './shop';
 export * from './shop-state';
+export * from './restock';
