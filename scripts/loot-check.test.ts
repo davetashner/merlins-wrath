@@ -38,7 +38,7 @@ describe('loot-check main (mw-e18.2)', () => {
     expect(console.log).toHaveBeenCalledWith(
       '::warning title=Loot tables::data/loot-table/zz-spare.json#: loot-table:zz-spare is not referenced by any creature, container or loot table',
     );
-    expect(console.log).toHaveBeenCalledWith('Loot tables valid (4 table(s), 1 warning(s)).');
+    expect(console.log).toHaveBeenCalledWith('Loot tables valid (9 table(s), 1 warning(s)).');
   });
 
   it('AC-2: fails naming a cycle of nested tables', () => {

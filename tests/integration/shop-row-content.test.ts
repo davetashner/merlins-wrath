@@ -16,6 +16,7 @@ const NOT_FOR_SALE = new Set([
   'gold',
   'rusted-gallery-key',
   'testbed-closet-key',
+  'valley-chest-key',
   'miners-tally-stick',
 ]);
 
