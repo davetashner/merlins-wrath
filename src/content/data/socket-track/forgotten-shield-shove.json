@@ -1,0 +1,72 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "forgotten-shield-shove",
+  "notes": "A Forgotten's shield bash or shove (moves forgotten-shield-bash and forgotten-archer-shove, 4 active ticks, mw-ju8.19): the boss or elbow drives straight forward 0.6 m from 0.15 m behind its rest pose in even 0.15 m steps; no rotation.",
+  "keys": [
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -0.15
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.15
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.3
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.45
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    }
+  ]
+}

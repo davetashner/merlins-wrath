@@ -1,0 +1,38 @@
+{
+  "$schema": "../creature.schema.json",
+  "id": "forgotten-shield-bearer",
+  "family": "forgotten",
+  "tags": ["undead", "forgotten", "shield-bearer"],
+  "stats": {
+    "health": 90,
+    "poise": 60,
+    "mass": 55,
+    "size": "medium"
+  },
+  "senses": {
+    "base": "undead",
+    "sight": {
+      "detectionSpeed": 1
+    },
+    "special": {
+      "life-sense": null
+    }
+  },
+  "locomotion": "forgotten",
+  "attacks": ["forgotten-shield-bash", "forgotten-shield-counter"],
+  "resistances": {
+    "blunt": 1.5,
+    "pierce": 0.5,
+    "poison": 0
+  },
+  "needs": {},
+  "behaviour": {
+    "profile": "forgotten-shield-bearer"
+  },
+  "presentation": {
+    "mesh": "placeholder-capsule-bones",
+    "sfx": "placeholder"
+  },
+  "loot": "forgotten-shield-bearer-drops",
+  "shield": "forgotten-board-shield"
+}

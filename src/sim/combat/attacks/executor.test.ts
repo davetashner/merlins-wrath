@@ -8,6 +8,7 @@ import type { Vec3 } from '../../stimulus/shapes';
 import { DAMAGE_COMPONENTS, giveCombatant, HealthComponent, healthOf } from '../damage/components';
 import { DamageApplied, type DamageResult } from '../damage/events';
 import { DamageModel } from '../damage/model';
+import { giveHurtboxes, HIT_VOLUME_COMPONENTS } from '../hits/components';
 import { DodgedHit, type HitboxHitInfo } from '../hits/events';
 import { invulnerabilityRule } from '../invulnerability';
 import { ACTION_TIMELINE_COMPONENTS, giveActionTimeline } from '../timeline/components';
@@ -403,6 +404,74 @@ describe('attack executor', () => {
     restored.world.restore(a.snapshot);
     restored.steps(4);
     expect(hashWorld(restored.world)).toBe(hashWorld(a.world));
+  });
+});
+
+describe('projectiles and hurtboxes (mw-ju8.19)', () => {
+  // A chest-high bolt: 1.2 m up, so a hurtbox-less entity's feet sphere (radius 0.4) is out of reach.
+  const bolt = makeAttack('bolt', [2, 2, 2], {
+    kind: 'projectile',
+    projectile: { speed: 60, maxRange: 5, origin: { x: 0, y: 1.2, z: 0.5 }, radius: 0.1 },
+  });
+
+  function boxedWorld() {
+    const world = new World<never>({ seed: 5 }).register(
+      ...DAMAGE_COMPONENTS,
+      ...ATTACK_COMPONENTS,
+      ...HIT_VOLUME_COMPONENTS,
+      PlacementComponent,
+    );
+    installAttacks(world, { attacks: new Map([[bolt.id, bolt]]), damage: new DamageModel() });
+    const archer = world.spawn();
+    giveCombatant(world, archer, { health: 100, poise: 10 });
+    giveAttacker(world, archer);
+    placeEntity(world, archer, { x: 0, y: 0, z: 0 }, 0.4);
+    /** A standing creature: a 1.8 m capsule hurtbox over its feet point. */
+    const standing = (z: number, x = 0): EntityId => {
+      const e = world.spawn();
+      giveCombatant(world, e, { health: 100 });
+      placeEntity(world, e, { x, y: 0, z }, 0.4);
+      giveHurtboxes(world, e, {
+        facing: { x: 0, y: 0, z: -1 },
+        boxes: [
+          {
+            id: 'body',
+            socket: 'root',
+            region: 'torso',
+            armored: false,
+            multiplier: 1,
+            shape: {
+              kind: 'capsule',
+              from: { x: 0, y: 0.4, z: 0 },
+              to: { x: 0, y: 1.4, z: 0 },
+              radius: 0.4,
+            },
+          },
+        ],
+      });
+      return e;
+    };
+    return { world, archer, standing };
+  }
+
+  it('a chest-high bolt hits an entity where its hurtboxes are, not at its feet', () => {
+    const { world, archer, standing } = boxedWorld();
+    const knight = standing(3);
+    startAttack(world, archer, bolt, FORWARD);
+    for (let i = 0; i < 8; i++) world.step();
+    expect(healthOf(world, knight)?.current).toBe(90);
+  });
+
+  it('flies over a hurtbox-bearing entity it misses, and still hits a bare entity by its sphere', () => {
+    const { world, archer, standing } = boxedWorld();
+    const aside = standing(3, 2); // off the path
+    const bare = world.spawn(); // no hurtboxes: the bounding sphere around the feet point
+    giveCombatant(world, bare, { health: 100 });
+    placeEntity(world, bare, { x: 0, y: 1.2, z: 4 }, 0.4);
+    startAttack(world, archer, bolt, FORWARD);
+    for (let i = 0; i < 8; i++) world.step();
+    expect(healthOf(world, aside)?.current).toBe(100);
+    expect(healthOf(world, bare)?.current).toBe(90);
   });
 });
 

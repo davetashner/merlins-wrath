@@ -102,6 +102,7 @@ Load any scene with `?scene=<id>` (an unknown id lists the available ones):
 | `weak-wall-room`  | A cracked wall to smash with a heavy attack and a breakable crate. |
 | `lighting-room`   | Torches, a burning crate and moonlight, with dark corners to hide in. |
 | `kit-gallery`     | Every grey-box kit piece in a row (an art check, not gameplay). |
+| `skeleton-pen`    | A walled yard with the Forgotten roster at their posts - miner, archer, shield-bearer and brute - to fight one at a time (mw-ju8.19). |
 
 **What the slice can't do yet:** the Forgotten miner skeleton is not placed in the arena yet (mw-e01.5),
 so the arena starts empty. The rusted gallery key lies at the miner's post, so you can pick it up and

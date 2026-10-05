@@ -5,7 +5,9 @@
 //   along its flight (its velocity in the air, its landing direction at rest). The shaft model's tip
 //   is at its origin and it points along +z.
 // - `bindArrows` gives every arrow without one a shaft after each step, whether flying or at rest;
-//   render sync drops a shaft when its arrow leaves the world (shattered, expired).
+//   render sync drops a shaft when its arrow leaves the world (shattered, expired). A creature's
+//   projectile attack (an archer's shot, mw-ju8.19) flies as a `ProjectileComponent`, not an arrow
+//   of the bow system; it gets the same shaft, pointing along its flight.
 // - `arrowReadout` is what the e2e reads (#app[data-arrows]): how many arrows fly, are stuck or lie
 //   dropped, and the latest arrow's state, where it is, what it is stuck in and whether its shaft is
 //   drawn and on screen.
@@ -17,6 +19,7 @@ import {
   ArrowComponent,
   arrowDirection,
   ArrowRestComponent,
+  ProjectileComponent,
   type EntityId,
   type Vec3,
   type World,
@@ -37,11 +40,19 @@ export function pointAlong(d: Vec3): Quat {
 
 /** An arrow's transform for render sync (see the file header); undefined for anything else. */
 export function readArrowTransform(view: SimView, entity: EntityId): Transform | undefined {
-  const flight = view.get(entity, ArrowComponent);
+  const flight = view.isRegistered(ArrowComponent) ? view.get(entity, ArrowComponent) : undefined;
   if (flight !== undefined) {
     return { position: flight.position, rotation: pointAlong(arrowDirection(flight)) };
   }
-  const rest = view.get(entity, ArrowRestComponent);
+  const shot = view.isRegistered(ProjectileComponent)
+    ? view.get(entity, ProjectileComponent)
+    : undefined;
+  if (shot !== undefined) {
+    return { position: shot.position, rotation: pointAlong(shot.direction) };
+  }
+  const rest = view.isRegistered(ArrowRestComponent)
+    ? view.get(entity, ArrowRestComponent)
+    : undefined;
   if (rest === undefined) return undefined;
   return { position: rest.position, rotation: pointAlong(rest.direction) };
 }
@@ -55,13 +66,15 @@ export function bindArrows<TObject>(
   sync: RenderSync,
   create: (entity: EntityId) => SceneBinding<TObject>,
 ): number {
-  if (!world.isRegistered(ArrowComponent)) return 0;
   const unbound: EntityId[] = [];
   const collect = (entity: EntityId): void => {
     if (!sync.has(entity)) unbound.push(entity);
   };
-  world.query(ArrowComponent).forEach(collect);
-  world.query(ArrowRestComponent).forEach(collect);
+  if (world.isRegistered(ArrowComponent)) {
+    world.query(ArrowComponent).forEach(collect);
+    world.query(ArrowRestComponent).forEach(collect);
+  }
+  if (world.isRegistered(ProjectileComponent)) world.query(ProjectileComponent).forEach(collect);
   for (const entity of unbound) sync.bind(entity, create(entity));
   return unbound.length;
 }

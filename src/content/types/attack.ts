@@ -248,18 +248,15 @@ export function compileAttack(attack: AttackEntry, moves: MoveTable): RuntimeAtt
     last = hitting(id).move;
     chain.push(last);
   }
-  let projectile: RuntimeAttack['projectile'] = null;
-  if (attack.projectile !== undefined) {
+  // A projectile launches from (and is as big as) its move's sphere hit volume.
+  const launched = (flight: NonNullable<AttackEntry['projectile']>) => {
     const { shape } = hitbox;
     if (shape.kind !== 'sphere') {
       throw fail(`a projectile's move "${move.id}" needs a sphere hit volume, not a ${shape.kind}`);
     }
-    projectile = Object.freeze({
-      ...attack.projectile,
-      origin: shape.center,
-      radius: shape.radius,
-    });
-  }
+    return Object.freeze({ ...flight, origin: shape.center, radius: shape.radius });
+  };
+  const projectile = attack.projectile === undefined ? null : launched(attack.projectile);
   const { preconditions } = attack;
   return Object.freeze({
     id: attack.id,

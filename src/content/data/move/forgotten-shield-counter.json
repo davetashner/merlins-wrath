@@ -1,0 +1,43 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "forgotten-shield-counter",
+  "notes": "The Forgotten shield-bearer's counter-swing (mw-ju8.19): slow and committed, 38 ticks of windup (633 ms) from tick 0, 5 active, 36 recovery, so every one is a punish window. 16 slash, 24 poise, 22 stamina on a block. Parryable and blockable; the strike a player who mashes at the shield walks into. Its clip is the miner's slash retimed (placeholder).",
+  "verb": "attack",
+  "frames": {
+    "startup": 38,
+    "active": 5,
+    "recovery": 36
+  },
+  "damage": {
+    "amounts": {
+      "slash": 16
+    },
+    "poiseDamage": 24,
+    "staminaDamage": 22
+  },
+  "hitbox": {
+    "track": "forgotten-shield-counter-arc",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0.3,
+        "y": 1.15,
+        "z": 0.3
+      },
+      "to": {
+        "x": 0.3,
+        "y": 1.15,
+        "z": 1.5
+      },
+      "radius": 0.1
+    },
+    "reach": "medium",
+    "swing": "horizontal"
+  },
+  "telegraphTick": 0,
+  "hitStop": "heavy",
+  "presentation": {
+    "anim": "anim-forgotten-shield-counter",
+    "audioCue": "sfx-knight-sword-swing-heavy"
+  }
+}

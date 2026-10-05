@@ -1,0 +1,94 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "skeleton-pen",
+  "name": "Skeleton pen",
+  "description": "A dev arena for the Forgotten roster (mw-ju8.19): a 30 x 24 m walled yard with the player at the south end and, in a row 16 m north, the miner, the archer, the shield-bearer and the brute (left to right), each leashed to a 6 m post. Walk up to whichever you want to fight; the others stay at their posts until they notice you. Console: spawn forgotten-archer 3 for more.",
+  "grid": 1,
+  "camera": {
+    "position": [0, 16, -14],
+    "target": [0, 0, 8]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 6],
+      "scale": [15, 1, 12]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, -6],
+      "scale": [15, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 18],
+      "scale": [15, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-15, 0, 6],
+      "yaw": 90,
+      "scale": [12, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [15, 0, 6],
+      "yaw": 90,
+      "scale": [12, 1, 1]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, -2],
+      "tags": ["player-start"]
+    },
+    {
+      "id": "pen-miner",
+      "at": [-10, 0, 14],
+      "yaw": 180,
+      "creature": "forgotten-miner",
+      "leash": {
+        "radius": 6
+      }
+    },
+    {
+      "id": "pen-archer",
+      "at": [-3.5, 0, 14],
+      "yaw": 180,
+      "creature": "forgotten-archer",
+      "leash": {
+        "radius": 6
+      }
+    },
+    {
+      "id": "pen-shield-bearer",
+      "at": [3.5, 0, 14],
+      "yaw": 180,
+      "creature": "forgotten-shield-bearer",
+      "leash": {
+        "radius": 6
+      }
+    },
+    {
+      "id": "pen-brute",
+      "at": [10, 0, 14],
+      "yaw": 180,
+      "creature": "forgotten-brute",
+      "leash": {
+        "radius": 6
+      }
+    }
+  ],
+  "light": {
+    "ambient": 0.4,
+    "directional": [
+      {
+        "id": "sun",
+        "direction": [-0.45, -1, 0.3],
+        "level": 0.5,
+        "reach": 60
+      }
+    ]
+  }
+}

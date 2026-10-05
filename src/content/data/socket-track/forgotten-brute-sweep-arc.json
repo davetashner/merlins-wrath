@@ -1,0 +1,124 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "forgotten-brute-sweep-arc",
+  "notes": "The Forgotten brute's sweep (move forgotten-brute-sweep, 8 active ticks, mw-ju8.19): a flat 140 degree horizontal arc about the root, yaw +70 to -70 degrees in equal steps (right to left as it faces), twice as wide and twice as slow as the miner's slash.",
+  "keys": [
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.573576,
+        "z": 0,
+        "w": 0.819152
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.442289,
+        "z": 0,
+        "w": 0.896873
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.300706,
+        "z": 0,
+        "w": 0.953717
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.152123,
+        "z": 0,
+        "w": 0.988362
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.0,
+        "z": 0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": -0.152123,
+        "z": 0,
+        "w": 0.988362
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": -0.300706,
+        "z": 0,
+        "w": 0.953717
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": -0.442289,
+        "z": 0,
+        "w": 0.896873
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": -0.573576,
+        "z": 0,
+        "w": 0.819152
+      }
+    }
+  ]
+}

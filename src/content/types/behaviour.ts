@@ -183,6 +183,7 @@ export const BEHAVIOUR_PRIMITIVES = [
   'forget-stimulus',
   'strike',
   'circle',
+  'guard',
   'share-target',
 ] as const;
 
@@ -324,6 +325,14 @@ const stepSchema = z.discriminatedUnion(
       })
       .describe(
         'Strafes an eighth of a turn around its target, a seeded-random way, at its preferred range, facing it; succeeds on arrival or after `seconds`, fails without a target or when the spot is unreachable.',
+      ),
+    z
+      .strictObject({
+        do: z.literal('guard'),
+        seconds: seconds.describe('How long it holds its shield up.'),
+      })
+      .describe(
+        'Raises the shield it carries (creature `shield`) and faces its target as it goes up, holding it for `seconds`, then succeeds; the shield stays up exactly while this is its current step (it drops when the step ends, the activity changes or a stagger breaks it). Fails without a target.',
       ),
     z
       .strictObject({ do: z.literal('share-target') })

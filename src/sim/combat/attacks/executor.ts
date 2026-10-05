@@ -43,11 +43,13 @@
 // else `completed`. Run the
 // executor after the action timeline and the hit-volume system, and install it after the melee
 // strikes. Projectile, grab and special attacks, and attackers without a timeline, keep the executor's
-// own counter.
+// own counter. A projectile hits where its target's hurtboxes are (the hit-volume system's segment
+// query), not at its feet, so a creature's arrow at chest height strikes a standing knight.
 
 import type { RuntimeAttack, RuntimeMove, TargetStance } from '@content/index';
 import type { EntityId } from '../../core/component';
 import type { System, World } from '../../core/world';
+import { hypot } from '../../math';
 import { PlacementComponent } from '../../stimulus/placement';
 import { shapeFalloff, type Vec3 } from '../../stimulus/shapes';
 import { HealthComponent } from '../damage/components';
@@ -56,7 +58,13 @@ import type { DamageModel } from '../damage/model';
 import { DAMAGE_TAGS } from '../damage/packet';
 import { HitboxComponent, HurtboxComponent } from '../hits/components';
 import { DodgedHit } from '../hits/events';
-import { noInvulnerability, type InvulnerabilityRule } from '../hits/system';
+import {
+  hurtboxTargets,
+  noInvulnerability,
+  segmentHurtboxHits,
+  type InvulnerabilityRule,
+} from '../hits/system';
+
 import { CombatFacingComponent, facingOf, giveFacing } from '../melee/components';
 import { MoveStruck, type MoveStrike } from '../melee/events';
 import { HitParried } from '../parry/events';
@@ -581,7 +589,9 @@ export function attackSystem<TInput>(options: AttackExecutorOptions): System<TIn
 
 /**
  * The living hurtboxes the swept capsule `from`→`to` touches, other than `exclude` and those in
- * `skip`, nearest along the path first (ties in ascending id order).
+ * `skip`, nearest along the path first (ties in ascending id order). An entity with hurtboxes
+ * (every spawned creature and the knight) is touched where its hurtboxes are, so a shot at chest
+ * height hits a standing knight (mw-ju8.19); any other living placed entity is its bounding sphere.
  */
 function allAlong(
   world: World<never>,
@@ -591,8 +601,19 @@ function allAlong(
 ): EntityId[] {
   const sweep: HitShape = { kind: 'capsule', from: path.from, to: path.to, radius: path.radius };
   const found: { entity: EntityId; along: number }[] = [];
+  const boxed = world.isRegistered(HurtboxComponent);
+  if (boxed) {
+    const reach = hypot(path.to.x - path.from.x, path.to.y - path.from.y, path.to.z - path.from.z);
+    const hits = segmentHurtboxHits(
+      hurtboxTargets(world),
+      { from: path.from, to: path.to, radius: path.radius },
+      (entity) => entity === exclude || skip.includes(entity),
+    );
+    for (const { entity, fraction } of hits) found.push({ entity, along: fraction * reach });
+  }
   for (const { entity, at } of hurtboxes(world, exclude)) {
     if (skip.includes(entity)) continue;
+    if (boxed && world.has(entity, HurtboxComponent)) continue;
     if (shapeFalloff(sweep, 'none', at, at.radius) === undefined) continue;
     const d = path.direction;
     const along =

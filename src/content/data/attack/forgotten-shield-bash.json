@@ -1,0 +1,14 @@
+{
+  "$schema": "../attack.schema.json",
+  "id": "forgotten-shield-bash",
+  "notes": "The shield-bearer's bash (mw-ju8.19): from 0-1.5 m every 4.5 s, twice as likely as the counter. It drains the stamina that holds the player's own guard up.",
+  "kind": "melee",
+  "move": "forgotten-shield-bash",
+  "telegraph": "forgotten-windup",
+  "range": {
+    "min": 0,
+    "max": 1.5
+  },
+  "cooldown": 4.5,
+  "weight": 2
+}

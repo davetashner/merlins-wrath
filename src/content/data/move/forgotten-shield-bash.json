@@ -1,0 +1,49 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "forgotten-shield-bash",
+  "notes": "The Forgotten shield-bearer's bash (mw-ju8.19): 26 ticks of windup from tick 0 (the shield drops and draws back), 4 active, 32 recovery. 8 blunt, 35 poise and 55 stamina on a block (22 through the knight's wood shield, stability 60): two bashes empty a knight's stamina bar, opening its guard for the counter-swing. A 140 N.s shove. Parryable and blockable. Its clip is the miner's thrust retimed (placeholder until a shield raise and bash clip exists).",
+  "verb": "attack",
+  "frames": {
+    "startup": 26,
+    "active": 4,
+    "recovery": 32
+  },
+  "damage": {
+    "amounts": {
+      "blunt": 8
+    },
+    "poiseDamage": 35,
+    "staminaDamage": 55,
+    "impulse": {
+      "x": 0,
+      "y": 0,
+      "z": 140
+    },
+    "tags": ["interrupt"]
+  },
+  "hitbox": {
+    "track": "forgotten-shield-shove",
+    "shape": {
+      "kind": "box",
+      "center": {
+        "x": 0,
+        "y": 1.0,
+        "z": 0.7
+      },
+      "halfExtents": {
+        "x": 0.45,
+        "y": 0.5,
+        "z": 0.25
+      }
+    },
+    "reach": "close",
+    "swing": "thrust"
+  },
+  "telegraphTick": 0,
+  "hitStop": "heavy",
+  "presentation": {
+    "anim": "anim-forgotten-shield-bash",
+    "audioCue": "sfx-knight-shield-bash",
+    "vfxCue": "vfx-impact-dust"
+  }
+}

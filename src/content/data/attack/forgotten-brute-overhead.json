@@ -1,0 +1,14 @@
+{
+  "$schema": "../attack.schema.json",
+  "id": "forgotten-brute-overhead",
+  "notes": "The brute's two-handed overhead (mw-ju8.19): from 0-2.3 m every 5 s, twice as likely as the sweep.",
+  "kind": "melee",
+  "move": "forgotten-brute-overhead",
+  "telegraph": "forgotten-windup",
+  "range": {
+    "min": 0,
+    "max": 2.3
+  },
+  "cooldown": 5,
+  "weight": 2
+}

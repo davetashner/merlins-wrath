@@ -1,0 +1,14 @@
+{
+  "$schema": "../navmesh.schema.json",
+  "id": "skeleton-pen",
+  "version": 1,
+  "source": "a2b9a9f8",
+  "settings": { "cellSize": 0.125, "agentRadius": 0.35, "agentHeight": 1.8, "stepHeight": 0.4, "maxSlope": 45, "maxJump": 2, "maxDrop": 4 },
+  "origin": [-15.25, -6.25],
+  "polys": [
+    [6, 6, 238, 190, 0, 0, 0, 0, -1]
+  ],
+  "portals": [],
+  "links": [],
+  "doors": []
+}

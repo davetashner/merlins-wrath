@@ -1,0 +1,13 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "rusted-lamp-hook",
+  "category": "misc",
+  "name": "Rusted lamp hook",
+  "description": "A hook that held a miner's lamp to a gallery post. Whatever it held is dust; the hook is merely patient.",
+  "notes": "Tier 1 skeleton scrap (mw-ju8.19, economy doc: scrap worth 5-15). Worth 12.",
+  "icon": "icon-item-rusted-lamp-hook-01",
+  "value": 12,
+  "worldProperties": {
+    "material": "iron"
+  }
+}

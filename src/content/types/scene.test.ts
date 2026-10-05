@@ -619,7 +619,7 @@ describeContent(
 );
 
 describe('scene content', () => {
-  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room, the slice, the perf baseline, the valley spike scenes, the Marsh store, the Briar Glen shop lane and the Sleeping Ox', () => {
+  it('ships the default testbed scene, the kit gallery, the combat sandbox, the lighting room, the weak-wall room, the mechanism room, the slice, the perf baseline, the valley spike scenes, the Marsh store, the Briar Glen shop lane, the Sleeping Ox and the skeleton pen', () => {
     expect(
       loadContent(contentTypes, gameContentSources(), contentChecks)
         .all('scene')
@@ -632,6 +632,7 @@ describe('scene content', () => {
       'marsh-store',
       'mechanism-room',
       'perf-baseline',
+      'skeleton-pen',
       'sleeping-ox',
       'slice',
       'testbed',

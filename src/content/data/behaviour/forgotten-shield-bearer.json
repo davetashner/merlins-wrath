@@ -1,0 +1,309 @@
+{
+  "$schema": "../behaviour.schema.json",
+  "id": "forgotten-shield-bearer",
+  "notes": "The Forgotten shield-bearer's fight (mw-ju8.19, ADR-0005): the Forgotten's alert states with its own Combat. It squares up and raises its board shield for 1.5 s (the shield blocks the frontal 110 degrees while the guard step runs), then advances and bashes (drains the stamina that holds the player's guard up) or counter-swings (slow, 38-tick windup), whichever is ready. With both on cooldown the strike fails and it holds its shield up for 2 s, then tries again, so a player who mashes light attacks into the board is rewarded with nothing and a bash. The shield drops for the swing, and when it is stunned or its guard broken (the knight's shield bash breaks it).",
+  "tuning": {
+    "suspiciousTimeoutS": 12,
+    "searchingTimeoutS": 20,
+    "alertedTimeoutS": 15,
+    "combatLostS": 6,
+    "preferredRange": 2.2,
+    "leashSearchS": 2
+  },
+  "thinkHz": 10,
+  "inertia": 0.1,
+  "initial": "unaware",
+  "states": {
+    "unaware": {
+      "transitions": [
+        {
+          "to": "suspicious",
+          "when": {
+            "input": "awareness",
+            "gte": {
+              "tuning": "suspiciousAt"
+            }
+          }
+        },
+        {
+          "to": "alerted",
+          "when": {
+            "event": "damaged-by-unseen"
+          }
+        }
+      ],
+      "activities": ["home", "stand"]
+    },
+    "suspicious": {
+      "timeoutS": {
+        "tuning": "suspiciousTimeoutS"
+      },
+      "onTimeout": "unaware",
+      "transitions": [
+        {
+          "to": "combat",
+          "when": {
+            "input": "targetVisible",
+            "gte": 1
+          }
+        },
+        {
+          "to": "alerted",
+          "when": {
+            "event": "damaged-by-unseen"
+          }
+        },
+        {
+          "to": "unaware",
+          "when": {
+            "done": "seek"
+          }
+        },
+        {
+          "to": "unaware",
+          "when": {
+            "failed": "seek"
+          }
+        }
+      ],
+      "activities": ["seek"]
+    },
+    "searching": {
+      "timeoutS": {
+        "tuning": "searchingTimeoutS"
+      },
+      "onTimeout": "unaware",
+      "postAlert": true,
+      "transitions": [
+        {
+          "to": "combat",
+          "when": {
+            "input": "targetVisible",
+            "gte": 1
+          }
+        }
+      ],
+      "activities": ["search", "scan"]
+    },
+    "alerted": {
+      "timeoutS": {
+        "tuning": "alertedTimeoutS"
+      },
+      "onTimeout": "searching",
+      "transitions": [
+        {
+          "to": "combat",
+          "when": {
+            "input": "targetVisible",
+            "gte": 1
+          }
+        },
+        {
+          "to": "searching",
+          "when": {
+            "done": "hunt"
+          }
+        },
+        {
+          "to": "searching",
+          "when": {
+            "failed": "hunt"
+          }
+        }
+      ],
+      "activities": ["hunt"]
+    },
+    "combat": {
+      "transitions": [
+        {
+          "to": "searching",
+          "when": {
+            "input": "targetLostS",
+            "gte": {
+              "tuning": "combatLostS"
+            }
+          }
+        }
+      ],
+      "activities": ["bash-combo", "hold", "rattle"]
+    }
+  },
+  "activities": {
+    "home": {
+      "weight": 2,
+      "considerations": [
+        {
+          "input": "fromPost",
+          "curve": {
+            "kind": "step",
+            "at": 0.5,
+            "below": 0,
+            "above": 1
+          }
+        }
+      ],
+      "steps": [
+        {
+          "do": "move-to",
+          "target": "post",
+          "within": 0.5,
+          "gait": "run"
+        }
+      ]
+    },
+    "stand": {
+      "steps": [
+        {
+          "do": "wait",
+          "seconds": 1
+        }
+      ]
+    },
+    "seek": {
+      "steps": [
+        {
+          "do": "look-at",
+          "target": "stimulus",
+          "seconds": 1
+        },
+        {
+          "do": "move-to",
+          "target": "stimulus",
+          "within": 1
+        },
+        {
+          "do": "look-around",
+          "seconds": 3
+        },
+        {
+          "do": "forget-stimulus"
+        }
+      ]
+    },
+    "search": {
+      "steps": [
+        {
+          "do": "move-to",
+          "target": "lkp",
+          "within": 1
+        },
+        {
+          "do": "look-around",
+          "seconds": 4
+        }
+      ]
+    },
+    "scan": {
+      "weight": 0.5,
+      "steps": [
+        {
+          "do": "look-around",
+          "seconds": 4
+        }
+      ]
+    },
+    "hunt": {
+      "steps": [
+        {
+          "do": "look-at",
+          "target": "lkp",
+          "seconds": 1
+        },
+        {
+          "do": "move-to",
+          "target": "lkp",
+          "within": 1,
+          "gait": "run"
+        },
+        {
+          "do": "look-around",
+          "seconds": 3
+        }
+      ]
+    },
+    "rattle": {
+      "weight": 2,
+      "considerations": [
+        {
+          "input": "targetUnreachableS",
+          "curve": {
+            "kind": "step",
+            "at": 8,
+            "below": 0,
+            "above": 1
+          }
+        }
+      ],
+      "steps": [
+        {
+          "do": "look-at",
+          "target": "target",
+          "seconds": 1
+        },
+        {
+          "do": "play-cue",
+          "cue": "forgotten-rattle"
+        },
+        {
+          "do": "wait",
+          "seconds": 3
+        }
+      ]
+    },
+    "bash-combo": {
+      "weight": 2,
+      "interruptible": false,
+      "considerations": [
+        {
+          "input": "attackToken",
+          "curve": {
+            "kind": "step",
+            "at": 1,
+            "below": 0,
+            "above": 1
+          }
+        },
+        {
+          "input": "targetUnreachableS",
+          "curve": {
+            "kind": "step",
+            "at": 8,
+            "below": 1,
+            "above": 0
+          }
+        }
+      ],
+      "steps": [
+        {
+          "do": "guard",
+          "seconds": 1.5
+        },
+        {
+          "do": "strike",
+          "gait": "run",
+          "giveUpS": 8
+        }
+      ]
+    },
+    "hold": {
+      "weight": 1,
+      "considerations": [
+        {
+          "input": "targetUnreachableS",
+          "curve": {
+            "kind": "step",
+            "at": 8,
+            "below": 1,
+            "above": 0
+          }
+        }
+      ],
+      "steps": [
+        {
+          "do": "guard",
+          "seconds": 2
+        }
+      ]
+    }
+  }
+}

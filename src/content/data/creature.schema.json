@@ -912,6 +912,12 @@
       "type": "string",
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
     },
+    "shield": {
+      "description": "Shield (or shieldless guard) it carries, mw-ju8.19: it blocks frontal hits like the knight’s while its behaviour holds a `guard` step; absent = it has no guard.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "x-contentRef": "shield"
+    },
     "presentation": {
       "description": "Render and audio bindings.",
       "default": {},

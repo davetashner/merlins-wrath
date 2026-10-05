@@ -1,0 +1,55 @@
+{
+  "$schema": "../creature.schema.json",
+  "id": "forgotten-brute",
+  "family": "forgotten",
+  "tags": ["undead", "forgotten", "brute"],
+  "stats": {
+    "health": 220,
+    "poise": 120,
+    "mass": 110,
+    "size": "large"
+  },
+  "senses": {
+    "base": "undead",
+    "sight": {
+      "detectionSpeed": 1
+    },
+    "special": {
+      "life-sense": null
+    }
+  },
+  "locomotion": {
+    "base": "forgotten",
+    "agent": {
+      "radius": 0.5,
+      "height": 2.3
+    },
+    "modes": {
+      "walk": {
+        "speeds": {
+          "sneak": 0.5,
+          "walk": 0.7,
+          "run": 1.8
+        }
+      }
+    }
+  },
+  "attacks": ["forgotten-brute-overhead", "forgotten-brute-sweep"],
+  "resistances": {
+    "blunt": 1.25,
+    "pierce": 0.5,
+    "poison": 0
+  },
+  "needs": {},
+  "behaviour": {
+    "profile": "forgotten",
+    "tuning": {
+      "preferredRange": 3
+    }
+  },
+  "presentation": {
+    "mesh": "placeholder-capsule-bones",
+    "sfx": "placeholder"
+  },
+  "loot": "forgotten-brute-drops"
+}

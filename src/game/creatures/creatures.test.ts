@@ -113,6 +113,17 @@ describe('game creatures (mw-e12.4)', () => {
     );
   });
 
+  it('mw-ju8.19: prepares the shield of each creature that carries one, compiled from content', () => {
+    const content = loadGameContent();
+    const creatures = prepareCreatures(content, prepareTestbedCombat(content));
+    expect([...(creatures.spawn.shields ?? new Map()).keys()]).toEqual(['forgotten-shield-bearer']);
+    expect(creatures.spawn.shields?.get('forgotten-shield-bearer')).toMatchObject({
+      id: 'forgotten-board-shield',
+      kind: 'weapon',
+      arcDegrees: 110,
+    });
+  });
+
   it('binds a proxy once per creature and reads out how many are drawn and in view', () => {
     const content = loadDevContent();
     const combat = prepareTestbedCombat(content);

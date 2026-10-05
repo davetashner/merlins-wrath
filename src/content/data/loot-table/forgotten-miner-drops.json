@@ -1,0 +1,20 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "forgotten-miner-drops",
+  "notes": "What a Forgotten miner leaves (mw-ju8.19, economy doc tier 1): always 1-4 crowns (mean 2.5) and a 40% chance of a scrap item worth 8-12. Each part is rolled exactly once (noDuplicates over 2 entries), so coins always drop. Not final tuning.",
+  "rolls": {
+    "min": 2,
+    "max": 2
+  },
+  "entries": [
+    {
+      "table": "forgotten-miner-coins",
+      "weight": 1
+    },
+    {
+      "table": "forgotten-miner-scrap",
+      "weight": 1
+    }
+  ],
+  "noDuplicates": true
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "forgotten-shield-bearer-drops",
+  "notes": "What a Forgotten shield-bearer leaves (mw-ju8.19, economy doc tier 2): always 3-8 crowns (mean 5.5) and a 30% chance of a weapon or shield. Each part is rolled exactly once (noDuplicates over 2 entries), so coins always drop. Not final tuning.",
+  "rolls": {
+    "min": 2,
+    "max": 2
+  },
+  "entries": [
+    {
+      "table": "forgotten-shield-bearer-coins",
+      "weight": 1
+    },
+    {
+      "table": "forgotten-shield-bearer-gear",
+      "weight": 1
+    }
+  ],
+  "noDuplicates": true
+}

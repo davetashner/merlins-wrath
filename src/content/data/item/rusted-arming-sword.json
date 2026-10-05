@@ -1,0 +1,19 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "rusted-arming-sword",
+  "category": "weapon",
+  "name": "Rusted arming sword",
+  "description": "The shape of a sword and the strength of a biscuit. A smith might still see a blade in it.",
+  "notes": "Tier 2 skeleton gear drop (mw-ju8.19, economy doc: base value 20-60). Worth 28. No moves of its own; it is for selling.",
+  "icon": "icon-item-rusted-arming-sword-01",
+  "value": 28,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "main-hand",
+    "proficiencies": ["blades"]
+  },
+  "weapon": {}
+}
