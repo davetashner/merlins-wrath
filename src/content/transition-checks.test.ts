@@ -110,14 +110,18 @@ describe('the walkable world (mw-e01.11)', () => {
   const out = (id: string) => edges.filter((e) => e.from === id).map((e) => e.to);
   const into = (id: string) => edges.filter((e) => e.to === id).map((e) => e.from);
 
-  /**
-   * Ways with no way back yet. The Sleeping Ox has a way out to the lane but the lane has no inn door
-   * (mw-ju8.22); delete the entry when that bead adds the door (the test below then demands it).
-   */
-  const ONE_WAY = new Set(['sleeping-ox>briar-glen-lane']);
+  /** Ways with no way back yet (none: the lane's inn door, mw-ju8.22, closed the last one). */
+  const ONE_WAY = new Set<string>();
 
   it('every scene of the chain is reachable from valley-01 and valley-01 from each of them', () => {
-    const chain = ['valley-01', 'valley-02', 'valley-03', 'briar-glen-lane', 'marsh-store'];
+    const chain = [
+      'valley-01',
+      'valley-02',
+      'valley-03',
+      'briar-glen-lane',
+      'marsh-store',
+      'sleeping-ox',
+    ];
     const forward = reach(START, out);
     const back = reach(START, into);
     for (const id of chain) {
