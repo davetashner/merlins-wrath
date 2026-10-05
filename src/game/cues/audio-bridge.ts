@@ -309,6 +309,10 @@ export function worldCueLookups(
     facingOf: (entity) => read(entity, CombatFacingComponent)?.facing,
     moveSoundOf: (move) => sounds.get(move),
     arrowCuesOf: (arrow) => arrowCues.get(arrow),
+    surfaceOfMaterial: (material) => {
+      const surface = surfaces.get(material);
+      return surface !== undefined && known.has(surface) ? surface : undefined;
+    },
     surfaceUnder: (entity) => {
       const ground = read(entity, CharacterController)?.groundBody;
       const owner = ground === undefined || ground === null ? undefined : ownerOf(ground);

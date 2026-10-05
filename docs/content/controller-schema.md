@@ -114,6 +114,28 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `stealth.profiles.crouched.sprint` | object | required | At the sprint gait. |
 | `stealth.profiles.crouched.sprint.noise` | number 0–1 | required | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
 | `stealth.profiles.crouched.sprint.visibility` | number 0–1 | required | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `water` | object | — | Wading, swimming and breath; absent = the sim’s defaults (DEFAULT_WATER_TUNING). |
+| `water.wadeDepth` | number > 0 ≤ 2 | required | Water at least this deep at the feet slows the character to a wade, m. |
+| `water.swimDepth` | number > 0 ≤ 3 | required | Water deeper than this at the feet is swum in (light and medium load) or sunk in (heavy and overloaded), m. |
+| `water.wadeScale` | number > 0 ≤ 1 | required | Wading speed as a share of the run speed (no sprint while wading), 0–1. |
+| `water.swimSpeed` | object | required | Swim speed per armor load class (heavy and overloaded sink, they do not swim). |
+| `water.swimSpeed.light` | number > 0 ≤ 10 | required | Swim speed at light load, m/s. |
+| `water.swimSpeed.medium` | number > 0 ≤ 10 | required | Swim speed at medium load, m/s. |
+| `water.swimAccelTime` | number > 0 ≤ 5 | required | Time for a swimmer to reach full speed and to stop, s. |
+| `water.staminaPerSecond` | object | required | Stamina drained while swimming (characters with a stamina pool); none for heavy loads, which sink. |
+| `water.staminaPerSecond.light` | number 0–1000 | required | Stamina drained while swimming at light load, stamina/s. |
+| `water.staminaPerSecond.medium` | number 0–1000 | required | Stamina drained while swimming at medium load, stamina/s. |
+| `water.floatDepth` | number > 0 ≤ 3 | required | How far below the surface a floating swimmer’s feet hang, m (the head stays above). |
+| `water.diveSpeed` | number > 0 ≤ 10 | required | Descent speed of a swimmer who dives (crouch held), m/s. |
+| `water.riseSpeed` | number > 0 ≤ 10 | required | Speed a swimmer floats back up to the surface, m/s. |
+| `water.sinkSpeed` | number > 0 ≤ 10 | required | Speed a heavily loaded character descends through deep water, m/s. |
+| `water.sinkScale` | number > 0 ≤ 1 | required | Walking speed along the bottom for a character that sank, as a share of the run speed, 0–1. |
+| `water.headHeight` | number > 0 ≤ 3 | required | Height of the mouth above the feet, m: breath runs out while the surface is above it. |
+| `water.breathSeconds` | number > 0 ≤ 600 | required | Breath underwater before drowning starts (20 by the design), s. |
+| `water.breathRecoverSeconds` | number > 0 ≤ 600 | required | Time for an empty breath meter to refill once the head is above water, s. |
+| `water.drowning` | object | required | What running out of breath does. |
+| `water.drowning.intervalMs` | integer 100–60000 | required | Time between drowning damage events once breath has run out, whole ms. |
+| `water.drowning.damage` | number 0–10000 | required | Placeholder damage per drowning event until the damage model (e04) prices it, points. |
 | `classes` | map of `"knight"` \| `"archer"` \| `"sorcerer"` \| `"thief"` → object | — | Per-class overrides (mw-e02.3): class → only the values it changes; the rest come from this profile. Armor load effects are not overrides (mw-e17.13). |
 | `classes.<key>.capsule` | object | — |  |
 | `classes.<key>.capsule.radius` | number > 0 ≤ 1 | — | Capsule radius, m. |
@@ -219,3 +241,25 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `classes.<key>.stealth.profiles.crouched.sprint` | object | — |  |
 | `classes.<key>.stealth.profiles.crouched.sprint.noise` | number 0–1 | — | Footstep noise multiplier, 0–1 (stand-sprint is 1): what stealth noise (mw-e09.5) scales by. |
 | `classes.<key>.stealth.profiles.crouched.sprint.visibility` | number 0–1 | — | Visibility multiplier, 0–1 (stand-sprint is 1): what visibility scoring (mw-e09.2) scales by. |
+| `classes.<key>.water` | object | — |  |
+| `classes.<key>.water.wadeDepth` | number > 0 ≤ 2 | — | Water at least this deep at the feet slows the character to a wade, m. |
+| `classes.<key>.water.swimDepth` | number > 0 ≤ 3 | — | Water deeper than this at the feet is swum in (light and medium load) or sunk in (heavy and overloaded), m. |
+| `classes.<key>.water.wadeScale` | number > 0 ≤ 1 | — | Wading speed as a share of the run speed (no sprint while wading), 0–1. |
+| `classes.<key>.water.swimSpeed` | object | — |  |
+| `classes.<key>.water.swimSpeed.light` | number > 0 ≤ 10 | — | Swim speed at light load, m/s. |
+| `classes.<key>.water.swimSpeed.medium` | number > 0 ≤ 10 | — | Swim speed at medium load, m/s. |
+| `classes.<key>.water.swimAccelTime` | number > 0 ≤ 5 | — | Time for a swimmer to reach full speed and to stop, s. |
+| `classes.<key>.water.staminaPerSecond` | object | — |  |
+| `classes.<key>.water.staminaPerSecond.light` | number 0–1000 | — | Stamina drained while swimming at light load, stamina/s. |
+| `classes.<key>.water.staminaPerSecond.medium` | number 0–1000 | — | Stamina drained while swimming at medium load, stamina/s. |
+| `classes.<key>.water.floatDepth` | number > 0 ≤ 3 | — | How far below the surface a floating swimmer’s feet hang, m (the head stays above). |
+| `classes.<key>.water.diveSpeed` | number > 0 ≤ 10 | — | Descent speed of a swimmer who dives (crouch held), m/s. |
+| `classes.<key>.water.riseSpeed` | number > 0 ≤ 10 | — | Speed a swimmer floats back up to the surface, m/s. |
+| `classes.<key>.water.sinkSpeed` | number > 0 ≤ 10 | — | Speed a heavily loaded character descends through deep water, m/s. |
+| `classes.<key>.water.sinkScale` | number > 0 ≤ 1 | — | Walking speed along the bottom for a character that sank, as a share of the run speed, 0–1. |
+| `classes.<key>.water.headHeight` | number > 0 ≤ 3 | — | Height of the mouth above the feet, m: breath runs out while the surface is above it. |
+| `classes.<key>.water.breathSeconds` | number > 0 ≤ 600 | — | Breath underwater before drowning starts (20 by the design), s. |
+| `classes.<key>.water.breathRecoverSeconds` | number > 0 ≤ 600 | — | Time for an empty breath meter to refill once the head is above water, s. |
+| `classes.<key>.water.drowning` | object | — |  |
+| `classes.<key>.water.drowning.intervalMs` | integer 100–60000 | — | Time between drowning damage events once breath has run out, whole ms. |
+| `classes.<key>.water.drowning.damage` | number 0–10000 | — | Placeholder damage per drowning event until the damage model (e04) prices it, points. |

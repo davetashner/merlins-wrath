@@ -107,6 +107,15 @@ controller profile's `stealth` block (`src/content/data/controller/player.json`)
 comes back to centre or is clicked again (`GamepadSettings.sprintToggle`, default on). Off, sprint is
 held like the Shift key.
 
+## Water
+
+Wading (feet in 0.5 to 1.2 m of water) is walking at 60% of the run speed, with no sprint. Deeper than
+that, a light or medium armor load swims: the move stick paddles, holding crouch dives (the breath
+meter appears; 20 s of air, then drowning damage every second), letting go floats back up. Attack,
+block and bow are unavailable while swimming (hands busy, as when climbing). A heavy or overloaded
+load sinks to the bottom and walks it at 40% of the run speed; jump does nothing against the armor.
+Unequipping the armor floats it up. Source: `mw-e02.14`, `src/sim/character/water.ts`.
+
 ## Lock-on
 
 Lock on (Y/Triangle, Q or middle click) picks the target nearest the centre of the view, weighted by

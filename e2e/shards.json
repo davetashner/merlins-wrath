@@ -29,6 +29,7 @@
     "pause.spec.ts": 129.5,
     "perf.spec.ts": 0,
     "render-boot.spec.ts": 92.1,
+    "river.spec.ts": 15,
     "save-menus.spec.ts": 162.8,
     "save-storage.spec.ts": 18.6,
     "scenes.spec.ts": 173.5,

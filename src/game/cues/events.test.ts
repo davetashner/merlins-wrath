@@ -10,6 +10,7 @@ const lookups: CueLookups = {
   shieldOf: (e) => (e === 1 ? 'wood-shield' : undefined),
   moveSoundOf: (m) => (m === 'sword-light-1' ? 'sfx-knight-sword-swing-light' : undefined),
   surfaceUnder: () => 'wood',
+  surfaceOfMaterial: (material) => (material === 'water' ? 'water-shallow' : undefined),
   armorOf: (e) => (e === 4 ? 'plate' : undefined),
   arrowCuesOf: (arrow) =>
     arrow === 'water'
@@ -69,6 +70,7 @@ const SAMPLES: Record<CueEventName, unknown> = {
   DodgedHit: hitbox,
   ActionPhaseChanged: { tick: 1, entity: 4, move: 'sword-light-1', phase: 'active', moveTick: 13 },
   LocomotionEvents: { tick: 1, entity: 4, kind: 'footstep', foot: 'left', gait: 'walk' },
+  WaterEntered: { tick: 1, entity: 4, volume: 'river', speed: 9 },
   Died: { tick: 1, target: 1, killer: null, source: 2, tags: ['backstab'] },
   TelegraphStarted: {
     tick: 1,
@@ -576,6 +578,31 @@ describe('cue event bindings', () => {
     expect(read('LocomotionEvents', SAMPLES.LocomotionEvents)).toEqual({
       anchors: { entity: { entity: 4 } },
       facts: { kind: 'footstep', foot: 'left', gait: 'walk', surface: 'wood', armor: 'plate' },
+    });
+    // Wading: the material the step was taken in names the surface, not the ground under it.
+    expect(
+      read('LocomotionEvents', {
+        tick: 1,
+        entity: 4,
+        kind: 'footstep',
+        foot: 'left',
+        gait: 'walk',
+        material: 'water',
+      }).facts['surface'],
+    ).toBe('water-shallow');
+    expect(
+      read('LocomotionEvents', {
+        tick: 1,
+        entity: 4,
+        kind: 'footstep',
+        foot: 'left',
+        gait: 'walk',
+        material: 'mud',
+      }).facts['surface'],
+    ).toBe('wood');
+    expect(read('WaterEntered', SAMPLES.WaterEntered)).toEqual({
+      anchors: { entity: { entity: 4 } },
+      facts: { speed: 9 },
     });
     const land = (impactSpeed: number) =>
       read('LocomotionEvents', { tick: 1, entity: 5, kind: 'land', impactSpeed }).facts;

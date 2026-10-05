@@ -815,6 +815,171 @@
       ],
       "additionalProperties": false
     },
+    "water": {
+      "description": "Wading, swimming and breath; absent = the sim’s defaults (DEFAULT_WATER_TUNING).",
+      "type": "object",
+      "properties": {
+        "wadeDepth": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 2,
+          "description": "Water at least this deep at the feet slows the character to a wade, m."
+        },
+        "swimDepth": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 3,
+          "description": "Water deeper than this at the feet is swum in (light and medium load) or sunk in (heavy and overloaded), m."
+        },
+        "wadeScale": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "description": "Wading speed as a share of the run speed (no sprint while wading), 0–1."
+        },
+        "swimSpeed": {
+          "type": "object",
+          "properties": {
+            "light": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10,
+              "description": "Swim speed at light load, m/s."
+            },
+            "medium": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10,
+              "description": "Swim speed at medium load, m/s."
+            }
+          },
+          "required": [
+            "light",
+            "medium"
+          ],
+          "additionalProperties": false,
+          "description": "Swim speed per armor load class (heavy and overloaded sink, they do not swim)."
+        },
+        "swimAccelTime": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 5,
+          "description": "Time for a swimmer to reach full speed and to stop, s."
+        },
+        "staminaPerSecond": {
+          "type": "object",
+          "properties": {
+            "light": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000,
+              "description": "Stamina drained while swimming at light load, stamina/s."
+            },
+            "medium": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000,
+              "description": "Stamina drained while swimming at medium load, stamina/s."
+            }
+          },
+          "required": [
+            "light",
+            "medium"
+          ],
+          "additionalProperties": false,
+          "description": "Stamina drained while swimming (characters with a stamina pool); none for heavy loads, which sink."
+        },
+        "floatDepth": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 3,
+          "description": "How far below the surface a floating swimmer’s feet hang, m (the head stays above)."
+        },
+        "diveSpeed": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "description": "Descent speed of a swimmer who dives (crouch held), m/s."
+        },
+        "riseSpeed": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "description": "Speed a swimmer floats back up to the surface, m/s."
+        },
+        "sinkSpeed": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "description": "Speed a heavily loaded character descends through deep water, m/s."
+        },
+        "sinkScale": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1,
+          "description": "Walking speed along the bottom for a character that sank, as a share of the run speed, 0–1."
+        },
+        "headHeight": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 3,
+          "description": "Height of the mouth above the feet, m: breath runs out while the surface is above it."
+        },
+        "breathSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 600,
+          "description": "Breath underwater before drowning starts (20 by the design), s."
+        },
+        "breathRecoverSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 600,
+          "description": "Time for an empty breath meter to refill once the head is above water, s."
+        },
+        "drowning": {
+          "type": "object",
+          "properties": {
+            "intervalMs": {
+              "type": "integer",
+              "minimum": 100,
+              "maximum": 60000,
+              "description": "Time between drowning damage events once breath has run out, whole ms."
+            },
+            "damage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10000,
+              "description": "Placeholder damage per drowning event until the damage model (e04) prices it, points."
+            }
+          },
+          "required": [
+            "intervalMs",
+            "damage"
+          ],
+          "additionalProperties": false,
+          "description": "What running out of breath does."
+        }
+      },
+      "required": [
+        "wadeDepth",
+        "swimDepth",
+        "wadeScale",
+        "swimSpeed",
+        "swimAccelTime",
+        "staminaPerSecond",
+        "floatDepth",
+        "diveSpeed",
+        "riseSpeed",
+        "sinkSpeed",
+        "sinkScale",
+        "headHeight",
+        "breathSeconds",
+        "breathRecoverSeconds",
+        "drowning"
+      ],
+      "additionalProperties": false
+    },
     "classes": {
       "description": "Per-class overrides (mw-e02.3): class → only the values it changes; the rest come from this profile. Armor load effects are not overrides (mw-e17.13).",
       "type": "object",
@@ -1455,6 +1620,138 @@
                       }
                     },
                     "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          "water": {
+            "type": "object",
+            "properties": {
+              "wadeDepth": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 2,
+                "description": "Water at least this deep at the feet slows the character to a wade, m."
+              },
+              "swimDepth": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 3,
+                "description": "Water deeper than this at the feet is swum in (light and medium load) or sunk in (heavy and overloaded), m."
+              },
+              "wadeScale": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1,
+                "description": "Wading speed as a share of the run speed (no sprint while wading), 0–1."
+              },
+              "swimSpeed": {
+                "type": "object",
+                "properties": {
+                  "light": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 10,
+                    "description": "Swim speed at light load, m/s."
+                  },
+                  "medium": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 10,
+                    "description": "Swim speed at medium load, m/s."
+                  }
+                },
+                "additionalProperties": false
+              },
+              "swimAccelTime": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 5,
+                "description": "Time for a swimmer to reach full speed and to stop, s."
+              },
+              "staminaPerSecond": {
+                "type": "object",
+                "properties": {
+                  "light": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000,
+                    "description": "Stamina drained while swimming at light load, stamina/s."
+                  },
+                  "medium": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000,
+                    "description": "Stamina drained while swimming at medium load, stamina/s."
+                  }
+                },
+                "additionalProperties": false
+              },
+              "floatDepth": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 3,
+                "description": "How far below the surface a floating swimmer’s feet hang, m (the head stays above)."
+              },
+              "diveSpeed": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 10,
+                "description": "Descent speed of a swimmer who dives (crouch held), m/s."
+              },
+              "riseSpeed": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 10,
+                "description": "Speed a swimmer floats back up to the surface, m/s."
+              },
+              "sinkSpeed": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 10,
+                "description": "Speed a heavily loaded character descends through deep water, m/s."
+              },
+              "sinkScale": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1,
+                "description": "Walking speed along the bottom for a character that sank, as a share of the run speed, 0–1."
+              },
+              "headHeight": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 3,
+                "description": "Height of the mouth above the feet, m: breath runs out while the surface is above it."
+              },
+              "breathSeconds": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 600,
+                "description": "Breath underwater before drowning starts (20 by the design), s."
+              },
+              "breathRecoverSeconds": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 600,
+                "description": "Time for an empty breath meter to refill once the head is above water, s."
+              },
+              "drowning": {
+                "type": "object",
+                "properties": {
+                  "intervalMs": {
+                    "type": "integer",
+                    "minimum": 100,
+                    "maximum": 60000,
+                    "description": "Time between drowning damage events once breath has run out, whole ms."
+                  },
+                  "damage": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10000,
+                    "description": "Placeholder damage per drowning event until the damage model (e04) prices it, points."
                   }
                 },
                 "additionalProperties": false

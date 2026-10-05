@@ -7,3 +7,5 @@ export * from './pointer-lock';
 export * from './testbed-player';
 export * from './controller-reload';
 export * from './death-beat';
+export * from './water-hud';
+export * from './water';

@@ -33,6 +33,7 @@
               "DodgedHit",
               "ActionPhaseChanged",
               "LocomotionEvents",
+              "WaterEntered",
               "TelegraphStarted",
               "AttackHit",
               "AttackProjectileLaunched",

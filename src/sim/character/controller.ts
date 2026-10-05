@@ -57,7 +57,13 @@ import { cos, sin } from '../math';
 import type { Vec3 } from '../stimulus/shapes';
 import type { BodyId, Capsule, CollisionHit, CollisionWorld } from './collision-world';
 import { radians } from './greybox';
-import type { ClimbTraversal, LedgeTraversal, TraversalHook, TraversalMode } from './traversal';
+import type {
+  ClimbTraversal,
+  LedgeTraversal,
+  SwimTraversal,
+  TraversalHook,
+  TraversalMode,
+} from './traversal';
 import { add, clip, dot, DOWN, flat, length, normalize, scale, sub, UP, vec, ZERO } from './vec';
 
 /** Gap kept between the capsule and everything it touches, metres. */
@@ -118,6 +124,11 @@ export interface CharacterInput {
    * of it horizontally.
    */
   readonly strafeAround?: Vec3;
+  /**
+   * Scales the run, crouch and sprint speeds this tick (wading, walking the bottom of a river:
+   * mw-e02.14) and takes the sprint away; absent = full speed.
+   */
+  readonly speedScale?: number;
 }
 
 const UP_BUTTON: ButtonState = { pressed: false, held: false };
@@ -191,6 +202,8 @@ export interface CharacterState {
   readonly ledge?: LedgeTraversal;
   /** The surface being climbed (mw-e02.13); absent otherwise. */
   readonly climb?: ClimbTraversal;
+  /** The water being swum or sunk in (mw-e02.14); absent otherwise. */
+  readonly swim?: SwimTraversal;
 }
 
 /** Something the character struck hard this tick (see the file header). */
@@ -393,7 +406,7 @@ function locked(actions: MovementActions): MovementActions {
  * The horizontal velocity the move input asks for at `speed`: camera-relative, or with a strafe point,
  * relative to the direction to it (see CharacterInput.strafeAround).
  */
-function moveTarget(
+export function moveTarget(
   position: Vec3,
   input: CharacterInput,
   raw: { readonly x: number; readonly y: number },
@@ -422,10 +435,30 @@ function moveTarget(
 }
 
 /** `from` moved towards `to` by at most `maxDelta`. */
-function moveTowards(from: Vec3, to: Vec3, maxDelta: number): Vec3 {
+export function moveTowards(from: Vec3, to: Vec3, maxDelta: number): Vec3 {
   const gap = sub(to, from);
   const distance = length(gap);
   return distance <= maxDelta ? to : add(from, scale(gap, maxDelta / distance));
+}
+
+/**
+ * Moves a capsule that is not standing on anything (a swimmer) by `velocity` for one tick, sliding
+ * along what it meets: the position reached and the velocity left after removing what pushed into
+ * surfaces. No ground check, no step-up.
+ */
+export function moveFree(
+  world: CollisionWorld,
+  tuning: Frozen<ControllerTuning>,
+  params: ControllerParams,
+  from: Vec3,
+  velocity: Vec3,
+  capsule: Capsule,
+): { readonly position: Vec3; readonly velocity: Vec3 } {
+  const mover = new Mover(world, tuning, params);
+  const moved = mover.move(from, scale(velocity, params.dt), capsule, false);
+  let left = velocity;
+  for (const { normal } of moved.blockers) left = mover.slide(left, normal);
+  return { position: moved.position, velocity: left };
 }
 
 /** Ordinary walking, running, jumping and falling. */
@@ -447,7 +480,8 @@ function locomotion(
   const raw = actions.move;
   const deflection = Math.min(1, Math.sqrt(raw.x * raw.x + raw.y * raw.y));
   const moving = deflection > 0;
-  const wantsSprint = motion === undefined && actions.sprint.held && moving;
+  const wantsSprint =
+    motion === undefined && input.speedScale === undefined && actions.sprint.held && moving;
   const standing: Capsule = { radius: tuning.capsule.radius, height: tuning.capsule.height };
   const wantsCrouch = actions.crouch.held && !wantsSprint;
   const crouched = wantsCrouch || (state.crouched && !mover.roomToStand(state.position, standing));
@@ -460,11 +494,9 @@ function locomotion(
   const { slowWalk: slow } = tuning.stealth ?? DEFAULT_STEALTH_TUNING;
   const slowHeld = actions.slowWalk?.held === true;
   const slowWalk = !sprinting && moving && (slowHeld || deflection <= slow.deflection);
-  const top = crouched
-    ? tuning.speeds.crouch
-    : sprinting
-      ? tuning.speeds.sprint
-      : tuning.speeds.run;
+  const top =
+    (crouched ? tuning.speeds.crouch : sprinting ? tuning.speeds.sprint : tuning.speeds.run) *
+    (input.speedScale ?? 1);
   const wishSpeed =
     slowHeld && !sprinting ? Math.min(top * deflection, slow.speed) : top * deflection;
   const target = moveTarget(state.position, input, raw, wishSpeed, dt);

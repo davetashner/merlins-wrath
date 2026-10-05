@@ -66,6 +66,10 @@ import {
   PLAYER_FALL_RESET_MARGIN,
   PlayerLook,
   ViewAnchor,
+  waterVolumes,
+  breathFraction,
+  CharacterBreath,
+  DEFAULT_WATER_TUNING,
   sceneLedges,
   sceneRopes,
   type BodyId,
@@ -81,6 +85,7 @@ import {
   type InteractionPrompt,
   type InteractorKit,
   type LineOfSight,
+  type LoadClass,
   type LoadedScene,
   type SightWorld,
   type TargetLocator,
@@ -129,6 +134,18 @@ export interface PlayerReadout {
   readonly lock?: EntityId | null;
   /** The bow and quiver, when the player has a bow (mw-e05.21). */
   readonly bow?: PlayerBowReadout;
+  /** Water and breath, when the scene has water (mw-e02.14). */
+  readonly water?: PlayerWaterReadout;
+}
+
+/** The player's water in a readout (mw-e02.14). */
+export interface PlayerWaterReadout {
+  /** The feet are in water at least wading deep. */
+  readonly inWater: boolean;
+  /** The armor is dragging the player down. */
+  readonly sinking: boolean;
+  /** Share of a full breath left, 0–1. */
+  readonly breath: number;
 }
 
 /** The player's bow in a readout. */
@@ -276,6 +293,11 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
    */
   readonly climb?: TestbedClimbOptions;
   /**
+   * Wading, swimming, sinking and breath in the scene's water regions (mw-e02.14). Absent = the
+   * player walks through water as if it were not there.
+   */
+  readonly water?: TestbedWaterOptions;
+  /**
    * A bow and quiver (mw-e05.21), with `moves`: drawn, the camera narrows to its aim. The world's
    * arrow system (startTestbedCombat) flies what it looses. Absent = none.
    */
@@ -286,6 +308,14 @@ export interface TestbedPlayerOptions<TObject, TCommand> {
 export interface TestbedClimbOptions {
   /** The player's climbing capabilities (e.g. CLIMB_ROUGH_CAPABILITY), on top of the registry's (mw-e19.2). */
   readonly capabilities?: readonly string[];
+}
+
+/** The player's water (mw-e02.14). */
+export interface TestbedWaterOptions {
+  /** The player's armor load class now; absent = light (nothing sinks). */
+  readonly loadClass?: (entity: EntityId) => LoadClass | undefined;
+  /** Applies a drowning tick of `amount` points to the player. */
+  readonly onDrown?: (entity: EntityId, amount: number) => void;
 }
 
 /** The player's mantling and ledge hangs (mw-e02.12). */
@@ -414,6 +444,9 @@ export function setupTestbedPlayer<TObject, TCommand>(
       ledges: { index: sceneLedges(scene), ...options.ledges },
     }),
     ...(options.climb !== undefined && { climb: options.climb }),
+    ...(options.water !== undefined && {
+      water: { volumes: waterVolumes(scene.layout.regions), ...options.water },
+    }),
     ...(options.moves !== undefined && {
       combat: {
         moves: options.moves,
@@ -502,6 +535,22 @@ export function setupTestbedPlayer<TObject, TCommand>(
       }),
       ...(lockOn !== undefined && { lock: world.get(entity, LockOnComponent)?.target ?? null }),
       ...(bow !== undefined && { bow: bowReadout() }),
+      ...waterReadout(),
+    };
+  };
+
+  const waterReadout = (): { water?: PlayerWaterReadout } => {
+    const breath = world.isRegistered(CharacterBreath)
+      ? world.get(entity, CharacterBreath)
+      : undefined;
+    if (breath === undefined) return {};
+    const water = tuning.water ?? DEFAULT_WATER_TUNING;
+    return {
+      water: {
+        inWater: breath.inWater,
+        sinking: breath.sinking,
+        breath: round(breathFraction(breath, water, world.clock.hz)),
+      },
     };
   };
 

@@ -170,6 +170,7 @@ export {
   type LaunchTuning,
   type LedgeTuning,
   type ClimbTuning,
+  type WaterTuning,
   PLAYER_CONTROLLER_ID,
   PLAYER_CLASSES,
   controllerSchema,
