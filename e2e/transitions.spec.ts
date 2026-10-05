@@ -27,6 +27,20 @@ async function ready(page: Page, scene: string): Promise<void> {
   await expect(app).toHaveAttribute('data-player', /"grounded":true/, { timeout: 60_000 });
 }
 
+/**
+ * Runs the console line that puts the player in a gate and waits for the page to reload into
+ * `scene`. The reload tears the page down under the line's own evaluation (it is still waiting for
+ * the console to close), so a destroyed context there is the expected result, not a failure; every
+ * later read waits for the new URL and the new scene first.
+ */
+async function crossBy(page: Page, line: string, scene: string): Promise<void> {
+  await runConsole(page, line).catch((error: unknown) => {
+    if (!/Execution context was destroyed|navigation|closed/i.test(String(error))) throw error;
+  });
+  await page.waitForURL(new RegExp(`scene=${scene}(&|$)`), { timeout: 90_000 });
+  await ready(page, scene);
+}
+
 test('AC-1: crossing valley-01’s north gate arrives in valley-02 at its named spawn, and the south gate returns', async ({
   page,
 }) => {
@@ -36,8 +50,7 @@ test('AC-1: crossing valley-01’s north gate arrives in valley-02 at its named 
   await page.goto('/?scene=valley-01&debug=1');
   await ready(page, 'valley-01');
   // Two metres inside the north gate (x 4.5…7.5, z 51.5…53.5).
-  await runConsole(page, 'tp 6 0 52.5');
-  await ready(page, 'valley-02');
+  await crossBy(page, 'tp 6 0 52.5', 'valley-02');
   const app = page.locator('#app');
   await expect(app).toHaveAttribute(
     'data-transit',
@@ -58,8 +71,7 @@ test('AC-1: crossing valley-01’s north gate arrives in valley-02 at its named 
   );
 
   // Back through the south gate (z 0.25…1.75): valley-01, at the spawn by its north end.
-  await runConsole(page, 'tp 0 0 1');
-  await ready(page, 'valley-01');
+  await crossBy(page, 'tp 0 0 1', 'valley-01');
   const back = await playerState(page);
   expect(back.position.z).toBeGreaterThan(45);
   expect(problems).toEqual([]);
