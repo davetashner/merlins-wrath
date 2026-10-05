@@ -3,13 +3,7 @@
 // water) and drowning as environmental damage. The rules themselves are src/sim/character/water.ts.
 
 import type { GameContent } from '@content/index';
-import {
-  DAMAGE_TAGS,
-  EquipmentRules,
-  equipmentOf,
-  type DamageModel,
-  type World,
-} from '@sim/index';
+import { DAMAGE_TAGS, EquipmentRules, equipmentOf, type DamageModel, type World } from '@sim/index';
 import type { TestbedWaterOptions } from './testbed-player';
 
 /** The tag drowning damage carries besides `environment`. */

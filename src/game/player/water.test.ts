@@ -98,6 +98,15 @@ describe('water HUD glue (mw-e02.14)', () => {
     expect(hud.notice).toBe('');
   });
 
+  it('uses the sim defaults for a profile without a water block', () => {
+    const { water, ...bare } = tuning;
+    expect(water).toBeDefined();
+    const { world, player } = setup();
+    giveBreath(world, player, DEFAULT_WATER_TUNING, 60);
+    world.step();
+    expect(waterHudModel(world, player, bare)?.breath).toBe(1);
+  });
+
   it('does nothing for a player without a breath', () => {
     document.body.innerHTML = '';
     const { world, player } = setup();

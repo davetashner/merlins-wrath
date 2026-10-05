@@ -1113,6 +1113,14 @@ describe('testbed player in water (mw-e02.14)', () => {
     expect(rig.state().traversal).toBeNull();
   });
 
+  it('reads the breath on the sim defaults when the profile has no water block', () => {
+    const { water, ...bare } = tuning;
+    expect(water).toBeDefined();
+    const rig = testbed({ water: {}, tuning: bare });
+    rig.run(0.5);
+    expect(rig.state().water?.breath).toBe(1);
+  });
+
   it('publishes no water without the rules', () => {
     const rig = testbed();
     rig.run(0.1);
