@@ -354,6 +354,20 @@ export const sceneSpawnSchema = z.strictObject({
     .describe(
       'Ties the spawned creature to a post (mw-e01.17): in Combat it chases only this far from the post, then searches and walks home (needs creature).',
     ),
+  repopulate: z
+    .strictObject({
+      afterDays: z
+        .int()
+        .min(1)
+        .max(365)
+        .describe(
+          'World days after the kill before the creature returns; 1 = once the player has slept through a night.',
+        ),
+    })
+    .optional()
+    .describe(
+      'Opts the spawned creature in to returning after it is killed (mw-ju8.29): it is spawned fresh at its origin when the scene next loads, or at once when the player is out of sight and far away. Not for bosses or gatekeepers (needs creature).',
+    ),
   carries: z
     .array(
       z.strictObject({
@@ -678,7 +692,14 @@ export const sceneSchema = z
       seen.add(spawn.id);
       checkMechanism(spawn, index, ctx);
       if (spawn.creature !== undefined) return;
-      for (const key of ['faction', 'patrol', 'routine', 'leash', 'carries'] as const) {
+      for (const key of [
+        'faction',
+        'patrol',
+        'routine',
+        'leash',
+        'carries',
+        'repopulate',
+      ] as const) {
         if (spawn[key] === undefined) continue;
         ctx.addIssue({
           code: 'custom',

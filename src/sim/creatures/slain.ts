@@ -10,6 +10,7 @@
 import { Died } from '../combat/damage/events';
 import type { World } from '../core/world';
 import { entityFactKey } from '../facts/store';
+import { DAY_FACT } from '../rest/day-clock';
 import { CreatureComponent } from './components';
 
 /** The fact name a slain placed creature sets: `entity:<level>/<point>.slain`. */
@@ -20,6 +21,14 @@ export function slainFact(level: string, point: string): string {
   return entityFactKey(level, point, SLAIN_FACT);
 }
 
+/** The fact name that records the world day a placed creature was killed (0: never). */
+export const KILLED_DAY_FACT = 'killed-day';
+
+/** The killed-day fact of the creature placed at spawn point `point` of `level`. */
+export function killedDayFact(level: string, point: string): string {
+  return entityFactKey(level, point, KILLED_DAY_FACT);
+}
+
 /**
  * Sets the slain fact of every placed creature of `level` that dies in `world` (see the file
  * header). Returns a function that uninstalls it.
@@ -28,6 +37,9 @@ export function installSlainFacts(world: World<never>, level: string): () => voi
   return world.events.on(Died, ({ target }) => {
     if (!world.isRegistered(CreatureComponent)) return;
     const point = world.get(target, CreatureComponent)?.origin.point;
-    if (point !== undefined) world.facts.set(slainFact(level, point), true);
+    if (point === undefined) return;
+    world.facts.set(slainFact(level, point), true);
+    // The world day of the kill, for repopulation (mw-ju8.29).
+    world.facts.set(killedDayFact(level, point), Number(world.facts.get(DAY_FACT) ?? 1));
   });
 }

@@ -335,6 +335,20 @@ export function respawnCreature(
   return spawnCreature(world, options, state.origin);
 }
 
+/** The origin a scene spawn that names `creature` spawns it with (also used to bring it back). */
+export function originOfSpawn(spawn: SceneSpawnPlacement, creature: string): CreatureOrigin {
+  return {
+    creature,
+    at: spawn.position,
+    facing: facingFromYaw(spawn.yaw),
+    point: spawn.id,
+    ...(spawn.faction !== undefined && { faction: spawn.faction }),
+    ...(spawn.patrol !== undefined && { patrol: spawn.patrol }),
+    ...(spawn.routine !== undefined && { routine: spawn.routine }),
+    ...(spawn.leash !== undefined && { leash: spawn.leash }),
+  };
+}
+
 /** What `spawnSceneCreatures` did. */
 export interface SceneCreatures {
   /** The creatures spawned, in spawn order. */
@@ -356,16 +370,7 @@ export function spawnSceneCreatures(
   const errors: { point: string; error: SpawnError }[] = [];
   for (const spawn of spawns) {
     if (spawn.creature === undefined) continue;
-    const result = spawnCreature(world, options, {
-      creature: spawn.creature,
-      at: spawn.position,
-      facing: facingFromYaw(spawn.yaw),
-      point: spawn.id,
-      ...(spawn.faction !== undefined && { faction: spawn.faction }),
-      ...(spawn.patrol !== undefined && { patrol: spawn.patrol }),
-      ...(spawn.routine !== undefined && { routine: spawn.routine }),
-      ...(spawn.leash !== undefined && { leash: spawn.leash }),
-    });
+    const result = spawnCreature(world, options, originOfSpawn(spawn, spawn.creature));
     if (result.ok) entities.push(result.entity);
     else errors.push({ point: spawn.id, error: result.error });
   }

@@ -207,6 +207,7 @@
       "at": [-5.5, 0.0, 11.0],
       "yaw": 90,
       "creature": "forgotten-miner",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 18
       },
@@ -217,6 +218,7 @@
       "at": [-3.75, 0.0, 13.25],
       "yaw": 180,
       "creature": "forgotten-archer",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 15
       },
@@ -227,6 +229,7 @@
       "at": [5.0, 0.0, 15.5],
       "yaw": 180,
       "creature": "forgotten-shield-bearer",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 15
       },
@@ -237,6 +240,7 @@
       "at": [4.75, 0.0, 18.5],
       "yaw": 270,
       "creature": "forgotten-miner",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 18
       },
@@ -247,6 +251,7 @@
       "at": [-4.5, 0.0, 22.5],
       "yaw": 90,
       "creature": "forgotten-archer",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 15
       },
@@ -257,6 +262,7 @@
       "at": [4.5, 0.0, 28.5],
       "yaw": 180,
       "creature": "forgotten-miner",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 18
       },
@@ -267,6 +273,7 @@
       "at": [6.5, 0.0, 33.5],
       "yaw": 180,
       "creature": "forgotten-archer",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 15
       },
@@ -277,6 +284,7 @@
       "at": [-4.5, 0.0, 32.0],
       "yaw": 270,
       "creature": "forgotten-shield-bearer",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 15
       },

@@ -213,6 +213,7 @@
       "at": [-5.5, 0.0, 12.0],
       "yaw": 90,
       "creature": "forgotten-miner",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 18
       },
@@ -223,6 +224,7 @@
       "at": [-3.5, 0.0, 14.0],
       "yaw": 90,
       "creature": "forgotten-shield-bearer",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 15
       },
@@ -233,6 +235,7 @@
       "at": [-6.5, 0.0, 16.0],
       "yaw": 90,
       "creature": "forgotten-archer",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 15
       },
@@ -243,6 +246,7 @@
       "at": [6.0, 0.0, 18.5],
       "yaw": 270,
       "creature": "forgotten-miner",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 18
       },
@@ -253,6 +257,7 @@
       "at": [7.25, 0.0, 22.0],
       "yaw": 270,
       "creature": "forgotten-archer",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 15
       },
@@ -263,6 +268,7 @@
       "at": [5.0, 0.0, 21.0],
       "yaw": 270,
       "creature": "forgotten-shield-bearer",
+      "repopulate": { "afterDays": 1 },
       "leash": {
         "radius": 15
       },
@@ -277,7 +283,7 @@
         "radius": 15,
         "post": [-2.0, 0, 24.0]
       },
-      "tags": ["encounter", "group-gate", "habit-bars-the-bridge"]
+      "tags": ["encounter", "group-gate", "habit-bars-the-bridge", "gatekeeper"]
     }
   ],
   "light": {
