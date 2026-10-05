@@ -1,0 +1,109 @@
+{
+  "$schema": "../behaviour.schema.json",
+  "id": "watchman",
+  "notes": "A Bridge Watch guard's post (mw-ju8.12): he stands at the post (the spawn point, held by a leash), keeps an eye on the bridge, and walks back if anything moves him. When he notices someone he turns to look at them for a few seconds (Suspicious here only means \"noticed a traveller\") and goes back to watching. Struck from the unseen he is startled for a few seconds and settles again. He has no combat state and no attacks yet: the Watch's hostility to monsters is in the bridge-watch faction and waits on creatures targeting creatures. No shift schedule: the day and night watch are two sets of guards who both stand at the post (mw-e27.12 may replace that with real shifts).",
+  "tuning": {
+    "alertedTimeoutS": 6,
+    "suspiciousTimeoutS": 5
+  },
+  "thinkHz": 10,
+  "inertia": 0.1,
+  "initial": "unaware",
+  "states": {
+    "unaware": {
+      "transitions": [
+        {
+          "to": "suspicious",
+          "when": {
+            "input": "awareness",
+            "gte": {
+              "tuning": "suspiciousAt"
+            }
+          }
+        },
+        {
+          "to": "alerted",
+          "when": {
+            "event": "damaged-by-unseen"
+          }
+        }
+      ],
+      "activities": ["home", "keep-watch"]
+    },
+    "suspicious": {
+      "timeoutS": {
+        "tuning": "suspiciousTimeoutS"
+      },
+      "onTimeout": "unaware",
+      "transitions": [
+        {
+          "to": "alerted",
+          "when": {
+            "event": "damaged-by-unseen"
+          }
+        }
+      ],
+      "activities": ["greet"]
+    },
+    "alerted": {
+      "timeoutS": {
+        "tuning": "alertedTimeoutS"
+      },
+      "onTimeout": "unaware",
+      "activities": ["steady"]
+    }
+  },
+  "activities": {
+    "home": {
+      "weight": 2,
+      "considerations": [
+        {
+          "input": "fromPost",
+          "curve": {
+            "kind": "step",
+            "at": 0.5,
+            "below": 0,
+            "above": 1
+          }
+        }
+      ],
+      "steps": [
+        {
+          "do": "move-to",
+          "target": "post",
+          "within": 0.5,
+          "gait": "walk"
+        }
+      ]
+    },
+    "steady": {
+      "steps": [
+        {
+          "do": "wait",
+          "seconds": 1
+        }
+      ]
+    },
+    "greet": {
+      "steps": [
+        {
+          "do": "look-at",
+          "target": "stimulus",
+          "seconds": 4
+        }
+      ]
+    },
+    "keep-watch": {
+      "steps": [
+        {
+          "do": "wait",
+          "seconds": 8
+        },
+        {
+          "do": "look-around",
+          "seconds": 4
+        }
+      ]
+    }
+  }
+}

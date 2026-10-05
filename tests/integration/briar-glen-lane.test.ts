@@ -11,7 +11,9 @@ import {
   actionButton,
   actionFrame,
   actionVector,
+  buildFactionTable,
   CreatureComponent,
+  factionSpecFromDef,
   FactionMemberComponent,
   interactionPrompt,
   InventoryRules,
@@ -177,4 +179,100 @@ describe('the Briar Glen shop lane, headless (mw-ju8.5)', () => {
       expect(content.get('creature', npc).attacks).toEqual([]);
     });
   }
+
+  // mw-ju8.12: the Bridge Watch post at the town end of the bridge.
+  const WATCH = [
+    { id: 'npc-watchman-day-1', creature: 'npc-watchman-day', tag: 'watch:day' },
+    { id: 'npc-watchman-day-2', creature: 'npc-watchman-day', tag: 'watch:day' },
+    { id: 'npc-watchman-night-1', creature: 'npc-watchman-night', tag: 'watch:night' },
+  ] as const;
+
+  it('AC-2: the day watch and the night watch both keep guards at the post', ({ task }) => {
+    markExercised(task, 'behaviour', 'watchman');
+    markExercised(task, 'faction', 'bridge-watch');
+    markExercised(task, 'creature', 'npc-watchman-day');
+    markExercised(task, 'creature', 'npc-watchman-night');
+    const t = lane();
+    const post = t.marker('guard-post').position;
+    for (const watch of ['watch:day', 'watch:night']) {
+      const guards = WATCH.filter((g) => g.tag === watch);
+      expect(guards.length).toBeGreaterThanOrEqual(1);
+      for (const g of guards) {
+        expect(t.marker(g.id).tags).toEqual(expect.arrayContaining(['guard', watch]));
+        const entity = t.keeper(g.creature);
+        expect(entity).toBeDefined();
+      }
+    }
+    expect(content.get('creature', 'npc-watchman-day').tags).toContain('watch-day');
+    expect(content.get('creature', 'npc-watchman-night').tags).toContain('watch-night');
+    // Behind or at the post (town side of the bridge-end wall), clear of every arrival by 2 m.
+    const arrivals = game_arrivals(t);
+    for (const g of WATCH) {
+      const at = t.marker(g.id).position;
+      expect(Math.hypot(at.x - post.x, at.z - post.z)).toBeLessThan(6);
+      expect(at.z).toBeGreaterThan(post.z - 1);
+      for (const a of arrivals) expect(Math.hypot(at.x - a.x, at.z - a.z)).toBeGreaterThan(2);
+    }
+    for (const prop of ['guard-post', 'watch-brazier', 'watch-banner', 'watch-lamp']) {
+      expect(t.marker(prop).position.z).toBeLessThan(5);
+    }
+    expect(t.marker('watch-brazier').tags).toContain('brazier');
+  });
+
+  it('AC-2: guards hold the post, friendly and unarmed', ({ task }) => {
+    markExercised(task, 'creature', 'npc-watchman-day');
+    const t = lane();
+    t.step(300);
+    const guards = t.world
+      .query(CreatureComponent)
+      .ids()
+      .filter((e) => t.world.get(e, CreatureComponent)?.origin.creature.startsWith('npc-watchman'));
+    expect(guards).toHaveLength(WATCH.length);
+    for (const guard of guards) {
+      expect(t.world.get(guard, FactionMemberComponent)).toMatchObject({
+        faction: 'bridge-watch',
+        toward: { player: 'friendly' },
+      });
+      expect(t.where(guard).z).toBeGreaterThan(1.5);
+      expect(t.where(guard).z).toBeLessThan(5);
+    }
+  });
+
+  it('AC-1: the Watch is hostile to monsters and no monster is in the lane or crosses', ({
+    task,
+  }) => {
+    markExercised(task, 'faction', 'bridge-watch');
+    markExercised(task, 'faction', 'townsfolk');
+    markExercised(task, 'faction', 'unaligned');
+    const table = buildFactionTable(content.all('faction').map(factionSpecFromDef));
+    // The Forgotten name no faction, so they are unaligned: the Watch is hostile to them (and
+    // they to it), and friendly to the player and the townsfolk.
+    for (const id of ['forgotten-miner', 'forgotten-brute', 'forgotten-archer']) {
+      expect(content.get('creature', id).faction).toBeUndefined();
+    }
+    expect(table.base('bridge-watch', 'unaligned')).toBe('hostile');
+    expect(table.base('unaligned', 'bridge-watch')).toBe('hostile');
+    expect(table.base('bridge-watch', 'townsfolk')).toBe('ally');
+    expect(table.base('bridge-watch', 'player')).toBe('friendly');
+    // Monsters never travel and none is placed in the town: every creature in the lane scenes
+    // belongs to the Watch or the townsfolk.
+    for (const scene of ['briar-glen-lane', 'marsh-store', 'sleeping-ox']) {
+      for (const spawn of content.get('scene', scene).spawns) {
+        if (spawn.creature === undefined) continue;
+        const def = content.get('creature', spawn.creature.id);
+        expect(['townsfolk', 'bridge-watch']).toContain(def.faction?.id);
+        expect(def.tags).not.toContain('forgotten');
+        expect(def.tags).not.toContain('undead');
+      }
+    }
+  });
 });
+
+function game_arrivals(t: { marker: (id: string) => { position: Vec3 } }): Vec3[] {
+  return [
+    'arrive-from-valley-03',
+    'arrive-from-marsh-store',
+    'arrive-from-sleeping-ox',
+    'player-start',
+  ].map((id) => t.marker(id).position);
+}

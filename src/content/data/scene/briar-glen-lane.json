@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "briar-glen-lane",
   "name": "Briar Glen: the shop lane",
-  "description": "Bead mw-ju8.5: a greybox cobbled lane, about 40 m long and 16 m wide, built from the e00 kit only. It runs north from the town end of the Miners' Bridge (the bridge-town-end marker; the bridge-gate transition just south of it leads back to valley-03). Marsh's General Store is the first building past the bridge, on the west side: its front door (marsh-store-door) is a transition into the shop (mw-e01.11). Arrival spawns arrive-from-valley-03, arrive-from-marsh-store and arrive-from-sleeping-ox are where the player stands when coming from those scenes; the Sleeping Ox stands further up the west side (mw-ju8.22): a facade with a doorway, a hanging sign stand-in (sign-sleeping-ox; the art, a peaceful ox asleep under a moon, comes later), a lantern and the sleeping-ox-door transition into the inn, with arrive-from-sleeping-ox just outside it. On the east side three open-fronted shops stand side by side, each with a six metre counter and its keeper behind it: Brand's Forge (Oswin Brand; anvil, forge fire, weapon rack, quench barrel), Fenn's Fletchery & Simples (Juniper Fenn; bow rack, herb bench, arrow barrel) and Pell's Bakery (Hollis Pell; bread shelf, oven, flour sacks). Each counter is a spawn tagged merchant:<id> with the Trade verb and dev-crowns:400 so the dev scene can trade. Props are kit stand-ins with named marker spawns so art can dress them later; street and shop lanterns are warm. Reach it with ?scene=briar-glen-lane.",
+  "description": "Bead mw-ju8.5: a greybox cobbled lane, about 40 m long and 16 m wide, built from the e00 kit only. It runs north from the town end of the Miners' Bridge (the bridge-town-end marker; the bridge-gate transition just south of it leads back to valley-03). Marsh's General Store is the first building past the bridge, on the west side: its front door (marsh-store-door) is a transition into the shop (mw-e01.11). Arrival spawns arrive-from-valley-03, arrive-from-marsh-store and arrive-from-sleeping-ox are where the player stands when coming from those scenes; the Sleeping Ox stands further up the west side (mw-ju8.22): a facade with a doorway, a hanging sign stand-in (sign-sleeping-ox; the art, a peaceful ox asleep under a moon, comes later), a lantern and the sleeping-ox-door transition into the inn, with arrive-from-sleeping-ox just outside it. On the east side three open-fronted shops stand side by side, each with a six metre counter and its keeper behind it: Brand's Forge (Oswin Brand; anvil, forge fire, weapon rack, quench barrel), Fenn's Fletchery & Simples (Juniper Fenn; bow rack, herb bench, arrow barrel) and Pell's Bakery (Hollis Pell; bread shelf, oven, flour sacks). Each counter is a spawn tagged merchant:<id> with the Trade verb and dev-crowns:400 so the dev scene can trade. The Bridge Watch post stands at the bridge end (mw-ju8.12): two pillars with the guard-post, a banner (watch-banner), a lamp (watch-lamp) and a brazier on a crate (watch-brazier), with two day guards and one night guard (npc-watchman-day/-night, faction bridge-watch) standing just inside the lane. Props are kit stand-ins with named marker spawns so art can dress them later; street and shop lanterns are warm. Reach it with ?scene=briar-glen-lane.",
   "grid": 1,
   "camera": {
     "position": [-12, 16, 4],
@@ -204,6 +204,27 @@
       "piece": "crate",
       "at": [-5.5, 0.0, 17.0],
       "scale": [0.8, 0.6, 0.8]
+    },
+    {
+      "piece": "pillar",
+      "at": [-3.5, 0.0, 2.5],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "pillar",
+      "at": [3.5, 0.0, 2.5],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [5.5, 0.0, 2.25],
+      "scale": [0.5, 0.6, 0.5],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "crate",
+      "at": [-5.5, 0.0, 2.25],
+      "scale": [0.6, 0.6, 0.6]
     }
   ],
   "spawns": [
@@ -485,6 +506,66 @@
       "at": [-4.5, 0.0, 26.0],
       "yaw": 90,
       "tags": ["arrival"]
+    },
+    {
+      "id": "guard-post",
+      "at": [0.0, 0.0, 2.5],
+      "tags": ["guard-post", "prop"]
+    },
+    {
+      "id": "watch-brazier",
+      "at": [-5.5, 0.5, 2.25],
+      "tags": ["brazier", "hearth"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 86400
+      }
+    },
+    {
+      "id": "watch-banner",
+      "at": [0.0, 3.25, 2.5],
+      "tags": ["banner", "prop"]
+    },
+    {
+      "id": "watch-lamp",
+      "at": [3.5, 3.25, 2.5],
+      "tags": ["lantern", "street"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "npc-watchman-day-1",
+      "at": [-2.5, 0.0, 2.5],
+      "tags": ["guard", "watch:day"],
+      "yaw": 180,
+      "creature": "npc-watchman-day",
+      "leash": {
+        "radius": 1.5
+      }
+    },
+    {
+      "id": "npc-watchman-day-2",
+      "at": [2.5, 0.0, 2.5],
+      "tags": ["guard", "watch:day"],
+      "yaw": 180,
+      "creature": "npc-watchman-day",
+      "leash": {
+        "radius": 1.5
+      }
+    },
+    {
+      "id": "npc-watchman-night-1",
+      "at": [4.25, 0.0, 3.25],
+      "tags": ["guard", "watch:night"],
+      "yaw": 180,
+      "creature": "npc-watchman-night",
+      "leash": {
+        "radius": 1.5
+      }
     }
   ],
   "light": {

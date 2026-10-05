@@ -1,0 +1,13 @@
+{
+  "$schema": "../faction.schema.json",
+  "id": "bridge-watch",
+  "name": "The Bridge Watch",
+  "notes": "Captain Hale's Watch at the Miners' Bridge (story bible §3.5, §5.2; mw-ju8.12). Friendly to the player and allied with each other and the townsfolk. Hostile to the unaligned faction, which is every creature that names no faction today, the Forgotten included: a monster is somebody the Watch turns away. Until the Forgotten get a faction of their own (mw-e13.17, mw-e40.18) this relation is how the table says so. The stance is data only: creatures do not yet choose other creatures as targets (the AI's one target is the player), so the guards stand and watch rather than fight; creatures never cross a scene transition either, which is what keeps monsters out of town.",
+  "towardPlayer": "friendly",
+  "towardMembers": "ally",
+  "towardOthers": "neutral",
+  "relations": [
+    { "faction": "townsfolk", "stance": "ally", "mutual": true },
+    { "faction": "unaligned", "stance": "hostile", "mutual": true }
+  ]
+}

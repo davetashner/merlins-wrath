@@ -48,7 +48,7 @@ async function openLane(page: Page): Promise<void> {
   await expect(app).toHaveAttribute('data-player', /"grounded":true/, { timeout: 10_000 });
 }
 
-test('AC-2: the three keepers are loaded and drawn behind their counters', async ({ page }) => {
+test('AC-2: the three keepers and the Bridge Watch are loaded and drawn', async ({ page }) => {
   test.setTimeout(60_000);
   const problems = collectProblems(page);
   await openLane(page);
@@ -56,8 +56,14 @@ test('AC-2: the three keepers are loaded and drawn behind their counters', async
   await expect
     .poll(() => data<{ kinds: Record<string, number>; drawn: number }>(page, 'creatures'))
     .toMatchObject({
-      kinds: { 'npc-oswin': 1, 'npc-juniper': 1, 'npc-hollis': 1 },
-      drawn: 3,
+      kinds: {
+        'npc-oswin': 1,
+        'npc-juniper': 1,
+        'npc-hollis': 1,
+        'npc-watchman-day': 2,
+        'npc-watchman-night': 1,
+      },
+      drawn: 6,
     });
   // Each stands east of her counter (x > 5.5), in her own shop.
   const ai = await data<{ agents: { at: number[] }[] }>(page, 'ai');
