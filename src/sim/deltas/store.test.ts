@@ -110,6 +110,18 @@ describe('LevelDeltaStore', () => {
     ]);
   });
 
+  it('mw-ju8.29: replaces the stored deltas of a level that is not loaded, and refuses the loaded one', () => {
+    const world = newWorld();
+    const store = new LevelDeltaStore();
+    store.enter(world, persistence, 'crypt', spawnLevel(world, 1));
+    const edited: LevelDeltas = { level: 'tower', entities: [], spawned: [] };
+    store.replace(edited);
+    expect(store.deltas('tower')).toBe(edited);
+    expect(() => {
+      store.replace({ level: 'crypt', entities: [], spawned: [] });
+    }).toThrow('level "crypt" is loaded');
+  });
+
   it('hashes deltas independent of level order and sensitive to content', () => {
     const a: LevelDeltas = { level: 'a', entities: [], spawned: [] };
     const b: LevelDeltas = { level: 'b', entities: [{ id: 'x', destroyed: true }], spawned: [] };

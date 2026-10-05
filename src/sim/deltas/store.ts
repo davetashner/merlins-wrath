@@ -105,6 +105,16 @@ export class LevelDeltaStore {
     return levels.sort(byLevel);
   }
 
+  /**
+   * Replaces the stored deltas of a level that is not loaded (repopulation drops the entries of
+   * creatures that returned before the level is entered, mw-ju8.29).
+   * @throws Error when `deltas.level` is the loaded level (its entities are live).
+   */
+  replace(deltas: LevelDeltas): void {
+    if (deltas.level === this.current) throw new Error(`level "${deltas.level}" is loaded`);
+    this.#stored.set(deltas.level, deltas);
+  }
+
   /** Replaces the stored deltas with `levels`, except the current level's (file header). */
   restore(levels: readonly LevelDeltas[]): void {
     this.#stored.clear();

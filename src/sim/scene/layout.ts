@@ -206,6 +206,8 @@ export interface SceneSpawnSpec {
   readonly routine?: readonly SceneRoutineSpec[] | undefined;
   /** The creature's leash (mw-e01.17): metres around its post, grid cells (default the spawn). */
   readonly leash?: { readonly radius: number; readonly post?: Triple | undefined } | undefined;
+  /** Opts the creature in to returning after a kill (mw-ju8.29). */
+  readonly repopulate?: { readonly afterDays: number } | undefined;
   /** What the creature carries and drops where it dies (mw-e01.5). */
   readonly carries?:
     readonly { readonly item: { readonly id: string }; readonly count: number }[] | undefined;
@@ -354,6 +356,8 @@ export interface SceneSpawnPlacement {
   readonly routine?: readonly PatrolRoutine[];
   /** That creature's leash, world metres (mw-e01.17): the post defaults to the spawn point. */
   readonly leash?: CreatureLeash;
+  /** Returns after a kill once `afterDays` world days have passed (mw-ju8.29). */
+  readonly repopulate?: { readonly afterDays: number };
   /** What that creature carries and drops where it dies (mw-e01.5), in order. */
   readonly carries?: readonly { readonly item: string; readonly count: number }[];
   /** Its world properties, when the spawn sets any (mw-e03.37). */
@@ -657,6 +661,9 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
           radius: spawn.leash.radius,
           post: gridToWorld(spawn.leash.post ?? spawn.at, scene.grid),
         }),
+      }),
+      ...(spawn.repopulate !== undefined && {
+        repopulate: Object.freeze({ afterDays: spawn.repopulate.afterDays }),
       }),
       ...(spawn.carries !== undefined && {
         carries: Object.freeze(

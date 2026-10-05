@@ -53,6 +53,23 @@ describe('slain facts (mw-e01.7)', () => {
     expect(world.facts.get('entity:slice/skeleton.slain')).toBe(false);
   });
 
+  it('mw-ju8.29: records the day of a kill only for spawns that repopulate', () => {
+    const world = new World<never>({ seed: 1 });
+    world.register(...CREATURE_COMPONENTS);
+    installSlainFacts(world, 'valley', [
+      { id: 'back', repopulate: { afterDays: 1 } },
+      { id: 'once' },
+    ]);
+    const back = world.spawn();
+    world.add(back, CreatureComponent, creature('back'));
+    const once = world.spawn();
+    world.add(once, CreatureComponent, creature('once'));
+    die(world, once);
+    expect(world.facts.snapshot()).toEqual({ 'entity:valley/once.slain': true });
+    die(world, back);
+    expect(world.facts.get('entity:valley/back.killed-day')).toBe(1);
+  });
+
   it('ignores deaths in a world without creatures', () => {
     const world = new World<never>({ seed: 1 });
     installSlainFacts(world, 'slice');

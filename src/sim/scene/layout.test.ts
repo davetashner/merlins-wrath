@@ -267,6 +267,27 @@ describe('scene layout (mw-e00.21)', () => {
     expect(layoutScene(TEST_SCENE, testKit).spawns.every((s) => s.leash === undefined)).toBe(true);
   });
 
+  it('mw-ju8.29: lays out a creature’s repopulation rule, and none for a spawn without one', () => {
+    const scene: SceneSpec = {
+      ...TEST_SCENE,
+      spawns: [
+        {
+          id: 'skeleton',
+          at: [0, 0, 0],
+          yaw: 0,
+          tags: [],
+          creature: { id: 'forgotten-miner' },
+          repopulate: { afterDays: 2 },
+        },
+        { id: 'brute', at: [1, 0, 0], yaw: 0, tags: [], creature: { id: 'forgotten-brute' } },
+      ],
+    };
+    const [skeleton, brute] = layoutScene(scene, testKit).spawns;
+    expect(skeleton?.repopulate).toEqual({ afterDays: 2 });
+    expect(Object.isFrozen(skeleton?.repopulate)).toBe(true);
+    expect(brute?.repopulate).toBeUndefined();
+  });
+
   it('mw-e01.5: lays out what a creature carries as plain item ids, in order', () => {
     const scene: SceneSpec = {
       ...TEST_SCENE,

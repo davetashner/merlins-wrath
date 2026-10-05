@@ -4,6 +4,8 @@
 // what Brand's Forge pays (price model, sell direction: base x 0.4 buy rate, x1.2 specialty). The
 // total must lie inside the economy doc's per-45-minutes curve (docs/design/economy.md, Target gold
 // curve: about 355 crowns = coins 200 + gear sold 110 + chests 45, about 7.9 crowns a minute).
+// Skeletons return after the player sleeps (mw-ju8.29; 20 of the 21, the brute gatekeeper stays dead),
+// so a repeat clear pays about this much again; the band below is for the single first clear.
 // AC-2 (each scene loads, zero console errors) is e2e/scenes.spec.ts; the placement rules are
 // src/content/valley-encounters.test.ts.
 import { describe, expect, it } from 'vitest';

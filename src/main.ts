@@ -203,6 +203,7 @@ import {
   showCreatureTelegraph,
 } from '@render/creatures/index';
 import { creatureLocomotion } from '@game/creatures/animation';
+import { installRepopulationOnRest, repopulateOnArrival } from '@game/creatures/repopulation';
 import { AnimationDriver, simAnimReader } from '@game/animation/index';
 import { pickVariant, randomSalt, variantFromSearch } from '@render/creatures/variant';
 import { createHitVolumeOverlay } from '@render/debug/hit-volumes';
@@ -1523,7 +1524,7 @@ function startRenderer(
       });
       for (const line of sceneCreatureErrors(sceneCreatures)) console.error(line);
       // A placed creature's death sets its slain fact (mw-e01.7), e.g. entity:slice/skeleton.slain.
-      installSlainFacts(world, scene.id);
+      installSlainFacts(world, scene.id, loaded.layout.spawns);
       // A dying creature drops what it carries and rolls its loot table (mw-e01.5): the slice's
       // skeleton drops the gallery key at its body.
       startCreatureDrops(world, content, worldItems, scene.id, loaded.layout.spawns);
@@ -1696,6 +1697,17 @@ function startRenderer(
         }
       }
       registerPersistence(world);
+      // Creature repopulation (mw-ju8.29): opted-in skeletons killed long enough ago (days pass by
+      // resting) stand at their spawns again, so their dead entries leave the stored deltas. Sleeping
+      // while this scene is loaded brings them back at once, when out of the player's sight.
+      repopulateOnArrival(world, scene.id, loaded.layout.spawns);
+      installRepopulationOnRest(world, {
+        level: scene.id,
+        spawns: loaded.layout.spawns,
+        spawnOptions: creatures.spawn,
+        sight: sightWorld,
+        player: player?.entity,
+      });
       levelDeltasOf(world).enter(
         world,
         new WorldPersistence({

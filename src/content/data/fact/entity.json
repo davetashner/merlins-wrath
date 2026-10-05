@@ -24,6 +24,13 @@
       "default": false,
       "description": "The creature a level placed at this spawn point has been killed (mw-e01.7), e.g. entity:slice/skeleton.slain. Set once, when it dies; saves carry it, and quests, dialogue and level variants read it.",
       "owner": "creatures"
+    },
+    {
+      "key": "entity:*.killed-day",
+      "type": "int",
+      "default": 0,
+      "description": "The world day (time.day) the creature a level placed at this spawn point was killed (mw-ju8.29); 0 = not killed. Repopulation compares it with today; clearing it (and slain) brings the creature back.",
+      "owner": "creatures"
     }
   ]
 }

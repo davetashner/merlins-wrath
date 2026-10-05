@@ -5,3 +5,4 @@ export * from './persistence';
 export * from './spawn';
 export * from './target-sharing';
 export * from './slain';
+export * from './repopulation';

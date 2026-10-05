@@ -844,6 +844,22 @@
             ],
             "additionalProperties": false
           },
+          "repopulate": {
+            "description": "Opts the spawned creature in to returning after it is killed (mw-ju8.29): it is spawned fresh at its origin when the scene next loads, or at once when the player is out of sight and far away. Not for bosses or gatekeepers (needs creature).",
+            "type": "object",
+            "properties": {
+              "afterDays": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 365,
+                "description": "World days after the kill before the creature returns; 1 = once the player has slept through a night."
+              }
+            },
+            "required": [
+              "afterDays"
+            ],
+            "additionalProperties": false
+          },
           "carries": {
             "description": "What the spawned creature carries and drops where it dies, as world items (mw-e01.5), e.g. the slice skeleton’s key (needs creature).",
             "minItems": 1,

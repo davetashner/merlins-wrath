@@ -115,6 +115,8 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `spawns[].leash` | object | — | Ties the spawned creature to a post (mw-e01.17): in Combat it chases only this far from the post, then searches and walks home (needs creature). |
 | `spawns[].leash.radius` | number > 0 | required | Metres from the post, measured on the level, past which a chase ends. |
 | `spawns[].leash.post` | list of any (at least 3) | — | The post, grid cells; absent = the spawn point. |
+| `spawns[].repopulate` | object | — | Opts the spawned creature in to returning after it is killed (mw-ju8.29): it is spawned fresh at its origin when the scene next loads, or at once when the player is out of sight and far away. Not for bosses or gatekeepers (needs creature). |
+| `spawns[].repopulate.afterDays` | integer 1–365 | required | World days after the kill before the creature returns; 1 = once the player has slept through a night. |
 | `spawns[].carries` | list of object (at least 1) | — | What the spawned creature carries and drops where it dies, as world items (mw-e01.5), e.g. the slice skeleton’s key (needs creature). |
 | `spawns[].carries[].item` | ref → item | required | An item the creature carries. |
 | `spawns[].carries[].count` | integer 1–9999 | `1` | Units of it; default 1. |
