@@ -1,0 +1,22 @@
+{
+  "$schema": "../creature.schema.json",
+  "id": "npc-watchman-day",
+  "family": "human",
+  "tags": ["npc", "guard", "bridge-watch", "watch-day"],
+  "stats": { "health": 90, "poise": 40, "mass": 85, "size": "medium" },
+  "senses": "humanoid",
+  "locomotion": "humanoid",
+  "attacks": [],
+  "faction": "bridge-watch",
+  "disposition": { "towardPlayer": "friendly" },
+  "personality": {
+    "bravery": 0.8,
+    "curiosity": 0.4,
+    "aggression": 0,
+    "diligence": 0.9,
+    "sociability": 0.5,
+    "greed": 0.2
+  },
+  "behaviour": { "profile": "watchman" },
+  "presentation": { "mesh": "placeholder-capsule", "sfx": "placeholder" }
+}

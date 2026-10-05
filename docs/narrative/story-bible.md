@@ -260,7 +260,7 @@ to reach and the town easy to attack: before the bridge, the river was Briar Gle
 Watch** (part of Captain Hale's Watch, §5.2) keeps a guard post on the town end by day and night, and turns
 away hooligans and monsters; nothing that is not a person on business crosses it. Everything a traveller
 brings into Briar Glen from the valley passes the post first, and Marsh's General Store is the first building
-past it. The bridge is canon (owner, 2026-10-04). Guard names, shift times and what the post does with
+past it. The bridge is canon (owner, 2026-10-04). The Watch wear tabards and stand just inside the town end, beside a brazier and lamp (owner-reviewable greybox decision, mw-ju8.12). Guard names, shift times and what the post does with
 armed or armoured strangers are open.
 
 **The Bridgeward College (placeholder name, Briar Glen)** — the bridge's second legacy: the garrison that had
