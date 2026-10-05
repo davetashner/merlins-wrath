@@ -4,12 +4,14 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   BUY_RATE_BAND as CONTENT_BUY_RATE,
+  INN_BED_PRICE_BAND as CONTENT_INN_BED,
   MARKUP_BAND as CONTENT_MARKUP,
   SPECIALTY_BONUS_BAND as CONTENT_SPECIALTY,
   STOLEN_FACTOR_BAND as CONTENT_STOLEN,
 } from '@content/types/merchant.ts';
 import {
   BUY_RATE_BAND,
+  INN_BED_PRICE_BAND,
   MARKUP_BAND,
   SPECIALTY_BONUS_BAND,
   STOLEN_FACTOR_BAND,
@@ -21,6 +23,7 @@ describe('economy bands', () => {
     expect(CONTENT_BUY_RATE).toEqual(BUY_RATE_BAND);
     expect(CONTENT_SPECIALTY).toEqual(SPECIALTY_BONUS_BAND);
     expect(CONTENT_STOLEN).toEqual(STOLEN_FACTOR_BAND);
+    expect(CONTENT_INN_BED).toEqual(INN_BED_PRICE_BAND);
   });
 
   it('the economy doc states the bands the code enforces', () => {
@@ -29,6 +32,7 @@ describe('economy bands', () => {
     expect(doc).toContain('| Buy rate | 0.3-0.6 | 0.4 |');
     expect(doc).toContain('| Specialty bonus | 1.1-1.3 | 1.2 |');
     expect(doc).toContain('| Stolen / fence factor | 0.5-0.8 | 0.6 |');
+    expect(doc).toContain('| Inn bed | 8-15 per night |');
     expect(doc).toContain('**0.6-0.8**');
   });
 });

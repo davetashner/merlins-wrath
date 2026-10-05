@@ -22,6 +22,11 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `stock[].restock` | object | — | How the stock refills; absent = never restocks. |
 | `stock[].restock.everyHours` | integer 1–720 | required | In-world hours between restocks. |
 | `stock[].restock.amount` | integer 1–999 | required | Units (or rolls) added each time, up to `count`. |
+| `services` | list of object | `[]` | Services on the shop window’s Services tab (an inn’s rooms). |
+| `services[].id` | id | required | Service id, unique within the merchant, e.g. "room-for-the-night". |
+| `services[].name` | string | required | What the shop window lists, e.g. "Room for the night". |
+| `services[].price` | integer 1–100000 | required | Crowns, fixed by the merchant: no markup, disposition or haggle applies. A `rest` service sits in the inn-bed band 8-15. |
+| `services[].kind` | `"rest"` | required | `rest`: sleep until morning, fully healed (the Sleeping Ox room). |
 | `goldReserve` | integer ≥ 0 | required | Gold the merchant starts with to pay the player for sales. |
 | `goldRestockPerDay` | integer ≥ 0 | `0` | Gold the reserve refills by each in-world day, up to `goldReserve`. |
 | `markup` | number > 0 | required | Multiplier on item value when the player buys (economy band 1.1-1.5). |

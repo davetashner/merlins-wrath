@@ -2,6 +2,7 @@
 // hold them, every attempt is published, and a second failure warns.
 import {
   addSignalGraph,
+  restCompleted,
   installSignals,
   installStimuli,
   placeEntity,
@@ -105,6 +106,19 @@ describe('the game autosave (mw-e01.7)', () => {
       type: 'saved',
       trigger: { kind: 'quest', source: 'route.done' },
     });
+  });
+
+  it('finishing a rest requests one rest autosave, whatever else is going on (mw-ju8.6)', async () => {
+    const t = setup();
+    const actor = t.world.spawn();
+    const rested = { tick: 0, actor, kind: 'inn', hours: 9, point: 'sleeping-ox' } as const;
+    t.world.events.emit(restCompleted, { ...rested, wakes: { day: 2, minute: 360 } });
+    t.world.step();
+    expect(await t.autosave.afterStep()).toMatchObject({
+      type: 'saved',
+      trigger: { kind: 'rest', source: 'sleeping-ox' },
+    });
+    expect(await t.autosave.afterStep()).toBeNull();
   });
 
   it('a veto holds the request until it clears; reset forgets it', async () => {

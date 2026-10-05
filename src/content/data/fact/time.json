@@ -1,0 +1,22 @@
+{
+  "$schema": "../fact.schema.json",
+  "id": "time",
+  "name": "World time facts",
+  "notes": "The minimum world day clock (mw-ju8.6), until the real in-game clock lands (mw-e27.12). It never advances with sim ticks: only resting at an inn moves it (to 06:00 the next morning). mw-e27.12 takes these keys over.",
+  "facts": [
+    {
+      "key": "time.day",
+      "type": "int",
+      "default": 1,
+      "description": "The in-world day number, 1 on the first day. Increases each time the player sleeps through a midnight (rest at an inn).",
+      "owner": "rest"
+    },
+    {
+      "key": "time.minute",
+      "type": "int",
+      "default": 480,
+      "description": "The minute of the in-world day, 0-1439 (480 = 08:00, a new world's start). Resting at an inn sets it to 360 (06:00).",
+      "owner": "rest"
+    }
+  ]
+}

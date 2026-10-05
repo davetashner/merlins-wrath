@@ -1283,6 +1283,8 @@ function startRenderer(
           world,
           content,
           player: player.entity,
+          // Sleeping is refused while any autosave safety veto objects (mw-ju8.6).
+          safety: () => safety.active()[0]?.reason ?? null,
           publish: (key, value) => {
             root.dataset[key] = value;
           },

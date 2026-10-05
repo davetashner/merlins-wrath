@@ -5,6 +5,7 @@
 //   autosave (the slice's CP-1 and CP-2, via `sceneCheckpoints`);
 // - milestones: a fact turning true requests a `quest` autosave (the slice's `slice.complete`, so
 //   finishing the slice is saved);
+// - rests: finishing a rest (`rest.completed`, mw-ju8.6) requests a `rest` autosave, once;
 // - vetoes: systems' "not safe now" checks (the creatures' combat veto), so a request made mid-fight
 //   waits until the fight is over.
 //
@@ -14,7 +15,7 @@
 // is published (the e2e reads #app[data-autosave]); a write that failed twice is a warning, never a
 // blocking error.
 
-import { factChanged, type VolumeCrossing, type World } from '@sim/index';
+import { factChanged, restCompleted, type VolumeCrossing, type World } from '@sim/index';
 import type { SaveSlots } from '../slots/index';
 import { autosaveAtCheckpoints } from './checkpoints';
 import {
@@ -85,6 +86,11 @@ export class GameAutosave {
         }),
       );
     }
+    this.stops.push(
+      world.events.on(restCompleted, ({ point }) => {
+        this.scheduler.request({ kind: 'rest', source: point });
+      }),
+    );
     this.stops.push(
       this.scheduler.subscribe((event) => {
         options.publish?.(event);

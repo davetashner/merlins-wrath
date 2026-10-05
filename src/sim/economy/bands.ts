@@ -32,6 +32,8 @@ export const HAGGLE_BAND = { min: -0.05, max: 0.1 } as const;
 export const WORLD_PRICE_BAND = { min: 0.8, max: 1.25 } as const;
 /** Target ratio of obtainable gold to sink cost for a region (economy doc, "Target gold curve"). */
 export const OBTAINABLE_SINK_RATIO_BAND = { min: 0.6, max: 0.8 } as const;
+/** Gold for a night at an inn (economy doc, "Inn bed"): a service price fixed by the innkeeper. */
+export const INN_BED_PRICE_BAND = { min: 8, max: 15 } as const;
 /** The price floor in gold. */
 export const MIN_PRICE = 1;
 

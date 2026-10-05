@@ -147,6 +147,46 @@
         "additionalProperties": false
       }
     },
+    "services": {
+      "default": [],
+      "description": "Services on the shop window’s Services tab (an inn’s rooms).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Service id, unique within the merchant, e.g. \"room-for-the-night\"."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What the shop window lists, e.g. \"Room for the night\"."
+          },
+          "price": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "description": "Crowns, fixed by the merchant: no markup, disposition or haggle applies. A `rest` service sits in the inn-bed band 8-15."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "rest"
+            ],
+            "description": "`rest`: sleep until morning, fully healed (the Sleeping Ox room)."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "price",
+          "kind"
+        ],
+        "additionalProperties": false
+      }
+    },
     "goldReserve": {
       "type": "integer",
       "minimum": 0,

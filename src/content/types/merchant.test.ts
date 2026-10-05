@@ -46,12 +46,13 @@ const problems = (value: unknown) =>
   );
 
 describe('merchant schema', () => {
-  it('fills defaults: no tags, specialties or stock, not a fence, no restock gold', () => {
+  it('fills defaults: no tags, specialties, stock or services, not a fence, no restock gold', () => {
     expect(merchantSchema.parse(general)).toEqual({
       ...general,
       personalityTags: [],
       specialties: [],
       stock: [],
+      services: [],
       goldRestockPerDay: 0,
       isFence: false,
       buysStolen: false,
@@ -150,6 +151,21 @@ describe('merchant checks', () => {
         '/stolenFactor: merchant:test-general stolenFactor 0.95 is outside the economy band 0.5-0.8 (docs/design/economy.md)',
       ],
     );
+  });
+
+  it('mw-ju8.6: a room for the night is held to the inn-bed band, and service ids are unique', () => {
+    const room = { id: 'room', name: 'Room', price: 12, kind: 'rest' };
+    expect(loadIssues({ ...general, services: [room] })).toEqual([]);
+    expect(loadIssues({ ...general, services: [{ ...room, price: 8 }] })).toEqual([]);
+    expect(loadIssues({ ...general, services: [{ ...room, price: 15 }] })).toEqual([]);
+    expect(loadIssues({ ...general, services: [{ ...room, price: 16 }] })).toEqual([
+      '/services/0/price: merchant:test-general service room costs 16, outside the inn-bed band 8-15 (docs/design/economy.md)',
+    ]);
+    expect(loadIssues({ ...general, services: [{ ...room, price: 7 }] })).toHaveLength(1);
+    expect(problems({ ...general, services: [room, room] })).toEqual([
+      'services.1.id: merchant "test-general": service "room" is listed twice',
+    ]);
+    expect(problems({ ...general, services: [{ ...room, kind: 'bribe' }] })).toHaveLength(1);
   });
 
   it('AC-2: a markup just inside or outside the band edge', () => {

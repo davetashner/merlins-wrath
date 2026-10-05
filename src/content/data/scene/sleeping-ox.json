@@ -1,0 +1,301 @@
+{
+  "$schema": "../scene.schema.json",
+  "id": "sleeping-ox",
+  "name": "The Sleeping Ox",
+  "description": "Bead mw-ju8.6: Briar Glen's inn in grey box, built from the e00 kit only. A 10 x 8 m common room (street door in the south wall, a long bar counter with Odette \"Dot\" Farrow behind it, a hearth, lanterns, two tables with benches) and, through an open doorway in the east wall, a rented 4 x 4 m room with a bed. Open-topped like every kit scene; furniture is kit stand-ins with named marker spawns so art can dress them later (mw-e24.4 builds the full inn). The bar opens the shop screen for merchant sleeping-ox (tag merchant:<id>, verb talk): Buy and Sell for food, and on the Services tab a room for the night, which charges the crowns, sleeps until morning (06:00), fully restores health, stamina and mana and autosaves. dev-crowns:400 tops the player up on first opening so the dev scene can trade. Reach it with ?scene=sleeping-ox; the street exit is an area-exit marker (tag scene:briar-glen-lane) until area transitions exist (mw-e01.11).",
+  "grid": 1,
+  "camera": {
+    "position": [-9, 11, -11],
+    "target": [2, 1, 0]
+  },
+  "placements": [
+    {
+      "piece": "floor",
+      "at": [0, 0, 0],
+      "scale": [5, 1, 4]
+    },
+    {
+      "piece": "floor",
+      "at": [0, 0, -5.5],
+      "scale": [3, 1, 1.5]
+    },
+    {
+      "piece": "wall",
+      "at": [-3, 0, -4],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "doorway",
+      "at": [0, 0, -4]
+    },
+    {
+      "piece": "wall",
+      "at": [3, 0, -4],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [0, 0, 4],
+      "scale": [5, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [-5, 0, 0],
+      "scale": [4, 1, 1],
+      "yaw": 90
+    },
+    {
+      "piece": "wall",
+      "at": [5, 0, -3],
+      "scale": [1, 1, 1],
+      "yaw": 90
+    },
+    {
+      "piece": "doorway",
+      "at": [5, 0, -1],
+      "yaw": 90
+    },
+    {
+      "piece": "wall",
+      "at": [5, 0, 2],
+      "scale": [2, 1, 1],
+      "yaw": 90
+    },
+    {
+      "piece": "floor",
+      "at": [7, 0, -1],
+      "scale": [2, 1, 2]
+    },
+    {
+      "piece": "wall",
+      "at": [9, 0, -1],
+      "scale": [2, 1, 1],
+      "yaw": 90
+    },
+    {
+      "piece": "wall",
+      "at": [7, 0, -3],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "wall",
+      "at": [7, 0, 1],
+      "scale": [2, 1, 1]
+    },
+    {
+      "piece": "platform",
+      "at": [-2, 0, 1.5],
+      "scale": [3, 1, 0.5],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [-2, 0, 3.75],
+      "scale": [3, 1.8, 0.2],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [-2.5, 0, -1.5],
+      "scale": [0.8, 0.75, 0.5],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [-2.5, 0, -2.75],
+      "scale": [0.8, 0.5, 0.2],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [-2.5, 0, -0.25],
+      "scale": [0.8, 0.5, 0.2],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [2.25, 0, -2],
+      "scale": [0.8, 0.75, 0.5],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [2.25, 0, -3.25],
+      "scale": [0.8, 0.5, 0.2],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "platform",
+      "at": [2.25, 0, -1],
+      "scale": [0.8, 0.5, 0.2],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "crate",
+      "at": [-4.5, 0, -3.5],
+      "scale": [0.8, 1, 0.8]
+    },
+    {
+      "piece": "crate",
+      "at": [-4.5, 0, -2.5]
+    },
+    {
+      "piece": "crate",
+      "at": [3.5, 0, 3.5],
+      "scale": [0.8, 1, 0.8]
+    },
+    {
+      "piece": "platform",
+      "at": [8.25, 0, -1],
+      "scale": [0.6, 0.5, 1],
+      "purpose": "blocking"
+    },
+    {
+      "piece": "crate",
+      "at": [6, 0, 0.25],
+      "scale": [0.4, 0.5, 0.4]
+    }
+  ],
+  "spawns": [
+    {
+      "id": "player-start",
+      "at": [0, 0, -3],
+      "tags": ["player-start", "entrance"]
+    },
+    {
+      "id": "front-door",
+      "at": [0, 0, -4],
+      "door": {
+        "profile": "wooden-door"
+      }
+    },
+    {
+      "id": "street-exit",
+      "at": [0, 0, -6.5],
+      "tags": ["area-exit", "street", "scene:briar-glen-lane"]
+    },
+    {
+      "id": "bar-counter",
+      "at": [-2, 0, 0.75],
+      "tags": ["counter", "shop", "merchant:sleeping-ox", "dev-crowns:400"],
+      "interact": {
+        "affordances": [
+          {
+            "verb": "talk",
+            "label": "Trade / Rooms"
+          }
+        ],
+        "radius": 1.5
+      }
+    },
+    {
+      "id": "npc-dot",
+      "at": [-2, 0, 3],
+      "tags": ["innkeeper"],
+      "yaw": 180,
+      "creature": "npc-dot",
+      "leash": {
+        "radius": 3
+      }
+    },
+    {
+      "id": "hearth",
+      "at": [3, 0.5, 3.25],
+      "tags": ["hearth"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 86400
+      }
+    },
+    {
+      "id": "lantern-door",
+      "at": [0, 2.5, -3.5],
+      "tags": ["lantern"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "lantern-bar",
+      "at": [-1, 1.75, 1.5],
+      "tags": ["lantern"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "lantern-room",
+      "at": [8.5, 2, -2.5],
+      "tags": ["lantern"],
+      "properties": {
+        "flammable": true,
+        "burning": true,
+        "fuel": 28800
+      }
+    },
+    {
+      "id": "table-west",
+      "at": [-2.5, 0.75, -1.5],
+      "tags": ["table", "furniture"]
+    },
+    {
+      "id": "table-east",
+      "at": [2.25, 0.75, -2],
+      "tags": ["table", "furniture"]
+    },
+    {
+      "id": "bench-west-south",
+      "at": [-2.5, 0.5, -2.75],
+      "tags": ["bench", "furniture"]
+    },
+    {
+      "id": "bench-west-north",
+      "at": [-2.5, 0.5, -0.25],
+      "tags": ["bench", "furniture"]
+    },
+    {
+      "id": "bench-east-south",
+      "at": [2.25, 0.5, -3.25],
+      "tags": ["bench", "furniture"]
+    },
+    {
+      "id": "bench-east-north",
+      "at": [2.25, 0.5, -1],
+      "tags": ["bench", "furniture"]
+    },
+    {
+      "id": "room-door",
+      "at": [5, 0, -1],
+      "tags": ["rented-room", "doorway"]
+    },
+    {
+      "id": "bed",
+      "at": [8.25, 0.5, -1],
+      "tags": ["bed", "furniture", "rented-room"]
+    },
+    {
+      "id": "washstand",
+      "at": [6, 0.5, 0.25],
+      "tags": ["furniture", "rented-room"]
+    }
+  ],
+  "light": {
+    "ambient": 0.26,
+    "directional": [
+      {
+        "id": "window",
+        "direction": [0.3, -1, 0.4],
+        "level": 0.2,
+        "reach": 30
+      }
+    ]
+  },
+  "environment": {
+    "sky": "#1E1B2E"
+  }
+}

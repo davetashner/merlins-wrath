@@ -26,6 +26,7 @@ import {
 } from '../inventory/inventory';
 import type { LootTables } from '../loot/tables';
 import { Rng } from '../rng';
+import { restBlocked, restUntilMorning, type RestOptions, type RestResult } from '../rest/rest';
 import { price, type PriceInput, type PriceRefusal, type PriceResult } from './price';
 import {
   BUYBACK_LIMIT,
@@ -43,6 +44,16 @@ export interface ShopItemDef extends InventoryItemDef {
   readonly flags: InventoryItemDef['flags'] & { readonly noSell?: boolean | undefined };
 }
 
+/** A service a merchant sells at a fixed price (mw-ju8.6; trainers and more follow in mw-e20.9). */
+export interface ShopServiceDef {
+  readonly id: string;
+  readonly name: string;
+  /** Whole gold, fixed by the merchant: no markup, disposition or haggle applies. */
+  readonly price: number;
+  /** `rest`: a room for the night (sleep until morning). */
+  readonly kind: 'rest';
+}
+
 /** What shops read of a merchant definition (a loaded `MerchantDef` is one). */
 export interface ShopMerchantDef {
   readonly id: string;
@@ -55,6 +66,8 @@ export interface ShopMerchantDef {
   readonly isFence?: boolean | undefined;
   readonly buysStolen?: boolean | undefined;
   readonly stolenFactor?: number | undefined;
+  /** Services on offer (a room for the night); absent or empty = none. */
+  readonly services?: readonly ShopServiceDef[] | undefined;
   readonly stock: readonly {
     readonly item?: { readonly id: string } | undefined;
     readonly lootTable?: { readonly id: string } | undefined;
@@ -116,6 +129,39 @@ export interface ShopTransaction {
 export const shopBought = defineEvent<ShopTransaction>('shop.bought');
 export const shopSold = defineEvent<ShopTransaction>('shop.sold');
 export const shopBoughtBack = defineEvent<ShopTransaction>('shop.bought-back');
+
+/** Payload of `shop.service-bought`. */
+export interface ServiceTransaction {
+  readonly tick: number;
+  readonly actor: EntityId;
+  readonly merchantId: string;
+  readonly serviceId: string;
+  readonly kind: ShopServiceDef['kind'];
+  /** Gold that changed hands. */
+  readonly price: number;
+}
+
+export const shopServiceBought = defineEvent<ServiceTransaction>('shop.service-bought');
+
+/** Why a service purchase failed. */
+export type ServiceFailure =
+  /** The merchant does not offer that service (stale id). */
+  | 'no-such-service'
+  | 'cannot-afford'
+  /** Resting was vetoed (hostiles about); `detail` says why. */
+  | 'unsafe';
+
+export type ServiceResult =
+  | {
+      readonly ok: true;
+      readonly price: number;
+      /** The rest it bought (a `rest` service). */
+      readonly rest: Extract<RestResult, { ok: true }>;
+    }
+  | { readonly ok: false; readonly reason: ServiceFailure; readonly detail?: string };
+
+/** What a service purchase needs besides the merchant: how and whether it is safe to rest. */
+export type ServiceOptions = Pick<RestOptions, 'clock' | 'safety' | 'pools'>;
 
 /** Name of the seed-derived stream a merchant's loot-table stock is rolled with. */
 export const shopStockStream = (merchantId: string): string => `shop.stock.${merchantId}`;
@@ -330,6 +376,45 @@ export class Shops {
       total,
     });
     return { ok: true, unitPrice, total };
+  }
+
+  /**
+   * The player buys service `serviceId` (a room for the night: sleep until morning, fully rested).
+   * Checks first and changes nothing on a failure: refused as `unsafe` when the safety verdict
+   * objects, `cannot-afford` when short of gold. The merchant keeps the gold; the rest then runs
+   * (src/sim/rest/rest.ts) and emits `rest.completed` after `shop.service-bought`.
+   * @throws RangeError for an unknown merchant or an actor without an inventory.
+   */
+  buyService(
+    world: World,
+    actor: EntityId,
+    merchantId: string,
+    serviceId: string,
+    options: ServiceOptions = {},
+  ): ServiceResult {
+    const state = this.stateOf(world, merchantId);
+    const service = this.#merchant(merchantId).services?.find((s) => s.id === serviceId);
+    if (service === undefined) return failure('no-such-service');
+    const detail = restBlocked(options);
+    if (detail !== null) return { ok: false, reason: 'unsafe', detail };
+    if (this.#pack(world, actor).gold < service.price) return failure('cannot-afford');
+    this.#rules.spendGold(world, actor, service.price);
+    merchantStoreOf(world).set(merchantId, { ...state, gold: state.gold + service.price });
+    world.events.emit(shopServiceBought, {
+      tick: world.tick,
+      actor,
+      merchantId,
+      serviceId,
+      kind: service.kind,
+      price: service.price,
+    });
+    // The safety verdict was just taken, so the rest cannot be refused.
+    const rest = restUntilMorning(world, actor, {
+      ...options,
+      kind: 'inn',
+      point: merchantId,
+    }) as Extract<RestResult, { ok: true }>;
+    return { ok: true, price: service.price, rest };
   }
 
   /**
