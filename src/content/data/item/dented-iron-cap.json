@@ -1,0 +1,21 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "dented-iron-cap",
+  "category": "armor",
+  "name": "Dented iron cap",
+  "description": "A skullcap with a very personal dent. It was not enough, but it is a decent cap.",
+  "notes": "Tier 3 skeleton gear drop (mw-ju8.19, economy doc: gear base 40-120; helmets light 35-60). Worth 45, weight 1.25 kg as the open helm.",
+  "icon": "icon-item-dented-iron-cap-01",
+  "value": 45,
+  "weightClass": "medium",
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "head",
+    "proficiencies": ["light-armor"]
+  },
+  "armor": {
+    "weightKg": 1.25
+  }
+}

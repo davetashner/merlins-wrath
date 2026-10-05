@@ -1,0 +1,16 @@
+{
+  "$schema": "../shield.schema.json",
+  "id": "forgotten-board-shield",
+  "name": "Rotted board shield",
+  "notes": "The Forgotten shield-bearer's guard (mw-ju8.19): a door plank and a rusted boss, held up by habit. A shieldless-style guard (kind weapon), so the knight's shield bash breaks it outright for a second (mw-e04.14) - the counter to a skeleton that out-waits a mashed light attack. Soaks 80% of slash and pierce but only 50% of blunt (wood splinters under a hammer) and nothing of fire (it is dry wood). Wide 110 degree arc, a slow 12-tick raise, half speed behind it. Skeletons have no stamina pool, so only a bash, a flank or fire gets through.",
+  "kind": "weapon",
+  "absorption": {
+    "slash": 80,
+    "pierce": 80,
+    "blunt": 50
+  },
+  "stability": 100,
+  "raiseTicks": 12,
+  "arcDegrees": 110,
+  "moveSpeedScale": 0.5
+}

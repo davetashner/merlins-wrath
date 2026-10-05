@@ -241,16 +241,21 @@ test('mw-e01.6 AC-2: holding the gallery key, Interact on the exit door unlocks 
   await expect(app).toHaveAttribute('data-mechanisms', /"exit-door":\{"status":"locked"/);
   await takeControl(page);
 
-  // The miner dies at its post and drops the key it carries: Interact by the body takes it onto the
+  // The miner dies at its post and drops the key it carries, with its tier 1 loot (crowns and maybe
+  // scrap, mw-ju8.19): Interact by the body takes things up one at a time until the key is on the
   // keyring.
   await killSkeleton(page);
   await standAt(page, [2.5, 0, 31.3], { x: 2.5, z: 32.5 });
   const prompt = page.getByTestId('interact-prompt');
-  await expect(prompt).toContainText('Rusted gallery key', { timeout: 10_000 });
-  await interact(page);
+  for (let taken = 0; taken < 5; taken++) {
+    await expect(prompt).toContainText(/^E?(Take|Pick up)/, { timeout: 10_000 });
+    const key = ((await prompt.textContent()) ?? '').includes('Rusted gallery key');
+    await interact(page);
+    if (key) break;
+  }
   await expect
     .poll(async () => (await pack(page)).map((stack) => stack.item), { timeout: 30_000 })
-    .toEqual(['rusted-gallery-key']);
+    .toContain('rusted-gallery-key');
 
   // A step in front of the iron door: one Interact unlocks and opens it.
   await standAt(page, [0, 0, 35.5], { x: 0, z: 37 });
@@ -266,7 +271,7 @@ test('mw-e01.6 AC-2: holding the gallery key, Interact on the exit door unlocks 
     await page.evaluate(() => (window as unknown as { inventoryOpens: number }).inventoryOpens),
   ).toBe(0);
   // The quest key stays on the ring.
-  expect((await pack(page)).map((stack) => stack.item)).toEqual(['rusted-gallery-key']);
+  expect((await pack(page)).map((stack) => stack.item)).toContain('rusted-gallery-key');
 
   // Through into the vestibule: the slice is complete.
   const through = await walkNorth(page, 38.5);

@@ -1,0 +1,19 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "forgotten-miner-coins",
+  "notes": "Tier 1 skeleton coins (economy doc 1-4 gold): one pile of 1-4 gold, uniform, mean 2.5.",
+  "rolls": {
+    "min": 1,
+    "max": 1
+  },
+  "entries": [
+    {
+      "item": "gold",
+      "weight": 1,
+      "count": {
+        "min": 1,
+        "max": 4
+      }
+    }
+  ]
+}

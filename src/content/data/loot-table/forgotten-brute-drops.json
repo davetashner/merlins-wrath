@@ -1,0 +1,20 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "forgotten-brute-drops",
+  "notes": "What a Forgotten brute leaves (mw-ju8.19, economy doc tier 3): always 8-20 crowns (mean 14) and a 50% chance of a gear piece (a helm most often), 5% of it a fine kettle helm. Each part is rolled exactly once (noDuplicates over 2 entries), so coins always drop. Not final tuning.",
+  "rolls": {
+    "min": 2,
+    "max": 2
+  },
+  "entries": [
+    {
+      "table": "forgotten-brute-coins",
+      "weight": 1
+    },
+    {
+      "table": "forgotten-brute-gear",
+      "weight": 1
+    }
+  ],
+  "noDuplicates": true
+}

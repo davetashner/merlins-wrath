@@ -187,14 +187,14 @@ describe('saving and reloading the slice (mw-e01.7)', () => {
     expect(classOf(back.sim, back.player)).toBe('knight');
     expect(back.alive(back.skeleton())).toBe(false);
     expect(back.world.facts.get('entity:slice/skeleton.slain')).toBe(true);
-    // The key it dropped still lies by its body (mw-e01.5), once.
+    // The key it dropped still lies by its body (mw-e01.5), once, with its tier 1 loot (mw-ju8.19).
     const lying = (w: typeof back.world) =>
       w
         .query(WorldItemComponent)
         .ids()
         .map((entity) => w.get(entity, WorldItemComponent)?.defId);
-    expect(lying(t.world)).toEqual(['rusted-gallery-key']);
-    expect(lying(back.world)).toEqual(['rusted-gallery-key']);
+    expect(lying(t.world)).toEqual(['rusted-gallery-key', 'gold', 'bent-pick-head']);
+    expect(lying(back.world)).toEqual(lying(t.world));
     // The chest is empty: Search is greyed with "Empty", and Interact rolls nothing more.
     const again = back.spawn('alcove-chest');
     back.step(IDLE);

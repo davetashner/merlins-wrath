@@ -38,6 +38,7 @@
 import type { AlertState, BehaviourEvent } from '@content/index';
 import type { AttackLookup } from '../combat/attacks/executor';
 import { HealthComponent } from '../combat/damage/components';
+import { GuardComponent, setBlockHeld } from '../combat/melee/components';
 import type { EntityId } from '../core/component';
 import type { System, World } from '../core/world';
 import { CreatureComponent } from '../creatures/components';
@@ -250,6 +251,18 @@ function act(view: AgentView, behaviour: CompiledBehaviour): void {
   }
 }
 
+/**
+ * Holds the shield of an agent that carries one (mw-ju8.19) up exactly while its current step is a
+ * `guard`: any other step, a finished or failed activity or a stagger lowers it, so a guard step
+ * cannot leak a raised shield into the swing that follows.
+ */
+function syncGuard(view: AgentView, behaviour: CompiledBehaviour): void {
+  const { world, entity, brain } = view;
+  if (!world.isRegistered(GuardComponent) || !world.has(entity, GuardComponent)) return;
+  const activity = brain.activity === null ? undefined : behaviour.activities.get(brain.activity);
+  setBlockHeld(world, entity, activity?.steps[brain.step]?.primitive === 'guard');
+}
+
 /** The AI system (added by `installAi`). */
 function aiSystem<TInput>(runtime: AiRuntime): System<TInput> {
   return {
@@ -317,7 +330,9 @@ function aiSystem<TInput>(runtime: AiRuntime): System<TInput> {
       });
       brains.forEach((entity, brain) => {
         const behaviour = focus(entity, brain);
-        if (behaviour !== undefined) act(view, behaviour);
+        if (behaviour === undefined) return;
+        act(view, behaviour);
+        syncGuard(view, behaviour);
       });
     },
   };

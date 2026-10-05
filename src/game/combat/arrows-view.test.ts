@@ -13,6 +13,7 @@ import {
   HIT_VOLUME_COMPONENTS,
   installBow,
   PlacementComponent,
+  ProjectileComponent,
   World,
   type ActionFrame,
   type Vec3,
@@ -220,5 +221,33 @@ describe('arrows on screen (mw-e05.21)', () => {
     // Put away, the overlay says so.
     step(['Digit4']);
     expect(arrowsCell()).toBe('broadhead 0 (away)');
+  });
+});
+
+describe('creature projectiles on screen (mw-ju8.19)', () => {
+  it('a creature’s projectile attack gets a shaft pointing along its flight, without the bow system', () => {
+    const world = new World<never>({ seed: 1 }).register(ProjectileComponent);
+    const sync = new RenderSync(world);
+    const other = world.spawn(); // not a projectile: nothing to draw
+    const shot = world.spawn();
+    world.add(shot, ProjectileComponent, {
+      attacker: other,
+      attack: 'forgotten-archer-shot',
+      position: { x: 1, y: 1.35, z: 2 },
+      direction: { x: 0, y: 0, z: -1 },
+      travelled: 0.5,
+    });
+    expect(readArrowTransform(world, other)).toBeUndefined();
+    expect(readArrowTransform(world, shot)).toEqual({
+      position: { x: 1, y: 1.35, z: 2 },
+      rotation: pointAlong({ x: 0, y: 0, z: -1 }),
+    });
+    expect(bindArrows(world, sync, headless)).toBe(1);
+    expect(bindArrows(world, sync, headless)).toBe(0); // bound once
+    expect(sync.has(shot)).toBe(true);
+    // A world with neither arrows nor projectiles binds and reads nothing.
+    const bare = new World<never>({ seed: 1 });
+    expect(bindArrows(bare, new RenderSync(bare), headless)).toBe(0);
+    expect(readArrowTransform(bare, bare.spawn())).toBeUndefined();
   });
 });

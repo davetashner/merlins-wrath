@@ -1,0 +1,43 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "forgotten-brute-sweep",
+  "notes": "The Forgotten brute's sweep (mw-ju8.19): a wide flat arc, 44 ticks of windup (730 ms) telegraphed from tick 0, 8 active, 52 recovery. 28 slash, 45 poise, 35 stamina on a block; reach about 2 m across 140 degrees, so the answer is to back off, roll through or block, not to side-step. Parryable and blockable. Its clip is the miner's slash retimed (placeholder).",
+  "verb": "attack",
+  "frames": {
+    "startup": 44,
+    "active": 8,
+    "recovery": 52
+  },
+  "damage": {
+    "amounts": {
+      "slash": 28
+    },
+    "poiseDamage": 45,
+    "staminaDamage": 35
+  },
+  "hitbox": {
+    "track": "forgotten-brute-sweep-arc",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": -0.1,
+        "y": 1.0,
+        "z": 0.4
+      },
+      "to": {
+        "x": -0.1,
+        "y": 1.0,
+        "z": 2.0
+      },
+      "radius": 0.2
+    },
+    "reach": "long",
+    "swing": "horizontal"
+  },
+  "telegraphTick": 0,
+  "hitStop": "heavy",
+  "presentation": {
+    "anim": "anim-forgotten-brute-sweep",
+    "audioCue": "sfx-knight-sword-swing-heavy"
+  }
+}

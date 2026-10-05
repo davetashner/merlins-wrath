@@ -14,7 +14,12 @@ import { AttackEnded } from '../combat/attacks/events';
 import { cancelAttack, installAttacks } from '../combat/attacks/executor';
 import { DAMAGE_COMPONENTS, giveCombatant } from '../combat/damage/components';
 import { DamageModel } from '../combat/damage/model';
-import { CombatFacingComponent } from '../combat/melee/components';
+import {
+  CombatFacingComponent,
+  giveGuard,
+  GuardComponent,
+  guardOf,
+} from '../combat/melee/components';
 import { giveHitReactions, HitReactionComponent } from '../combat/reactions/components';
 import { ActionTimelineComponent, giveActionTimeline } from '../combat/timeline/components';
 import type { EntityId } from '../core/component';
@@ -887,5 +892,80 @@ describe('sharing targets (mw-e11.13)', () => {
       position: { x: 0, y: 0, z: 0 },
     });
     expect(must(shares[0]).confidence).toBeGreaterThan(0.9);
+  });
+});
+
+describe('the guard step (mw-ju8.19)', () => {
+  const shield = {
+    id: 'board',
+    kind: 'weapon',
+    absorption: { slash: 80 },
+    stability: 100,
+    raiseTicks: 12,
+    arcDegrees: 110,
+    moveSpeedScale: 0.5,
+  } as const;
+  const guarding = (steps: Loose[]) => fighter({ plain: true, press: steps });
+
+  function shieldBearer(steps: Loose[], at: Vec3 = { x: 3, y: 0, z: 0 }) {
+    const a = arena([], { behaviour: guarding(steps), foeAt: { x: 0, y: 0, z: 0 } });
+    a.world.register(GuardComponent);
+    const g = a.guard(at);
+    giveGuard(a.world, g, shield);
+    const log = ends(a.world, g);
+    return { a, g, log };
+  }
+  const held = (a: Arena, g: EntityId) => guardOf(a.world, g)?.held;
+
+  it('squares up to its target and holds the shield up for its seconds, then lowers it', () => {
+    const { a, g, log } = shieldBearer([
+      { do: 'guard', seconds: 1 },
+      { do: 'wait', seconds: 5 },
+    ]);
+    a.look();
+    for (let i = 0; i < 30; i++) a.world.step();
+    expect(held(a, g)).toBe(true);
+    // It turned to face the foe at the origin (it stands at +x).
+    expect(a.world.get(g, CombatFacingComponent)?.facing.x).toBeCloseTo(-1, 3);
+    for (let i = 0; i < 60; i++) a.world.step(); // past the second, waiting
+    expect(held(a, g)).toBe(false);
+    expect(log).toEqual([]); // the wait is still running
+  });
+
+  it('fails without a target, and a stagger drops the shield with the activity', () => {
+    const blind = shieldBearer([{ do: 'guard', seconds: 1 }]);
+    for (let i = 0; i < 8; i++) blind.a.world.step();
+    expect(blind.log[0]).toEqual({ activity: 'press', ok: false });
+    expect(held(blind.a, blind.g)).toBe(false);
+
+    const hit = shieldBearer([{ do: 'guard', seconds: 5 }]);
+    hit.a.world.register(HitReactionComponent);
+    giveHitReactions(hit.a.world, hit.g);
+    hit.a.look();
+    for (let i = 0; i < 20; i++) hit.a.world.step();
+    expect(held(hit.a, hit.g)).toBe(true);
+    const reactions = must(hit.a.world.get(hit.g, HitReactionComponent));
+    hit.a.world.set(hit.g, HitReactionComponent, {
+      ...reactions,
+      current: {
+        kind: 'stagger',
+        direction: 'front',
+        startedAt: hit.a.world.tick,
+        endsAt: hit.a.world.tick + 46,
+        interrupted: true,
+      },
+    });
+    for (let i = 0; i < 3; i++) hit.a.world.step();
+    expect(brain(hit.a.world, hit.g).activity).toBeNull();
+    expect(held(hit.a, hit.g)).toBe(false);
+  });
+
+  it('a creature without a guard component just runs the step', () => {
+    const a = arena([], { behaviour: guarding([{ do: 'guard', seconds: 0.5 }]) });
+    const g = a.guard({ x: 3, y: 0, z: 0 });
+    const log = ends(a.world, g);
+    a.look();
+    for (let i = 0; i < 60; i++) a.world.step();
+    expect(log[0]).toEqual({ activity: 'press', ok: true });
   });
 });

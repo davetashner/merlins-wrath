@@ -80,4 +80,6 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `activities.<key>.steps[].range` | number > 0 or object | required | Distance it keeps from its target, metres (its preferred range). |
 | `activities.<key>.steps[].range.tuning` | string | required | Tuning key. |
 | `activities.<key>.steps[].seconds` | number ≥ 0 or object | required | Longest it strafes before the step ends. |
+| `activities.<key>.steps[].do` | `"guard"` | required |  |
+| `activities.<key>.steps[].seconds` | number ≥ 0 or object | required | How long it holds its shield up. |
 | `activities.<key>.steps[].do` | `"share-target"` | required |  |

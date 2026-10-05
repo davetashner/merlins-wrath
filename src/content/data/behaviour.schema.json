@@ -874,6 +874,45 @@
                   "properties": {
                     "do": {
                       "type": "string",
+                      "const": "guard"
+                    },
+                    "seconds": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "tuning": {
+                              "type": "string",
+                              "minLength": 1,
+                              "description": "Tuning key."
+                            }
+                          },
+                          "required": [
+                            "tuning"
+                          ],
+                          "additionalProperties": false,
+                          "description": "Reads this tuning key (the creature’s override, else the behaviour’s default)."
+                        }
+                      ],
+                      "description": "How long it holds its shield up."
+                    }
+                  },
+                  "required": [
+                    "do",
+                    "seconds"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Raises the shield it carries (creature `shield`) and faces its target as it goes up, holding it for `seconds`, then succeeds; the shield stays up exactly while this is its current step (it drops when the step ends, the activity changes or a stagger breaks it). Fails without a target."
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "do": {
+                      "type": "string",
                       "const": "share-target"
                     }
                   },

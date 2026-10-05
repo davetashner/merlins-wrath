@@ -16,6 +16,9 @@
 // attacks; `share-target` tells allies where it believes the target is (as an event: who hears it
 // is the world's business, not the agent's).
 //
+// Guarding (mw-ju8.19, `guard`): squares up to the target and holds for a time. The runtime raises
+// the agent's shield (creature `shield`) exactly while its current step is a `guard` (runtime.ts).
+//
 // Leashes (mw-e01.17, leash.ts): out of Combat a leashed agent's `move-to` goal is pulled in to its
 // leash edge; `post` is its leash post (its spawn without a leash), and arriving there turns it the
 // way it was placed.
@@ -541,6 +544,23 @@ const COMPILERS: Compilers = {
         });
         faceToward(v, target);
         return status;
+      },
+    };
+  },
+
+  guard: (step, num) => {
+    const seconds = num(step.seconds);
+    return {
+      primitive: 'guard',
+      start(v) {
+        // It squares up once, as the shield goes up: a fighter who slips around to its side or back
+        // inside the hold is behind the shield's arc until it next raises it.
+        const goal = believedTarget(v);
+        if (goal !== undefined && selfAt(v) !== undefined) faceToward(v, goal);
+      },
+      update(v) {
+        if (believedTarget(v) === undefined) return 'failure';
+        return elapsed(v) >= ticks(seconds(v), v.hz) ? 'success' : 'running';
       },
     };
   },

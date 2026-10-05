@@ -1,0 +1,24 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "forgotten-archer-drops",
+  "notes": "What a Forgotten archer leaves (mw-ju8.19, economy doc tier 2): always 3-8 crowns (mean 5.5), half the time a few arrows, and a 30% chance of a weapon or armour piece worth 20-35. Each part is rolled exactly once (noDuplicates over 3 entries), so coins always drop. Not final tuning.",
+  "rolls": {
+    "min": 3,
+    "max": 3
+  },
+  "entries": [
+    {
+      "table": "forgotten-archer-coins",
+      "weight": 1
+    },
+    {
+      "table": "forgotten-archer-arrows",
+      "weight": 1
+    },
+    {
+      "table": "forgotten-archer-gear",
+      "weight": 1
+    }
+  ],
+  "noDuplicates": true
+}

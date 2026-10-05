@@ -27,7 +27,7 @@
 // (`installFactions`). Spawning is structural: inside a step the entity exists from the end of the
 // tick; between steps at once.
 
-import type { CreatureTable, RuntimeCreature } from '@content/index';
+import type { CreatureTable, RuntimeCreature, RuntimeShield } from '@content/index';
 import type { PatrolRoutine } from '../ai/routes';
 import { aiBehaviour, giveBrain } from '../ai/runtime';
 import { giveAttacker, AttackerComponent } from '../combat/attacks/components';
@@ -42,7 +42,13 @@ import {
   HitboxComponent,
   HurtboxComponent,
 } from '../combat/hits/components';
-import { CombatFacingComponent, FORWARD_FACING, giveFacing } from '../combat/melee/components';
+import {
+  CombatFacingComponent,
+  FORWARD_FACING,
+  giveFacing,
+  giveGuard,
+  GuardComponent,
+} from '../combat/melee/components';
 import {
   giveHitReactions,
   HitReactionComponent,
@@ -96,6 +102,11 @@ export interface CreatureSpawnOptions {
   /** Runtime creatures by id (`compileCreatures`). */
   readonly creatures: CreatureTable;
   readonly factions: FactionTable;
+  /**
+   * The shield each creature that carries one holds, by creature id (mw-ju8.19: the compiled
+   * `shield` of its definition); a creature absent here has no guard.
+   */
+  readonly shields?: ReadonlyMap<string, RuntimeShield>;
 }
 
 /** Why a spawn did not happen. */
@@ -262,6 +273,9 @@ export function spawnCreature(
       giveHitboxes(world, entity);
     }
   }
+  const shield = options.shields?.get(def.id);
+  // The melee components come with the player's combat (a world without them has no guards).
+  if (shield !== undefined && world.isRegistered(GuardComponent)) giveGuard(world, entity, shield);
   if (world.isRegistered(TargetableComponent)) {
     giveTargetable(world, entity, creatureLockProfile(nav.height));
   }

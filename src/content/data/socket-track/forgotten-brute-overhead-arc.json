@@ -1,0 +1,98 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "forgotten-brute-overhead-arc",
+  "notes": "The Forgotten brute's overhead (move forgotten-brute-overhead, 6 active ticks, mw-ju8.19): the maul pitches from 50 degrees above level down to 25 below it about the root in equal steps, a longer fall than the miner's chop so the sweep reaches the full 1.9 m.",
+  "keys": [
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": -0.422618,
+        "y": 0,
+        "z": 0,
+        "w": 0.906308
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": -0.321439,
+        "y": 0,
+        "z": 0,
+        "w": 0.94693
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": -0.21644,
+        "y": 0,
+        "z": 0,
+        "w": 0.976296
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": -0.108867,
+        "y": 0,
+        "z": 0,
+        "w": 0.994056
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0.0,
+        "y": 0,
+        "z": 0,
+        "w": 1.0
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0.108867,
+        "y": 0,
+        "z": 0,
+        "w": 0.994056
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0.21644,
+        "y": 0,
+        "z": 0,
+        "w": 0.976296
+      }
+    }
+  ]
+}

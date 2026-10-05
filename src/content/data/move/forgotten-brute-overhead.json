@@ -1,0 +1,49 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "forgotten-brute-overhead",
+  "notes": "The Forgotten brute's two-handed overhead (mw-ju8.19): a 56-tick windup (930 ms) telegraphed from tick 0, 6 active and a 64-tick recovery (over a second to punish it). 40 blunt, 70 poise and 50 stamina on a block (20 through the knight's wood shield): two blocks leave the knight guard-broken, so the answer is to parry it or step out of the line. Parryable and blockable. Long reach (about 2 m). Its clip is the miner's chop retimed to 56 ticks (placeholder until a heavy two-handed overhead clip exists).",
+  "verb": "attack",
+  "frames": {
+    "startup": 56,
+    "active": 6,
+    "recovery": 64
+  },
+  "damage": {
+    "amounts": {
+      "blunt": 40
+    },
+    "poiseDamage": 70,
+    "staminaDamage": 50,
+    "impulse": {
+      "x": 0,
+      "y": 0,
+      "z": 200
+    }
+  },
+  "hitbox": {
+    "track": "forgotten-brute-overhead-arc",
+    "shape": {
+      "kind": "capsule",
+      "from": {
+        "x": 0,
+        "y": 1.2,
+        "z": 0.3
+      },
+      "to": {
+        "x": 0,
+        "y": 1.2,
+        "z": 1.9
+      },
+      "radius": 0.2
+    },
+    "reach": "long",
+    "swing": "vertical"
+  },
+  "telegraphTick": 0,
+  "hitStop": "heavy",
+  "presentation": {
+    "anim": "anim-forgotten-brute-overhead",
+    "audioCue": "sfx-knight-sword-swing-heavy",
+    "vfxCue": "vfx-impact-dust"
+  }
+}

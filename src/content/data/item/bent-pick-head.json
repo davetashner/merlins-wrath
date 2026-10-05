@@ -1,0 +1,13 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "bent-pick-head",
+  "category": "misc",
+  "name": "Bent pick head",
+  "description": "The iron of a miner's pick, bent double against a wall it was never meant to meet. The haft rotted long ago.",
+  "notes": "Tier 1 skeleton scrap (mw-ju8.19, economy doc: scrap worth 5-15). Worth 8; sold at the buy rate it fetches about 3 crowns.",
+  "icon": "icon-item-bent-pick-head-01",
+  "value": 8,
+  "worldProperties": {
+    "material": "iron"
+  }
+}

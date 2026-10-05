@@ -11,7 +11,7 @@
 import type { EntityId, World } from '@sim/index';
 
 /** Read-only sim access for render sync. `World` satisfies it; nothing here can step or mutate. */
-export type SimView = Pick<World, 'tick' | 'isAlive' | 'get'>;
+export type SimView = Pick<World, 'tick' | 'isAlive' | 'get' | 'isRegistered'>;
 
 export interface Vec3 {
   readonly x: number;

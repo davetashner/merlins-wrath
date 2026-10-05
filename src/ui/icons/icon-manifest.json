@@ -16,6 +16,10 @@
     "placeholder": true
   },
   {
+    "id": "icon-item-bent-pick-head-01",
+    "placeholder": true
+  },
+  {
     "id": "icon-item-blunt-arrow-01",
     "placeholder": true
   },
@@ -33,6 +37,10 @@
   },
   {
     "id": "icon-item-burnished-open-helm-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-dented-iron-cap-01",
     "placeholder": true
   },
   {
@@ -241,6 +249,18 @@
   },
   {
     "id": "icon-item-rope-arrow-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-rusted-arming-sword-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-rusted-knife-01",
+    "placeholder": true
+  },
+  {
+    "id": "icon-item-rusted-lamp-hook-01",
     "placeholder": true
   },
   {

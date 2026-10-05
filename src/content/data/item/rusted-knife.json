@@ -1,0 +1,18 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "rusted-knife",
+  "category": "weapon",
+  "name": "Rusted knife",
+  "description": "Orange to the hilt and still, regrettably, a knife.",
+  "notes": "Tier 2 skeleton gear drop (mw-ju8.19, economy doc: base value 20-60). Worth 20. No moves of its own, like the hunting knife; it is for selling.",
+  "icon": "icon-item-rusted-knife-01",
+  "value": 20,
+  "worldProperties": {
+    "material": "iron"
+  },
+  "equip": {
+    "slot": "main-hand",
+    "proficiencies": ["daggers"]
+  },
+  "weapon": {}
+}

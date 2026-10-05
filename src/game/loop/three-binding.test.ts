@@ -20,7 +20,7 @@ describe('object3DBinding', () => {
   it('passes the reader through', () => {
     const read = vi.fn(() => ({ position: { x: 0, y: 0, z: 0 }, rotation: IDENTITY_ROTATION }));
     const binding = object3DBinding(new Object3D(), read);
-    const view = { tick: 0, isAlive: () => true, get: () => undefined };
+    const view = { tick: 0, isAlive: () => true, get: () => undefined, isRegistered: () => true };
     expect(binding.read(view, 1)).toEqual(read.mock.results[0]?.value);
     expect(read).toHaveBeenCalledWith(view, 1);
   });

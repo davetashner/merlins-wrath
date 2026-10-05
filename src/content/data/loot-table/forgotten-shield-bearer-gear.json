@@ -1,0 +1,35 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "forgotten-shield-bearer-gear",
+  "notes": "Tier 2 gear (economy doc: 30% weapon or armour, base 20-60): 30% in all - a rusted arming sword (28) 14%, a wooden shield (25) 8%, a small buckler (45) 5%, and 3% a kite shield (100, over the band: the owner's rare catalogue piece).",
+  "rolls": {
+    "min": 1,
+    "max": 1
+  },
+  "entries": [
+    {
+      "item": "gold",
+      "weight": 70,
+      "count": {
+        "min": 0,
+        "max": 0
+      }
+    },
+    {
+      "item": "rusted-arming-sword",
+      "weight": 14
+    },
+    {
+      "item": "wooden-shield",
+      "weight": 8
+    },
+    {
+      "item": "small-buckler",
+      "weight": 5
+    },
+    {
+      "item": "kite-shield",
+      "weight": 3
+    }
+  ]
+}

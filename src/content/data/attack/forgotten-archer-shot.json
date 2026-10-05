@@ -1,0 +1,18 @@
+{
+  "$schema": "../attack.schema.json",
+  "id": "forgotten-archer-shot",
+  "notes": "The archer's shot (mw-ju8.19): a projectile attack, used from 4.5-14 m every 3.5 s at most. The arrow flies at 14 m/s for 16 m (1.1 s at the far end), slow enough to see and side-step. Its telegraph is the shared forgotten-windup.",
+  "kind": "projectile",
+  "move": "forgotten-archer-shot",
+  "telegraph": "forgotten-windup",
+  "range": {
+    "min": 4.5,
+    "max": 14
+  },
+  "cooldown": 3.5,
+  "weight": 3,
+  "projectile": {
+    "speed": 14,
+    "maxRange": 16
+  }
+}

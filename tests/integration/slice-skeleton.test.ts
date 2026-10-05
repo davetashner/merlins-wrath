@@ -235,32 +235,36 @@ describe('the Forgotten skeleton fight in the slice arena (mw-e01.5)', () => {
     expect(t.health()?.current).toBe(0);
     // The key is dropped in the tick it dies, by the skeleton.
     expect(itemsAtDeath).toBe(0);
-    expect(dropped).toEqual([
+    // What it carries first (the key), then its tier 1 table's crowns (and maybe scrap, mw-ju8.19).
+    expect(dropped[0]).toEqual(
       expect.objectContaining({
         actor: skeleton,
         defId: 'rusted-gallery-key',
         count: 1,
         thrown: false,
       }),
-    ]);
+    );
+    expect(dropped.slice(1).map((d) => d.defId)).toContain('gold');
+    expect(dropped.every((d) => d.actor === skeleton)).toBe(true);
     t.step(IDLE, HZ);
     const items = t.worldItems();
-    expect(items.map((i) => i.item)).toEqual(['rusted-gallery-key']);
+    expect(items.map((i) => i.item)).toEqual(dropped.map((d) => d.defId));
     const [key] = items;
-    expect(flat(key?.at ?? { x: 99, y: 0, z: 99 }, body)).toBeLessThanOrEqual(1);
-    expect(Math.abs((key?.at.y ?? 99) - body.y)).toBeLessThan(0.5);
+    for (const item of items) {
+      expect(flat(item.at, body)).toBeLessThanOrEqual(1);
+      expect(Math.abs(item.at.y - body.y)).toBeLessThan(0.5);
+    }
     expect(t.world.facts.get('entity:slice/skeleton.slain')).toBe(true);
 
-    // Interact by the body takes it onto the keyring.
+    // Interact by the body takes what lies there; the key goes onto the keyring.
     const keyEntity = key?.entity ?? -1;
     t.teleport({ x: body.x, y: 0, z: body.z - 1.1 });
     t.step(IDLE, 10);
-    expect(interactionPrompt(t.sim, t.player)).toMatchObject({
-      target: keyEntity,
-      verb: 'pick-up',
-      available: true,
-    });
-    t.step(INTERACT);
+    expect(interactionPrompt(t.sim, t.player)).toMatchObject({ verb: 'pick-up', available: true });
+    for (let n = 0; n < 6 && t.world.isAlive(keyEntity); n++) {
+      t.step(INTERACT);
+      t.step(IDLE, 10);
+    }
     expect(t.pack()).toContain('rusted-gallery-key');
     expect(t.world.isAlive(keyEntity)).toBe(false);
   });
@@ -272,7 +276,9 @@ describe('the Forgotten skeleton fight in the slice arena (mw-e01.5)', () => {
     const t = slice();
     t.world.step([IDLE, killCommand(t.skeleton())]);
     t.step(IDLE, HZ);
-    expect(t.worldItems().map((i) => i.item)).toEqual(['rusted-gallery-key']);
+    const afterKill = t.worldItems().map((i) => i.item);
+    expect(afterKill[0]).toBe('rusted-gallery-key');
+    expect(afterKill).toContain('gold'); // its tier 1 crowns lie beside the key (mw-ju8.19)
     const registry = createGameSaveRegistry();
     const bytes = registry.write(t.world, { build, wallClockSavedAt: 1_790_000_000_000 });
 
@@ -282,7 +288,7 @@ describe('the Forgotten skeleton fight in the slice arena (mw-e01.5)', () => {
     expect(loaded.warnings).toEqual([]);
     expect(hashWorld(back.world)).toBe(hashWorld(t.world));
     back.step(IDLE, HZ);
-    expect(back.worldItems().map((i) => i.item)).toEqual(['rusted-gallery-key']);
+    expect(back.worldItems().map((i) => i.item)).toEqual(afterKill); // nothing dropped twice
     expect(back.health()?.current).toBe(0);
   });
 

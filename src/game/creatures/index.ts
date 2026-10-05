@@ -27,10 +27,12 @@
 import {
   compileAttacks,
   compileCreatures,
+  compileShield,
   type AttackTable,
   type CreatureTable,
   type GameContent,
   type NavAgent,
+  type RuntimeShield,
 } from '@content/index';
 import {
   ATTACK_COMPONENTS,
@@ -85,7 +87,13 @@ export interface GameCreatures {
 export function prepareCreatures(content: GameContent, combat: TestbedCombat): GameCreatures {
   const table = compileCreatures(content.all('creature'), content);
   const factions = buildFactionTable(content.all('faction').map(factionSpecFromDef));
-  const spawn = { creatures: table, factions };
+  // The shield each creature carries (mw-ju8.19), compiled once.
+  const shields = new Map<string, RuntimeShield>();
+  for (const def of content.all('creature')) {
+    if (def.shield !== undefined)
+      shields.set(def.id, compileShield(content.get('shield', def.shield.id)));
+  }
+  const spawn = { creatures: table, factions, shields };
   return {
     table,
     spawn,

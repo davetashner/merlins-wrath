@@ -1,0 +1,41 @@
+{
+  "$schema": "../move.schema.json",
+  "id": "forgotten-archer-shot",
+  "notes": "The Forgotten archer's shot (mw-ju8.19): it draws for 42 ticks (700 ms, telegraphed from tick 0, over twice the 18-tick creature minimum, so the player can read the draw and step aside), looses on the first active tick and recovers 40 ticks. The arrow is the attack's projectile (the executor flies it as a 14 m/s sphere, attack forgotten-archer-shot), 14 pierce, 10 poise, 12 stamina on a block. Blockable, not parryable (an arrow is not parried). Its clip is the miner's thrust retimed to this draw (a placeholder until a bow draw and loose clip is authored).",
+  "verb": "attack",
+  "frames": {
+    "startup": 42,
+    "active": 2,
+    "recovery": 40
+  },
+  "damage": {
+    "amounts": {
+      "pierce": 14
+    },
+    "poiseDamage": 10,
+    "staminaDamage": 12
+  },
+  "hitbox": {
+    "track": "forgotten-arrow-loose",
+    "shape": {
+      "kind": "sphere",
+      "center": {
+        "x": 0,
+        "y": 1.35,
+        "z": 0.6
+      },
+      "radius": 0.08
+    },
+    "reach": "long",
+    "swing": "thrust"
+  },
+  "flags": {
+    "parryable": false
+  },
+  "telegraphTick": 0,
+  "hitStop": "light",
+  "presentation": {
+    "anim": "anim-forgotten-archer-shot",
+    "audioCue": "sfx-bow-release-twang"
+  }
+}

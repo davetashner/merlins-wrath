@@ -32,6 +32,14 @@ const withMinerLoot: Pick<GameContent, 'all'> = {
       : content.all(type as 'item')) as GameContent['all'],
 };
 
+/** The game's content with no creature rolling any table: only what a spawn carries drops. */
+const withoutLoot: Pick<GameContent, 'all'> = {
+  all: ((type: string) =>
+    type === 'creature'
+      ? content.all('creature').map((c) => ({ ...c, loot: undefined }))
+      : content.all(type as 'item')) as GameContent['all'],
+};
+
 const SPAWNS: SceneSpawnPlacement[] = [
   {
     id: 'skeleton',
@@ -93,7 +101,14 @@ function dropsOnDeath(source: Pick<GameContent, 'all'>): (string | undefined)[] 
 
 describe('creature drops in the game (mw-e01.5)', () => {
   it('AC-2: a dying creature drops what its spawn carries, and nothing else without a loot table', () => {
-    expect(dropsOnDeath(content)).toEqual(['rusted-gallery-key']);
+    expect(dropsOnDeath(withoutLoot)).toEqual(['rusted-gallery-key']);
+  });
+
+  it('mw-ju8.19: the miner’s own tier 1 table drops its crowns after what the spawn carries', () => {
+    const dropped = dropsOnDeath(content);
+    expect(dropped[0]).toBe('rusted-gallery-key');
+    expect(dropped).toContain('gold');
+    expect(dropped.every((id) => id !== undefined)).toBe(true);
   });
 
   it('rolls the creature’s content loot table after what it carries', () => {

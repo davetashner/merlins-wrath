@@ -173,6 +173,11 @@ export const creatureSchema = z.strictObject({
     .prefault([])
     .describe('Non-hostile affordances offered to the player, e.g. "feed", "talk", "pet".'),
   loot: contentId.optional().describe('Loot table id (E18); absent = drops only what it carries.'),
+  shield: ref('shield')
+    .optional()
+    .describe(
+      'Shield (or shieldless guard) it carries, mw-ju8.19: it blocks frontal hits like the knight’s while its behaviour holds a `guard` step; absent = it has no guard.',
+    ),
   presentation: z
     .strictObject({
       mesh: contentId.default('placeholder-capsule').describe('Mesh id; grey-box capsule default.'),

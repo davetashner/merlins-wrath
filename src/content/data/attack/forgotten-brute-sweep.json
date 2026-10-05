@@ -1,0 +1,14 @@
+{
+  "$schema": "../attack.schema.json",
+  "id": "forgotten-brute-sweep",
+  "notes": "The brute's sweep (mw-ju8.19): from 0-2.4 m every 7 s.",
+  "kind": "melee",
+  "move": "forgotten-brute-sweep",
+  "telegraph": "forgotten-windup",
+  "range": {
+    "min": 0,
+    "max": 2.4
+  },
+  "cooldown": 7,
+  "weight": 1
+}

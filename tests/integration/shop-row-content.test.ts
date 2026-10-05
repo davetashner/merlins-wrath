@@ -11,13 +11,21 @@ const merchants = content.all('merchant');
 const items = content.all('item');
 const itemIds = new Set(items.map((item) => item.id));
 
-/** What a shop never sells: currency, keys, and the slice's worthless oddity. */
+/**
+ * What a shop never sells: currency, keys, the slice's worthless oddity, and the salvage skeletons
+ * drop (mw-ju8.19), which shops only buy.
+ */
 const NOT_FOR_SALE = new Set([
   'gold',
   'rusted-gallery-key',
   'testbed-closet-key',
   'valley-chest-key',
   'miners-tally-stick',
+  'bent-pick-head',
+  'rusted-lamp-hook',
+  'rusted-knife',
+  'rusted-arming-sword',
+  'dented-iron-cap',
 ]);
 
 /** The owner's shop list, as predicates over an item id and its definition. */
@@ -128,7 +136,9 @@ describe('the village shop row merchants (mw-ju8.5)', () => {
   it.each(Object.keys(OWNER_CATEGORIES))(
     'AC-1: the owner’s %s are on sale, every one of them',
     (category) => {
-      const matching = items.filter(OWNER_CATEGORIES[category] ?? (() => false));
+      const matching = items
+        .filter(OWNER_CATEGORIES[category] ?? (() => false))
+        .filter((item) => !NOT_FOR_SALE.has(item.id));
       expect(matching.length, `no ${category} in the catalogue`).toBeGreaterThan(0);
       for (const item of matching) {
         expect(stockedBy(item.id), `${item.id} (${category}) has no shop`).not.toEqual([]);

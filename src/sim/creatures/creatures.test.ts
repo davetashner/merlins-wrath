@@ -11,7 +11,7 @@ import {
 } from '../combat/damage/components';
 import { HitboxComponent, HurtboxComponent } from '../combat/hits/components';
 import { ACTION_TIMELINE_COMPONENTS, ActionTimelineComponent } from '../combat/timeline/components';
-import { CombatFacingComponent } from '../combat/melee/components';
+import { CombatFacingComponent, GuardComponent, guardOf } from '../combat/melee/components';
 import { HitReactionComponent } from '../combat/reactions/components';
 import { World } from '../core/world';
 import { despawnCreaturesCommand, spawnCommand } from '../debug/commands';
@@ -503,5 +503,31 @@ describe('creature spawner (mw-e12.4)', () => {
     const before = w.entityCount;
     w.step([spawnCommand('hound', 1, origin), despawnCreaturesCommand()]);
     expect(w.entityCount).toBe(before);
+  });
+
+  it('mw-ju8.19: a creature whose shield the options name is given that guard, lowered, where melee is installed', () => {
+    const shield = {
+      id: 'board',
+      kind: 'weapon',
+      absorption: { slash: 80 },
+      stability: 100,
+      raiseTicks: 12,
+      arcDegrees: 110,
+      moveSpeedScale: 0.5,
+    } as const;
+    const withShield: CreatureSpawnOptions = { ...options, shields: new Map([['guard', shield]]) };
+    const w = world();
+    w.register(GuardComponent);
+    const result = spawnCreature(w, withShield, { creature: 'guard', at: origin });
+    if (!result.ok) throw new Error('no spawn');
+    expect(guardOf(w, result.entity)).toEqual({ shield, held: false, raisedAt: null });
+    // A creature without a shield entry has none; a world without melee spawns the creature bare.
+    const hound = spawnCreature(w, withShield, { creature: 'hound', at: origin });
+    if (!hound.ok) throw new Error('no spawn');
+    expect(guardOf(w, hound.entity)).toBeUndefined();
+    const bare = world();
+    const unguarded = spawnCreature(bare, withShield, { creature: 'guard', at: origin });
+    expect(unguarded.ok).toBe(true);
+    expect(bare.isRegistered(GuardComponent)).toBe(false);
   });
 });

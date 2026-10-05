@@ -193,11 +193,15 @@ describe('the slice loot (mw-e01.6)', () => {
     t.step(IDLE, 30);
     const key = t.worldItem('rusted-gallery-key');
 
-    // Take the key from beside the body: it goes on the keyring.
+    // Take what lies beside the body: the key goes on the keyring (the miner's own tier 1 crowns
+    // lie on a ring round it too, mw-ju8.19, and go to the gold counter).
     t.teleport({ x: KEY_AT.x, y: 0, z: KEY_AT.z - 1.2 });
-    expect(interactionPrompt(t.sim, t.player)).toMatchObject({ target: key, available: true });
-    t.step(INTERACT);
-    expect(t.pack()).toEqual([['rusted-gallery-key', 1]]);
+    expect(interactionPrompt(t.sim, t.player)).toMatchObject({ verb: 'pick-up', available: true });
+    for (let n = 0; n < 6 && t.world.isAlive(key); n++) {
+      t.step(INTERACT);
+      t.step(IDLE, 10);
+    }
+    expect(t.pack()).toContainEqual(['rusted-gallery-key', 1]);
     expect(t.world.isAlive(key)).toBe(false);
 
     // A step in front of the iron door: Unlock is available now, and one press opens it.
@@ -219,13 +223,15 @@ describe('the slice loot (mw-e01.6)', () => {
     ]);
     t.step(IDLE, 90);
     expect(doorStatus(t.sim, door)).toBe('open');
-    // Two presses, two interactions (take, unlock), nothing between them: no inventory, no choice.
-    expect(t.interactions.map((e) => [e.verb, e.target])).toEqual([
-      ['pick-up', key],
-      ['unlock', door],
-    ]);
+    // Taking the key and the door are plain interactions with no menu between them (and nothing
+    // but the body's own pickups before the door).
+    const verbs = t.interactions.map((e) => e.verb);
+    expect(verbs.at(-1)).toBe('unlock');
+    expect(verbs.slice(0, -1).every((verb) => verb === 'pick-up')).toBe(true);
+    expect(t.interactions.some((e) => e.verb === 'pick-up' && e.target === key)).toBe(true);
+    expect(t.interactions.at(-1)?.target).toBe(door);
     // The quest key stays on the ring.
-    expect(t.pack()).toEqual([['rusted-gallery-key', 1]]);
+    expect(t.pack()).toContainEqual(['rusted-gallery-key', 1]);
 
     // Through the open doorway into the vestibule: the slice is complete.
     t.step(FORWARD, 60);

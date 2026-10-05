@@ -1,0 +1,85 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "forgotten-shield-counter-arc",
+  "notes": "The Forgotten shield-bearer's counter-swing (move forgotten-shield-counter, 5 active ticks, mw-ju8.19): a flat 100 degree horizontal arc about the root, yaw +50 to -50 degrees in equal steps (right to left as it faces), as the miner's first slash but one tick longer.",
+  "keys": [
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.422618,
+        "z": 0,
+        "w": 0.906308
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.258819,
+        "z": 0,
+        "w": 0.965926
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0.087156,
+        "z": 0,
+        "w": 0.996195
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": -0.087156,
+        "z": 0,
+        "w": 0.996195
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": -0.258819,
+        "z": 0,
+        "w": 0.965926
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": -0.422618,
+        "z": 0,
+        "w": 0.906308
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "forgotten-archer-arrows",
+  "notes": "The archer's spent quiver: half the time 2-6 arrows (a crown's worth each; the player can shoot them).",
+  "rolls": {
+    "min": 1,
+    "max": 1
+  },
+  "entries": [
+    {
+      "item": "gold",
+      "weight": 1,
+      "count": {
+        "min": 0,
+        "max": 0
+      }
+    },
+    {
+      "item": "standard-arrow",
+      "weight": 1,
+      "count": {
+        "min": 2,
+        "max": 6
+      }
+    }
+  ]
+}

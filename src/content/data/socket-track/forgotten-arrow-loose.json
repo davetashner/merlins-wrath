@@ -1,0 +1,46 @@
+{
+  "$schema": "../socket-track.schema.json",
+  "id": "forgotten-arrow-loose",
+  "notes": "The Forgotten archer's loosed arrow (move forgotten-archer-shot, 2 active ticks, mw-ju8.19): the arrow itself is the attack's projectile, launched from the move's sphere on its first active tick and flown by the executor, so this socket only carries the bow hand forward as it lets go - 0.2 m a tick, the arc the hit-volume system sweeps for the move.",
+  "keys": [
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.2
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    },
+    {
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0.4
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "w": 1
+      }
+    }
+  ]
+}

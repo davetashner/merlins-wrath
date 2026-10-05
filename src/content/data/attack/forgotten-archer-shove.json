@@ -1,0 +1,14 @@
+{
+  "$schema": "../attack.schema.json",
+  "id": "forgotten-archer-shove",
+  "notes": "The archer's melee fallback (mw-ju8.19): a shove from 0-1.6 m every 2.5 s, used when it is closed on and cannot draw.",
+  "kind": "melee",
+  "move": "forgotten-archer-shove",
+  "telegraph": "forgotten-windup",
+  "range": {
+    "min": 0,
+    "max": 1.6
+  },
+  "cooldown": 2.5,
+  "weight": 1
+}

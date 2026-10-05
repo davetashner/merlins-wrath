@@ -1,0 +1,39 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "forgotten-brute-gear",
+  "notes": "Tier 3 gear (economy doc: 50% a gear piece, base 40-120, 5% fine): 50% in all - a dented iron cap (45) 20%, a nasal helm (80) 13%, mail gauntlets (70) 8%, riveted boots (60) 4%, and 5% a fine kettle helm (200).",
+  "rolls": {
+    "min": 1,
+    "max": 1
+  },
+  "entries": [
+    {
+      "item": "gold",
+      "weight": 50,
+      "count": {
+        "min": 0,
+        "max": 0
+      }
+    },
+    {
+      "item": "dented-iron-cap",
+      "weight": 20
+    },
+    {
+      "item": "nasal-helm",
+      "weight": 13
+    },
+    {
+      "item": "mail-gauntlets",
+      "weight": 8
+    },
+    {
+      "item": "riveted-boots",
+      "weight": 4
+    },
+    {
+      "item": "kettle-helm",
+      "weight": 5
+    }
+  ]
+}
