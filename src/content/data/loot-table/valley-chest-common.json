@@ -1,0 +1,19 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "valley-chest-common",
+  "notes": "A plain wooden chest in the valley (mw-ju8.20), economy tier common (docs/design/economy.md: 8-25 crowns plus a consumable roll). Always 8 crowns, plus at most one bonus coin entry of 1-17 (noDuplicates caps it), so the purse is always 9-25. Two or three picks of the rest: arrows, bread, apples, a healing draught, oil, empty jars and a few foraged ingredients. Not tuned; the balance tool re-bases weights.",
+  "guaranteed": [{ "item": "gold", "count": 8 }],
+  "rolls": { "min": 2, "max": 3 },
+  "entries": [
+    { "item": "gold", "weight": 4, "count": { "min": 1, "max": 17 } },
+    { "item": "standard-arrow", "weight": 3, "count": { "min": 6, "max": 12 } },
+    { "item": "bread-loaf", "weight": 2, "count": { "min": 1, "max": 2 } },
+    { "item": "apple", "weight": 2, "count": { "min": 1, "max": 3 } },
+    { "item": "healing-draught", "weight": 2 },
+    { "item": "oil-flask", "weight": 2, "count": { "min": 1, "max": 2 } },
+    { "item": "empty-glass-jar", "weight": 1, "count": { "min": 1, "max": 2 } },
+    { "item": "mushroom-caps", "weight": 2, "count": { "min": 1, "max": 3 } },
+    { "item": "red-clay", "weight": 1, "count": { "min": 1, "max": 2 } }
+  ],
+  "noDuplicates": true
+}

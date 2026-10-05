@@ -1,0 +1,9 @@
+{
+  "$schema": "../lock.schema.json",
+  "id": "valley-chest-iron",
+  "name": "Valley iron-bound chest lock",
+  "notes": "The padlock on the valley's fine, iron-bound chest in valley-02 (mw-ju8.20): the valley chest key, lying in the wooden chest across the glade, opens it from the keyring. A tier-2 lock a thief with lockpicks can pick at pick tier 2 (mw-e10 owns the minigame; the chest takes the same unlock and pick path as a door).",
+  "tier": 2,
+  "pickTier": 2,
+  "hint": "Locked. An iron padlock; the key must be somewhere in the glade."
+}

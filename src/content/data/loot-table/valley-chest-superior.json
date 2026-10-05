@@ -1,0 +1,19 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "valley-chest-superior",
+  "notes": "The hidden chest at the valley overlook (mw-ju8.20), economy tier superior (70-180 crowns). Always 70 crowns plus at most one bonus coin entry of 1-110 (noDuplicates caps it), so the purse is 71-180. Three or four picks: special arrows, strong potions, a spell scroll (circle one) and the valley-chest-superior-gear table for a better gear piece (about half of all chests). Not tuned.",
+  "guaranteed": [{ "item": "gold", "count": 70 }],
+  "rolls": { "min": 3, "max": 4 },
+  "entries": [
+    { "item": "gold", "weight": 4, "count": { "min": 1, "max": 110 } },
+    { "item": "fire-arrow", "weight": 2, "count": { "min": 4, "max": 8 } },
+    { "item": "broadhead-arrow", "weight": 2, "count": { "min": 8, "max": 15 } },
+    { "item": "strong-healing-draught", "weight": 3 },
+    { "item": "strong-mana-draught", "weight": 2 },
+    { "item": "scroll-of-ember", "weight": 2 },
+    { "item": "scroll-of-mage-hand", "weight": 2 },
+    { "item": "scroll-of-firebolt", "weight": 1 },
+    { "table": "valley-chest-superior-gear", "weight": 6 }
+  ],
+  "noDuplicates": true
+}

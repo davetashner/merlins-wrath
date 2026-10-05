@@ -166,6 +166,30 @@
       "id": "path-end",
       "at": [0.0, 0, 46.0],
       "tags": ["path-end", "area-exit"]
+    },
+    {
+      "id": "chest-valley-02-glade-east",
+      "at": [8.25, 0, 14.0],
+      "yaw": 270,
+      "tags": ["chest", "valley-chest", "nook", "holds-key"],
+      "container": {
+        "loot": "valley-chest-common",
+        "contents": [
+          {
+            "item": "valley-chest-key"
+          }
+        ]
+      }
+    },
+    {
+      "id": "chest-valley-02-glade-west",
+      "at": [-8.0, 0, 31.0],
+      "yaw": 90,
+      "tags": ["chest", "valley-chest", "nook", "iron-bound"],
+      "container": {
+        "loot": "valley-chest-fine",
+        "lock": "valley-chest-iron"
+      }
     }
   ],
   "light": {

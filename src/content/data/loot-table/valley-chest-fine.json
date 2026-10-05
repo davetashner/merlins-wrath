@@ -1,0 +1,21 @@
+{
+  "$schema": "../loot-table.schema.json",
+  "id": "valley-chest-fine",
+  "notes": "An iron-bound chest in the valley (mw-ju8.20), economy tier fine (25-70 crowns). Always 25 crowns plus at most one bonus coin entry of 1-45 (noDuplicates caps it), so the purse is 26-70. Three or four picks: better arrows, potions and tonics, jars, rarer ingredients, and the valley-chest-fine-gear table for a gear piece (about one chest in three). Not tuned.",
+  "guaranteed": [{ "item": "gold", "count": 25 }],
+  "rolls": { "min": 3, "max": 4 },
+  "entries": [
+    { "item": "gold", "weight": 4, "count": { "min": 1, "max": 45 } },
+    { "item": "broadhead-arrow", "weight": 2, "count": { "min": 5, "max": 10 } },
+    { "item": "standard-arrow", "weight": 2, "count": { "min": 10, "max": 20 } },
+    { "item": "healing-draught", "weight": 3, "count": { "min": 1, "max": 2 } },
+    { "item": "stamina-tonic", "weight": 2 },
+    { "item": "mana-draught", "weight": 2 },
+    { "item": "jar-of-healing-tonic", "weight": 2, "count": { "min": 1, "max": 2 } },
+    { "item": "spider-silk", "weight": 1, "count": { "min": 1, "max": 3 } },
+    { "item": "glenstone-dust", "weight": 1, "count": { "min": 1, "max": 3 } },
+    { "item": "bellwort-root", "weight": 1, "count": { "min": 1, "max": 3 } },
+    { "table": "valley-chest-fine-gear", "weight": 5 }
+  ],
+  "noDuplicates": true
+}

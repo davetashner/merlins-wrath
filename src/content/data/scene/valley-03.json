@@ -145,6 +145,31 @@
       "at": [0.0, -15, 30.0],
       "scale": [60.0, 1, 50.0],
       "purpose": "hazard"
+    },
+    {
+      "piece": "wall",
+      "at": [6.25, 0, 12.0],
+      "yaw": 90,
+      "scale": [2.0, 1.0, 1],
+      "properties": {
+        "hp": 100
+      },
+      "breakable": {
+        "profile": "wood-barricade",
+        "reveals": "valley-03-cache"
+      }
+    },
+    {
+      "piece": "wall",
+      "at": [7.25, 0, 14.0],
+      "scale": [1.0, 1.0, 1],
+      "properties": {
+        "hp": 100
+      },
+      "breakable": {
+        "profile": "wood-barricade",
+        "reveals": "valley-03-cache"
+      }
     }
   ],
   "spawns": [
@@ -162,6 +187,15 @@
       "id": "path-end",
       "at": [0.0, 0, 56.0],
       "tags": ["path-end", "area-exit"]
+    },
+    {
+      "id": "chest-valley-03-overlook-cache",
+      "at": [7.25, 0, 12.0],
+      "yaw": 270,
+      "tags": ["chest", "valley-chest", "hidden"],
+      "container": {
+        "loot": "valley-chest-superior"
+      }
     }
   ],
   "light": {

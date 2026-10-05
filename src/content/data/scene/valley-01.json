@@ -104,6 +104,15 @@
       "id": "path-end",
       "at": [6.0, 0, 52.0],
       "tags": ["path-end", "area-exit"]
+    },
+    {
+      "id": "chest-valley-01-nook",
+      "at": [-1.25, 0, 20.25],
+      "yaw": 90,
+      "tags": ["chest", "valley-chest", "nook"],
+      "container": {
+        "loot": "valley-chest-common"
+      }
     }
   ],
   "light": {

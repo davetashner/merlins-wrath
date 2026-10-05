@@ -1,0 +1,16 @@
+{
+  "$schema": "../item.schema.json",
+  "id": "valley-chest-key",
+  "category": "key",
+  "name": "Padlock key",
+  "description": "A squat iron key, dark with old grease. Someone hid it in a plain box so the good box would stay shut.",
+  "notes": "Opens the iron-bound chest in valley-02 (mw-ju8.20); it lies in the wooden chest on the glade's east side, in the same scene, so the chest is never unsolvable. Reusable, so it stays on the keyring. Placeholder text until e39-item-creature-text.",
+  "icon": "icon-item-iron-key-01",
+  "value": 0,
+  "worldProperties": {
+    "material": "iron"
+  },
+  "key": {
+    "opens": ["valley-chest-iron"]
+  }
+}
