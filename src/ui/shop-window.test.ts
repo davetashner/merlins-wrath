@@ -99,7 +99,34 @@ describe('shop window (mw-e20.10)', () => {
     expect(t.window.tab).toBe('buy');
   });
 
-  it('the Services tab is an empty stub', () => {
+  it('mw-ju8.6: the Services tab lists services as bookable rows and books on confirm', () => {
+    const room = row(0, 'Room for the night', {
+      unitPrice: 12,
+      breakdown: ['Fixed price 12 crowns'],
+    });
+    const t = open({ ...MODEL, services: [room] });
+    t.window.select('services');
+    expect(t.rows('services').map((r) => r.getAttribute('aria-label'))).toEqual([
+      'Book Room for the night, 12 crowns',
+    ]);
+    (t.rows('services')[0] as HTMLElement).click(); // 12 of 100: no confirmation
+    expect(t.onDeal).toHaveBeenCalledWith({ tab: 'services', id: 0, count: 1 });
+  });
+
+  it('mw-ju8.6: a room that is over a quarter of the crowns asks first; too few crowns refuses', async () => {
+    const room = row(0, 'Room for the night', { unitPrice: 12 });
+    const asks = open({ ...MODEL, crowns: 40, services: [room] });
+    asks.window.select('services');
+    (asks.rows('services')[0] as HTMLElement).click();
+    expect(ui.top?.id).toBe('confirm');
+    expect(asks.onDeal).not.toHaveBeenCalled();
+    (document.querySelectorAll('[data-testid="confirm"] button')[1] as HTMLElement).click();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(asks.onDeal).toHaveBeenCalledWith({ tab: 'services', id: 0, count: 1 });
+  });
+
+  it('the Services tab is empty when the merchant offers nothing', () => {
     const t = open();
     t.window.select('services');
     expect(find('[data-shop-panel="services"]').textContent).toBe('Nothing on offer');

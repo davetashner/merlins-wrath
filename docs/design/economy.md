@@ -160,4 +160,4 @@ a band, defaulting to neutral (1.0), and e22.4 maps its score to one.
 ## Open questions for the owner
 
 - UI wording: "gold" or "crowns" on the shop screens (the doc assumes "crowns" in text, `gold` in data).
-- Whether the inn bed should heal fully or only restore stamina (it only has a price here).
+- ~~Whether the inn bed should heal fully or only restore stamina.~~ Decided 2026-10-04 (owner): a night at the inn fully restores health, stamina and mana, and sleeping passes time to morning (mw-ju8.6).

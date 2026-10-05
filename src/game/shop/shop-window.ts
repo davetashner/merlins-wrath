@@ -16,6 +16,11 @@
 //   grey-box shop room, so a fresh player can trade).
 // - `startShopUi` wires it into a running game and publishes `#app[data-shop]` (JSON: whether the
 //   shop is open, the merchant and the player's crowns) for the e2e.
+// - Services (mw-ju8.6): the Services tab lists the merchant's `services`; booking "a room for the
+//   night" runs `Shops.buyService` (pay, sleep until morning, fully rested; refused when short of
+//   crowns or when a safety veto objects), closes the shop and shows "You sleep until morning." as a
+//   toast. `rest.completed` is published as `#app[data-rest]` for the e2e; the game's autosave hears
+//   the same event (src/game/save/autosave/game.ts) and writes a `rest` autosave.
 
 import type { GameContent, ItemEntry } from '@content/index';
 import {
@@ -24,6 +29,7 @@ import {
   InventoryRules,
   inventoryOf,
   LootTables,
+  restCompleted,
   SceneSpawnComponent,
   Shops,
   type BuyFailure,
@@ -33,11 +39,14 @@ import {
   type PriceResult,
   type PriceStep,
   type SellFailure,
+  type ServiceFailure,
+  type ShopServiceDef,
   type World,
 } from '@sim/index';
 import {
   crownsText,
   openShopWindow,
+  ToastHost,
   type ShopDeal,
   type ShopModel,
   type ShopRowModel,
@@ -61,6 +70,7 @@ interface MerchantEntry {
   readonly npcId: string;
   readonly displayName?: string | undefined;
   readonly personalityTags: readonly string[];
+  readonly services?: readonly ShopServiceDef[];
 }
 
 /** The greeting for a personality, until barks (E22) give merchants their own lines. */
@@ -84,6 +94,16 @@ export function greetingFor(merchant: Pick<MerchantEntry, 'personalityTags'>): s
   }
   return DEFAULT_GREETING;
 }
+
+/** Why a service could not be booked, in the keeper's terms. */
+const SERVICE_FAILURES: Readonly<Record<ServiceFailure, string>> = Object.freeze({
+  'no-such-service': 'That is no longer on offer.',
+  'cannot-afford': 'Not enough crowns.',
+  unsafe: 'You cannot sleep with danger about.',
+});
+
+/** The toast after a night's rest. */
+export const SLEEP_TOAST = 'You sleep until morning.';
 
 /** Why a price was refused, in the merchant's terms. */
 const REFUSALS: Readonly<Record<PriceRefusal, string>> = Object.freeze({
@@ -186,7 +206,33 @@ export class ShopViews {
       buy: this.#buyRows(world, player, merchantId, state),
       sell: this.#sellRows(world, player, merchantId),
       buyback: this.#buybackRows(state),
+      services: this.#serviceRows(merchant),
     };
+  }
+
+  /**
+   * The service at `index` in `merchantId`'s list (the row id the window deals on).
+   * @throws RangeError when there is none: the window only deals on rows the model listed.
+   */
+  serviceAt(merchantId: string, index: number): ShopServiceDef {
+    const service = this.#merchants.get(merchantId)?.services?.[index];
+    if (service === undefined) {
+      throw new RangeError(`merchant "${merchantId}" has no service ${String(index)}`);
+    }
+    return service;
+  }
+
+  #serviceRows(merchant: MerchantEntry): ShopRowModel[] {
+    return (merchant.services ?? []).map((service, index) => ({
+      id: index,
+      name: service.name,
+      icon: 'misc',
+      count: 1,
+      unitPrice: service.price,
+      specialty: false,
+      stolen: false,
+      breakdown: [`Fixed price ${crownsText(service.price)}`],
+    }));
   }
 
   #row(
@@ -316,6 +362,10 @@ export interface ShopControllerOptions {
   readonly shops: Shops;
   /** Rules for granting `dev-crowns`. */
   readonly rules: InventoryRules;
+  /** Null when it is safe to sleep, else why not (the autosave veto registry's verdict). */
+  readonly safety?: () => string | null;
+  /** Shows a toast (the night's "You sleep until morning."). */
+  readonly toast?: (text: string) => void;
   /** The shop opened or closed (or its crowns changed): what the e2e reads. */
   readonly onChange?: (reading: ShopReading) => void;
 }
@@ -436,11 +486,29 @@ export class ShopController {
     this.#report(true, merchantId);
   }
 
+  #book(merchantId: string, window: ShopWindow, index: number): void {
+    const { world, player, shops, views, safety, toast } = this.#options;
+    const service = views.serviceAt(merchantId, index);
+    const result = shops.buyService(world, player, merchantId, service.id, {
+      ...(safety !== undefined && { safety }),
+    });
+    if (!result.ok) {
+      window.say(SERVICE_FAILURES[result.reason]);
+      return;
+    }
+    this.close();
+    toast?.(SLEEP_TOAST);
+  }
+
   #deal({ tab, id, count }: ShopDeal): void {
     const { world, player, shops, views } = this.#options;
     const session = this.#session;
     if (session === undefined) return;
     const { merchantId, window } = session;
+    if (tab === 'services') {
+      this.#book(merchantId, window, id);
+      return;
+    }
     const name = views.nameOf(
       tab === 'buy'
         ? shops.stateOf(world, merchantId).stock.find((l) => l.id === id)?.defId
@@ -474,8 +542,10 @@ export interface ShopUiOptions {
   readonly world: World<never>;
   readonly content: ShopContent;
   readonly player: EntityId;
-  /** Publishes a readout for the e2e: `shop` (JSON of a `ShopReading`). */
-  readonly publish?: (key: 'shop', value: string) => void;
+  /** Publishes a readout for the e2e: `shop` (JSON of a `ShopReading`), `rest` (a night's sleep). */
+  readonly publish?: (key: 'shop' | 'rest', value: string) => void;
+  /** Null when it is safe to sleep, else why not (the autosave veto registry's verdict). */
+  readonly safety?: () => string | null;
 }
 
 /** The shop in a running game. */
@@ -488,7 +558,7 @@ export interface ShopUi {
 
 /** Builds the shops engine over content and readies the shop screen for the player. */
 export function startShopUi(options: ShopUiOptions): ShopUi {
-  const { ui, world, content, player, publish } = options;
+  const { ui, world, content, player, publish, safety } = options;
   const items = content.all('item');
   const rules = new InventoryRules(items);
   const shops = new Shops(
@@ -498,6 +568,11 @@ export function startShopUi(options: ShopUiOptions): ShopUi {
     new LootTables(content.all('loot-table'), items),
   );
   const views = new ShopViews(content, shops);
+  const toasts = new ToastHost();
+  ui.hud.append(toasts.element);
+  world.events.on(restCompleted, ({ kind, hours, point, wakes }) => {
+    publish?.('rest', JSON.stringify({ kind, hours, point, day: wakes.day, minute: wakes.minute }));
+  });
   const controller = new ShopController({
     ui,
     world,
@@ -505,6 +580,10 @@ export function startShopUi(options: ShopUiOptions): ShopUi {
     views,
     shops,
     rules,
+    ...(safety !== undefined && { safety }),
+    toast: (text) => {
+      toasts.show(text, { durationMs: 6000 });
+    },
     onChange: (reading) => publish?.('shop', JSON.stringify(reading)),
   });
   publish?.('shop', JSON.stringify(readingOf(world, player, false, null)));

@@ -11,7 +11,8 @@
 //   focus so the reason can be read; pressing it says the reason on the status line.
 // - Confirmation: a purchase (Buy or Buyback) costing more than a quarter of the player's crowns asks
 //   first; a cheaper one is a single input. Selling never asks.
-// - Services: an empty stub ("Nothing on offer") until services exist (mw-e20.9).
+// - Services: what the merchant sells besides goods (a room for the night, mw-ju8.6), listed and booked
+//   like a purchase: a fixed price, the same confirmation rule. Empty: "Nothing on offer".
 //
 // The screen pauses the sim and captures input; Back (Esc, B) or Close shuts it. It never changes
 // game state: every deal is reported through `onDeal`, the game does it with the sim's `Shops` engine
@@ -37,8 +38,8 @@ export const SHOP_TABS = [
   { id: 'services', label: 'Services', empty: 'Nothing on offer' },
 ] as const;
 export type ShopTabId = (typeof SHOP_TABS)[number]['id'];
-/** The tabs that list items. */
-export type ShopDealTab = Exclude<ShopTabId, 'services'>;
+/** The tabs that list rows a deal can be done on (all of them). */
+export type ShopDealTab = ShopTabId;
 
 /** A purchase costing more than this fraction of the player's crowns asks first (economy doc). */
 export const CONFIRM_FRACTION = 0.25;
@@ -93,6 +94,8 @@ export interface ShopModel {
   readonly buy: readonly ShopRowModel[];
   readonly sell: readonly ShopRowModel[];
   readonly buyback: readonly ShopRowModel[];
+  /** Services on offer, one row each (id = the service's index; count 1); none when absent. */
+  readonly services?: readonly ShopRowModel[];
 }
 
 /** A deal the player chose. */
@@ -132,6 +135,7 @@ const VERB: Readonly<Record<ShopDealTab, string>> = Object.freeze({
   buy: 'Buy',
   sell: 'Sell',
   buyback: 'Buy back',
+  services: 'Book',
 });
 
 /** A row's accessible name: "Buy Healing draught ×2, 52 crowns". */
@@ -163,17 +167,13 @@ export function openShopWindow(ui: UiRoot, options: ShopWindowOptions): ShopWind
   const lists = new Map<ShopDealTab, { list: HTMLElement; empty: string }>();
   const panels = SHOP_TABS.map((spec) => {
     const panel = h('div', { className: 'vb-shop-panel', data: { shopPanel: spec.id } });
-    if (spec.id === 'services') {
-      panel.append(h('p', { className: 'vb-shop-empty', text: spec.empty }));
-    } else {
-      const list = h('div', {
-        className: 'vb-stack vb-shop-rows',
-        attrs: { role: 'group', 'aria-label': spec.label },
-        data: { testid: `shop-rows-${spec.id}` },
-      });
-      lists.set(spec.id, { list, empty: spec.empty });
-      panel.append(list);
-    }
+    const list = h('div', {
+      className: 'vb-stack vb-shop-rows',
+      attrs: { role: 'group', 'aria-label': spec.label },
+      data: { testid: `shop-rows-${spec.id}` },
+    });
+    lists.set(spec.id, { list, empty: spec.empty });
+    panel.append(list);
     return { id: spec.id, label: spec.label, panel };
   });
   const strip: Tabs = tabs({
@@ -205,7 +205,8 @@ export function openShopWindow(ui: UiRoot, options: ShopWindowOptions): ShopWind
     h('p', { className: 'vb-shop-hint', text: SHOP_TEXT.hint }),
   );
 
-  const rowsOf = (tab: ShopDealTab): readonly ShopRowModel[] => model[tab];
+  const rowsOf = (tab: ShopDealTab): readonly ShopRowModel[] =>
+    tab === 'services' ? (model.services ?? []) : model[tab];
 
   function quantityOf(key: string, row: ShopRowModel): number {
     return Math.min(Math.max(1, quantities.get(key) ?? 1), Math.max(1, row.count));

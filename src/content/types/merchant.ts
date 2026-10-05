@@ -32,8 +32,15 @@ export const SPECIALTY_BONUS_BAND: Band = { min: 1.1, max: 1.3, default: 1.2 };
 /** A fence's multiplier on the sell price of stolen goods. */
 export const STOLEN_FACTOR_BAND: Band = { min: 0.5, max: 0.8, default: 0.6 };
 
+/** Gold for a night at an inn (mirrors `INN_BED_PRICE_BAND` in src/sim/economy/bands.ts). */
+export const INN_BED_PRICE_BAND = { min: 8, max: 15 } as const;
+
+/** Kinds of service a merchant sells. */
+export const SERVICE_KINDS = ['rest'] as const;
+export type ServiceKind = (typeof SERVICE_KINDS)[number];
+
 /** Whether `value` lies inside `band` (inclusive, with a hair of float slack). */
-const inBand = (band: Band, value: number): boolean =>
+const inBand = (band: Pick<Band, 'min' | 'max'>, value: number): boolean =>
   value >= band.min - 1e-9 && value <= band.max + 1e-9;
 
 /** How a shopkeeper carries themselves; barks and haggling read these (E22/E20 later). */
@@ -77,6 +84,21 @@ const stockSchema = z
   .refine((entry) => (entry.item === undefined) !== (entry.lootTable === undefined), {
     message: 'a stock entry names exactly one of `item` or `lootTable`',
   });
+
+const serviceSchema = z.strictObject({
+  id: contentId.describe('Service id, unique within the merchant, e.g. "room-for-the-night".'),
+  name: z.string().min(1).describe('What the shop window lists, e.g. "Room for the night".'),
+  price: z
+    .int()
+    .min(1)
+    .max(100_000)
+    .describe(
+      'Crowns, fixed by the merchant: no markup, disposition or haggle applies. A `rest` service sits in the inn-bed band 8-15.',
+    ),
+  kind: z
+    .enum(SERVICE_KINDS)
+    .describe('`rest`: sleep until morning, fully healed (the Sleeping Ox room).'),
+});
 
 const hoursSchema = z
   .strictObject({
@@ -130,6 +152,10 @@ export const merchantSchema = z
       .min(1)
       .describe('Item categories the merchant buys from the player.'),
     stock: z.array(stockSchema).default([]).describe('What the merchant sells.'),
+    services: z
+      .array(serviceSchema)
+      .default([])
+      .describe('Services on the shop window’s Services tab (an inn’s rooms).'),
     goldReserve: z
       .int()
       .nonnegative()
@@ -185,6 +211,13 @@ export const merchantSchema = z
     if (merchant.stolenFactor !== undefined && !merchant.buysStolen) {
       issue(['stolenFactor'], 'stolenFactor needs buysStolen: true');
     }
+    const serviceIds = new Set<string>();
+    merchant.services.forEach((service, i) => {
+      if (serviceIds.has(service.id)) {
+        issue(['services', i, 'id'], `service "${service.id}" is listed twice`);
+      }
+      serviceIds.add(service.id);
+    });
     merchant.specialties.forEach((category, i) => {
       if (!merchant.buysCategories.includes(category)) {
         issue(['specialties', i], `specialty "${category}" must also be in buysCategories`);
@@ -192,7 +225,7 @@ export const merchantSchema = z
     });
   });
 
-function bandText(band: Band): string {
+function bandText(band: Pick<Band, 'min' | 'max'>): string {
   return `${String(band.min)}-${String(band.max)}`;
 }
 
@@ -233,6 +266,17 @@ export const checkMerchants: ContentCheck = (entries) => {
         });
       }
     }
+    merchant.services.forEach((service, i) => {
+      if (!inBand(INN_BED_PRICE_BAND, service.price)) {
+        issues.push({
+          file,
+          pointer: `/services/${String(i)}/price`,
+          message:
+            `merchant:${merchant.id} service ${service.id} costs ${String(service.price)}, outside the inn-bed band ` +
+            `${bandText(INN_BED_PRICE_BAND)} (docs/design/economy.md)`,
+        });
+      }
+    });
     merchant.stock.forEach((entry, i) => {
       const stocked = entry.item === undefined ? undefined : items.get(entry.item.id);
       if (stocked?.category === 'currency' || stocked?.category === 'quest') {

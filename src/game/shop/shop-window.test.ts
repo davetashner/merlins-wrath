@@ -3,12 +3,18 @@
 // `Shops` engine, the UI root and the glue between them. Talking to a counter opens the screen; deals
 // run at once through the engine; the window mirrors the world.
 import { loadDevContent } from '@content/dev-content';
-import type { GameContent } from '@content/index';
+import { loadGameContent, type GameContent } from '@content/index';
 import {
   emptySlots,
   addEquipment,
   addInventory,
+  DAMAGE_COMPONENTS,
+  DAY_CLOCK_FACTS,
   EquipmentRules,
+  factDayClock,
+  giveCombatant,
+  HealthComponent,
+  MORNING_MINUTE,
   interacted,
   InventoryComponent,
   EquipmentComponent,
@@ -42,7 +48,7 @@ beforeEach(() => {
   document.body.innerHTML = '';
 });
 
-function setup(source: ShopContent = content, crowns = 200) {
+function setup(source: ShopContent = content, crowns = 200, safety?: () => string | null) {
   const world = new World<unknown>({ seed: 5 });
   world.register(InventoryComponent, EquipmentComponent, PlacementComponent, SceneSpawnComponent);
   const sim = world as unknown as World<never>;
@@ -55,6 +61,7 @@ function setup(source: ShopContent = content, crowns = 200) {
     world: sim,
     content: source,
     player,
+    ...(safety !== undefined && { safety }),
     publish: (_key, value) => published.push(value),
   });
   const counter = (tags: string[]): EntityId => {
@@ -624,5 +631,93 @@ describe('more shop cases', () => {
       new Shops([plainMerchant()], items, new InventoryRules(items)),
     );
     expect(() => views.model(t.sim, t.player, 'shop')).toThrow(RangeError);
+  });
+});
+
+describe('the Sleeping Ox: a room for the night on the Services tab (mw-ju8.6)', () => {
+  const game = loadGameContent();
+  const OX = ['merchant:sleeping-ox'];
+
+  /** The inn with a hurt player and a clock at 21:00. */
+  function inn(crowns: number, safety?: () => string | null) {
+    const t = setup(game, crowns, safety);
+    for (const [key, spec] of Object.entries(DAY_CLOCK_FACTS)) t.sim.facts.declare(key, spec);
+    t.world.register(...DAMAGE_COMPONENTS);
+    giveCombatant(t.sim, t.player, { health: 90 });
+    t.world.set(t.player, HealthComponent, { max: 90, current: 10 });
+    const clock = factDayClock(t.sim.facts);
+    clock.set({ day: 1, minute: 21 * 60 });
+    t.talk(t.counter(OX));
+    tab('services');
+    return { ...t, clock };
+  }
+  const toast = () => document.querySelector('.vb-toast')?.textContent;
+
+  it('AC-1: lists the room with its price; booking it pays, sleeps to morning, heals, closes and toasts', () => {
+    const t = inn(200);
+    expect(t.rows('services').map((r) => r.getAttribute('aria-label'))).toEqual([
+      'Book Room for the night, 12 crowns',
+    ]);
+    (t.rows('services')[0] as HTMLElement).click();
+    expect(t.crownsNow()).toBe(188);
+    expect(t.clock.now()).toEqual({ day: 2, minute: MORNING_MINUTE });
+    expect(t.sim.get(t.player, HealthComponent)).toEqual({ max: 90, current: 90 });
+    expect(t.shop.controller.isOpen).toBe(false);
+    expect(toast()).toBe('You sleep until morning.');
+    const shops = t.published.filter((p) => p.includes('"open"'));
+    expect(JSON.parse(shops.at(-1) ?? 'null')).toMatchObject({ open: false, crowns: 188 });
+    t.world.step([]); // the event reaches the readout at the next flush
+    expect(t.published.at(-1)).toBe(
+      JSON.stringify({ kind: 'inn', hours: 9, point: 'sleeping-ox', day: 2, minute: 360 }),
+    );
+  });
+
+  it('a room costing over a quarter of the crowns asks first', async () => {
+    const t = inn(40); // 12 of 40
+    (t.rows('services')[0] as HTMLElement).click();
+    expect(t.ui.top?.id).toBe('confirm');
+    expect(t.crownsNow()).toBe(40);
+    (document.querySelectorAll('[data-testid="confirm"] button')[1] as HTMLElement).click();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(t.crownsNow()).toBe(28);
+    expect(t.clock.now().day).toBe(2);
+  });
+
+  it('AC-2: with too few crowns the room is dimmed, says so, and nothing changes', () => {
+    const t = inn(11);
+    const room = t.rows('services')[0] as HTMLElement;
+    expect(room.getAttribute('aria-disabled')).toBe('true');
+    room.click();
+    expect(t.status()).toBe('Not enough crowns.');
+    expect(t.crownsNow()).toBe(11);
+    expect(t.clock.now()).toEqual({ day: 1, minute: 21 * 60 });
+    expect(t.sim.get(t.player, HealthComponent)?.current).toBe(10);
+    expect(t.shop.controller.isOpen).toBe(true);
+  });
+
+  it('is refused while a safety veto objects, keeping the shop open and the crowns', () => {
+    const t = inn(200, () => 'Can’t save during combat');
+    (t.rows('services')[0] as HTMLElement).click();
+    expect(t.status()).toBe('You cannot sleep with danger about.');
+    expect(t.crownsNow()).toBe(200);
+    expect(t.clock.now().day).toBe(1);
+    expect(t.shop.controller.isOpen).toBe(true);
+    expect(toast()).toBeUndefined();
+  });
+
+  it('a service the merchant does not list is a loud error, not a silent no-op', () => {
+    const t = setup(game, 100);
+    const views = new ShopViews(game, t.shop.shops);
+    expect(views.serviceAt('sleeping-ox', 0).id).toBe('room-for-the-night');
+    expect(() => views.serviceAt('sleeping-ox', 1)).toThrow(RangeError);
+    expect(() => views.serviceAt('marsh-general-store', 0)).toThrow(RangeError);
+  });
+
+  it('a merchant with no services lists none on the Services tab', () => {
+    const t = setup(game, 100);
+    t.talk(t.counter(['merchant:marsh-general-store']));
+    tab('services');
+    expect(find('[data-shop-panel="services"]').textContent).toBe('Nothing on offer');
   });
 });

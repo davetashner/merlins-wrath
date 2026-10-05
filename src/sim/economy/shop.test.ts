@@ -8,14 +8,20 @@ import {
 } from '../inventory/inventory';
 import { LootTables, type LootTableDef } from '../loot/tables';
 import { Rng } from '../rng';
+import { DAMAGE_COMPONENTS, giveCombatant, HealthComponent } from '../combat/damage/components';
+import { giveStamina, StaminaComponent } from '../combat/stamina';
+import { DAY_CLOCK_FACTS, factDayClock, MORNING_MINUTE } from '../rest/day-clock';
+import { restCompleted, type RestCompleted } from '../rest/rest';
 import { BUYBACK_LIMIT } from './shop-state';
 import {
   shopBought,
   shopBoughtBack,
+  shopServiceBought,
   shopSold,
   Shops,
   type ShopItemDef,
   type ShopMerchantDef,
+  type ServiceTransaction,
   type ShopTransaction,
 } from './shop';
 
@@ -97,7 +103,17 @@ const PACK: LootTableDef = {
   ],
 };
 
-const MERCHANTS = [smith, fence, pauper, hunter, dealer];
+const innkeeper: ShopMerchantDef = {
+  id: 'inn',
+  buysCategories: ['consumable'],
+  goldReserve: 50,
+  markup: 1,
+  buyRate: 0.5,
+  stock: [],
+  services: [{ id: 'room', name: 'Room for the night', price: 12, kind: 'rest' }],
+};
+
+const MERCHANTS = [smith, fence, pauper, hunter, dealer, innkeeper];
 
 function setup(gold = 100, options: { goldMax?: number; unitGuard?: number } = {}) {
   const world = new World({ seed: 7 });
@@ -525,5 +541,84 @@ describe('merchant transactions (mw-e20.4)', () => {
       }
     }
     for (const [what, n] of Object.entries(outcomes)) expect(n, what).toBeGreaterThan(0);
+  });
+});
+
+describe('merchant services: a room for the night (mw-ju8.6)', () => {
+  /** A hurt, tired player who has gold and a day clock at 21:00, ready to rent a room. */
+  function inn(gold = 100) {
+    const s = setup(gold);
+    for (const [key, spec] of Object.entries(DAY_CLOCK_FACTS)) s.world.facts.declare(key, spec);
+    s.world.register(...DAMAGE_COMPONENTS, StaminaComponent);
+    giveCombatant(s.world, s.actor, { health: 80 });
+    s.world.set(s.actor, HealthComponent, { max: 80, current: 20 });
+    giveStamina(s.world, s.actor);
+    const clock = factDayClock(s.world.facts);
+    clock.set({ day: 1, minute: 21 * 60 });
+    const bought: ServiceTransaction[] = [];
+    const rests: RestCompleted[] = [];
+    s.world.events.on(shopServiceBought, (e) => bought.push(e));
+    s.world.events.on(restCompleted, (e) => rests.push(e));
+    const state = () =>
+      JSON.stringify([
+        inventoryOf(s.world, s.actor),
+        s.shops.stateOf(s.world, 'inn'),
+        clock.now(),
+        s.world.get(s.actor, HealthComponent),
+      ]);
+    return { ...s, clock, bought, rests, state };
+  }
+
+  it('AC-1: with enough gold, buying the room costs its price, passes time to morning and heals fully', () => {
+    const s = inn(100);
+    const result = s.shops.buyService(s.world, s.actor, 'inn', 'room');
+    expect(result).toMatchObject({ ok: true, price: 12, rest: { hours: 9 } });
+    expect(inventoryOf(s.world, s.actor)?.gold).toBe(88);
+    expect(s.shops.stateOf(s.world, 'inn').gold).toBe(62);
+    expect(s.clock.now()).toEqual({ day: 2, minute: MORNING_MINUTE });
+    expect(s.world.get(s.actor, HealthComponent)).toEqual({ max: 80, current: 80 });
+    s.world.events.flush();
+    expect(s.bought).toEqual([
+      { tick: 0, actor: s.actor, merchantId: 'inn', serviceId: 'room', kind: 'rest', price: 12 },
+    ]);
+    expect(s.rests).toMatchObject([{ kind: 'inn', hours: 9, point: 'inn' }]);
+  });
+
+  it('AC-2: with too little gold the purchase is refused and nothing changes', () => {
+    const s = inn(11);
+    const before = s.state();
+    expect(s.shops.buyService(s.world, s.actor, 'inn', 'room')).toEqual({
+      ok: false,
+      reason: 'cannot-afford',
+    });
+    expect(s.state()).toBe(before);
+    s.world.events.flush();
+    expect(s.bought).toEqual([]);
+    expect(s.rests).toEqual([]);
+  });
+
+  it('an unsafe verdict refuses the room with the reason and charges nothing', () => {
+    const s = inn(100);
+    const before = s.state();
+    expect(
+      s.shops.buyService(s.world, s.actor, 'inn', 'room', { safety: () => 'enemies nearby' }),
+    ).toEqual({ ok: false, reason: 'unsafe', detail: 'enemies nearby' });
+    expect(s.state()).toBe(before);
+    s.world.events.flush();
+    expect(s.rests).toEqual([]);
+  });
+
+  it('a service the merchant does not offer is refused (stale id, or no services at all)', () => {
+    const s = inn(100);
+    const before = s.state();
+    expect(s.shops.buyService(s.world, s.actor, 'inn', 'nope')).toEqual({
+      ok: false,
+      reason: 'no-such-service',
+    });
+    expect(s.shops.buyService(s.world, s.actor, 'smith', 'room')).toEqual({
+      ok: false,
+      reason: 'no-such-service',
+    });
+    expect(s.state()).toBe(before);
   });
 });
