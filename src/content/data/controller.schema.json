@@ -831,6 +831,16 @@
           "maximum": 3,
           "description": "Water deeper than this at the feet is swum in (light and medium load) or sunk in (heavy and overloaded), m."
         },
+        "sinkFromLoadClass": {
+          "type": "string",
+          "enum": [
+            "light",
+            "medium",
+            "heavy",
+            "overloaded"
+          ],
+          "description": "The lightest armor load class that sinks in deep water (medium: the owner’s \"going in the river makes you sink with all the armor\"); lighter loads swim."
+        },
         "wadeScale": {
           "type": "number",
           "exclusiveMinimum": 0,
@@ -964,6 +974,7 @@
       "required": [
         "wadeDepth",
         "swimDepth",
+        "sinkFromLoadClass",
         "wadeScale",
         "swimSpeed",
         "swimAccelTime",
@@ -1641,6 +1652,16 @@
                 "exclusiveMinimum": 0,
                 "maximum": 3,
                 "description": "Water deeper than this at the feet is swum in (light and medium load) or sunk in (heavy and overloaded), m."
+              },
+              "sinkFromLoadClass": {
+                "type": "string",
+                "enum": [
+                  "light",
+                  "medium",
+                  "heavy",
+                  "overloaded"
+                ],
+                "description": "The lightest armor load class that sinks in deep water (medium: the owner’s \"going in the river makes you sink with all the armor\"); lighter loads swim."
               },
               "wadeScale": {
                 "type": "number",

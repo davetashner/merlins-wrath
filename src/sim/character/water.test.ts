@@ -149,6 +149,11 @@ function rig({ shapes, volumes, feet, load, tuning = TUNING, properties, unequip
   return { world, entity, state, breath, run, drained, drowned, drownTicks, sunk, entered, exited };
 }
 const IDLE = input();
+/** Only heavy and overloaded loads sink: a medium load swims (slowly). */
+const MEDIUM_SWIMS: Frozen<ControllerTuning> = {
+  ...TUNING,
+  water: { ...DEFAULT_WATER_TUNING, sinkFromLoadClass: 'heavy' },
+};
 
 /** A flat floor with its top at `top`, 100 m square. */
 const floorAt = (top: number): GreyboxShape => box(v(-50, top - 1, -50), v(50, top, 50));
@@ -195,7 +200,10 @@ describe('water volumes', () => {
     expect(waterMode(0.5, 'heavy', w)).toBe('wade');
     expect(waterMode(1.2, 'overloaded', w)).toBe('wade');
     expect(waterMode(1.21, 'light', w)).toBe('swim');
-    expect(waterMode(1.21, 'medium', w)).toBe('swim');
+    expect(waterMode(1.21, 'medium', w)).toBe('sink');
+    // The threshold is data: raised to heavy, a medium load swims again.
+    expect(waterMode(1.21, 'medium', { ...w, sinkFromLoadClass: 'heavy' })).toBe('swim');
+    expect(waterMode(1.21, 'heavy', { ...w, sinkFromLoadClass: 'heavy' })).toBe('sink');
     expect(waterMode(1.21, undefined, w)).toBe('swim');
     expect(waterMode(1.21, 'heavy', w)).toBe('sink');
     expect(waterMode(1.21, 'overloaded', w)).toBe('sink');
@@ -242,8 +250,9 @@ describe('wading (mw-e02.14)', () => {
 });
 
 describe('swimming (mw-e02.14)', () => {
-  const basin = (load?: LoadClass) =>
+  const basin = (load?: LoadClass, tuning = TUNING) =>
     rig({
+      tuning,
       shapes: [floorAt(-1.5)],
       volumes: [pool(0)],
       feet: v(0, -1.5 + SKIN, 0),
@@ -297,7 +306,7 @@ describe('swimming (mw-e02.14)', () => {
     const light = basin('light');
     light.run(3, FORWARD);
     expect(horizontalSpeed(light.state())).toBeCloseTo(3, 6);
-    const medium = basin('medium');
+    const medium = basin('medium', MEDIUM_SWIMS);
     medium.run(3, FORWARD);
     expect(horizontalSpeed(medium.state())).toBeCloseTo(2, 6);
     expect(medium.state().position.z).toBeLessThan(light.state().position.z);
@@ -308,7 +317,7 @@ describe('swimming (mw-e02.14)', () => {
     const light = basin('light');
     light.run(2, FORWARD);
     expect(total(light.drained)).toBeCloseTo(2, 6);
-    const medium = basin('medium');
+    const medium = basin('medium', MEDIUM_SWIMS);
     medium.run(2, FORWARD);
     expect(total(medium.drained)).toBeCloseTo(8, 6);
     const none = rig({ shapes: [floorAt(-4)], volumes: [pool(0)], feet: v(0, -3.9, 0) });

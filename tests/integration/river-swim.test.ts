@@ -109,6 +109,49 @@ const BANK = v(6.5, 0, 28.5);
 const onBank = (s: ReturnType<typeof valley>) => () =>
   s.state().position.z < 30.5 && s.state().position.y > -0.2 && s.state().grounded;
 
+describe('the starting knight falls into the River Wend (mw-e02.14)', () => {
+  // Mail and a wooden shield are a Medium load (ADR-0003): "going in the river makes you sink with
+  // all the armor" (owner, 2026-10-04), so Medium sinks like plate. From anywhere a fall off the
+  // Miners' Bridge can land, the knight must walk the bed to a ramp and be out inside the breath.
+  const ENTRIES: readonly [string, Vec3][] = [
+    ['east of the midpoint', v(5, 0.5, 38)],
+    ['west of the midpoint', v(-5, 0.5, 38)],
+    ['over the rail, between the piers', v(3, 2, 38)],
+    ['beside the east ramp', v(6.5, 0.5, 38)],
+    ['beside the west ramp', v(-6.5, 0.5, 38)],
+    ['near-end corner, east', v(5, 0.5, 31)],
+    ['near-end corner, west', v(-5, 0.5, 31)],
+    ['far-end corner, east', v(5, 0.5, 45)],
+    ['far-end corner, west', v(-5, 0.5, 45)],
+  ];
+  for (const [name, from] of ENTRIES) {
+    it(`${name}: sinks, walks the bed to a ramp and is out with breath to spare`, () => {
+      const s = valley('valley-03', from, 'medium');
+      const east = from.x > 0;
+      const foot = v(east ? 6.5 : -6.5, 0, 45.2);
+      const bank = v(east ? 6.5 : -6.5, 0, 28.5);
+      let sank = false;
+      const out = follow(
+        s,
+        [foot, bank],
+        () => {
+          sank ||= s.state().swim?.sinking === true;
+          return onBank(s)();
+        },
+        20,
+      );
+      console.log(
+        `time to bank from ${name}: ${out.time.toFixed(1)} s, lowest air ${(out.lowestAir / HZ).toFixed(1)} s`,
+      );
+      expect(sank).toBe(true);
+      expect(onBank(s)()).toBe(true);
+      expect(out.time).toBeLessThan(20);
+      expect(out.lowestAir).toBeGreaterThan(0);
+      expect(s.drownings()).toBe(0);
+    });
+  }
+});
+
 describe('falling into the River Wend (mw-e02.14)', () => {
   it('a heavy-armored knight sinks, walks the bed to the ramp and climbs out inside the breath', () => {
     const s = valley('valley-03', FALL_FROM, 'heavy');

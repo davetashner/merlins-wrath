@@ -291,6 +291,11 @@ export const waterTuningSchema = z
       .describe(
         'Water deeper than this at the feet is swum in (light and medium load) or sunk in (heavy and overloaded), m.',
       ),
+    sinkFromLoadClass: z
+      .enum(['light', 'medium', 'heavy', 'overloaded'])
+      .describe(
+        'The lightest armor load class that sinks in deep water (medium: the owner’s "going in the river makes you sink with all the armor"); lighter loads swim.',
+      ),
     wadeScale: z
       .number()
       .positive()

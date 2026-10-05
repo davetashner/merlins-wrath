@@ -9,10 +9,10 @@
 //   wadeDepth..swimDepth (1.2)  WADING: locomotion at wadeScale (60%) of the run speed, no sprint,
 //                               footsteps report the material `water`
 //   > swimDepth                 by armor load class (ADR-0003):
-//     light, medium             SWIMMING (traversal 'swim'): floats with the head above the surface
+//     lighter than sinkFromLoadClass  SWIMMING (traversal 'swim'): floats with the head above the surface
 //                               at swimSpeed.<class>, crouch dives, hands are busy (no attack, block
 //                               or bow: the combat gate reads the traversal mode), stamina drains
-//     heavy, overloaded         SINKING (traversal 'swim', `swim.sinking`): no buoyancy; descends at
+//     sinkFromLoadClass and up  SINKING (traversal 'swim', `swim.sinking`): no buoyancy; descends at
 //                               sinkSpeed to the bottom and walks it at sinkScale (40%), cannot swim
 //                               up and cannot jump. It climbs out where the bottom comes up to
 //                               swimDepth (a bank, a ramp), or by shedding armor (the load class is
@@ -33,7 +33,7 @@ import type { ControllerTuning, Frozen, WaterTuning } from '@content/index';
 import { defineComponent, type EntityId } from '../core/component';
 import { defineEvent } from '../core/events';
 import type { System, World } from '../core/world';
-import type { LoadClass } from '../inventory/equipment';
+import { LOAD_CLASSES, type LoadClass } from '../inventory/equipment';
 import { assignProperty, WorldProperties } from '../properties/components';
 import type { Vec3 } from '../stimulus/shapes';
 import {
@@ -61,6 +61,7 @@ export const DEFAULT_WATER_TUNING: Frozen<WaterTuning> = Object.freeze({
   wadeDepth: 0.5,
   swimDepth: 1.2,
   wadeScale: 0.6,
+  sinkFromLoadClass: 'medium',
   swimSpeed: Object.freeze({ light: 3, medium: 2 }),
   swimAccelTime: 0.4,
   staminaPerSecond: Object.freeze({ light: 1, medium: 4 }),
@@ -124,7 +125,8 @@ export function waterMode(
 ): WaterMode {
   if (depth < water.wadeDepth) return 'dry';
   if (depth <= water.swimDepth) return 'wade';
-  return load === 'heavy' || load === 'overloaded' ? 'sink' : 'swim';
+  const rank = (c: LoadClass): number => LOAD_CLASSES.indexOf(c);
+  return rank(load ?? 'light') >= rank(water.sinkFromLoadClass) ? 'sink' : 'swim';
 }
 
 export interface WaterHookOptions {
@@ -195,7 +197,7 @@ function noJump(input: CharacterInput): CharacterInput {
 /**
  * The water traversal hook (see the file header): takes the character whenever its feet are in
  * wading water or deeper, runs wading and sinking through ordinary locomotion at a scaled speed, and
- * swims light and medium loads. Add it after the ledge and climb hooks.
+ * swims the loads lighter than sinkFromLoadClass. Add it after the ledge and climb hooks.
  */
 export function waterTraversal(options: WaterHookOptions): TraversalHook {
   const { volumes } = options;

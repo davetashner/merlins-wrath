@@ -141,7 +141,7 @@ Base values are the existing controller and stamina tuning: run 5.0 m/s, sprint 
 | Jump height multiplier | ×1.0 | ×0.95 | ×0.85 | ×0.7 |
 | Climbing (ladders, ropes, ivy, rough walls) | all | all, climb speed ×0.85 | ladders only; others refused "Too heavy to climb" | ladders only |
 | Pull-up from a ledge hang (`mw-e02.34`) | yes | yes | yes | refused |
-| Water deeper than 1.2 m (`mw-e02.14`) | swims at 3.0 m/s | swims at 2.0 m/s, 4 stamina/s | **sinks**: walks the bottom at 40% run speed, cannot swim up | sinks, as Heavy |
+| Water deeper than 1.2 m (`mw-e02.14`) | swims at 3.0 m/s, 1 stamina/s | **sinks** (owner: "going in the river makes you sink with all the armor"): walks the bottom at 40% run speed, cannot swim up | sinks, as Medium | sinks, as Medium |
 | Poise and absorption | per piece (`mw-e04.16`) | | | |
 
 The noise multiplier scales the radius at which a noise is audible, so in a decibel model it is an

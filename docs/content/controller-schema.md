@@ -117,6 +117,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `water` | object | — | Wading, swimming and breath; absent = the sim’s defaults (DEFAULT_WATER_TUNING). |
 | `water.wadeDepth` | number > 0 ≤ 2 | required | Water at least this deep at the feet slows the character to a wade, m. |
 | `water.swimDepth` | number > 0 ≤ 3 | required | Water deeper than this at the feet is swum in (light and medium load) or sunk in (heavy and overloaded), m. |
+| `water.sinkFromLoadClass` | `"light"` \| `"medium"` \| `"heavy"` \| `"overloaded"` | required | The lightest armor load class that sinks in deep water (medium: the owner’s "going in the river makes you sink with all the armor"); lighter loads swim. |
 | `water.wadeScale` | number > 0 ≤ 1 | required | Wading speed as a share of the run speed (no sprint while wading), 0–1. |
 | `water.swimSpeed` | object | required | Swim speed per armor load class (heavy and overloaded sink, they do not swim). |
 | `water.swimSpeed.light` | number > 0 ≤ 10 | required | Swim speed at light load, m/s. |
@@ -244,6 +245,7 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `classes.<key>.water` | object | — |  |
 | `classes.<key>.water.wadeDepth` | number > 0 ≤ 2 | — | Water at least this deep at the feet slows the character to a wade, m. |
 | `classes.<key>.water.swimDepth` | number > 0 ≤ 3 | — | Water deeper than this at the feet is swum in (light and medium load) or sunk in (heavy and overloaded), m. |
+| `classes.<key>.water.sinkFromLoadClass` | `"light"` \| `"medium"` \| `"heavy"` \| `"overloaded"` | — | The lightest armor load class that sinks in deep water (medium: the owner’s "going in the river makes you sink with all the armor"); lighter loads swim. |
 | `classes.<key>.water.wadeScale` | number > 0 ≤ 1 | — | Wading speed as a share of the run speed (no sprint while wading), 0–1. |
 | `classes.<key>.water.swimSpeed` | object | — |  |
 | `classes.<key>.water.swimSpeed.light` | number > 0 ≤ 10 | — | Swim speed at light load, m/s. |
