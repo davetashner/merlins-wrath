@@ -6,6 +6,7 @@ import {
   InventoryRules,
   type InventoryItemDef,
 } from '../inventory/inventory';
+import { addEquipment, EquipmentComponent } from '../inventory/equipment';
 import { LootTables, type LootTableDef } from '../loot/tables';
 import { Rng } from '../rng';
 import { DAMAGE_COMPONENTS, giveCombatant, HealthComponent } from '../combat/damage/components';
@@ -258,6 +259,27 @@ describe('merchant transactions (mw-e20.4)', () => {
     expect(state.stock.some((l) => l.defId === 'dagger')).toBe(false);
     s.world.events.flush();
     expect(s.events.map(([kind]) => kind)).toEqual(['sold']);
+  });
+
+  it('an equipped item cannot be sold until it is unequipped; nothing changes', () => {
+    const s = setup(0);
+    s.rules.add(s.world, s.actor, 'dagger', 1);
+    const dagger = s.rules.query(s.world, s.actor)[0]?.instanceId ?? 0;
+    addEquipment(s.world, s.actor, 'warrior');
+    const worn = s.world.get(s.actor, EquipmentComponent);
+    if (worn === undefined) throw new Error('no equipment');
+    s.world.set(s.actor, EquipmentComponent, {
+      ...worn,
+      slots: { ...worn.slots, 'main-hand': { instanceId: dagger, defId: 'dagger' } },
+    });
+    expect(s.shops.sell(s.world, s.actor, 'smith', dagger)).toEqual({
+      ok: false,
+      reason: 'equipped',
+    });
+    expect(inventoryOf(s.world, s.actor)?.gold).toBe(0);
+    expect(s.rules.count(s.world, s.actor)).toBe(1);
+    s.world.set(s.actor, EquipmentComponent, worn);
+    expect(s.shops.sell(s.world, s.actor, 'smith', dagger)).toMatchObject({ ok: true });
   });
 
   it('selling part of a stack leaves the rest; selling more than held fails not-enough', () => {

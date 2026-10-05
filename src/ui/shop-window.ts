@@ -53,6 +53,9 @@ export const SHOP_TEXT = Object.freeze({
   fewer: 'Fewer',
   more: 'More',
   notEnough: 'Not enough crowns.',
+  merchantBroke: 'They cannot afford that just now.',
+  till: 'Their crowns',
+  sellAll: 'Sell all',
   hint: `${UI_INTENT_GLYPHS.keyboard.tabPrev}/${UI_INTENT_GLYPHS.keyboard.tabNext} or ${UI_INTENT_GLYPHS.gamepad.tabPrev}/${UI_INTENT_GLYPHS.gamepad.tabNext}: change tab. ${UI_INTENT_GLYPHS.keyboard.back} or ${UI_INTENT_GLYPHS.gamepad.back}: Close.`,
 });
 
@@ -91,6 +94,8 @@ export interface ShopModel {
   };
   /** The player's crowns. */
   readonly crowns: number;
+  /** The crowns the merchant can pay out; a sale costing more is blocked. Absent = not shown. */
+  readonly merchantCrowns?: number;
   readonly buy: readonly ShopRowModel[];
   readonly sell: readonly ShopRowModel[];
   readonly buyback: readonly ShopRowModel[];
@@ -164,6 +169,8 @@ export function openShopWindow(ui: UiRoot, options: ShopWindowOptions): ShopWind
     data: { testid: 'shop-status' },
   });
 
+  const till = h('p', { className: 'vb-shop-till', data: { testid: 'shop-till' } });
+
   const lists = new Map<ShopDealTab, { list: HTMLElement; empty: string }>();
   const panels = SHOP_TABS.map((spec) => {
     const panel = h('div', { className: 'vb-shop-panel', data: { shopPanel: spec.id } });
@@ -199,6 +206,7 @@ export function openShopWindow(ui: UiRoot, options: ShopWindowOptions): ShopWind
       h('div', { className: 'vb-shop-who' }, title, greeting),
     ),
     crowns,
+    till,
     strip.element,
     status,
     h('div', { className: 'vb-row vb-shop-actions' }, closeButton),
@@ -215,7 +223,11 @@ export function openShopWindow(ui: UiRoot, options: ShopWindowOptions): ShopWind
   /** The reason a row cannot be dealt right now, if any. */
   function blocked(tab: ShopDealTab, row: ShopRowModel, count: number): string | undefined {
     if (row.refusal !== undefined) return row.refusal;
-    if (tab !== 'sell' && (row.unitPrice ?? 0) * count > model.crowns) return SHOP_TEXT.notEnough;
+    const total = (row.unitPrice ?? 0) * count;
+    if (tab !== 'sell' && total > model.crowns) return SHOP_TEXT.notEnough;
+    if (tab === 'sell' && total > (model.merchantCrowns ?? Number.POSITIVE_INFINITY)) {
+      return SHOP_TEXT.merchantBroke;
+    }
     return undefined;
   }
 
@@ -335,6 +347,20 @@ export function openShopWindow(ui: UiRoot, options: ShopWindowOptions): ShopWind
         step(1, SHOP_TEXT.more, `${key}:more`),
       );
     }
+    if (tab === 'sell' && row.count > 1 && row.refusal === undefined) {
+      const all = button({
+        label: SHOP_TEXT.sellAll,
+        onPress: () => {
+          quantities.set(key, row.count);
+          deal(tab, row, row.count);
+        },
+      });
+      all.classList.add('vb-shop-step');
+      all.setAttribute('aria-label', `${SHOP_TEXT.sellAll} ${row.name}`);
+      all.dataset['shopFocus'] = `${key}:all`;
+      all.dataset['sellAll'] = key;
+      stepper.append(all);
+    }
     const wrap = h('div', { className: 'vb-shop-item', data: { shopRow: key } }, main, stepper);
     if (row.breakdown.length > 0) {
       attachTooltip(main, row.breakdown.join('\n')).classList.add('vb-shop-tooltip');
@@ -355,6 +381,10 @@ export function openShopWindow(ui: UiRoot, options: ShopWindowOptions): ShopWind
     portrait.dataset['portrait'] = model.merchant.portrait ?? '';
     portrait.textContent = model.merchant.name.charAt(0).toUpperCase();
     crowns.textContent = `${SHOP_TEXT.crowns}: ${crownsText(model.crowns)}`;
+    till.textContent =
+      model.merchantCrowns === undefined
+        ? ''
+        : `${SHOP_TEXT.till}: ${crownsText(model.merchantCrowns)}`;
     for (const [tab, { list, empty }] of lists) {
       const rows = rowsOf(tab);
       list.replaceChildren(

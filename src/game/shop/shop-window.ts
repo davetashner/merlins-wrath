@@ -31,6 +31,7 @@ import {
   LootTables,
   restCompleted,
   SceneSpawnComponent,
+  isEquipped,
   Shops,
   type BuyFailure,
   type EntityId,
@@ -123,6 +124,7 @@ const FAILURES: Readonly<Record<Exclude<BuyFailure | SellFailure, PriceRefusal>,
     'cannot-carry': 'You cannot carry any more of that.',
     'not-enough': 'You do not have that many.',
     'merchant-cannot-afford': 'They cannot afford that just now.',
+    equipped: 'Unequip that first.',
     'gold-cap': 'You cannot carry that many crowns.',
   });
 
@@ -203,6 +205,7 @@ export class ShopViews {
         greeting: greetingFor(merchant),
       },
       crowns: crownsOf(world, player),
+      merchantCrowns: state.gold,
       buy: this.#buyRows(world, player, merchantId, state),
       sell: this.#sellRows(world, player, merchantId),
       buyback: this.#buybackRows(state),
@@ -281,23 +284,32 @@ export class ShopViews {
     );
   }
 
-  /** The player's stacks the merchant would deal in; a category it does not buy is not listed. */
+  /**
+   * The player's stacks the merchant would deal in, best price first with the refused ones (quest
+   * items, stolen goods, equipped gear) last; a category it does not buy is not listed. Equipped
+   * single items are refused: unequip them first.
+   */
   #sellRows(world: World<never>, player: EntityId, merchantId: string): ShopRowModel[] {
     const pack = inventoryOf(world, player)?.items ?? [];
-    return [...pack].reverse().flatMap((instance) => {
+    const rows = [...pack].reverse().flatMap((instance) => {
       const quote = this.#shops.quote(merchantId, 'sell', instance.defId, instance.flags);
       if (!quote.ok && quote.refused === 'not-bought') return [];
-      return [
-        this.#row(
-          quote,
-          instance.instanceId,
-          instance.defId,
-          instance.count,
-          instance.flags,
-          undefined,
-        ),
-      ];
+      const row = this.#row(
+        quote,
+        instance.instanceId,
+        instance.defId,
+        instance.count,
+        instance.flags,
+        undefined,
+      );
+      if (instance.count === 1 && isEquipped(world, player, instance.instanceId)) {
+        return [{ ...row, refusal: FAILURES.equipped, breakdown: [] }];
+      }
+      return [row];
     });
+    const refused = (row: ShopRowModel): number => (row.refusal === undefined ? 0 : 1);
+    // Array.sort is stable, so equal prices keep the pack's newest-first order.
+    return rows.sort((a, b) => refused(a) - refused(b) || (b.unitPrice ?? 0) - (a.unitPrice ?? 0));
   }
 
   #buybackRows(state: MerchantState): ShopRowModel[] {

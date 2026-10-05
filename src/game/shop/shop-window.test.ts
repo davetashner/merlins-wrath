@@ -721,3 +721,161 @@ describe('the Sleeping Ox: a room for the night on the Services tab (mw-ju8.6)',
     expect(find('[data-shop-panel="services"]').textContent).toBe('Nothing on offer');
   });
 });
+
+describe('selling loot at Brand’s Forge (mw-ju8.7)', () => {
+  const game = loadGameContent();
+  const FORGE = ['merchant:brand-forge'];
+  const label = (r: HTMLElement) => r.getAttribute('aria-label');
+
+  /** Brand's counter open on the Sell tab with `items` in the pack. */
+  function forge(items: readonly (readonly [string, number])[], crowns = 0) {
+    const t = setup(game, crowns);
+    for (const [defId, count] of items) t.rules.add(t.sim, t.player, defId, count);
+    t.talk(t.counter(FORGE));
+    tab('sell');
+    return t;
+  }
+
+  it('AC-1: selling a dropped weapon pays value x buy rate x specialty, leaves the pack, joins the buyback', () => {
+    const t = forge([['arming-sword', 1]]); // 40 x 0.4 x 1.2 = 19.2
+    const [row] = t.rows('sell');
+    expect(label(row as HTMLElement)).toBe('Sell Arming sword, 19 crowns');
+    (row as HTMLElement).click();
+    expect(t.crownsNow()).toBe(19);
+    expect(t.pack()).toEqual([]);
+    expect(t.status()).toBe('Sold Arming sword for 19 crowns.');
+    const bought = t.shop.shops.stateOf(t.sim, 'brand-forge').buyback;
+    expect(bought).toMatchObject([{ defId: 'arming-sword', count: 1, unitPrice: 19 }]);
+    tab('buyback');
+    expect(t.rows('buyback').map(label)).toEqual(['Buy back Arming sword, 19 crowns']);
+  });
+
+  it('AC-2: the tooltip lists base value, buying rate, specialty bonus and the price', () => {
+    const t = forge([['arming-sword', 1]]);
+    const lines = t.shop.shops.quote('brand-forge', 'sell', 'arming-sword', {});
+    expect(lines.ok && breakdownLines(lines)).toEqual([
+      'Base value 40 crowns',
+      'Merchant’s buying rate ×0.4',
+      'Specialty bonus ×1.2',
+      'Price 19 crowns',
+    ]);
+    expect(
+      document.querySelector('[data-shop-panel="sell"] .vb-shop-tooltip')?.textContent,
+    ).toContain('Specialty bonus ×1.2');
+  });
+
+  it('AC-3: rows are sorted best price first; categories he does not buy are not listed', () => {
+    const t = forge([
+      ['leather-jerkin', 1],
+      ['mail-hauberk', 1],
+      ['bread-loaf', 2],
+      ['open-helm', 1],
+    ]);
+    expect(t.rows('sell').map(label)).toEqual([
+      'Sell Mail hauberk, 58 crowns',
+      'Sell Open helm, 22 crowns',
+      'Sell Leather jerkin, 14 crowns',
+    ]);
+  });
+
+  it('AC-4: Sell all sells a whole stack in one press', () => {
+    const t = forge([['standard-arrow', 20]]);
+    const all = find('[data-sell-all]');
+    all.click();
+    expect(t.pack()).toEqual([]);
+    expect(t.crownsNow()).toBeGreaterThan(0);
+  });
+
+  it('AC-5: equipped gear is dimmed with the reason and cannot be sold', () => {
+    const t = setup(game, 0);
+    t.rules.add(t.sim, t.player, 'arming-sword', 1);
+    const sword = inventoryOf(t.sim, t.player)?.items[0]?.instanceId ?? 0;
+    addEquipment(t.sim, t.player, 'warrior');
+    new EquipmentRules(game.all('item'), game.all('class')).equip(t.sim, t.player, sword);
+    t.talk(t.counter(FORGE));
+    tab('sell');
+    const row = t.rows('sell')[0] as HTMLElement;
+    expect(row.getAttribute('aria-disabled')).toBe('true');
+    expect(row.textContent).toContain('Unequip that first.');
+    row.click();
+    expect(t.crownsNow()).toBe(0);
+    expect(t.pack()).toEqual([['arming-sword', 1]]);
+    expect(failureText('equipped')).toBe('Unequip that first.');
+  });
+
+  it('AC-6: quest items stay listed last, dimmed, with the reason, and cannot be sold', () => {
+    const t = forge([
+      ['rusted-gallery-key', 1],
+      ['kite-shield', 1],
+    ]);
+    t.rules.add(t.sim, t.player, 'arming-sword', 1, { stolen: true });
+    t.world.step([]);
+    t.shop.afterStep();
+    const rows = t.rows('sell');
+    expect(rows.map(label)).toEqual([
+      'Sell Kite shield, 40 crowns',
+      'Sell Arming sword',
+      'Sell Rusted gallery key',
+    ]);
+    expect(rows[1]?.textContent).toContain('Only a fence buys stolen goods.');
+    const key = rows[2] as HTMLElement;
+    expect(key.getAttribute('aria-disabled')).toBe('true');
+    expect(key.textContent).toContain('Quest items cannot be sold.');
+    key.click();
+    expect(t.pack()).toContainEqual(['rusted-gallery-key', 1]);
+  });
+
+  it('AC-7: a sale beyond his till is dimmed with "can’t afford" and nothing changes', () => {
+    const t = forge([['tempered-mail-hauberk', 1]], 0); // 500 x 0.48 = 240 of 400
+    expect(t.shop.shops.stateOf(t.sim, 'brand-forge').gold).toBe(400);
+    (t.rows('sell')[0] as HTMLElement).click(); // 240: ok, till 160
+    expect(t.crownsNow()).toBe(240);
+    t.rules.add(t.sim, t.player, 'tempered-mail-hauberk', 1);
+    t.talk(t.counter(FORGE));
+    const row = document.querySelector<HTMLElement>('[data-shop-panel="sell"] .vb-shop-row');
+    expect(row?.getAttribute('aria-disabled')).toBe('true');
+    expect(row?.textContent).toContain('They cannot afford that just now.');
+    expect(document.querySelector('[data-testid="shop-till"]')?.textContent).toBe(
+      'Their crowns: 160 crowns',
+    );
+    row?.click();
+    expect(t.crownsNow()).toBe(240);
+  });
+
+  it('AC-8: each shop’s buy list matches its trade', () => {
+    const buys = (id: string) => game.all('merchant').find((m) => m.id === id)?.buysCategories;
+    expect(buys('brand-forge')).toEqual(
+      expect.arrayContaining(['weapon', 'armor', 'shield', 'ammo']),
+    );
+    expect(buys('brand-forge')).not.toContain('consumable');
+    expect(buys('fenn-fletchery-simples')).toEqual(
+      expect.arrayContaining(['ammo', 'weapon', 'consumable', 'misc']),
+    );
+    expect(buys('fenn-fletchery-simples')).not.toContain('armor');
+    expect(buys('pell-bakery')).toEqual(['consumable']);
+    expect(buys('sleeping-ox')).toEqual(['consumable']);
+    expect(buys('marsh-general-store')).toEqual(
+      expect.arrayContaining(['weapon', 'armor', 'shield', 'ammo', 'consumable', 'tool', 'misc']),
+    );
+  });
+
+  it('AC-9: income sanity — a 45-minute valley haul of typical tier-2 drops sells for about 110 crowns', () => {
+    // docs/design/economy.md: selling is about 110 crowns per 45 minutes; tier-2 skeletons drop weapon
+    // or armour pieces of base value 20-60 (30% of kills), bought at value x 0.4 x 1.2 at the Forge.
+    const drops: [string, number][] = [
+      ['arming-sword', 40],
+      ['open-helm', 45],
+      ['leather-jerkin', 30],
+      ['small-buckler', 45],
+      ['riveted-boots', 60],
+      ['utility-knife', 25],
+    ];
+    const t = forge(drops.map(([id]) => [id, 1] as const));
+    for (const row of t.rows('sell')) row.click();
+    expect(t.pack()).toEqual([]);
+    // 19 + 22 + 14 + 18 + 29 + 12 = 114.
+    expect(t.crownsNow()).toBe(114);
+    expect(t.crownsNow()).toBeGreaterThanOrEqual(90);
+    expect(t.crownsNow()).toBeLessThanOrEqual(140);
+  });
+});
