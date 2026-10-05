@@ -111,22 +111,30 @@ describe('the valley encounters (mw-ju8.21)', () => {
     });
   }
 
-  it('AC-2: the lone opener is a miner, valley-02 has a shield-bearer by the west chest, valley-03 ends on one brute', () => {
-    const v1 = encounters('valley-01');
-    expect(v1.filter((m) => m.tags.includes('group-bend')).map((m) => m.creature?.id)).toEqual([
-      'forgotten-miner',
-    ]);
-    const v1pair = v1.filter((m) => m.tags.includes('group-flank')).map((m) => m.creature?.id);
-    expect(v1pair.sort()).toEqual(['forgotten-archer', 'forgotten-miner']);
-    const v2 = content.get('scene', 'valley-02');
-    const chest = v2.spawns.find((s) => s.id === 'chest-valley-02-glade-west');
-    const bearer = encounters('valley-02').find(
-      (m) => m.creature?.id === 'forgotten-shield-bearer',
-    );
+  it('AC-2: the population is 22 skeletons (6, 8, 7 and so on) with all four variants, a shield-bearer by the west chest and one brute as the last fight', () => {
+    const per = SCENES.map((id) => encounters(id).length);
+    expect(per).toEqual([6, 8, 7]);
+    const variants = new Set(SCENES.flatMap((id) => encounters(id).map((m) => m.creature?.id)));
+    expect(variants).toEqual(VARIANTS);
+    // The opening group is miners only: an easy start.
+    expect(
+      encounters('valley-01')
+        .filter((m) => m.tags.includes('group-bend'))
+        .map((m) => m.creature?.id),
+    ).toEqual(['forgotten-miner', 'forgotten-miner']);
+    const chest = content
+      .get('scene', 'valley-02')
+      .spawns.find((s) => s.id === 'chest-valley-02-glade-west');
+    const bearer = encounters('valley-02').find((m) => m.tags.includes('group-glade'));
+    expect(bearer?.creature?.id).toBe('forgotten-shield-bearer');
     expect(flat(bearer?.at ?? [0, 0, 0], chest?.at ?? [99, 0, 99])).toBeLessThanOrEqual(5);
     const v3 = encounters('valley-03');
-    expect(v3.filter((m) => m.creature?.id === 'forgotten-brute')).toHaveLength(1);
-    const brute = v3.find((m) => m.creature?.id === 'forgotten-brute');
+    const brutes = SCENES.flatMap((id) => encounters(id)).filter(
+      (m) => m.creature?.id === 'forgotten-brute',
+    );
+    expect(brutes).toHaveLength(1);
+    const brute = brutes[0];
+    expect(brute?.id).toContain('valley-03');
     // Furthest along the path: the gatekeeper is the last fight, on the near side of the bridge (z < 28).
     expect(Math.max(...v3.map((m) => m.at[2]))).toBe(brute?.at[2]);
     const post = brute?.leash?.post ?? brute?.at ?? [0, 0, 0];

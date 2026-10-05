@@ -203,18 +203,8 @@
       "tags": ["arrival"]
     },
     {
-      "id": "skel-valley-02-glade-bearer",
-      "at": [-4.5, 0, 30.0],
-      "yaw": 270,
-      "creature": "forgotten-shield-bearer",
-      "leash": {
-        "radius": 15
-      },
-      "tags": ["encounter", "group-glade", "habit-guards-the-west-chest"]
-    },
-    {
-      "id": "skel-valley-02-trail-miner-a",
-      "at": [-1.5, 0, 13.0],
+      "id": "skel-valley-02-trail-miner",
+      "at": [-5.5, 0.0, 11.0],
       "yaw": 90,
       "creature": "forgotten-miner",
       "leash": {
@@ -223,24 +213,74 @@
       "tags": ["encounter", "group-trail", "habit-hauls-the-cart"]
     },
     {
-      "id": "skel-valley-02-trail-miner-b",
-      "at": [1.0, 0, 15.5],
+      "id": "skel-valley-02-trail-archer",
+      "at": [-3.75, 0.0, 13.25],
+      "yaw": 180,
+      "creature": "forgotten-archer",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-trail", "habit-watches-from-the-trees"]
+    },
+    {
+      "id": "skel-valley-02-ford-bearer",
+      "at": [5.0, 0.0, 15.5],
+      "yaw": 180,
+      "creature": "forgotten-shield-bearer",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-ford", "habit-guards-the-wagon"]
+    },
+    {
+      "id": "skel-valley-02-ford-miner",
+      "at": [4.75, 0.0, 18.5],
       "yaw": 270,
       "creature": "forgotten-miner",
       "leash": {
         "radius": 18
       },
-      "tags": ["encounter", "group-trail", "habit-hauls-the-cart"]
+      "tags": ["encounter", "group-ford", "habit-digs-by-the-path"]
+    },
+    {
+      "id": "skel-valley-02-glade-archer",
+      "at": [-4.5, 0.0, 22.5],
+      "yaw": 90,
+      "creature": "forgotten-archer",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-glade-lookout", "habit-watches-from-the-trees"]
+    },
+    {
+      "id": "skel-valley-02-ridge-miner",
+      "at": [4.5, 0.0, 28.5],
+      "yaw": 180,
+      "creature": "forgotten-miner",
+      "leash": {
+        "radius": 18
+      },
+      "tags": ["encounter", "group-ridge", "habit-mends-the-fence"]
     },
     {
       "id": "skel-valley-02-ridge-archer",
-      "at": [4.0, 0, 34.0],
+      "at": [6.5, 0.0, 33.5],
       "yaw": 180,
       "creature": "forgotten-archer",
       "leash": {
         "radius": 15
       },
       "tags": ["encounter", "group-ridge", "habit-watches-from-the-trees"]
+    },
+    {
+      "id": "skel-valley-02-glade-bearer",
+      "at": [-4.5, 0.0, 32.0],
+      "yaw": 270,
+      "creature": "forgotten-shield-bearer",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-glade", "habit-guards-the-west-chest"]
     }
   ],
   "light": {

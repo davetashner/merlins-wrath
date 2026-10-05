@@ -210,7 +210,7 @@
     },
     {
       "id": "skel-valley-03-plateau-miner",
-      "at": [-4.5, 0, 13.5],
+      "at": [-5.5, 0.0, 12.0],
       "yaw": 90,
       "creature": "forgotten-miner",
       "leash": {
@@ -220,7 +220,7 @@
     },
     {
       "id": "skel-valley-03-plateau-bearer",
-      "at": [-2.5, 0, 15.5],
+      "at": [-3.5, 0.0, 14.0],
       "yaw": 90,
       "creature": "forgotten-shield-bearer",
       "leash": {
@@ -229,13 +229,53 @@
       "tags": ["encounter", "group-plateau", "habit-stands-the-watch"]
     },
     {
+      "id": "skel-valley-03-plateau-archer",
+      "at": [-6.5, 0.0, 16.0],
+      "yaw": 90,
+      "creature": "forgotten-archer",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-plateau", "habit-keeps-the-wall"]
+    },
+    {
+      "id": "skel-valley-03-east-miner",
+      "at": [6.0, 0.0, 18.5],
+      "yaw": 270,
+      "creature": "forgotten-miner",
+      "leash": {
+        "radius": 18
+      },
+      "tags": ["encounter", "group-east", "habit-props-up-the-fence"]
+    },
+    {
+      "id": "skel-valley-03-east-archer",
+      "at": [7.25, 0.0, 22.0],
+      "yaw": 270,
+      "creature": "forgotten-archer",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-east", "habit-keeps-the-wall"]
+    },
+    {
+      "id": "skel-valley-03-east-bearer",
+      "at": [5.0, 0.0, 21.0],
+      "yaw": 270,
+      "creature": "forgotten-shield-bearer",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-east", "habit-stands-the-watch"]
+    },
+    {
       "id": "skel-valley-03-gate-brute",
-      "at": [0.0, 0, 25.0],
+      "at": [-3.5, 0.0, 26.5],
       "yaw": 180,
       "creature": "forgotten-brute",
       "leash": {
         "radius": 15,
-        "post": [0.0, 0, 22.0]
+        "post": [-2.0, 0, 24.0]
       },
       "tags": ["encounter", "group-gate", "habit-bars-the-bridge"]
     }

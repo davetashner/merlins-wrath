@@ -122,33 +122,63 @@
     },
     {
       "id": "skel-valley-01-bend-miner",
-      "at": [0.0, 0, 15.5],
+      "at": [0.0, 0.0, 11.5],
       "yaw": 90,
       "creature": "forgotten-miner",
       "leash": {
-        "radius": 15
+        "radius": 18
       },
       "tags": ["encounter", "group-bend", "habit-digs-at-the-wall"]
     },
     {
-      "id": "skel-valley-01-flank-miner",
-      "at": [5.25, 0, 38.0],
+      "id": "skel-valley-01-bend-sweeper",
+      "at": [0.0, 0.0, 15.5],
+      "yaw": 0,
+      "creature": "forgotten-miner",
+      "leash": {
+        "radius": 18
+      },
+      "tags": ["encounter", "group-bend", "habit-sweeps-the-path"]
+    },
+    {
+      "id": "skel-valley-01-rise-miner",
+      "at": [5.25, 0.0, 23.5],
       "yaw": 180,
       "creature": "forgotten-miner",
       "leash": {
         "radius": 18
       },
-      "tags": ["encounter", "group-flank", "habit-sweeps-the-path"]
+      "tags": ["encounter", "group-rise", "habit-hauls-the-cart"]
     },
     {
-      "id": "skel-valley-01-flank-archer",
-      "at": [7.0, 0, 33.5],
+      "id": "skel-valley-01-rise-archer",
+      "at": [7.0, 0.0, 27.0],
       "yaw": 180,
       "creature": "forgotten-archer",
       "leash": {
         "radius": 15
       },
-      "tags": ["encounter", "group-flank", "habit-keeps-the-pocket"]
+      "tags": ["encounter", "group-rise", "habit-keeps-the-pocket"]
+    },
+    {
+      "id": "skel-valley-01-gate-bearer",
+      "at": [5.25, 0.0, 36.0],
+      "yaw": 180,
+      "creature": "forgotten-shield-bearer",
+      "leash": {
+        "radius": 15
+      },
+      "tags": ["encounter", "group-gate", "habit-stands-the-watch"]
+    },
+    {
+      "id": "skel-valley-01-gate-miner",
+      "at": [7.0, 0.0, 40.5],
+      "yaw": 270,
+      "creature": "forgotten-miner",
+      "leash": {
+        "radius": 18
+      },
+      "tags": ["encounter", "group-gate", "habit-props-up-the-wall"]
     }
   ],
   "light": {

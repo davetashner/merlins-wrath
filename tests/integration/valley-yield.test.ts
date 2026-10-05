@@ -78,35 +78,37 @@ function clear() {
 describe('a full clear of the valley pays what the economy expects (mw-ju8.21)', () => {
   const run = clear();
 
-  it('AC-1: the three scenes hold the owner’s population: 10 skeletons over 4 variants and 4 chests', ({
+  it('AC-1: the three scenes hold 21 skeletons (6, 8 and 7) of all four variants and 4 chests', ({
     task,
   }) => {
     for (const id of SCENES) markExercised(task, 'scene', id);
-    expect(run.kills).toBe(10);
-    expect(run.perScene['valley-01']?.kills).toBe(3);
-    expect(run.perScene['valley-02']?.kills).toBe(4);
-    expect(run.perScene['valley-03']?.kills).toBe(3);
+    expect(run.kills).toBe(21);
+    expect(run.perScene['valley-01']?.kills).toBe(6);
+    expect(run.perScene['valley-02']?.kills).toBe(8);
+    expect(run.perScene['valley-03']?.kills).toBe(7);
   });
 
-  it('AC-1: total crowns plus sellable gear value lies inside the economy doc’s band for a 25-35 minute clear', () => {
-    // The doc's anchor: ~355 crowns in 45 minutes, so ~7.9 a minute. A full clear of the three scenes
-    // is roughly 25-35 minutes of play (a 46-52 m walk each, fights, looting, the chest key hunt):
-    //   floor   = 25 min x 7.9 = ~197 crowns
-    //   ceiling = the whole 45-minute figure, 355: a one-off clear must not out-earn the doc's anchor.
-    const floor = Math.round((355 / 45) * 25);
-    const ceiling = 355;
-    expect(run.total).toBeGreaterThanOrEqual(floor);
-    expect(run.total).toBeLessThanOrEqual(ceiling);
+  it('AC-1: total crowns plus sellable gear value lies inside the economy doc’s 45-minute band', () => {
+    // The doc's anchor: ~355 crowns (coins 200 + gear sold 110 + chests 45) for ~45 minutes of valley
+    // play. Owner direction: the valley must pay enough to buy the early purchases, so one full clear
+    // (a 46-52 m walk per scene, 21 fights, looting, the chest key hunt: roughly 35-45 minutes) should
+    // land about on that figure. The band is the anchor +-25%/+20%:
+    //   floor   = 355 x 0.75 = ~270 (a clear that pays less than three quarters of the anchor starves
+    //             the shops the valley exists to fund)
+    //   ceiling = 355 x 1.2  = ~430 (a one-off clear must not out-earn the anchor by more than a fifth;
+    //             the doc's 0.6-0.8 obtainable:sink ratio holds the region's total to ~3,800)
+    expect(run.total).toBeGreaterThanOrEqual(Math.round(355 * 0.75));
+    expect(run.total).toBeLessThanOrEqual(Math.round(355 * 1.2));
   });
 
-  it('AC-1: coins and Brand-sold gear from the skeletons alone are a real income, not just chests', () => {
+  it('AC-1: the skeletons’ coins and Brand-sold gear are the larger part of what is not a chest, and a real income', () => {
     const skeletons = run.coins + run.gear;
-    expect(run.coins).toBeGreaterThan(40);
-    expect(run.gear).toBeGreaterThan(10);
-    expect(skeletons).toBeGreaterThan(60);
-    // The chests (4, tiers fixed by mw-ju8.20) are the larger share of a one-off clear: the skeleton
-    // share is reported, not hidden (owner decision in the bead's handoff).
-    expect(run.chests).toBeGreaterThan(0);
+    expect(run.coins).toBeGreaterThan(80);
+    expect(run.gear).toBeGreaterThan(50);
+    // Chest tiers are fixed by mw-ju8.20 (~230 crowns for four chests), so with the total held under
+    // the band's ceiling, skeletons are ~40-50% of a clear; they are never less than 40%.
+    expect(skeletons / run.total).toBeGreaterThan(0.4);
+    expect(skeletons).toBeGreaterThan(150);
   });
 
   it('AC-1: the expected total is deterministic for the seed', () => {
