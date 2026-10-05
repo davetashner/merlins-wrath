@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "briar-glen-lane",
   "name": "Briar Glen: the shop lane",
-  "description": "Bead mw-ju8.5: a greybox cobbled lane, about 40 m long and 16 m wide, built from the e00 kit only. It runs north from the town end of the Miners' Bridge (the bridge-town-end marker, tagged scene:valley-03 as a stand-in for the road to the valley). Marsh's General Store is the first building past the bridge, on the west side: its front door (marsh-store-door, tagged scene:marsh-store) is an area-exit marker until area transitions exist (mw-e01.11), so for now reach the interior with ?scene=marsh-store. On the east side three open-fronted shops stand side by side, each with a six metre counter and its keeper behind it: Brand's Forge (Oswin Brand; anvil, forge fire, weapon rack, quench barrel), Fenn's Fletchery & Simples (Juniper Fenn; bow rack, herb bench, arrow barrel) and Pell's Bakery (Hollis Pell; bread shelf, oven, flour sacks). Each counter is a spawn tagged merchant:<id> with the Trade verb and dev-crowns:400 so the dev scene can trade. Props are kit stand-ins with named marker spawns so art can dress them later; street and shop lanterns are warm. Reach it with ?scene=briar-glen-lane.",
+  "description": "Bead mw-ju8.5: a greybox cobbled lane, about 40 m long and 16 m wide, built from the e00 kit only. It runs north from the town end of the Miners' Bridge (the bridge-town-end marker; the bridge-gate transition just south of it leads back to valley-03). Marsh's General Store is the first building past the bridge, on the west side: its front door (marsh-store-door) is a transition into the shop (mw-e01.11). Arrival spawns arrive-from-valley-03, arrive-from-marsh-store and arrive-from-sleeping-ox are where the player stands when coming from those scenes; the inn has no door here yet (mw-ju8.22), so arrive-from-sleeping-ox is a marker for it. On the east side three open-fronted shops stand side by side, each with a six metre counter and its keeper behind it: Brand's Forge (Oswin Brand; anvil, forge fire, weapon rack, quench barrel), Fenn's Fletchery & Simples (Juniper Fenn; bow rack, herb bench, arrow barrel) and Pell's Bakery (Hollis Pell; bread shelf, oven, flour sacks). Each counter is a spawn tagged merchant:<id> with the Trade verb and dev-crowns:400 so the dev scene can trade. Props are kit stand-ins with named marker spawns so art can dress them later; street and shop lanterns are warm. Reach it with ?scene=briar-glen-lane.",
   "grid": 1,
   "camera": {
     "position": [-12, 16, 4],
@@ -365,12 +365,12 @@
     {
       "id": "bridge-town-end",
       "at": [0.0, 0.0, 1.5],
-      "tags": ["area-exit", "bridge", "scene:valley-03"]
+      "tags": ["bridge"]
     },
     {
       "id": "marsh-store-door",
       "at": [-8.0, 0.0, 9.0],
-      "tags": ["area-exit", "building", "scene:marsh-store"]
+      "tags": ["building"]
     },
     {
       "id": "sign-marsh-general-store",
@@ -416,6 +416,23 @@
         "burning": true,
         "fuel": 28800
       }
+    },
+    {
+      "id": "arrive-from-valley-03",
+      "at": [0.0, 0.0, 5.0],
+      "tags": ["arrival"]
+    },
+    {
+      "id": "arrive-from-marsh-store",
+      "at": [-4.5, 0.0, 9.0],
+      "yaw": 90,
+      "tags": ["arrival"]
+    },
+    {
+      "id": "arrive-from-sleeping-ox",
+      "at": [-4.5, 0.0, 26.0],
+      "yaw": 90,
+      "tags": ["arrival"]
     }
   ],
   "light": {
@@ -431,5 +448,21 @@
   },
   "environment": {
     "sky": "#1E1B2E"
-  }
+  },
+  "transitions": [
+    {
+      "id": "bridge-gate",
+      "min": [-3, -1, 0.25],
+      "max": [3, 3, 2.0],
+      "scene": "valley-03",
+      "spawn": "arrive-from-briar-glen-lane"
+    },
+    {
+      "id": "marsh-store-door",
+      "min": [-8.5, -1, 8.4],
+      "max": [-7.5, 3, 9.6],
+      "scene": "marsh-store",
+      "spawn": "arrive-from-briar-glen-lane"
+    }
+  ]
 }

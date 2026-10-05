@@ -177,6 +177,18 @@ export function playerStart(
 }
 
 /**
+ * Where the player stands when a scene opens: the spawn called `startSpawn` when one is asked for
+ * (an area transition's arrival, mw-e01.11), else the `player-start`. Undefined when the scene lacks
+ * the spawn asked for, or has no start.
+ */
+export function playerSpawn(
+  spawns: readonly SceneSpawnPlacement[],
+  startSpawn?: string,
+): SceneSpawnPlacement | undefined {
+  return startSpawn === undefined ? playerStart(spawns) : spawns.find((s) => s.id === startSpawn);
+}
+
+/**
  * How an analog stick turns the view (rate-based: a held deflection turns at a steady speed). The
  * gamepad's right stick feeds it through the ActionFrame's `lookStick` (mw-e02.9).
  */
@@ -541,6 +553,11 @@ function climbStaminaSystem<TInput>(tuning: Frozen<ControllerTuning>): System<TI
 export interface PlayerOptions {
   /** The loaded scene's spawns; the player starts at the one tagged `player-start`. */
   readonly spawns: readonly SceneSpawnPlacement[];
+  /**
+   * The id of the spawn to start at, facing the way its yaw says, instead of the one tagged
+   * `player-start`: an area transition's arrival point (mw-e01.11).
+   */
+  readonly startSpawn?: string;
   readonly collision: CollisionWorld;
   readonly tuning: Frozen<ControllerTuning>;
   /** Look input; each setting defaults to DEFAULT_LOOK_SETTINGS. */
@@ -617,9 +634,13 @@ export function playerFallRecoverySystem<TInput>(
  * @throws NoPlayerStartError when no spawn is tagged `player-start` (the world is left unchanged).
  */
 export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptions): EntityId {
-  const start = playerStart(options.spawns);
+  const start = playerSpawn(options.spawns, options.startSpawn);
   if (start === undefined) {
-    throw new NoPlayerStartError(`the scene has no spawn tagged "${PLAYER_START_TAG}"`);
+    throw new NoPlayerStartError(
+      options.startSpawn === undefined
+        ? `the scene has no spawn tagged "${PLAYER_START_TAG}"`
+        : `the scene has no spawn "${options.startSpawn}"`,
+    );
   }
   const look: LookSettings = { ...DEFAULT_LOOK_SETTINGS, ...options.look };
   if (options.fallResetY !== undefined && !Number.isFinite(options.fallResetY)) {

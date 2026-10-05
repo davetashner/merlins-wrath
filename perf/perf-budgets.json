@@ -155,6 +155,15 @@
       "source": "docs/backlog-contract.md §1 Hardware baseline: warm reload ≤ 3 s",
       "scene": "slice",
       "note": "Reference mode, warm: death with no save, Restart area to the first sim step of the new world. Moved from e2e/slice-restart.spec.ts."
+    },
+    {
+      "id": "area-transition-valley",
+      "metric": "transitionToPlayableMs",
+      "mode": "reference",
+      "max": 3000,
+      "source": "docs/backlog-contract.md §1 Hardware baseline: warm reload ≤ 3 s",
+      "scene": "valley-02",
+      "note": "Reference mode, warm: teleport into valley-01's north gate; #app[data-transit].ms of the arriving page is the wall-clock time from the crossing to the first sim step in valley-02 (mw-e01.11 AC-4: grey-box scene to scene ≤ 3 s)."
     }
   ]
 }

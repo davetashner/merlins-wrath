@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "sleeping-ox",
   "name": "The Sleeping Ox",
-  "description": "Bead mw-ju8.6: Briar Glen's inn in grey box, built from the e00 kit only. A 10 x 8 m common room (street door in the south wall, a long bar counter with Odette \"Dot\" Farrow behind it, a hearth, lanterns, two tables with benches) and, through an open doorway in the east wall, a rented 4 x 4 m room with a bed. Open-topped like every kit scene; furniture is kit stand-ins with named marker spawns so art can dress them later (mw-e24.4 builds the full inn). The bar opens the shop screen for merchant sleeping-ox (tag merchant:<id>, verb talk): Buy and Sell for food, and on the Services tab a room for the night, which charges the crowns, sleeps until morning (06:00), fully restores health, stamina and mana and autosaves. dev-crowns:400 tops the player up on first opening so the dev scene can trade. Reach it with ?scene=sleeping-ox; the street exit is an area-exit marker (tag scene:briar-glen-lane) until area transitions exist (mw-e01.11).",
+  "description": "Bead mw-ju8.6: Briar Glen's inn in grey box, built from the e00 kit only. A 10 x 8 m common room (street door in the south wall, a long bar counter with Odette \"Dot\" Farrow behind it, a hearth, lanterns, two tables with benches) and, through an open doorway in the east wall, a rented 4 x 4 m room with a bed. Open-topped like every kit scene; furniture is kit stand-ins with named marker spawns so art can dress them later (mw-e24.4 builds the full inn). The bar opens the shop screen for merchant sleeping-ox (tag merchant:<id>, verb talk): Buy and Sell for food, and on the Services tab a room for the night, which charges the crowns, sleeps until morning (06:00), fully restores health, stamina and mana and autosaves. dev-crowns:400 tops the player up on first opening so the dev scene can trade. Reach it with ?scene=sleeping-ox; its street-exit transition leads out to briar-glen-lane (mw-e01.11); the lane has no inn door yet (mw-ju8.22), so nothing leads in.",
   "grid": 1,
   "camera": {
     "position": [-9, 11, -11],
@@ -172,7 +172,7 @@
     {
       "id": "street-exit",
       "at": [0, 0, -6.5],
-      "tags": ["area-exit", "street", "scene:briar-glen-lane"]
+      "tags": ["street"]
     },
     {
       "id": "bar-counter",
@@ -297,5 +297,14 @@
   },
   "environment": {
     "sky": "#1E1B2E"
-  }
+  },
+  "transitions": [
+    {
+      "id": "street-exit",
+      "min": [-2, -1, -7.25],
+      "max": [2, 3, -6.75],
+      "scene": "briar-glen-lane",
+      "spawn": "arrive-from-sleeping-ox"
+    }
+  ]
 }

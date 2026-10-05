@@ -91,10 +91,16 @@ describe('the Briar Glen shop lane, headless (mw-ju8.5)', () => {
     expect(t.marker('player-start').tags).toContain('player-start');
     expect(t.where(t.player).x).toBeCloseTo(0, 0);
     const bridge = t.marker('bridge-town-end');
-    expect(bridge.tags).toContain('area-exit');
+    expect(bridge.tags).toContain('bridge');
+    expect(
+      content.get('scene', 'briar-glen-lane').transitions.map((t) => [t.id, t.scene.id]),
+    ).toEqual([
+      ['bridge-gate', 'valley-03'],
+      ['marsh-store-door', 'marsh-store'],
+    ]);
     expect(bridge.position.z).toBeLessThan(t.marker('marsh-store-door').position.z);
     const door = t.marker('marsh-store-door');
-    expect(door.tags).toEqual(expect.arrayContaining(['area-exit', 'scene:marsh-store']));
+    expect(door.tags).toContain('building');
     expect(content.has('scene', 'marsh-store')).toBe(true);
     // The lane's far end is no further than ~40 m from the bridge.
     expect(t.marker('street-lantern-4').position.z).toBeGreaterThan(30);

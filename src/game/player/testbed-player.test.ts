@@ -191,6 +191,11 @@ function tap(sampler: ActionSampler, run: (seconds: number) => void, code: strin
 }
 
 describe('testbed player with sword and shield (mw-e04.6)', () => {
+  it('starts at a named spawn when asked (area transitions, mw-e01.11)', () => {
+    const { state } = testbed({ startSpawn: 'player-start' });
+    expect(state().position.z).toBeCloseTo(testbed().state().position.z, 3);
+  });
+
   it('publishes the move in progress, stamina and the raised shield', () => {
     const combat = prepareTestbedCombat(content);
     const physics = new RapierPhysics(RAPIER);

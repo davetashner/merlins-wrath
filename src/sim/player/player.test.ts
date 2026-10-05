@@ -154,6 +154,26 @@ describe('player spawn (mw-e02.23)', () => {
     expect(() => world.register(CharacterController, PlayerLook, ViewAnchor)).not.toThrow();
   });
 
+  it('starts at the named spawn instead of the player start, and throws when it is missing (mw-e01.11)', () => {
+    const arrival = { ...spawn(90, ['arrival']), id: 'arrive-from-x' } as SceneSpawnPlacement;
+    const world = new World<ActionFrame>({ seed: 3 });
+    const id = installPlayer(world, {
+      spawns: [spawn(0, ['player-start']), arrival],
+      startSpawn: 'arrive-from-x',
+      collision: sceneCollisionWorld(),
+      tuning: TUNING,
+    });
+    expect(world.get(id, PlayerLook)?.yaw).toBeCloseTo(-Math.PI / 2, 5);
+    expect(() =>
+      installPlayer(new World<ActionFrame>({ seed: 3 }), {
+        spawns: [spawn(0, ['player-start'])],
+        startSpawn: 'nowhere',
+        collision: sceneCollisionWorld(),
+        tuning: TUNING,
+      }),
+    ).toThrow(/no spawn "nowhere"/);
+  });
+
   it('an idle player does not move from its spawn', () => {
     const { world, state } = setup();
     const start = state().position;

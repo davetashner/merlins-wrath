@@ -64,7 +64,10 @@ describe('the valley spike scenes (mw-ju8.1)', () => {
     expect(
       def.placements.filter((p) => p.piece.id === 'wall' && p.scale[1] < 1).length,
     ).toBeGreaterThanOrEqual(4);
-    expect(spawn('valley-03', 'area-exit')).toBeDefined();
+    expect(scene('valley-03').transitions.map((t) => t.scene.id)).toEqual([
+      'valley-02',
+      'briar-glen-lane',
+    ]);
   });
 
   it('AC-1: only approved-for-dev backdrops are used: never the overlook concept', () => {

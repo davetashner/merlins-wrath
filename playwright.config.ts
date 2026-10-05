@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4173;
+const PORT = Number(process.env['E2E_PORT'] ?? '4173');
 const PLAYTHROUGH = 'slice-playthrough.spec.ts';
 
 // Smoke tests run against the production build served by `vite preview`.

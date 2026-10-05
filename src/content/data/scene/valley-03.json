@@ -186,7 +186,7 @@
     {
       "id": "path-end",
       "at": [0.0, 0, 56.0],
-      "tags": ["path-end", "area-exit"]
+      "tags": ["path-end"]
     },
     {
       "id": "chest-valley-03-overlook-cache",
@@ -196,6 +196,17 @@
       "container": {
         "loot": "valley-chest-superior"
       }
+    },
+    {
+      "id": "arrive-from-valley-02",
+      "at": [0.0, 0, 4.0],
+      "tags": ["arrival"]
+    },
+    {
+      "id": "arrive-from-briar-glen-lane",
+      "at": [0.0, 0, 51.0],
+      "yaw": 180,
+      "tags": ["arrival"]
     }
   ],
   "light": {
@@ -231,6 +242,22 @@
       "min": [-30, -6, 30],
       "max": [30, -2, 46],
       "tags": ["water", "river"]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "south-gate",
+      "min": [-1.5, -1, 0.25],
+      "max": [1.5, 3, 1.75],
+      "scene": "valley-02",
+      "spawn": "arrive-from-valley-03"
+    },
+    {
+      "id": "bridge-gate",
+      "min": [-3, -1, 55],
+      "max": [3, 3, 57],
+      "scene": "briar-glen-lane",
+      "spawn": "arrive-from-valley-03"
     }
   ]
 }

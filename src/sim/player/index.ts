@@ -23,6 +23,7 @@ export {
   PlayerLook,
   playerLookSystem,
   playerFallRecoverySystem,
+  playerSpawn,
   playerStart,
   restrainMovement,
   spawnYaw,

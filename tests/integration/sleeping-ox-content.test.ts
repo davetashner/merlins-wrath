@@ -23,12 +23,14 @@ describe('the Sleeping Ox scene data (mw-ju8.6)', () => {
     const door = spawn('front-door');
     expect(door?.door?.profile.id).toBe('wooden-door');
     const entrance = scene.spawns.find((s) => s.tags.includes('entrance'));
-    const exit = scene.spawns.find((s) => s.tags.includes('area-exit'));
+    const exit = spawn('street-exit');
     expect(entrance?.tags).toContain('player-start');
     expect(entrance?.at[2]).toBeGreaterThan(door?.at[2] ?? 0);
     expect(exit?.at[2]).toBeLessThan(door?.at[2] ?? 0);
-    // The street exit names where it leads, by the convention area transitions will read.
-    expect(exit?.tags).toContain('scene:briar-glen-lane');
+    // The street exit is a transition volume that leads to the lane.
+    expect(scene.transitions.map((t) => [t.id, t.scene.id, t.spawn])).toEqual([
+      ['street-exit', 'briar-glen-lane', 'arrive-from-sleeping-ox'],
+    ]);
   });
 
   it('the bar is tagged for sleeping-ox with the Trade / Rooms prompt and Dot stands behind it', ({

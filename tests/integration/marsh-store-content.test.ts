@@ -29,7 +29,7 @@ describe('Marsh’s General Store scene (mw-ju8.9)', () => {
     // A doorway in the street-side (south) wall, where the door stands.
     expect(placed('doorway').map((p) => [p.at[0], p.at[2]])).toEqual([[0, door?.at[2]]]);
     const inside = withTag('entrance')[0];
-    const exit = withTag('area-exit')[0];
+    const exit = spawn('street-exit');
     expect(inside?.at[2]).toBeGreaterThan(door?.at[2] ?? 0);
     expect(exit?.at[2]).toBeLessThan(door?.at[2] ?? 0);
     expect(inside?.tags).toContain('player-start');

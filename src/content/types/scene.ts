@@ -571,6 +571,32 @@ export const sceneRegionSchema = z
     path: ['max'],
   });
 
+/**
+ * A way out of the scene into another (mw-e01.11): a box the player walks into, the scene it leads to
+ * and the named spawn of that scene the player arrives at, facing the way the spawn's yaw says.
+ * Arrival spawns are ordinary marker spawns by convention called `arrive-from-<this scene id>`; the
+ * content check (src/content/transition-checks.ts) fails a transition whose target scene or spawn
+ * does not exist, naming both.
+ */
+export const sceneTransitionSchema = z
+  .strictObject({
+    id: contentId.describe('Name of the transition, unique in the scene, e.g. north-gate.'),
+    min: vec3Schema.describe('Lower corner of the volume, grid cells.'),
+    max: vec3Schema.describe('Upper corner of the volume, grid cells; above min on every axis.'),
+    scene: ref('scene').describe('The scene it leads to.'),
+    spawn: contentId.describe(
+      'The spawn of that scene the player arrives at; its yaw is the way the player faces.',
+    ),
+    follow: z
+      .boolean()
+      .default(false)
+      .describe('Companions flagged to follow travel with the player through it (none exist yet).'),
+  })
+  .refine(({ min, max }) => max[0] > min[0] && max[1] > min[1] && max[2] > min[2], {
+    message: 'max must be above min on every axis',
+    path: ['max'],
+  });
+
 export const sceneSchema = z
   .strictObject({
     id: contentId.describe('Scene id; also the ?scene= URL value.'),
@@ -605,8 +631,30 @@ export const sceneSchema = z
       .array(sceneRegionSchema)
       .default([])
       .describe('Tagged boxes, e.g. a river (mw-ju8.1); data only until a system reads them.'),
+    transitions: z
+      .array(sceneTransitionSchema)
+      .default([])
+      .describe('Volumes that lead to another scene, and where the player arrives (mw-e01.11).'),
   })
   .superRefine((scene, ctx) => {
+    const transitionIds = new Set<string>();
+    scene.transitions.forEach((transition, index) => {
+      if (transitionIds.has(transition.id)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['transitions', index, 'id'],
+          message: `transition id "${transition.id}" is used twice in this scene`,
+        });
+      }
+      transitionIds.add(transition.id);
+      if (transition.scene.id === scene.id) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['transitions', index, 'scene'],
+          message: `transition "${transition.id}" leads back into its own scene`,
+        });
+      }
+    });
     const regionIds = new Set<string>();
     scene.regions.forEach((region, index) => {
       if (regionIds.has(region.id)) {
@@ -838,6 +886,7 @@ function checkMechanism(spawn: SpawnDef, index: number, ctx: z.RefinementCtx): v
 export type SceneDef = z.output<typeof sceneSchema>;
 export type SceneDefInput = z.input<typeof sceneSchema>;
 export type ScenePlacementDef = z.output<typeof scenePlacementSchema>;
+export type SceneTransitionDef = z.output<typeof sceneTransitionSchema>;
 export type SceneSpawnDef = z.output<typeof sceneSpawnSchema>;
 export type SceneLightDef = z.output<typeof sceneLightSchema>;
 export type SceneEnvironmentDef = z.output<typeof sceneEnvironmentSchema>;
