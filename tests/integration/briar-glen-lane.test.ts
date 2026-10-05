@@ -97,11 +97,26 @@ describe('the Briar Glen shop lane, headless (mw-ju8.5)', () => {
     ).toEqual([
       ['bridge-gate', 'valley-03'],
       ['marsh-store-door', 'marsh-store'],
+      ['sleeping-ox-door', 'sleeping-ox'],
     ]);
     expect(bridge.position.z).toBeLessThan(t.marker('marsh-store-door').position.z);
     const door = t.marker('marsh-store-door');
     expect(door.tags).toContain('building');
     expect(content.has('scene', 'marsh-store')).toBe(true);
+    // The Sleeping Ox stands further up the west side than Marsh's, with its sign and lantern.
+    const inn = t.marker('sleeping-ox-door');
+    expect(inn.tags).toContain('building');
+    expect(inn.position.x).toBeCloseTo(door.position.x, 5);
+    expect(inn.position.z).toBeGreaterThan(door.position.z + 10);
+    expect(t.marker('sign-sleeping-ox').tags).toContain('sign');
+    expect(t.marker('lantern-sleeping-ox').tags).toContain('lantern');
+    const innWay = content
+      .get('scene', 'briar-glen-lane')
+      .transitions.find((x) => x.id === 'sleeping-ox-door');
+    expect(innWay?.spawn).toBe('arrive-from-briar-glen-lane');
+    const arrival = t.marker('arrive-from-sleeping-ox').position;
+    expect(arrival.x).toBeGreaterThan(-6);
+    expect(Math.abs(arrival.z - inn.position.z)).toBeLessThan(2);
     // The lane's far end is no further than ~40 m from the bridge.
     expect(t.marker('street-lantern-4').position.z).toBeGreaterThan(30);
   });

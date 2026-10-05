@@ -249,7 +249,7 @@ books under the counter and keeps one forbidden book she will not sell to anyone
 
 ### 3.5 Locations (MVP)
 
-**Briar Glen (town)** — Market Green and the notice board; **the Sleeping Ox** inn (Dot's); **the Lamplit
+**Briar Glen (town)** — Market Green and the notice board; **the Sleeping Ox** inn (Dot's; its front door is on the shop lane, further up the west side than Marsh's); **the Lamplit
 Stacks** bookshop (Mirela's); Brand's Forge; Fenn's Fletchery & Simples; Pell's Bakery; **Marsh's General Store** (§5.15); the Watch House
 and its one-cell jail; Vane House on the rise; the schoolhouse (empty; its teacher is missing); the Glen
 Well (a loose ladder-rung leads to the old cistern); the lychgate cemetery with Vesperine graves.
