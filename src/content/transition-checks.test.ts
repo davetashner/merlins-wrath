@@ -37,7 +37,7 @@ const firstTransition = (scene: Record<string, unknown>) => transitionAt(scene, 
 
 describe('transition validation (mw-e01.11)', () => {
   it('AC-3: a transition to a spawn the target scene lacks fails, naming both scenes and the spawn', () => {
-    const issues = issuesWith('valley-01.json', (scene) => {
+    const issues = issuesWith('scene/valley-01.json', (scene) => {
       firstTransition(scene)['spawn'] = 'arrive-from-nowhere';
     });
     expect(issues).toHaveLength(1);
@@ -48,14 +48,14 @@ describe('transition validation (mw-e01.11)', () => {
   });
 
   it('AC-3: a transition to a scene that does not exist fails, naming the scene and the missing one', () => {
-    const issues = issuesWith('valley-01.json', (scene) => {
+    const issues = issuesWith('scene/valley-01.json', (scene) => {
       firstTransition(scene)['scene'] = 'atlantis';
     });
     expect(issues.join('\n')).toMatch(/scene:valley-01 references missing .*atlantis/);
   });
 
   it('rejects an arrival spawn that lies inside a way out of its scene', () => {
-    const issues = issuesWith('valley-02.json', (scene) => {
+    const issues = issuesWith('scene/valley-02.json', (scene) => {
       const spawns = scene['spawns'] as Record<string, unknown>[];
       const arrival = spawns.find((s) => s['id'] === 'arrive-from-valley-01');
       if (arrival !== undefined) arrival['at'] = [0, 0, 1];
@@ -67,7 +67,7 @@ describe('transition validation (mw-e01.11)', () => {
   });
 
   it('rejects two transitions with one id and a transition back into its own scene', () => {
-    const issues = issuesWith('valley-02.json', (scene) => {
+    const issues = issuesWith('scene/valley-02.json', (scene) => {
       transitionAt(scene, 1)['id'] = 'south-gate';
       transitionAt(scene, 0)['scene'] = 'valley-02';
     });

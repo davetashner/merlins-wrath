@@ -48,7 +48,7 @@ describe('pnpm nav:bake / nav:check (mw-e11.4)', () => {
     expect(main(['check'], repo)).toBe(0);
     expect(out.log).toEqual(['navmeshes are up to date']);
     expect(bakedScenes(REPO)).toContain('testbed');
-  });
+  }, 30_000); // re-bakes every committed navmesh, now including the three valley scenes
 
   it('AC-6: bakes a scene into its data file, then check passes; a stale file fails check', () => {
     const dir = scratch();
