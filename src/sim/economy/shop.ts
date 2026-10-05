@@ -17,6 +17,7 @@
 import type { EntityId } from '../core/component';
 import { defineEvent } from '../core/events';
 import type { World } from '../core/world';
+import { equipmentOf } from '../inventory/equipment';
 import {
   inventoryOf,
   type InventoryItemDef,
@@ -36,6 +37,12 @@ import {
   type MerchantState,
   type StockLine,
 } from './shop-state';
+
+/** Whether an equipment slot references pack instance `instanceId`. */
+export function isEquipped(world: World, actor: EntityId, instanceId: number): boolean {
+  const slots = equipmentOf(world, actor)?.slots;
+  return slots !== undefined && Object.values(slots).some((ref) => ref?.instanceId === instanceId);
+}
 
 /** What shops read of an item definition: the inventory's view plus value and the no-sell flag. */
 export interface ShopItemDef extends InventoryItemDef {
@@ -97,6 +104,8 @@ export type SellFailure =
   /** The instance holds fewer units than asked for. */
   | 'not-enough'
   | 'merchant-cannot-afford'
+  /** The units are worn or held in an equipment slot: unequip first (a slot would dangle). */
+  | 'equipped'
   /** The payment would take the player's gold past the cap (so gold would be lost). */
   | 'gold-cap'
   | PriceRefusal;
@@ -341,6 +350,7 @@ export class Shops {
     const instance = pack.items.find((i) => i.instanceId === instanceId);
     if (instance === undefined) return failure('no-such-item');
     if (instance.count < count) return failure('not-enough');
+    if (count >= instance.count && isEquipped(world, actor, instanceId)) return failure('equipped');
     const quoted = this.quote(merchantId, 'sell', instance.defId, instance.flags, options);
     if (!quoted.ok) return failure(quoted.refused);
     const unitPrice = quoted.price;

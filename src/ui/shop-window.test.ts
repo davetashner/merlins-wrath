@@ -376,4 +376,35 @@ describe('shop window (mw-e20.10)', () => {
     t.rows('buy')[0]?.click();
     expect(t.onDeal).toHaveBeenCalledWith({ tab: 'buy', id: 9, count: 1 });
   });
+
+  it('Sell all offers a whole stack at once; single items and refused rows have no button', () => {
+    const t = open({
+      ...MODEL,
+      sell: [
+        row(5, 'Arrows', { count: 20, unitPrice: 2 }),
+        row(6, 'Sword'),
+        row(8, 'Candlestick', { count: 3, refusal: 'Only a fence buys stolen goods.' }),
+      ],
+    });
+    expect(document.querySelectorAll('[data-sell-all]')).toHaveLength(1);
+    t.window.select('sell');
+    find('[data-sell-all]').click();
+    expect(t.onDeal).toHaveBeenCalledWith({ tab: 'sell', id: 5, count: 20 });
+  });
+
+  it('a sale beyond the merchant’s crowns is dimmed with the reason and shows their till', () => {
+    const t = open({
+      ...MODEL,
+      merchantCrowns: 15,
+      sell: [row(5, 'Arrows', { count: 20, unitPrice: 2 })],
+    });
+    expect(find('[data-testid="shop-till"]').textContent).toBe('Their crowns: 15 crowns');
+    t.window.select('sell');
+    find('[data-sell-all]').click();
+    expect(t.onDeal).not.toHaveBeenCalled();
+    expect(find('[data-testid="shop-status"]').textContent).toBe(
+      'They cannot afford that just now.',
+    );
+    expect(t.rows('sell')[0]?.getAttribute('aria-disabled')).toBeNull();
+  });
 });

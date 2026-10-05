@@ -88,3 +88,37 @@ test('AC-2: each counter offers a trade and opens the shop of its keeper', async
   }
   expect(problems).toEqual([]);
 });
+
+test('mw-ju8.7: gear sells back at the Forge counter for fewer crowns than it cost', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const problems = collectProblems(page);
+  await openLane(page);
+  await takeControl(page);
+  await runConsole(page, 'tp 3.5 0 16');
+  await turnTo(page, { x: 5, z: 16 });
+  await page.keyboard.press('KeyE');
+  await expect(page.locator('#app')).toHaveAttribute('data-shop', /"open":true/);
+
+  // Buy a knife (the debug console has no `give`), then sell it: crowns rise by its buy-back price
+  // and the knife leaves the pack. Reach the rows as a keyboard player does: focus, then Enter.
+  const shop = page.locator('[data-screen="shop"]');
+  await shop.locator('[aria-label^="Buy Utility knife"]').first().focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('shop-status')).toHaveText(
+    /^Bought Utility knife for \d+ crowns\.$/,
+  );
+  const bought = await data<{ crowns: number; pack: { item: string }[] }>(page, 'shop');
+  expect(bought?.pack).toContainEqual({ item: 'utility-knife', count: 1 });
+
+  await shop.locator('[data-tab="sell"]').click();
+  await shop.locator('[aria-label^="Sell Utility knife"]').first().focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('shop-status')).toHaveText(/^Sold Utility knife for \d+ crowns\.$/);
+  const sold = await data<{ crowns: number; pack: { item: string }[] }>(page, 'shop');
+  expect(sold?.crowns).toBeGreaterThan(bought?.crowns ?? Number.POSITIVE_INFINITY);
+  expect(sold?.crowns).toBeLessThan(400);
+  expect(sold?.pack).toEqual([]);
+  expect(problems).toEqual([]);
+});
