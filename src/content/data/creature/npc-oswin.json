@@ -1,0 +1,22 @@
+{
+  "$schema": "../creature.schema.json",
+  "id": "npc-oswin",
+  "family": "human",
+  "tags": ["npc", "shopkeeper", "merchant"],
+  "stats": { "health": 60, "poise": 20, "mass": 80, "size": "medium" },
+  "senses": "humanoid",
+  "locomotion": "humanoid",
+  "attacks": [],
+  "faction": "townsfolk",
+  "disposition": { "towardPlayer": "friendly" },
+  "personality": {
+    "bravery": 0.4,
+    "curiosity": 0.6,
+    "aggression": 0,
+    "diligence": 0.9,
+    "sociability": 0.9,
+    "greed": 0.5
+  },
+  "behaviour": { "profile": "shopkeeper" },
+  "presentation": { "mesh": "placeholder-capsule", "sfx": "placeholder" }
+}

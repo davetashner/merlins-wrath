@@ -59,6 +59,7 @@ export const DEV_CROWNS_TAG = 'dev-crowns:';
 interface MerchantEntry {
   readonly id: string;
   readonly npcId: string;
+  readonly displayName?: string | undefined;
   readonly personalityTags: readonly string[];
 }
 
@@ -178,7 +179,7 @@ export class ShopViews {
     const state = this.#shops.stateOf(world, merchantId);
     return {
       merchant: {
-        name: itemLabel(merchant.npcId),
+        name: merchant.displayName ?? itemLabel(merchant.npcId),
         greeting: greetingFor(merchant),
       },
       crowns: crownsOf(world, player),

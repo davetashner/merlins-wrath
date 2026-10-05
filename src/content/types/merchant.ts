@@ -103,6 +103,18 @@ export const merchantSchema = z
       .min(1)
       .describe('Who runs it and why these prices and stock, for owner review.'),
     npcId: contentId.describe('The NPC who speaks for the shop (dialogue speaker id).'),
+    displayName: z
+      .string()
+      .min(1)
+      .optional()
+      .describe(
+        'The keeper’s name as the shop window shows it, e.g. "Ottilie Marsh"; absent = the NPC id made readable.',
+      ),
+    shopName: z
+      .string()
+      .min(1)
+      .optional()
+      .describe('The shop’s name, e.g. "Brand’s Forge" (signage, shop window subtitle).'),
     personalityTags: z
       .array(z.enum(MERCHANT_PERSONALITIES))
       .default([])
