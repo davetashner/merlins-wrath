@@ -227,8 +227,10 @@ export interface PlayerAnimationView {
 
 export interface TestbedPlayerOptions<TObject, TCommand> {
   readonly world: World<TCommand>;
-  /** The loaded scene; the player spawns at its `player-start` spawn. */
+  /** The loaded scene; the player spawns at its `player-start` spawn, or at `startSpawn`. */
   readonly scene: LoadedScene;
+  /** The spawn to start at instead of `player-start`: an area transition's arrival (mw-e01.11). */
+  readonly startSpawn?: string;
   readonly sync: RenderSync;
   readonly tuning: Frozen<ControllerTuning>;
   /** The orbit camera and look tuning (content `camera`, `player`). */
@@ -395,6 +397,7 @@ export function setupTestbedPlayer<TObject, TCommand>(
       : { ...options.melee, target: lockedTarget, locate: lockOn.locate ?? placedTargetPosition };
   const entity = installPlayer(world, {
     spawns: scene.layout.spawns,
+    ...(options.startSpawn !== undefined && { startSpawn: options.startSpawn }),
     collision,
     tuning,
     fallResetY:

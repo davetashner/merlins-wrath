@@ -12,6 +12,7 @@ import {
   measureFrontDoor,
   measureRestart,
   measureSaveLoad,
+  measureTransition,
 } from './flows';
 import { SLICE_URL } from '../helpers/slice';
 import {
@@ -115,6 +116,14 @@ test.describe('load budgets', () => {
     await enforce(testInfo, 'reference', {
       browser: browserName(page),
       measurements: [{ metric: 'restartToPlayableMs', value, scene: 'slice' }],
+    });
+  });
+
+  test('valley-01 → valley-02: area transition playable ≤ 3 s warm', async ({ page }, testInfo) => {
+    const value = await measureTransition(page);
+    await enforce(testInfo, 'reference', {
+      browser: browserName(page),
+      measurements: [{ metric: 'transitionToPlayableMs', value, scene: 'valley-02' }],
     });
   });
 });

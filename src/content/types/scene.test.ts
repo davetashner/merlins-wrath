@@ -440,6 +440,7 @@ describe('scene schema (mw-e00.21)', () => {
       waypoints: [],
       routes: [],
       regions: [],
+      transitions: [],
     });
   });
 

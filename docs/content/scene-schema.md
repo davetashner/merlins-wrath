@@ -259,3 +259,10 @@ every other field takes the default shown when omitted ("—" = stays absent).
 | `regions[].min` | list of any (at least 3) | required | Lower corner, grid cells. |
 | `regions[].max` | list of any (at least 3) | required | Upper corner, grid cells; above min on every axis. |
 | `regions[].tags` | list of string | `[]` | Free-form tags, e.g. water. |
+| `transitions` | list of object | — | Volumes that lead to another scene, and where the player arrives (mw-e01.11). |
+| `transitions[].id` | id | required | Name of the transition, unique in the scene, e.g. north-gate. |
+| `transitions[].min` | list of any (at least 3) | required | Lower corner of the volume, grid cells. |
+| `transitions[].max` | list of any (at least 3) | required | Upper corner of the volume, grid cells; above min on every axis. |
+| `transitions[].scene` | ref → scene | required | The scene it leads to. |
+| `transitions[].spawn` | id | required | The spawn of that scene the player arrives at; its yaw is the way the player faces. |
+| `transitions[].follow` | boolean | `false` | Companions flagged to follow travel with the player through it (none exist yet). |

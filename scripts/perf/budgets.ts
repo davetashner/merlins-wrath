@@ -34,6 +34,8 @@ export const PERF_METRICS = {
   continueToPlayableMs: 'ms',
   /** Death screen "Restart area" pressed to the first sim step of the new world (warm). */
   restartToPlayableMs: 'ms',
+  /** Crossing an area transition volume to the first sim step of the next area (warm). */
+  transitionToPlayableMs: 'ms',
   /** JS heap (allocated) after idling in the testbed. */
   heapBytesAfterIdle: 'bytes',
   /** Main-thread tasks of 200 ms or more while frames are sampled, frame renders included. */

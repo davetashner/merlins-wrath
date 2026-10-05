@@ -165,7 +165,7 @@
     {
       "id": "path-end",
       "at": [0.0, 0, 46.0],
-      "tags": ["path-end", "area-exit"]
+      "tags": ["path-end"]
     },
     {
       "id": "chest-valley-02-glade-east",
@@ -190,6 +190,17 @@
         "loot": "valley-chest-fine",
         "lock": "valley-chest-iron"
       }
+    },
+    {
+      "id": "arrive-from-valley-01",
+      "at": [0.0, 0, 4.0],
+      "tags": ["arrival"]
+    },
+    {
+      "id": "arrive-from-valley-03",
+      "at": [0.0, 0, 41.0],
+      "yaw": 180,
+      "tags": ["arrival"]
     }
   ],
   "light": {
@@ -225,6 +236,22 @@
       "min": [-30, -6, 2],
       "max": [-12, -2, 46],
       "tags": ["water", "river"]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "south-gate",
+      "min": [-3, -1, 0.25],
+      "max": [3, 3, 1.75],
+      "scene": "valley-01",
+      "spawn": "arrive-from-valley-02"
+    },
+    {
+      "id": "north-gate",
+      "min": [-3, -1, 45],
+      "max": [3, 3, 47],
+      "scene": "valley-03",
+      "spawn": "arrive-from-valley-02"
     }
   ]
 }

@@ -204,7 +204,7 @@ has two modes:
   Reference mode also holds the wall-clock load budgets that PR e2e specs used to assert (mw-e41.8;
   `e2e/perf/flows.ts`, same in-page timing hooks): cold slice load and the title's New Game → Knight →
   playable ≤ 10 s at 50 Mbps; first frame on a warm reload, death → Load last save (testbed and
-  slice), title Continue and Restart area to the first sim step ≤ 3 s warm. They sit here, not in CI
+  slice), title Continue, Restart area and an area transition (valley-01 → valley-02) to the first sim step ≤ 3 s warm. They sit here, not in CI
   mode, because software GL on shared runners makes absolute loads jitter (restarts measured 9–10 s
   there). CI mode adds no relative or ceiling guard for them; its throttled testbed load and warm
   reload budgets remain. PR e2e specs keep only functional assertions and hang-protection timeouts.

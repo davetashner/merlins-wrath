@@ -1970,6 +1970,80 @@
         ],
         "additionalProperties": false
       }
+    },
+    "transitions": {
+      "description": "Volumes that lead to another scene, and where the player arrives (mw-e01.11).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Name of the transition, unique in the scene, e.g. north-gate."
+          },
+          "min": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Lower corner of the volume, grid cells."
+          },
+          "max": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "items": false,
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Upper corner of the volume, grid cells; above min on every axis."
+          },
+          "scene": {
+            "description": "The scene it leads to.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "x-contentRef": "scene"
+          },
+          "spawn": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "The spawn of that scene the player arrives at; its yaw is the way the player faces."
+          },
+          "follow": {
+            "default": false,
+            "description": "Companions flagged to follow travel with the player through it (none exist yet).",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "min",
+          "max",
+          "scene",
+          "spawn"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "required": [

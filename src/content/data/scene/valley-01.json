@@ -103,7 +103,7 @@
     {
       "id": "path-end",
       "at": [6.0, 0, 52.0],
-      "tags": ["path-end", "area-exit"]
+      "tags": ["path-end"]
     },
     {
       "id": "chest-valley-01-nook",
@@ -113,6 +113,12 @@
       "container": {
         "loot": "valley-chest-common"
       }
+    },
+    {
+      "id": "arrive-from-valley-02",
+      "at": [6.0, 0, 48.0],
+      "yaw": 180,
+      "tags": ["arrival"]
     }
   ],
   "light": {
@@ -141,5 +147,14 @@
       "centreY": 28,
       "follow": 1
     }
-  }
+  },
+  "transitions": [
+    {
+      "id": "north-gate",
+      "min": [4.5, -1, 51.5],
+      "max": [7.5, 3, 53.5],
+      "scene": "valley-02",
+      "spawn": "arrive-from-valley-01"
+    }
+  ]
 }

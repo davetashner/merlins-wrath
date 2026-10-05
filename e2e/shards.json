@@ -43,6 +43,7 @@
     "testbed-audio.spec.ts": 24.7,
     "testbed-player.spec.ts": 145.3,
     "title.spec.ts": 89.1,
+    "transitions.spec.ts": 40,
     "ui-perf.spec.ts": 5.4,
     "ui.spec.ts": 28.9,
     "vfx-perf.spec.ts": 0,

@@ -9,7 +9,7 @@
 // the capability registry, the items and the proficiency tags items call for (mw-e19.4), and the
 // spawns the signal graphs a scene places bind (mw-e03.18), loot tables' references, nesting and
 // unique items across the world (mw-e18.2), and baked navmeshes against their scenes' door spawns
-// (mw-e11.4), respawn-rule destinations against their scenes' spawns (mw-e01.8), and merchants' price
+// (mw-e11.4), area transitions' target spawns (mw-e01.11), respawn-rule destinations against their scenes' spawns (mw-e01.8), and merchants' price
 // bands and stock against the economy design (mw-e20.2). The `game` type
 // is the one game configuration file (playable classes, mw-e01.15).
 
@@ -20,6 +20,7 @@ import { checkConditions } from './condition-checks.ts';
 import { checkFacts } from './fact-checks.ts';
 import { checkLootTables } from './loot-checks.ts';
 import { checkSceneSignals } from './mechanism-checks.ts';
+import { checkSceneTransitions } from './transition-checks.ts';
 import { checkPuzzles } from './puzzle-checks.ts';
 import type { Catalogue, ContentCheck, EntryOf } from './loader.ts';
 import { animClipSchema } from './types/anim-clip.ts';
@@ -131,6 +132,7 @@ export const contentChecks: readonly ContentCheck[] = [
   checkItems,
   checkClasses,
   checkSceneSignals,
+  checkSceneTransitions,
   checkLootTables,
   checkMerchants,
   checkNavmeshes,

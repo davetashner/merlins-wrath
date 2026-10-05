@@ -156,6 +156,16 @@ import {
   SceneLoader,
 } from '@game/scene/index';
 import {
+  applyCarriedPlayer,
+  applyCarriedWorld,
+  Arrival,
+  carriedClassId,
+  peekTransit,
+  takeTransit,
+  TransitionController,
+  type Transit,
+} from '@game/transit/index';
+import {
   DeathReload,
   takePendingLoad,
   type PendingLoad,
@@ -207,6 +217,7 @@ import { captureCanvasThumbnail, type CapturedThumbnail } from '@render/thumbnai
 import {
   addCapabilities,
   announceRespawn,
+  installSceneTransitions,
   AttackerDummyComponent,
   classOf,
   equipChanged,
@@ -574,6 +585,23 @@ function startRenderer(
     },
   });
   let player: TestbedPlayer | undefined;
+  // Area transitions (mw-e01.11): a page that arrives from another area shows the loading overlay
+  // (area name) if it takes longer than half a second to become playable, and publishes how long
+  // the whole transition took in #app[data-transit]; a page that leaves hands off through
+  // `transitions`, whose `leaving` holds the sim while the page reloads.
+  const transitStore = sessionStore();
+  const incoming = peekTransit(transitStore);
+  const arrival =
+    incoming === undefined
+      ? undefined
+      : new Arrival(incoming, {
+          overlayParent: root,
+          now: () => Date.now(),
+          publish: (readout) => {
+            root.dataset['transit'] = JSON.stringify(readout);
+          },
+        });
+  let transitions: TransitionController | undefined;
   // The browser ends pointer lock on Esc itself (and on alt-tab), not always passing the key on:
   // losing the player's lock while nothing else is open pauses the game (mw-e01.3).
   let hadLock = false;
@@ -877,7 +905,8 @@ function startRenderer(
         beforeSample?.(tick);
         return bridge.sampleCommands(tick);
       }),
-      simPaused: () => bridge.simPaused() || aiDebug?.held() === true,
+      simPaused: () =>
+        bridge.simPaused() || aiDebug?.held() === true || transitions?.leaving === true,
       // A pausing menu's queued command (the inventory's Use, Drop…) still runs, one tick a frame;
       // while `ai.freeze` holds the sim, queued commands wait for `ai.step`.
       stepWhilePaused: () => aiDebug?.held() !== true && commands.size > 0,
@@ -984,9 +1013,39 @@ function startRenderer(
     // No ?scene= boots the game's start scene (game.startScene, mw-e01.2): the slice in m1.
     const startScene = content.get('game', GAME_CONFIG_ID).startScene.id;
     const request = resolveSceneRequest(location.search, scenes.available(), startScene);
+    // The transition this page arrived by, once its scene is known to be the one asked for.
+    let transit: Transit | undefined;
     if (request.kind === 'scene') {
       const scene = content.get('scene', request.id);
       const loaded = scenes.load(scene.id);
+      // An area transition's hand-off (mw-e01.11): the facts, level changes and merchants carried
+      // from the area just left go in before anything in this one starts; the player arrives at the
+      // spawn the transition names (or the one ?spawn= asks for), facing the way it faces.
+      const handOff = takeTransit(transitStore);
+      transit = handOff?.to === scene.id ? handOff : undefined;
+      if (transit === undefined) arrival?.dismiss();
+      const asked =
+        transit?.spawn ?? new URLSearchParams(location.search).get('spawn') ?? undefined;
+      const arrivalSpawn =
+        asked !== undefined && loaded.layout.spawns.some((spawn) => spawn.id === asked)
+          ? asked
+          : undefined;
+      if (asked !== undefined && arrivalSpawn === undefined) {
+        console.warn(`scene ${scene.id} has no spawn "${asked}": starting at its player start`);
+      }
+      const carryOptions = {
+        registry: createGameSaveRegistry({
+          knownItem: (id) => content.has('item', id),
+          warn: (message) => {
+            console.warn(message);
+          },
+        }),
+        knownItem: (id: string) => content.has('item', id),
+        warn: (message: string) => {
+          console.warn(message);
+        },
+      };
+      if (transit !== undefined) applyCarriedWorld(world, transit.carry, carryOptions);
       // Sky, fog and the painted backdrop of outdoor scenes (mw-ju8.1). The unapproved backdrop images
       // are not in production builds, so only dev loads them.
       applyEnvironment(view.scene, scene.environment, { load: import.meta.env.DEV });
@@ -1049,6 +1108,7 @@ function startRenderer(
         player = setupTestbedPlayer({
           world,
           scene: loaded,
+          ...(arrivalSpawn !== undefined && { startSpawn: arrivalSpawn }),
           sync,
           tuning,
           cameraTuning,
@@ -1625,6 +1685,16 @@ function startRenderer(
       // Level deltas (mw-e27.3, mw-e27.4): with everything the scene spawned in place, before the
       // first tick, the level's baseline is taken and any changes stored for it are applied. Saves
       // capture how the level differs from it; dropped items persist with the level.
+      if (transit !== undefined && player !== undefined) {
+        applyCarriedPlayer(world, player.entity, transit.carry, carryOptions);
+        // The class's controller tuning (the kit block above applies it for a chosen class).
+        const classId = carriedClassId(transit.carry);
+        if (classId !== undefined && isPlayerClass(classId)) {
+          const profile = content.get('controller', PLAYER_CONTROLLER_ID);
+          commands.push(tuneCommand(player.entity, controllerTuningFor(profile, classId)));
+          root.dataset['playerClass'] = classId;
+        }
+      }
       registerPersistence(world);
       levelDeltasOf(world).enter(
         world,
@@ -1638,10 +1708,13 @@ function startRenderer(
         sceneAuthoredEntities(world, loaded),
       );
       persistDroppedItems(world, () => scene.id);
+      // The scene's ways into other scenes (mw-e01.11); answered by `transitions` below.
+      if (player !== undefined) installSceneTransitions(world, loaded.layout, player.entity);
       label.textContent = sceneLabel(scene, __BUILD_SHA__);
       root.dataset['scene'] = scene.id;
     } else {
       label.textContent = `No scene · build ${__BUILD_SHA__}`;
+      arrival?.dismiss();
       showSceneError(root, request.requested, request.available);
     }
     // Death → reload (mw-e30.7): the player's Died opens the death screen; loading a save or
@@ -1803,9 +1876,39 @@ function startRenderer(
             console.warn(message);
           },
         });
+        if (transit !== undefined) {
+          autosave.scheduler.request({ kind: 'area-transition', source: transit.to });
+        }
       });
       afterStep.push(() => {
         void autosave?.afterStep();
+      });
+      // Leaving by a transition volume (mw-e01.11): saves the area's changes, carries the player and
+      // reloads into the target scene. An arrival autosaves once it is safe (the area-transition
+      // trigger of mw-e30.5), so Continue resumes in the new area.
+      const hero = player.entity;
+      const controller = new TransitionController({
+        world,
+        player: hero,
+        registry: saveRegistry,
+        areaName: (id) => content.get('scene', id).name,
+        session: transitStore,
+        now: () => Date.now(),
+        navigate: (search) => {
+          location.search = search;
+        },
+        search: () => location.search,
+        overlayParent: root,
+        publish: (readout) => {
+          root.dataset['transit'] = JSON.stringify(readout);
+        },
+        warn: (message) => {
+          console.warn(message);
+        },
+      });
+      transitions = controller;
+      afterStep.push(() => {
+        controller.afterStep();
       });
     }
     // The pause menu (mw-e01.3): Esc, P or the pad's Menu while playing. Its Settings, Save and Load
@@ -2073,6 +2176,7 @@ function startRenderer(
       // The world as booted, before its first step: a Restart area and a New Game as the same class
       // publish the same state hash (mw-e01.16 AC-2, read by the e2e).
       root.dataset['bootState'] = JSON.stringify({ tick: world.tick, hash: hashWorld(world) });
+      arrival?.playable();
       loop.start();
       inPlay = true;
       openRequestedMenu();

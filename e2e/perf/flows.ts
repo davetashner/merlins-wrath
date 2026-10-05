@@ -5,7 +5,7 @@
 // in perf/perf-budgets.json; they mean something only on the reference machine.
 import { expect, type Page } from '@playwright/test';
 import { collectProblems, data, run, SLICE_URL } from '../helpers/slice';
-import { stubPointerLock } from '../helpers/player';
+import { runConsole, stubPointerLock } from '../helpers/player';
 import { throttled } from './harness';
 
 export { collectProblems };
@@ -187,4 +187,21 @@ export async function measureFirstFrameWarm(page: Page): Promise<number> {
   const app = page.locator('#app');
   await expect(app).toHaveAttribute('data-first-frame-ms', /^\d+$/, { timeout: 60_000 });
   return Number(await app.getAttribute('data-first-frame-ms'));
+}
+
+/**
+ * Area transition, warm (mw-e01.11 AC-4): teleports into valley-01's north gate and reads
+ * #app[data-transit].ms of the page that arrives in valley-02: wall-clock milliseconds from the
+ * crossing on the old page to the new page's first playable frame.
+ */
+export async function measureTransition(page: Page): Promise<number> {
+  await stubPointerLock(page);
+  await page.goto('/?scene=valley-01&debug=1');
+  await sceneReady(page, 'valley-01');
+  await page.waitForLoadState('networkidle'); // warm the cache the next page uses
+  await runConsole(page, 'tp 6 0 52.5');
+  await sceneReady(page, 'valley-02');
+  const arrived = await data<{ kind: string; ms: number }>(page, 'transit');
+  if (arrived.kind !== 'arrived') throw new Error(`no arrival timing: ${JSON.stringify(arrived)}`);
+  return arrived.ms;
 }

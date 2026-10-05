@@ -145,6 +145,29 @@ export interface SceneSignal {
   readonly checkpoints: readonly string[];
 }
 
+/** A way into another scene as written in data (mw-e01.11): a box in grid cells and where it leads. */
+export interface SceneTransitionSpec {
+  readonly id: string;
+  readonly min: Triple;
+  readonly max: Triple;
+  readonly scene: { readonly id: string };
+  readonly spawn: string;
+  readonly follow: boolean;
+}
+
+/** A way into another scene as laid out: its volume in metres and where it leads. */
+export interface SceneTransition {
+  readonly id: string;
+  readonly min: Vec3;
+  readonly max: Vec3;
+  /** The scene it leads to. */
+  readonly scene: string;
+  /** The spawn of that scene the player arrives at. */
+  readonly spawn: string;
+  /** Companions flagged to follow travel through it. */
+  readonly follow: boolean;
+}
+
 export interface ScenePlacementSpec {
   readonly piece: { readonly id: string };
   /** Grid cells. */
@@ -262,6 +285,8 @@ export interface SceneSpec {
   readonly waypoints?: readonly SceneWaypointSpec[] | undefined;
   /** Patrol routes and guard posts over the waypoints (mw-e11.9). */
   readonly routes?: readonly SceneRouteSpec[] | undefined;
+  /** Volumes leading to other scenes (mw-e01.11). */
+  readonly transitions?: readonly SceneTransitionSpec[] | undefined;
 }
 
 /** Finds a kit piece by id (undefined when there is none). */
@@ -352,6 +377,8 @@ export interface SceneLayout {
   readonly light: LightEnvironment;
   /** Its placed signal graphs, in scene order (mw-e03.18). */
   readonly signals: readonly SceneSignal[];
+  /** Its ways into other scenes, in scene order, in metres (mw-e01.11). */
+  readonly transitions: readonly SceneTransition[];
 }
 
 /** Thrown when a scene names a kit piece the lookup does not have. */
@@ -655,6 +682,18 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
           graph: signal.graph.id,
           bindings: Object.freeze({ ...signal.bindings }),
           checkpoints: Object.freeze([...(signal.checkpoints ?? [])]),
+        }),
+      ),
+    ),
+    transitions: Object.freeze(
+      (scene.transitions ?? []).map((t) =>
+        Object.freeze({
+          id: t.id,
+          min: gridToWorld(t.min, scene.grid),
+          max: gridToWorld(t.max, scene.grid),
+          scene: t.scene.id,
+          spawn: t.spawn,
+          follow: t.follow,
         }),
       ),
     ),
