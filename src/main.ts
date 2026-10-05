@@ -1524,7 +1524,7 @@ function startRenderer(
       });
       for (const line of sceneCreatureErrors(sceneCreatures)) console.error(line);
       // A placed creature's death sets its slain fact (mw-e01.7), e.g. entity:slice/skeleton.slain.
-      installSlainFacts(world, scene.id);
+      installSlainFacts(world, scene.id, loaded.layout.spawns);
       // A dying creature drops what it carries and rolls its loot table (mw-e01.5): the slice's
       // skeleton drops the gallery key at its body.
       startCreatureDrops(world, content, worldItems, scene.id, loaded.layout.spawns);

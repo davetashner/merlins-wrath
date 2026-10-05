@@ -132,7 +132,7 @@ describe('kill records', () => {
   it('records the world day of a kill with the slain fact', () => {
     const world = registerCreatureComponents(newWorld());
     installFactions(world);
-    installSlainFacts(world, LEVEL);
+    installSlainFacts(world, LEVEL, spawns);
     const result = spawnCreature(world, spawnOptions, {
       creature: 'skeleton',
       at: { x: 0, y: 0, z: 0 },
