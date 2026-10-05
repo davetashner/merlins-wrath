@@ -17,7 +17,7 @@ import {
   slainFact,
 } from '@sim/index';
 import { createGameWorld } from '@tools/replay/testbed-player-scenario';
-import { installRepopulationOnRest, repopulateOnArrival } from './repopulation';
+import { installRepopulationOnRest, repopulateOnArrival } from '@game/creatures/repopulation';
 
 const LEVEL = 'valley-01';
 const MINER = 'skel-valley-01-bend-miner';
