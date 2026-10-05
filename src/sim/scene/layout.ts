@@ -168,6 +168,22 @@ export interface SceneTransition {
   readonly follow: boolean;
 }
 
+/** A tagged box as written in data (mw-ju8.1): a river, a pool. */
+export interface SceneRegionSpec {
+  readonly id: string;
+  readonly min: Triple;
+  readonly max: Triple;
+  readonly tags: readonly string[];
+}
+
+/** A tagged box as laid out: its corners in metres (water: wading and swimming, mw-e02.14). */
+export interface SceneRegion {
+  readonly id: string;
+  readonly min: Vec3;
+  readonly max: Vec3;
+  readonly tags: readonly string[];
+}
+
 export interface ScenePlacementSpec {
   readonly piece: { readonly id: string };
   /** Grid cells. */
@@ -289,6 +305,8 @@ export interface SceneSpec {
   readonly routes?: readonly SceneRouteSpec[] | undefined;
   /** Volumes leading to other scenes (mw-e01.11). */
   readonly transitions?: readonly SceneTransitionSpec[] | undefined;
+  /** Tagged boxes: rivers and pools (mw-ju8.1). */
+  readonly regions?: readonly SceneRegionSpec[] | undefined;
 }
 
 /** Finds a kit piece by id (undefined when there is none). */
@@ -383,6 +401,8 @@ export interface SceneLayout {
   readonly signals: readonly SceneSignal[];
   /** Its ways into other scenes, in scene order, in metres (mw-e01.11). */
   readonly transitions: readonly SceneTransition[];
+  /** Its tagged boxes (water), in scene order, in metres. */
+  readonly regions: readonly SceneRegion[];
 }
 
 /** Thrown when a scene names a kit piece the lookup does not have. */
@@ -689,6 +709,16 @@ export function layoutScene(scene: SceneSpec, kit: KitLookup): SceneLayout {
           graph: signal.graph.id,
           bindings: Object.freeze({ ...signal.bindings }),
           checkpoints: Object.freeze([...(signal.checkpoints ?? [])]),
+        }),
+      ),
+    ),
+    regions: Object.freeze(
+      (scene.regions ?? []).map((r) =>
+        Object.freeze({
+          id: r.id,
+          min: gridToWorld(r.min, scene.grid),
+          max: gridToWorld(r.max, scene.grid),
+          tags: Object.freeze([...r.tags]),
         }),
       ),
     ),

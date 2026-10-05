@@ -13,6 +13,7 @@ export const PALETTE = Object.freeze({
   ink: '#1E1B2E',
   dusk: '#3B3A5A',
   leaf: '#6B8F4E',
+  sky: '#8FA8C8',
   parchment: '#EFE2C4',
   cream: '#FFF4DC',
   hearth: '#E8A24A',
@@ -38,6 +39,7 @@ export const UI_TOKENS: Readonly<Record<string, string>> = Object.freeze({
   'ui-color-bar-track': 'rgb(30 27 46 / 70%)',
   'ui-color-health': PALETTE.ember,
   'ui-color-stamina': PALETTE.leaf,
+  'ui-color-breath': PALETTE.sky,
   'ui-color-bar-trail': PALETTE.hearth,
   'ui-color-lock': PALETTE.wayfinder,
   'ui-color-flash': PALETTE.cream,
@@ -238,6 +240,33 @@ ${tokens}
 .vb-meter-trail { background: var(--ui-color-bar-trail); }
 .vb-meter-fill { background: var(--ui-color-health); }
 .vb-meter[data-kind='stamina'] .vb-meter-fill { background: var(--ui-color-stamina); }
+.vb-meter[data-kind='breath'] .vb-meter-fill { background: var(--ui-color-breath); }
+.vb-water-hud {
+  position: absolute;
+  left: 50%;
+  bottom: 22%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ui-space-2);
+  pointer-events: none;
+}
+.vb-water-hud[hidden] { display: none; }
+.vb-water-hud .vb-meter {
+  width: 14em;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px var(--ui-color-hud-shadow);
+}
+.vb-water-hud .vb-meter-trail, .vb-water-hud .vb-meter-fill { border-radius: inherit; }
+.vb-water-notice {
+  color: var(--ui-color-hud-text);
+  background: var(--ui-color-backdrop);
+  padding: var(--ui-space-1) var(--ui-space-3);
+  border-radius: var(--ui-radius);
+  font-family: var(--ui-font-body);
+}
+.vb-water-notice:empty { display: none; }
 .vb-combat-hud { position: absolute; inset: 0; pointer-events: none; }
 .vb-combat-bars { position: absolute; display: flex; flex-direction: column; }
 .vb-combat-bars .vb-meter {

@@ -243,7 +243,7 @@ function numberFields(node: unknown, path: readonly string[] = []): NumberField[
 }
 
 /** How a description declares its unit: `…, m.`, `…, m/s;`, `…, whole ms (≤ 120)`, `…, 0–1;`… */
-const UNIT = /[,:;] (?:whole ms|m\/s²|m\/s|m|s|kg|degrees|0–1|stamina\/s)(?=[.;:,) ]|$)/;
+const UNIT = /[,:;] (?:whole ms|m\/s²|m\/s|m|s|kg|degrees|0–1|stamina\/s|points)(?=[.;:,) ]|$)/;
 
 describe('controller data (mw-e02.3)', () => {
   const fields = numberFields(contentJsonSchema(controllerSchema));

@@ -124,7 +124,8 @@ export const CUE_EVENTS = {
       gait: 'string',
       /**
        * Footstep surface under the character (audio bible §7.3), from the ground collider's material
-       * (its `footstepSurface`); unknown surfaces read "stone" (footsteps and landings).
+       * (its `footstepSurface`); unknown surfaces read "stone" (footsteps and landings). A footstep
+       * taken wading reads the surface of the material water (water-shallow, mw-e02.14).
        */
       surface: 'string',
       /** Armour weight class of the character's armour layer, e.g. "plate", when it wears one. */
@@ -134,6 +135,11 @@ export const CUE_EVENTS = {
       /** Downward speed at touchdown, m/s (landings): scale volume by it. */
       impactSpeed: 'number',
     },
+  },
+  WaterEntered: {
+    anchors: ['entity'],
+    /** Downward speed on entering the water, m/s (mw-e02.14): scale the splash by it. */
+    facts: { speed: 'number' },
   },
   TelegraphStarted: {
     anchors: ['attacker'],

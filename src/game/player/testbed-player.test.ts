@@ -1104,3 +1104,26 @@ describe('testbed player with a bow (mw-e05.21)', () => {
     expect(state().combat).toBeUndefined();
   });
 });
+
+describe('testbed player in water (mw-e02.14)', () => {
+  it('publishes the breath and whether the player is in water, once the scene has water rules', () => {
+    const rig = testbed({ water: {} });
+    rig.run(0.5);
+    expect(rig.state().water).toEqual({ inWater: false, sinking: false, breath: 1 });
+    expect(rig.state().traversal).toBeNull();
+  });
+
+  it('reads the breath on the sim defaults when the profile has no water block', () => {
+    const { water, ...bare } = tuning;
+    expect(water).toBeDefined();
+    const rig = testbed({ water: {}, tuning: bare });
+    rig.run(0.5);
+    expect(rig.state().water?.breath).toBe(1);
+  });
+
+  it('publishes no water without the rules', () => {
+    const rig = testbed();
+    rig.run(0.1);
+    expect(rig.state().water).toBeUndefined();
+  });
+});

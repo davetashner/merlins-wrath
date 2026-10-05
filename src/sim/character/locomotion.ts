@@ -109,7 +109,13 @@ export const CharacterLocomotion = defineComponent<Locomotion>('character.locomo
 export type LocomotionEventKind =
   | { readonly kind: 'jumpStart' }
   | { readonly kind: 'land'; /** Downward speed at touchdown, m/s. */ readonly impactSpeed: number }
-  | { readonly kind: 'footstep'; readonly foot: Foot; readonly gait: FootstepGait }
+  | {
+      readonly kind: 'footstep';
+      readonly foot: Foot;
+      readonly gait: FootstepGait;
+      /** The material under the feet when it is not the ground's (`water`: wading, mw-e02.14). */
+      readonly material?: string;
+    }
   | { readonly kind: 'mantleStart' }
   | { readonly kind: 'ledgeGrab' };
 
@@ -222,6 +228,8 @@ export interface LocomotionTick {
   readonly character: CharacterState;
   /** Move input or root motion drives it this tick. */
   readonly moving: boolean;
+  /** A material the feet stand in besides the ground's (`water`), reported on footsteps. */
+  readonly material?: string | undefined;
   /** Facing yaw this tick, radians, or undefined without one. */
   readonly yaw: number | undefined;
 }
@@ -284,7 +292,12 @@ export function stepLocomotion(
     const spacing = gait.footstep[stepGait];
     stride += speed * dt;
     if (stride >= spacing) {
-      events.push({ kind: 'footstep', foot: nextFoot, gait: stepGait });
+      events.push({
+        kind: 'footstep',
+        foot: nextFoot,
+        gait: stepGait,
+        ...(tick.material !== undefined && { material: tick.material }),
+      });
       stride -= spacing;
       nextFoot = nextFoot === 'left' ? 'right' : 'left';
     }
@@ -318,6 +331,8 @@ export interface LocomotionSystemOptions<TInput> {
   readonly moving: (inputs: readonly TInput[], entity: EntityId) => boolean;
   /** `entity`'s facing yaw, radians (0 faces −z, positive turns left); undefined = no facing. */
   readonly facing?: (entity: EntityId) => number | undefined;
+  /** The material `entity` stands in besides the ground (`water` while wading), or undefined. */
+  readonly material?: (entity: EntityId) => string | undefined;
 }
 
 /**
@@ -342,6 +357,7 @@ export function locomotionSystem<TInput>(options: LocomotionSystemOptions<TInput
             character,
             moving: options.moving(inputs, entity),
             yaw: options.facing?.(entity),
+            material: options.material?.(entity),
           },
           context,
         );

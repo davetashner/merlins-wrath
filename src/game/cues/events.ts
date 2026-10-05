@@ -42,10 +42,12 @@ import {
   TelegraphStarted,
   volumeEntered,
   volumeExited,
+  WaterEntered,
   type DamageAmounts,
   type DamageResult,
   type EntityId,
   type EventType,
+  type LocomotionEvent,
   type StimulusShape,
   type TelegraphInfo,
   type Vec3,
@@ -81,6 +83,8 @@ export interface CueLookups {
   readonly moveSoundOf?: (move: string) => string | undefined;
   /** Footstep surface under a character (audio bible §7.3), already resolved to one with a set. */
   readonly surfaceUnder?: (entity: EntityId) => string | undefined;
+  /** Footstep surface of a material a character stands in (water → water-shallow), with a set. */
+  readonly surfaceOfMaterial?: (material: string) => string | undefined;
   /** Armour weight class of a character's armour layer, e.g. "plate". */
   readonly armorOf?: (entity: EntityId) => string | undefined;
   /** An arrow's own presentation cues (its content `cues`: trail, flight and impact). */
@@ -176,6 +180,15 @@ function contactOf(e: DamageResult): string {
   if (e.tags.includes(DAMAGE_TAGS.blocked)) return 'blocked';
   if (e.tags.includes(DAMAGE_TAGS.parried)) return 'parried';
   return e.immune ? 'immune' : 'hit';
+}
+
+/** The surface under a footstep or landing: the material it was taken in (wading), else the ground's. */
+function stepSurface(e: LocomotionEvent, look: CueLookups): string | undefined {
+  const material = e.kind === 'footstep' ? e.material : undefined;
+  return (
+    (material === undefined ? undefined : look.surfaceOfMaterial?.(material)) ??
+    look.surfaceUnder?.(e.entity)
+  );
 }
 
 /** Landings at or above the default hard-landing speed are heavy. */
@@ -276,11 +289,15 @@ export const CUE_EVENT_BINDINGS: Readonly<Record<CueEventName, CueEventBinding>>
           impactSpeed: e.impactSpeed,
           landing: landingWeight(e.impactSpeed),
         }),
-        surface: grounded ? look.surfaceUnder?.(e.entity) : undefined,
+        surface: grounded ? stepSurface(e, look) : undefined,
         armor: look.armorOf?.(e.entity),
       },
     };
   }),
+  WaterEntered: bind(WaterEntered, (e) => ({
+    anchors: { entity: { entity: e.entity } },
+    facts: { speed: e.speed },
+  })),
   TelegraphStarted: bind(TelegraphStarted, (e) => ({
     anchors: { attacker: { entity: e.attacker } },
     facts: {

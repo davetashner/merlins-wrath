@@ -302,6 +302,17 @@ describe('cue bridge helpers', () => {
     expect(lookups.materialOf(sword)).toBeUndefined();
   });
 
+  it('worldCueLookups names the footstep surface of a material a character stands in (mw-e02.14)', () => {
+    const world = registerWorldProperties(new World({ seed: 1 }));
+    const lookups = worldCueLookups(world, [
+      { id: 'water', impactSound: 'sfx-impact-water', footstepSurface: 'water-shallow' },
+      { id: 'iron', impactSound: 'sfx-impact-metal' },
+    ]);
+    expect(lookups.surfaceOfMaterial?.('water')).toBe('water-shallow');
+    expect(lookups.surfaceOfMaterial?.('iron')).toBeUndefined();
+    expect(lookups.surfaceOfMaterial?.('unknown')).toBeUndefined();
+  });
+
   it('a DamageApplied through the world bus plays the struck material’s impact cue', () => {
     const world = registerWorldProperties(new World({ seed: 1 }));
     const skeleton = world.spawn();

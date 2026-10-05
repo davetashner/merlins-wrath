@@ -148,6 +148,9 @@ import {
   setupTestbedPlayer,
   type ControllerHotUpdate,
   type TestbedPlayer,
+  attachWaterHud,
+  playerWater,
+  type WaterHudGlue,
 } from '@game/player/index';
 import {
   readPhysicsObjectTransform,
@@ -300,6 +303,7 @@ import {
   reducedMotion,
   setTextScale,
   UiRoot,
+  WaterHud,
 } from '@ui/index';
 import {
   DEBUG_CAMERA_HINT,
@@ -691,6 +695,8 @@ function startRenderer(
     // The player's health and stamina bars with damage feedback (mw-e04.10), once it is a combatant.
     let combatHud: CombatHudGlue | undefined;
     let targetHud: TargetHudGlue | undefined;
+    // The breath meter and the sinking warning (mw-e02.14).
+    let waterHud: WaterHudGlue | undefined;
     let publishedDummy = '';
 
     // VFX (mw-e29.1): effects from content, simulated each frame after the sim and the camera have
@@ -956,6 +962,7 @@ function startRenderer(
         }
         sandboxHud?.frame();
         combatHud?.frame(timeMs);
+        waterHud?.frame(timeMs);
         targetHud?.frame(timeMs);
         lockMarker.update(
           lockMarkerModel(
@@ -1126,6 +1133,9 @@ function startRenderer(
           // Ladders, ropes and ivy for every class (mw-e02.13); rough walls need the climbing
           // capability, which class data (mw-e02.3) will grant the thief.
           climb: {},
+          // Wading, swimming and sinking in the scene's water regions (mw-e02.14): the armor load
+          // class decides swim or sink; breath running out is drowning damage.
+          water: playerWater({ content, world, damage: combat.damage }),
           object: body.root,
           animation: {
             controller: new AnimationController(graph),
@@ -1254,6 +1264,18 @@ function startRenderer(
             forward: cameraForward(camera.quaternion),
             halfFov: horizontalHalfFov(camera.fov, camera.aspect),
           }),
+        });
+        // The breath meter (mw-e02.14): shown only while the player is short of breath, with the
+        // armor's warning when it drags the player under.
+        const breath = new WaterHud({
+          reducedMotion: () => reducedMotion(ui.element, (q) => globalThis.matchMedia(q)),
+        });
+        ui.hud.append(breath.element);
+        waterHud = attachWaterHud({
+          world,
+          player: player.entity,
+          hud: breath,
+          tuning: controllerTuningFor(content.get('controller', PLAYER_CONTROLLER_ID)),
         });
         // The target bar and damage numbers (mw-e04.21): the locked (or last-hit) fighter's health,
         // and what each hit did, over whoever took it.

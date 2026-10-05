@@ -1,6 +1,6 @@
 {
   "id": "footsteps",
-  "notes": "Footstep cue rules (mw-e28.6). Every footstep the sim's locomotion emits (spaced by ground distance per gait: 0.7 m walking, 1.0 m running for the player; animation foot plants can replace the spacing later) plays the surface under the character, read from the material of the collider it stands on (the material's footstepSurface): stone, wood, dirt, grass, gravel or shallow water, 4 round-robin variants each. A surface with no set yet plays stone (and warns once in dev). Walking and running play their own sets; sprinting is the run set 3 dB up and crouching the walk set 10 dB down. Characters in armour add its layer on every step (plate clank, chain jingle) once the armour weight class exists (mw-e04.16); landings thud harder and louder the faster the fall, heavy from the hard-landing speed. Creatures with locomotion use the same rules with their own surface; audio never emits sim noise (e09 does).",
+  "notes": "Footstep cue rules (mw-e28.6). Every footstep the sim's locomotion emits (spaced by ground distance per gait: 0.7 m walking, 1.0 m running for the player; animation foot plants can replace the spacing later) plays the surface under the character, read from the material of the collider it stands on (the material's footstepSurface): stone, wood, dirt, grass, gravel or shallow water, 4 round-robin variants each. A surface with no set yet plays stone (and warns once in dev). Walking and running play their own sets; sprinting is the run set 3 dB up and crouching the walk set 10 dB down. Characters in armour add its layer on every step (plate clank, chain jingle) once the armour weight class exists (mw-e04.16); landings thud harder and louder the faster the fall, heavy from the hard-landing speed. Creatures with locomotion use the same rules with their own surface; audio never emits sim noise (e09 does). Wading (mw-e02.14): a footstep taken in water at least 0.5 m deep carries the material water, which plays the water-shallow set whatever the ground under it is; stepping into the water (WaterEntered) splashes the existing water impact set (sfx-impact-water), louder the faster the fall into it, so a plunge off the bridge is heard and a wade-in is a soft plash. There are no swimming strokes or underwater muffling yet.",
   "rules": [
     {
       "event": "LocomotionEvents",
@@ -106,6 +106,16 @@
         "max": 14,
         "floorDb": -6
       },
+      "priority": 45
+    },
+    {
+      "event": "WaterEntered",
+      "layer": "impact",
+      "cue": "sfx-impact-water",
+      "variants": 4,
+      "pitchJitter": 0.08,
+      "volumeJitterDb": 1,
+      "volumeBy": { "fact": "speed", "min": 1, "max": 15, "floorDb": -12 },
       "priority": 45
     }
   ]

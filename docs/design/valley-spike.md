@@ -14,9 +14,12 @@ Three grey-box outdoor scenes from the e00 kit only (`src/content/data/scene/val
 | `valley-02` | 46 m forest-ish lane, 19 trunks (pillars), rail on the river side, river 3 m lower | `mid-forest-river.png`, follow 0.9 |
 | `valley-03` | approach, fenced 16 x 18 m overlook, stone bridge over a river, far bank towards the village | `far-mountains-castle.png` (stand-in; `overlook-concept.png` is a concept, not used) |
 
-The river in valley-02 and valley-03 is a tagged region (`regions[]`, tag `water`): data only,
-nothing reads it yet. Swimming and sinking are a later bead. Area transitions (mw-e01.11) do not
-exist in the code; the scenes end at an `area-exit` marker and are reached with `?scene=`.
+The river in valley-02 and valley-03 is a tagged region (`regions[]`, tag `water`). Since mw-e02.14
+the player wades, swims and sinks in it (src/sim/character/water.ts): valley-02's river is a 1 m
+ford (bed at -3 m, surface at -2 m), valley-03's is 4 m deep (bed -6 m, surface -2 m) with a ramp
+up each bank (x = +-6.5, from the south wall to the near bank) so anyone who falls off the Miners'
+Bridge, even a character in plate that sinks, can walk or swim out. Area transitions (mw-e01.11)
+join the scenes; they can also be reached with `?scene=`.
 
 New data: scene `environment` (`sky`, `fog`, `backdrop`) and `regions` (schema, generated docs
 `docs/content/scene-schema.md`). New renderer module `src/render/environment/index.ts`.

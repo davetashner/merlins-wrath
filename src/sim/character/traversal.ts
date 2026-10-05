@@ -67,6 +67,22 @@ export interface ClimbTraversal {
   readonly slipping: number;
 }
 
+/**
+ * The water a swimming or sinking character is in (mw-e02.14): plain data, snapshotted and hashed.
+ * Wading is ordinary locomotion at a lower speed and carries none of this.
+ */
+export interface SwimTraversal {
+  /** World height of the water's surface, m. */
+  readonly surface: number;
+  /**
+   * The armor load drags the character to the bottom (heavy, overloaded): it walks the bottom at a
+   * crawl and cannot swim up. False for a swimmer floating or diving.
+   */
+  readonly sinking: boolean;
+  /** A swimmer is diving (crouch held): under the surface, holding its breath. */
+  readonly diving: boolean;
+}
+
 /** A traversal mode that can take over the character from locomotion. */
 export interface TraversalHook {
   /** The modes this hook runs; it is asked to step whenever the character is in one of them. */

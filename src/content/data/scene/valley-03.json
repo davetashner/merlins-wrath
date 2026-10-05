@@ -2,7 +2,7 @@
   "$schema": "../scene.schema.json",
   "id": "valley-03",
   "name": "Valley overlook",
-  "description": "Spike mw-ju8.1: a cliff overlook in grey box: a 10 m approach, a fenced 16 x 18 m plateau, and a stone bridge across a river (tagged water region, 6 m down) leading to the far bank and, in the distance, the village. The village is backdrop only; the layer is a placeholder (far mountains) until the overlook image is approved.",
+  "description": "Spike mw-ju8.1: a cliff overlook in grey box: a 10 m approach, a fenced 16 x 18 m plateau, and a stone bridge across a river (tagged water region, 6 m down, with a ramp up each bank for anyone who falls in: mw-e02.14) leading to the far bank and, in the distance, the village. The village is backdrop only; the layer is a placeholder (far mountains) until the overlook image is approved.",
   "grid": 1,
   "camera": {
     "position": [-14, 16, -6],
@@ -122,6 +122,18 @@
       "at": [0.0, -6, 42.0],
       "scale": [1.5, 6, 1.0],
       "purpose": "blocking"
+    },
+    {
+      "piece": "ramp",
+      "at": [-6.5, -6, 38.0],
+      "yaw": 180,
+      "scale": [1, 6, 5.333333333333333]
+    },
+    {
+      "piece": "ramp",
+      "at": [6.5, -6, 38.0],
+      "yaw": 180,
+      "scale": [1, 6, 5.333333333333333]
     },
     {
       "piece": "floor",

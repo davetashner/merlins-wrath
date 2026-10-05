@@ -275,6 +275,119 @@ export const climbTuningSchema = z
 /** Climbing tuning (see climbTuningSchema). */
 export type ClimbTuning = z.output<typeof climbTuningSchema>;
 
+const waterSpeed = z.number().positive().max(10);
+
+export const waterTuningSchema = z
+  .strictObject({
+    wadeDepth: z
+      .number()
+      .positive()
+      .max(2)
+      .describe('Water at least this deep at the feet slows the character to a wade, m.'),
+    swimDepth: z
+      .number()
+      .positive()
+      .max(3)
+      .describe(
+        'Water deeper than this at the feet is swum in (light and medium load) or sunk in (heavy and overloaded), m.',
+      ),
+    sinkFromLoadClass: z
+      .enum(['light', 'medium', 'heavy', 'overloaded'])
+      .describe(
+        'The lightest armor load class that sinks in deep water (medium: the owner’s "going in the river makes you sink with all the armor"); lighter loads swim.',
+      ),
+    wadeScale: z
+      .number()
+      .positive()
+      .max(1)
+      .describe('Wading speed as a share of the run speed (no sprint while wading), 0–1.'),
+    swimSpeed: z
+      .strictObject({
+        light: waterSpeed.describe('Swim speed at light load, m/s.'),
+        medium: waterSpeed.describe('Swim speed at medium load, m/s.'),
+      })
+      .describe('Swim speed per armor load class (heavy and overloaded sink, they do not swim).'),
+    swimAccelTime: z
+      .number()
+      .positive()
+      .max(5)
+      .describe('Time for a swimmer to reach full speed and to stop, s.'),
+    staminaPerSecond: z
+      .strictObject({
+        light: z
+          .number()
+          .min(0)
+          .max(1000)
+          .describe('Stamina drained while swimming at light load, stamina/s.'),
+        medium: z
+          .number()
+          .min(0)
+          .max(1000)
+          .describe('Stamina drained while swimming at medium load, stamina/s.'),
+      })
+      .describe(
+        'Stamina drained while swimming (characters with a stamina pool); none for heavy loads, which sink.',
+      ),
+    floatDepth: z
+      .number()
+      .positive()
+      .max(3)
+      .describe(
+        'How far below the surface a floating swimmer’s feet hang, m (the head stays above).',
+      ),
+    diveSpeed: waterSpeed.describe('Descent speed of a swimmer who dives (crouch held), m/s.'),
+    riseSpeed: waterSpeed.describe('Speed a swimmer floats back up to the surface, m/s.'),
+    sinkSpeed: waterSpeed.describe(
+      'Speed a heavily loaded character descends through deep water, m/s.',
+    ),
+    sinkScale: z
+      .number()
+      .positive()
+      .max(1)
+      .describe(
+        'Walking speed along the bottom for a character that sank, as a share of the run speed, 0–1.',
+      ),
+    headHeight: z
+      .number()
+      .positive()
+      .max(3)
+      .describe(
+        'Height of the mouth above the feet, m: breath runs out while the surface is above it.',
+      ),
+    breathSeconds: z
+      .number()
+      .positive()
+      .max(600)
+      .describe('Breath underwater before drowning starts (20 by the design), s.'),
+    breathRecoverSeconds: z
+      .number()
+      .positive()
+      .max(600)
+      .describe('Time for an empty breath meter to refill once the head is above water, s.'),
+    drowning: z
+      .strictObject({
+        intervalMs: z
+          .int()
+          .min(100)
+          .max(60_000)
+          .describe('Time between drowning damage events once breath has run out, whole ms.'),
+        damage: z
+          .number()
+          .min(0)
+          .max(10_000)
+          .describe(
+            'Placeholder damage per drowning event until the damage model (e04) prices it, points.',
+          ),
+      })
+      .describe('What running out of breath does.'),
+  })
+  .describe(
+    'Wading, swimming, sinking and breath (mw-e02.14): depths, speeds per load class, floating, breath and the drowning hook. Placeholder values to tune in play.',
+  );
+
+/** Water tuning (see waterTuningSchema). */
+export type WaterTuning = z.output<typeof waterTuningSchema>;
+
 /** The stances a movement profile names (mw-e02.10). */
 export const MOVEMENT_STANCES = ['standing', 'crouched'] as const;
 
@@ -400,6 +513,9 @@ const tuningShape = {
     .describe(
       'MovementStance and gait movement profiles; absent = the sim’s defaults (DEFAULT_STEALTH_TUNING).',
     ),
+  water: waterTuningSchema
+    .optional()
+    .describe('Wading, swimming and breath; absent = the sim’s defaults (DEFAULT_WATER_TUNING).'),
 };
 
 /**
@@ -506,6 +622,14 @@ export const controllerOverrideSchema = z
       .extend({
         speeds: climbTuningSchema.shape.speeds.partial().optional(),
         jumpOff: climbTuningSchema.shape.jumpOff.partial().optional(),
+      })
+      .optional(),
+    water: waterTuningSchema
+      .partial()
+      .extend({
+        swimSpeed: waterTuningSchema.shape.swimSpeed.partial().optional(),
+        staminaPerSecond: waterTuningSchema.shape.staminaPerSecond.partial().optional(),
+        drowning: waterTuningSchema.shape.drowning.partial().optional(),
       })
       .optional(),
     stealth: stealthTuningSchema

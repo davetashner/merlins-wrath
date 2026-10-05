@@ -421,6 +421,29 @@ describe('scene layout (mw-e00.21)', () => {
     expect(layoutScene(TEST_SCENE, testKit).signals).toEqual([]);
   });
 
+  it('lays out tagged regions as boxes in metres, in scene order (mw-e02.14)', () => {
+    const scene: SceneSpec = {
+      ...TEST_SCENE,
+      grid: 2,
+      regions: [
+        { id: 'river', min: [-3, -3, 1], max: [-1, -1, 23], tags: ['water', 'river'] },
+        { id: 'mud', min: [0, 0, 0], max: [1, 1, 1], tags: [] },
+      ],
+    };
+    const { regions } = layoutScene(scene, testKit);
+    expect(regions).toEqual([
+      {
+        id: 'river',
+        min: { x: -6, y: -6, z: 2 },
+        max: { x: -2, y: -2, z: 46 },
+        tags: ['water', 'river'],
+      },
+      { id: 'mud', min: { x: 0, y: 0, z: 0 }, max: { x: 2, y: 2, z: 2 }, tags: [] },
+    ]);
+    expect(Object.isFrozen(regions[0]?.tags)).toBe(true);
+    expect(layoutScene(TEST_SCENE, testKit).regions).toEqual([]);
+  });
+
   it('is deterministic and frozen', () => {
     const a = layoutScene(TEST_SCENE, testKit);
     expect(layoutScene(TEST_SCENE, testKit)).toEqual(a);

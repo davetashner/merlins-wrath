@@ -116,6 +116,17 @@ import { climbTraversal, DEFAULT_CLIMB_TUNING } from '../climb/climb';
 import type { LedgeIndex } from '../climb/ledges';
 import { ledgeTraversal, type LedgeTraversalHook } from '../climb/mantle';
 import { ClimbRopeComponent } from '../climb/ropes';
+import {
+  CharacterBreath,
+  DEFAULT_WATER_TUNING,
+  giveBreath,
+  waterDepthAt,
+  waterSystem,
+  waterTraversal,
+  WATER_MATERIAL,
+  type WaterVolume,
+} from '../character/water';
+import type { LoadClass } from '../inventory/equipment';
 import { capabilitiesOf } from '../progression/capabilities';
 import type { TraversalHook } from '../character/traversal';
 import type { SceneSpawnPlacement } from '../scene/layout';
@@ -572,6 +583,18 @@ export interface PlayerOptions {
   readonly ledges?: PlayerLedgeOptions;
   /** Climbing ladders, ropes, ivy and rough walls (mw-e02.13); absent = none. */
   readonly climb?: PlayerClimbOptions;
+  /** Wading, swimming, sinking and breath in the scene's water (mw-e02.14); absent = none. */
+  readonly water?: PlayerWaterOptions;
+}
+
+/** The player's water (mw-e02.14, src/sim/character/water.ts). */
+export interface PlayerWaterOptions {
+  /** The scene's water volumes (`waterVolumes` of its regions). */
+  readonly volumes: readonly WaterVolume[];
+  /** The player's armor load class; absent or undefined = light (no sinking). */
+  readonly loadClass?: (entity: EntityId) => LoadClass | undefined;
+  /** Applies a drowning tick of `amount` health points (the game routes it to the damage model). */
+  readonly onDrown?: (entity: EntityId, amount: number) => void;
 }
 
 /** The player's climbing (mw-e02.13). */
@@ -689,7 +712,7 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
     }
     world.addSystem(dodgeMotionSystem({ moves, facing: lookFacing }));
   }
-  const { ledges, climb } = options;
+  const { ledges, climb, water } = options;
   // The options' fixed list plus whatever the capability registry grants the player (mw-e19.2), read
   // live so a grant or revoke changes traversal from the next check.
   const fixed = [...(ledges?.capabilities ?? []), ...(climb?.capabilities ?? [])];
@@ -714,6 +737,15 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
             ? undefined
             : world.get(entity, StaminaComponent)?.current,
         ...(ledgeHook !== undefined && { ledges: ledgeHook }),
+      }),
+    );
+  }
+  if (water !== undefined) {
+    world.register(CharacterBreath);
+    hooks.push(
+      waterTraversal({
+        volumes: water.volumes,
+        ...(water.loadClass !== undefined && { loadClass: water.loadClass }),
       }),
     );
   }
@@ -751,9 +783,33 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
   if (climb !== undefined && combat !== undefined) {
     world.addSystem(climbStaminaSystem(options.tuning));
   }
+  if (water !== undefined) {
+    world.addSystem(
+      waterSystem<TInput>({
+        volumes: water.volumes,
+        tuning: options.tuning,
+        ...(water.loadClass !== undefined && { loadClass: water.loadClass }),
+        ...(water.onDrown !== undefined && { onDrown: water.onDrown }),
+        drain: (entity, amount) => {
+          if (combat !== undefined) drainStamina(world, entity, amount);
+        },
+      }),
+    );
+  }
   world.addSystem(
     locomotionSystem<TInput>({
       tuning: options.tuning,
+      ...(water !== undefined && {
+        material: (entity: EntityId) => {
+          const state = world.get(entity, CharacterController);
+          const tuning =
+            characterTuning(world, entity, options.tuning).water ?? DEFAULT_WATER_TUNING;
+          return state !== undefined &&
+            waterDepthAt(water.volumes, state.position) >= tuning.wadeDepth
+            ? WATER_MATERIAL
+            : undefined;
+        },
+      }),
       moving: (inputs, entity) => {
         const move = actionFrameOf(inputs)?.move;
         const held = move !== undefined && (move.x !== 0 || move.y !== 0);
@@ -771,6 +827,9 @@ export function installPlayer<TInput>(world: World<TInput>, options: PlayerOptio
   // Its own tuning, so the debug console's ctl.set changes it from the very next tick (mw-e02.3).
   world.add(id, CharacterTuning, options.tuning);
   giveLocomotion(world, id);
+  if (water !== undefined) {
+    giveBreath(world, id, options.tuning.water ?? DEFAULT_WATER_TUNING, world.clock.hz);
+  }
   world.add(id, PlayerLook, startLook);
   if (combat !== undefined) {
     giveStamina(world, id, combat.stamina ?? DEFAULT_STAMINA_PROFILE);
